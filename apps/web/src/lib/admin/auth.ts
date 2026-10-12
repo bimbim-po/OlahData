@@ -42,6 +42,16 @@ export function isAllowedAdminEmail(email?: string | null): boolean {
  * Returns the admin session if authorized, or null if unauthorized.
  */
 export async function getAdminSession(): Promise<AdminSession | null> {
+  // Static export build: provide admin session so Next.js prerenders the admin console pages
+  if (process.env.NEXT_EXPORT === 'true') {
+    return {
+      userId: '00000000-0000-0000-0000-000000000001',
+      email: getConfiguredAdminEmails()[0],
+      role: 'owner',
+      mfaVerified: true,
+    };
+  }
+
   try {
     const cookieStore = await cookies();
     const headerStore = await headers();
