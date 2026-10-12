@@ -13,6 +13,7 @@ export type RunStatusT = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancel
 export type ExportFormatT = 'docx' | 'pdf';
 export type SubStatusT = 'active' | 'past_due' | 'expired' | 'canceled';
 export type PayStatusT = 'pending' | 'paid' | 'failed' | 'expired' | 'refunded';
+export type AdminRoleT = 'owner' | 'support' | 'viewer';
 
 export interface Database {
   public: {
@@ -25,6 +26,7 @@ export interface Database {
           kampus: string | null;
           plan: PlanT;
           plan_expires_at: string | null;
+          is_test: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -35,6 +37,7 @@ export interface Database {
           kampus?: string | null;
           plan?: PlanT;
           plan_expires_at?: string | null;
+          is_test?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -525,6 +528,200 @@ export interface Database {
           entity_id?: string | null;
           meta?: Json;
           created_at?: string;
+        };
+      };
+      admin_users: {
+        Row: {
+          user_id: string;
+          email: string;
+          role: AdminRoleT;
+          mfa_required: boolean;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          email: string;
+          role?: AdminRoleT;
+          mfa_required?: boolean;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          email?: string;
+          role?: AdminRoleT;
+          mfa_required?: boolean;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      app_events: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          event: string;
+          props: Json;
+          session_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          event: string;
+          props?: Json;
+          session_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string | null;
+          event?: string;
+          props?: Json;
+          session_id?: string | null;
+          created_at?: string;
+        };
+      };
+      admin_audit_log: {
+        Row: {
+          id: string;
+          admin_id: string;
+          admin_email: string;
+          action: string;
+          entity: string;
+          entity_id: string | null;
+          before: Json | null;
+          after: Json | null;
+          reason: string;
+          ip: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          admin_id: string;
+          admin_email: string;
+          action: string;
+          entity: string;
+          entity_id?: string | null;
+          before?: Json | null;
+          after?: Json | null;
+          reason: string;
+          ip?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          admin_id?: string;
+          admin_email?: string;
+          action?: string;
+          entity?: string;
+          entity_id?: string | null;
+          before?: Json | null;
+          after?: Json | null;
+          reason?: string;
+          ip?: string | null;
+          created_at?: string;
+        };
+      };
+      support_notes: {
+        Row: {
+          id: string;
+          user_id: string;
+          admin_id: string;
+          note: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          admin_id: string;
+          note: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          admin_id?: string;
+          note?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+    };
+    Views: {
+      v_daily_signups: {
+        Row: {
+          date_wib: string;
+          signups_count: number;
+          free_signups: number;
+          paid_signups: number;
+        };
+      };
+      v_daily_active_users: {
+        Row: {
+          date_wib: string;
+          dau_count: number;
+        };
+      };
+      v_mrr: {
+        Row: {
+          active_monthly_subs: number;
+          active_thesis_subs: number;
+          mrr_idr: number;
+          total_revenue_30d: number;
+        };
+      };
+      v_funnel: {
+        Row: {
+          total_signups: number;
+          total_created_project: number;
+          total_uploaded_dataset: number;
+          total_analyzed_success: number;
+          total_paid: number;
+        };
+      };
+      v_run_health: {
+        Row: {
+          total_runs_7d: number;
+          queued_count: number;
+          running_count: number;
+          succeeded_count: number;
+          failed_count: number;
+          canceled_count: number;
+          failure_rate_pct: number;
+          avg_duration_seconds: number;
+        };
+      };
+      v_llm_cost: {
+        Row: {
+          date_wib: string;
+          total_tokens: number;
+          estimated_cost_idr: number;
+          active_users_llm: number;
+        };
+      };
+      v_guard_stats: {
+        Row: {
+          total_explanations: number;
+          passed_count: number;
+          rejected_count: number;
+          pass_rate_pct: number;
+          avg_attempts: number;
+        };
+      };
+      v_retention_cohort: {
+        Row: {
+          cohort_week: string;
+          cohort_size: number;
+          week_0_active: number;
+          week_1_active: number;
+          week_2_active: number;
+          week_3_active: number;
         };
       };
     };
