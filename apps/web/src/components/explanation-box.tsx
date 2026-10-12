@@ -2,15 +2,23 @@
 
 import * as React from 'react';
 import { useState, useMemo } from 'react';
-import { Copy, Check, Info, FileText } from 'lucide-react';
+import { Copy, Check, Info, FileText, HelpCircle, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/toaster';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { COPY } from '@/lib/copy';
 
 export interface ExplanationBoxProps {
   title?: string;
+  summarySentence?: string;
   explanation: string;
   onHoverNumber?: (numStr: string | null) => void;
   activeNumber?: string | null;
@@ -19,16 +27,18 @@ export interface ExplanationBoxProps {
 }
 
 export function ExplanationBox({
-  title = 'Interpretasi Naratif Bab 4',
+  title = COPY.layers.layer3Title,
+  summarySentence,
   explanation,
   onHoverNumber,
   activeNumber,
   className,
-  badgeLabel = COPY.badges.writtenByAI,
+  badgeLabel = COPY.layers.aiNote,
 }: ExplanationBoxProps) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [localHoveredNum, setLocalHoveredNum] = useState<string | null>(null);
+  const [glossaryOpen, setGlossaryOpen] = useState(false);
 
   const effectiveHovered = activeNumber || localHoveredNum;
 
@@ -76,8 +86,8 @@ export function ExplanationBox({
       setTimeout(() => setCopied(false), 2500);
 
       toast({
-        title: 'Paragraf narasi berhasil disalin',
-        description: 'Siap kamu tempelkan ke pembahasan Bab 4 skripsimu.',
+        title: COPY.layers.copied,
+        description: 'Teks penjelasan siap kamu tempelkan ke pembahasan Bab 4 skripsimu.',
         variant: 'success',
       });
     } catch {
@@ -94,7 +104,6 @@ export function ExplanationBox({
     setLocalHoveredNum(nextVal);
     onHoverNumber?.(nextVal);
 
-    // If mobile or clicked, attempt to find and gently highlight or scroll to table cell
     if (nextVal) {
       const sanitized = nextVal.replace(/[^a-zA-Z0-9]/g, '-');
       const targetEl = document.querySelector(`[data-cell-num="${sanitized}"]`);
@@ -104,15 +113,31 @@ export function ExplanationBox({
     }
   };
 
+  const glossaryItems = Object.values(COPY.glossary);
+
   return (
     <div
       className={cn(
-        'rounded-md border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3 transition-colors',
+        'rounded-[16px] border border-border bg-card p-5 sm:p-6 shadow-xs space-y-4 transition-colors font-sans',
         className
       )}
     >
+      {/* Lapis 1: Intinya (Single Summary Sentence if provided) */}
+      {summarySentence && (
+        <div className="rounded-[10px] bg-[#FFE14D]/15 border border-[#FFE14D]/40 p-3.5 sm:p-4 text-[#243044] dark:text-foreground">
+          <div className="flex items-start gap-2.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#2748D6] bg-[#2748D6]/10 px-2 py-0.5 rounded-[4px] shrink-0 mt-0.5">
+              {COPY.layers.layer1Title}
+            </span>
+            <p className="text-sm sm:text-base font-semibold leading-relaxed max-w-[68ch]">
+              {summarySentence}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-1">
         <div className="flex items-center gap-2">
           <FileText className="h-4 w-4 text-primary shrink-0" />
           <h4 className="text-sm font-semibold text-foreground tracking-tight">
@@ -123,35 +148,81 @@ export function ExplanationBox({
         <div className="flex items-center gap-2 flex-wrap">
           <Badge
             variant="outline"
-            className="text-[11px] font-normal text-muted-foreground border-border bg-muted/40 px-2 py-0.5"
+            className="text-[11px] font-normal text-muted-foreground border-border bg-muted/40 px-2 py-0.5 rounded-[6px]"
           >
             {badgeLabel}
           </Badge>
+
+          {/* Interactive "Apa artinya?" helper dialog */}
+          <Dialog open={glossaryOpen} onOpenChange={setGlossaryOpen}>
+            <DialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2.5 gap-1.5 text-xs text-primary hover:text-primary hover:bg-primary/10 font-medium rounded-[10px]"
+                title="Buka penjelasan istilah statistik dalam bahasa sederhana"
+              >
+                <HelpCircle className="h-3.5 w-3.5" />
+                <span>{COPY.layers.whatDoesItMean}</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-primary" />
+                  <DialogTitle className="text-base font-semibold">
+                    Kamus Istilah Statistik (Bahasa Mahasiswa)
+                  </DialogTitle>
+                </div>
+              </DialogHeader>
+              <div className="space-y-4 pt-2 text-xs leading-relaxed max-h-[60vh] overflow-y-auto pr-1">
+                {glossaryItems.map((item, i) => (
+                  <div
+                    key={i}
+                    className="p-3 rounded-[10px] bg-muted/40 border border-border/80 space-y-1.5"
+                  >
+                    <div className="font-semibold text-foreground text-sm">
+                      {item.term}
+                    </div>
+                    <p className="text-foreground/90 font-medium">
+                      {item.short}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {item.detail}
+                    </p>
+                    <div className="text-[11px] text-[#2748D6] bg-primary/5 p-2 rounded-[6px] border border-primary/10 mt-1">
+                      {item.example}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </DialogContent>
+          </Dialog>
 
           <Button
             variant="outline"
             size="sm"
             onClick={handleCopy}
-            className="h-7 px-2.5 gap-1.5 text-xs text-foreground hover:bg-muted font-medium transition-colors"
-            title="Salin paragraf interpretasi narasi"
+            className="h-8 px-3 gap-1.5 text-xs text-foreground hover:bg-muted font-medium transition-colors rounded-[10px]"
+            title="Salin paragraf interpretasi narasi untuk Bab 4"
           >
             {copied ? (
               <>
                 <Check className="h-3.5 w-3.5 text-primary" />
-                <span className="text-primary font-medium">{COPY.results.copied}</span>
+                <span className="text-primary font-medium">{COPY.layers.copied}</span>
               </>
             ) : (
               <>
                 <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                <span>Salin Paragraf</span>
+                <span>Salin Teks</span>
               </>
             )}
           </Button>
         </div>
       </div>
 
-      {/* Narrative Paragraph with Interactive Bi-Directional Numbers */}
-      <div className="text-sm leading-relaxed text-foreground font-sans max-w-prose">
+      {/* Lapis 3: Teks Narasi Bab 4 dengan Kuning Stabilo Angka Tersambung */}
+      <div className="text-sm sm:text-[15px] leading-relaxed text-foreground font-sans max-w-[68ch]">
         {renderedTokens.map((token, idx) => {
           if (!token.isNumber || !token.rawNumber) {
             return <span key={idx}>{token.text}</span>;
@@ -186,11 +257,11 @@ export function ExplanationBox({
               }}
               onClick={() => handleSelectNumber(token.rawNumber!)}
               className={cn(
-                'inline-flex items-center px-1 py-0.2 mx-0.5 text-xs font-semibold rounded-xs transition-all duration-150 tabular-nums cursor-pointer select-none',
-                'bg-muted/70 text-foreground border border-border/80 hover:bg-accent hover:border-primary/40 hover:text-primary',
-                'focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
+                'inline-flex items-center px-1.5 py-0.5 mx-0.5 text-xs font-semibold rounded-[4px] transition-all duration-150 tabular-nums cursor-pointer select-none',
+                'bg-muted/70 text-foreground border border-border/80 hover:bg-[#FFE14D]/40 hover:border-[#FFE14D] hover:text-[#243044]',
+                'focus-visible:ring-2 focus-visible:ring-[#2748D6] focus-visible:outline-none',
                 isMatching &&
-                  'bg-accent border-primary text-primary font-bold ring-2 ring-primary/40 shadow-xs scale-105'
+                  'bg-[#FFE14D] text-[#243044] border-[#FFE14D] font-bold ring-2 ring-[#FFE14D] shadow-xs scale-105'
               )}
               title={`Klik atau sorot nilai ${token.text} untuk melihat sel asal di tabel`}
               aria-label={`Angka statistik ${token.text}`}
@@ -203,10 +274,10 @@ export function ExplanationBox({
       </div>
 
       {/* Subtle Hint */}
-      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground pt-1.5 border-t border-border/60">
+      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground pt-2 border-t border-border/60">
         <Info className="h-3 w-3 shrink-0 text-primary/70" />
         <span>
-          Arahkan kursor atau ketuk angka untuk menyorot sel asalnya di lembar tabel secara langsung.
+          Arahkan kursor atau ketuk angka bertinta untuk melihat sel asalnya di lembar tabel di atas.
         </span>
       </div>
     </div>

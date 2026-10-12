@@ -216,23 +216,26 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
         {currentStep === 0 && (
           <div className="space-y-6">
             <div>
-              <h2 className="font-serif text-2xl font-bold text-foreground">
+              <h2 className="font-sans text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                 Langkah 1: Unggah Data Kuesioner
               </h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Unggah spreadsheet data mentah (.xlsx, .xls) atau CSV berisikan tabulasi jawaban responden Anda.
+              <p className="text-sm text-muted-foreground mt-1 max-w-[68ch]">
+                Unggah spreadsheet data kuesionermu (.xlsx, .xls) atau CSV berisikan tabulasi jawaban responden.
               </p>
             </div>
 
             <FileDropzone />
 
-            <div className="flex items-center justify-end pt-4 border-t border-border">
+            <div className="flex items-center justify-between pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20">
+              <span className="text-xs text-muted-foreground hidden sm:inline">
+                {COPY.reassurance.saved}
+              </span>
               <Button
                 type="button"
                 size="lg"
                 onClick={nextStep}
                 disabled={fileData.length === 0}
-                className="cursor-pointer font-medium"
+                className="cursor-pointer font-semibold rounded-[10px] ml-auto min-h-[44px]"
               >
                 Lanjut ke Validasi Data
                 <ArrowRight className="w-4 h-4 ml-2" />
@@ -246,16 +249,16 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h2 className="font-serif text-2xl font-bold text-foreground">
+                <h2 className="font-sans text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                   Langkah 2: Validasi Kualitas Data
                 </h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Pemeriksaan integritas skala Likert, sel kosong, dan baris duplikat.
+                <p className="text-sm text-muted-foreground mt-1 max-w-[68ch]">
+                  Pemeriksaan integritas skala Likert, baris kosong, dan jawaban terduplikasi.
                 </p>
               </div>
 
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-xs font-mono">
+                <Badge variant="outline" className="text-xs font-mono rounded-[6px]">
                   Versi Data Aktif: dv-{dataVersion}
                 </Badge>
               </div>
@@ -263,14 +266,14 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
 
             {/* Critical Error Alert if any */}
             {criticalErrorCount > 0 && (
-              <div className="p-4 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive flex items-start gap-3">
+              <div className="p-4 sm:p-5 rounded-[16px] border border-destructive/30 bg-destructive/10 text-destructive flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
                 <div className="space-y-1 text-sm">
                   <span className="font-bold block">
-                    Ditemukan {criticalErrorCount} Galat Kritis pada Data
+                    Ditemukan {criticalErrorCount} Catatan Kritis pada Data
                   </span>
-                  <p className="text-destructive/90 text-xs leading-relaxed">
-                    Perbaiki atau hapus baris yang memiliki galat kritis sebelum melanjutkan. OlahData menjaga integritas akademis penelitian Anda dengan tidak memanipulasi data palsu.
+                  <p className="text-destructive/90 text-xs leading-relaxed max-w-[68ch]">
+                    Perbaiki atau keluarkan baris yang bermasalah sebelum melanjutkan. Data penelitianmu dijaga tetap murni tanpa manipulasi jawaban.
                   </p>
                 </div>
               </div>
@@ -303,13 +306,13 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
             </div>
 
             {/* Navigation Buttons */}
-            <div className="flex items-center justify-between pt-4 border-t border-border">
+            <div className="flex items-center justify-between pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20">
               <Button
                 type="button"
                 variant="outline"
                 size="lg"
                 onClick={prevStep}
-                className="cursor-pointer"
+                className="cursor-pointer rounded-[10px] min-h-[44px]"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Kembali ke Unggah
@@ -326,7 +329,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                   size="lg"
                   onClick={nextStep}
                   disabled={criticalErrorCount > 0}
-                  className="cursor-pointer font-medium"
+                  className="cursor-pointer font-semibold rounded-[10px] min-h-[44px]"
                 >
                   Lanjut ke Petakan Variabel
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -340,10 +343,10 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
         {currentStep === 2 && (
           <div className="space-y-6">
             <div>
-              <h2 className="font-serif text-2xl font-bold text-foreground">
+              <h2 className="font-sans text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                 Langkah 3: Petakan Variabel Penelitian
               </h2>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground mt-1 max-w-[68ch]">
                 Kelompokkan butir pernyataan kuesioner ke dalam konstruk variabel bebas (X) dan variabel terikat (Y).
               </p>
             </div>
@@ -355,13 +358,13 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
             />
 
             {/* Navigation Buttons */}
-            <div className="flex items-center justify-between pt-4 border-t border-border">
+            <div className="flex items-center justify-between pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20">
               <Button
                 type="button"
                 variant="outline"
                 size="lg"
                 onClick={prevStep}
-                className="cursor-pointer"
+                className="cursor-pointer rounded-[10px] min-h-[44px]"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Kembali ke Validasi
@@ -369,7 +372,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
 
               <div className="flex items-center gap-3">
                 {!isMappingValid && (
-                  <span className="text-xs text-[var(--color-amber)] font-medium hidden sm:inline">
+                  <span className="text-xs text-amber-600 dark:text-amber-400 font-medium hidden sm:inline">
                     Diperlukan min. 1 variabel X dan 1 variabel Y
                   </span>
                 )}
@@ -378,7 +381,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                   size="lg"
                   onClick={nextStep}
                   disabled={!isMappingValid}
-                  className="cursor-pointer font-medium"
+                  className="cursor-pointer font-semibold rounded-[10px] min-h-[44px]"
                 >
                   Lanjut ke Pilih Uji
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -393,11 +396,11 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h2 className="font-serif text-2xl font-bold text-foreground">
+                <h2 className="font-sans text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                   Langkah 4: Pilih Uji Statistik
                 </h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Pilih uji statistik yang Anda butuhkan untuk Bab 4 skripsi. Uji yang direkomendasikan telah disesuaikan otomatis dengan konstruk penelitian Anda.
+                <p className="text-sm text-muted-foreground mt-1 max-w-[68ch]">
+                  Pilih uji statistik yang kamu butuhkan untuk Bab 4 skripsi. Uji yang direkomendasikan telah disesuaikan otomatis dengan konstruk penelitianmu.
                 </p>
               </div>
 
@@ -410,7 +413,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                     const allRec = dynamicTestOptions.filter((t) => t.recommended).map((t) => t.id);
                     setSelectedTests(allRec);
                   }}
-                  className="text-xs cursor-pointer"
+                  className="text-xs cursor-pointer rounded-[10px]"
                 >
                   Pilih yang direkomendasikan
                 </Button>
@@ -421,7 +424,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                   onClick={() => {
                     setSelectedTests(dynamicTestOptions.map((t) => t.id));
                   }}
-                  className="text-xs cursor-pointer"
+                  className="text-xs cursor-pointer rounded-[10px]"
                 >
                   Pilih semua
                 </Button>
@@ -441,13 +444,13 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
             </div>
 
             {/* Navigation Buttons */}
-            <div className="flex items-center justify-between pt-4 border-t border-border">
+            <div className="flex items-center justify-between pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20">
               <Button
                 type="button"
                 variant="outline"
                 size="lg"
                 onClick={prevStep}
-                className="cursor-pointer"
+                className="cursor-pointer rounded-[10px] min-h-[44px]"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Kembali ke Pemetaan
@@ -464,7 +467,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                   size="lg"
                   onClick={nextStep}
                   disabled={selectedTests.length === 0}
-                  className="cursor-pointer font-medium"
+                  className="cursor-pointer font-semibold rounded-[10px] min-h-[44px]"
                 >
                   Lanjut ke Ringkasan
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -478,10 +481,10 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
         {currentStep === 4 && (
           <div className="space-y-6">
             <div>
-              <h2 className="font-serif text-2xl font-bold text-foreground">
+              <h2 className="font-sans text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                 Langkah 5: Ringkasan Konfigurasi & Jalankan Analisis
               </h2>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground mt-1 max-w-[68ch]">
                 Tinjau ringkasan parameter sebelum mesin statistik melakukan komputasi formula matriks dan regresi.
               </p>
             </div>
@@ -546,7 +549,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                   {constructs.map((c) => (
                     <div
                       key={c.id}
-                      className="p-2 rounded-lg bg-muted/40 border border-border/40 flex items-center justify-between gap-2"
+                      className="p-2.5 rounded-[10px] bg-muted/40 border border-border/40 flex items-center justify-between gap-2"
                     >
                       <div>
                         <span className="font-semibold text-foreground block">
@@ -558,7 +561,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                       </div>
                       <Badge
                         variant={c.role === 'independent' ? 'pine' : 'amber'}
-                        className="text-[10px] shrink-0"
+                        className="text-[10px] shrink-0 rounded-[6px]"
                       >
                         {c.role === 'independent' ? 'Bebas (X)' : 'Terikat (Y)'}
                       </Badge>
@@ -588,7 +591,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                         <Badge
                           key={testId}
                           variant="secondary"
-                          className="text-xs py-1 px-2.5 font-normal bg-card border border-border"
+                          className="text-xs py-1 px-2.5 font-normal bg-card border border-border rounded-[6px]"
                         >
                           {test?.name || testId}
                         </Badge>
@@ -600,7 +603,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
             </div>
 
             {/* Badges of Academic Transparency */}
-            <div className="p-4 rounded-xl border border-border/80 bg-muted/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="p-4 sm:p-5 rounded-[16px] border border-border/80 bg-card shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
@@ -608,16 +611,16 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                     Prinsip Transparansi & Komputasi
                   </span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Mesin statistik versi {ENGINE_VERSION} akan mengeksekusi perhitungan deterministik. Laporan Bab 4 dan jejak hitung akan langsung tersedia setelah selesai.
+                <p className="text-xs text-muted-foreground max-w-[68ch]">
+                  Mesin statistik versi {ENGINE_VERSION} mengeksekusi perhitungan rumus baku. Laporan Bab 4 dan jejak hitung akan langsung tersedia setelah selesai.
                 </p>
               </div>
 
               <div className="flex items-center gap-2 flex-wrap shrink-0">
-                <Badge variant="engine" className="text-xs py-1">
+                <Badge variant="engine" className="text-xs py-1 rounded-[6px]">
                   {COPY.badges.computedByEngine}
                 </Badge>
-                <Badge variant="ai" className="text-xs py-1">
+                <Badge variant="ai" className="text-xs py-1 rounded-[6px]">
                   {COPY.badges.writtenByAI}
                 </Badge>
               </div>
@@ -625,13 +628,13 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
 
             {/* Execution / Running Box */}
             {isRunning ? (
-              <div className="p-8 rounded-2xl border-2 border-primary/40 bg-card shadow-lg text-center space-y-6 animate-in fade-in">
+              <div className="p-8 rounded-[16px] border-2 border-primary/40 bg-card shadow-lg text-center space-y-6 animate-in fade-in">
                 <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
                   <Loader2 className="w-8 h-8 animate-spin" />
                 </div>
 
                 <div className="space-y-2 max-w-lg mx-auto">
-                  <h3 className="font-serif text-xl font-bold text-foreground">
+                  <h3 className="font-sans text-xl font-bold tracking-tight text-foreground">
                     Memproses Analisis Statistik...
                   </h3>
                   <p className="text-xs text-muted-foreground">
@@ -649,16 +652,16 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                       <div
                         key={stepText}
                         className={cn(
-                          'p-2.5 rounded-lg border text-xs flex items-center gap-2.5 transition-all',
+                          'p-3 rounded-[10px] border text-xs flex items-center gap-2.5 transition-all',
                           isDone
-                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300'
+                            ? 'bg-[#BFEBD9]/30 border-[#98D8BE] text-[#0E4331] dark:text-emerald-300 font-medium'
                             : isCurrent
                             ? 'bg-primary/10 border-primary text-primary font-semibold ring-1 ring-primary'
                             : 'bg-muted/30 border-border/40 text-muted-foreground'
                         )}
                       >
                         {isDone ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-[#0E4331] dark:text-emerald-400 shrink-0" />
                         ) : isCurrent ? (
                           <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />
                         ) : (
@@ -672,13 +675,13 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
               </div>
             ) : (
               /* Ready to run CTA */
-              <div className="flex items-center justify-between pt-4 border-t border-border">
+              <div className="flex items-center justify-between pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20">
                 <Button
                   type="button"
                   variant="outline"
                   size="lg"
                   onClick={prevStep}
-                  className="cursor-pointer"
+                  className="cursor-pointer rounded-[10px] min-h-[44px]"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Kembali ke Pilih Uji
@@ -688,10 +691,10 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                   type="button"
                   size="lg"
                   onClick={handleRunAnalysis}
-                  className="cursor-pointer font-bold px-8 bg-primary hover:bg-primary/90 text-white shadow-md text-base"
+                  className="cursor-pointer font-bold px-8 bg-primary hover:bg-primary/90 text-white shadow-md text-base rounded-[10px] min-h-[44px]"
                 >
                   <Play className="w-5 h-5 mr-2 fill-current" />
-                  Jalankan analisis
+                  Jalankan Analisis
                 </Button>
               </div>
             )}

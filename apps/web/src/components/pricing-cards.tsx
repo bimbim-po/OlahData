@@ -47,7 +47,7 @@ export function PricingCards({
             <Card
               key={plan.id}
               className={cn(
-                'relative flex flex-col justify-between transition-colors rounded-md',
+                'relative flex flex-col justify-between transition-colors rounded-[16px] shadow-xs',
                 isHighlighted
                   ? 'border-primary ring-1 ring-primary bg-card shadow-xs'
                   : 'border-border bg-card hover:border-foreground/30'
@@ -55,7 +55,7 @@ export function PricingCards({
             >
               {isHighlighted && (
                 <div className="absolute -top-2.5 left-4">
-                  <Badge variant="default" className="text-[10px] font-semibold py-0.5 px-2 bg-primary text-primary-foreground">
+                  <Badge variant="mint" className="text-[10px] font-semibold py-0.5 px-2.5 rounded-[6px]">
                     Rekomendasi Skripsi
                   </Badge>
                 </div>
@@ -68,7 +68,7 @@ export function PricingCards({
                       {plan.name}
                     </CardTitle>
                     {isCurrent && (
-                      <Badge variant="secondary" className="text-[10px]">
+                      <Badge variant="secondary" className="text-[10px] rounded-[6px]">
                         Paket Aktif
                       </Badge>
                     )}
@@ -112,7 +112,7 @@ export function PricingCards({
                 <Button
                   variant={isHighlighted ? 'default' : 'outline'}
                   size="default"
-                  className="w-full text-xs font-semibold"
+                  className="w-full text-xs font-semibold h-10 rounded-[10px]"
                   disabled={isCurrent}
                   onClick={() => onSelectPlan?.(planId)}
                 >
@@ -125,7 +125,7 @@ export function PricingCards({
       </div>
 
       {/* Campus License Note */}
-      <div className="rounded-md border border-border/80 bg-muted/30 p-3.5 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
+      <div className="rounded-[16px] border border-border/80 bg-card p-4 text-center text-xs text-muted-foreground flex items-center justify-center gap-2 shadow-2xs">
         <Building2 className="h-4 w-4 text-primary shrink-0" />
         <span>{COPY.pricing.campusNote}</span>
       </div>

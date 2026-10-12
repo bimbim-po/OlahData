@@ -86,8 +86,8 @@ export function ResultTable<T>({
       setTimeout(() => setCopied(false), 2500);
 
       toast({
-        title: 'Tabel berhasil disalin (format Word)',
-        description: 'Buka Microsoft Word lalu tempelkan (Ctrl+V / Cmd+V). Format kolom akan otomatis rapi.',
+        title: COPY.layers.copied,
+        description: 'Tabel berformat Word berhasil disalin. Buka Microsoft Word dan tekan Paste (Ctrl+V).',
         variant: 'success',
       });
     } catch {
@@ -111,7 +111,12 @@ export function ResultTable<T>({
     if (highlightedValue !== undefined && highlightedValue !== null) {
       const target = String(highlightedValue).trim();
       const cleanVal = valStr.trim();
-      if (cleanVal === target || (cleanVal.length > 0 && target.length > 0 && (cleanVal.includes(target) || target.includes(cleanVal)))) {
+      if (
+        cleanVal === target ||
+        (cleanVal.length > 0 &&
+          target.length > 0 &&
+          (cleanVal.includes(target) || target.includes(cleanVal)))
+      ) {
         return true;
       }
     }
@@ -121,15 +126,15 @@ export function ResultTable<T>({
   return (
     <div
       className={cn(
-        'rounded-md border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3 transition-colors',
+        'rounded-[16px] border border-border bg-card p-5 sm:p-6 shadow-xs space-y-3.5 transition-colors font-sans',
         className
       )}
     >
       {/* Table Top Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           {tableNumber && (
-            <span className="text-[11px] font-semibold text-primary uppercase tracking-wider block mb-0.5">
+            <span className="text-[11px] font-bold text-primary uppercase tracking-wider block mb-1">
               {tableNumber}
             </span>
           )}
@@ -141,7 +146,7 @@ export function ResultTable<T>({
         <div className="flex items-center gap-2 flex-wrap">
           <Badge
             variant="outline"
-            className="text-[11px] font-normal text-muted-foreground border-border bg-muted/40 px-2 py-0.5"
+            className="text-[11px] font-normal text-muted-foreground border-border bg-muted/40 px-2.5 py-0.5 rounded-[6px]"
           >
             {badgeLabel}
           </Badge>
@@ -150,7 +155,7 @@ export function ResultTable<T>({
             variant="outline"
             size="sm"
             onClick={handleCopyTable}
-            className="h-7 px-2.5 gap-1.5 text-xs text-foreground hover:bg-muted font-medium transition-colors"
+            className="h-8 px-3 gap-1.5 text-xs text-foreground hover:bg-muted font-medium transition-colors rounded-[10px]"
             title="Salin tabel format tab-separated untuk Microsoft Word"
           >
             {copied ? (
@@ -168,9 +173,9 @@ export function ResultTable<T>({
         </div>
       </div>
 
-      {/* Journal Table Body (APA 7th Edition Style) */}
-      <div className="overflow-x-auto -mx-1 sm:mx-0">
-        <table className="table-journal w-full text-left text-sm font-sans">
+      {/* Journal Table Body (APA 7th Edition Style with 6px inner radius) */}
+      <div className="overflow-x-auto -mx-1 sm:mx-0 rounded-[6px]">
+        <table className="table-journal w-full text-left text-sm font-sans border-collapse">
           <thead>
             <tr className="border-t-2 border-b border-foreground">
               {columns.map((col) => (
@@ -195,7 +200,7 @@ export function ResultTable<T>({
                 <tr
                   key={rKey}
                   className={cn(
-                    'border-b border-border transition-colors hover:bg-muted/40',
+                    'border-b border-border transition-colors hover:bg-muted/30',
                     index === data.length - 1 && 'border-b-2 border-foreground'
                   )}
                 >
@@ -230,11 +235,11 @@ export function ResultTable<T>({
                           onHoverCell?.(rKey, col.key, rawVal as string | number)
                         }
                         className={cn(
-                          'py-1.5 px-3 text-xs transition-all outline-none',
+                          'py-2 px-3 text-xs transition-all outline-none',
                           col.align === 'right' && 'text-right tabular-nums',
                           col.align === 'center' && 'text-center',
                           highlighted &&
-                            'bg-accent text-primary font-bold ring-1.5 ring-primary/60 rounded-xs scale-[1.01]'
+                            'bg-[#FFE14D] text-[#243044] font-bold ring-2 ring-[#FFE14D] rounded-[4px] scale-[1.01]'
                         )}
                       >
                         {col.render ? col.render(row, index) : valStr}

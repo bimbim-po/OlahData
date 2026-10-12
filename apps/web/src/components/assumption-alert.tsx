@@ -1,8 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { CheckCircle2, AlertTriangle, AlertCircle, Info } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, AlertCircle, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { COPY } from '@/lib/copy';
 
 export type AssumptionStatus = 'passed' | 'warning' | 'violated';
 
@@ -23,31 +24,34 @@ export function AssumptionAlert({
 }: AssumptionAlertProps) {
   const config = {
     passed: {
-      border: 'border-emerald-600/30 dark:border-emerald-500/30',
-      bg: 'bg-emerald-500/[0.04] dark:bg-emerald-950/20',
+      border: 'border-[#98D8BE] dark:border-emerald-800/60',
+      bg: 'bg-[#BFEBD9]/25 dark:bg-emerald-950/20',
       text: 'text-foreground',
-      badgeBg: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800',
-      badgeLabel: 'Terpenuhi',
+      titleColor: 'text-[#0E4331] dark:text-emerald-300',
+      badgeBg: 'bg-[#BFEBD9] text-[#0E4331] border-[#98D8BE] font-semibold',
+      badgeLabel: 'Lulus Uji',
       icon: CheckCircle2,
-      iconColor: 'text-emerald-600 dark:text-emerald-400',
+      iconColor: 'text-[#0E4331] dark:text-emerald-400',
     },
     warning: {
-      border: 'border-amber-500/30 dark:border-amber-400/30',
-      bg: 'bg-amber-500/[0.04] dark:bg-amber-950/20',
+      border: 'border-amber-300 dark:border-amber-700/60',
+      bg: 'bg-amber-50 dark:bg-amber-950/20',
       text: 'text-foreground',
-      badgeBg: 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 border-amber-300 dark:border-amber-800',
+      titleColor: 'text-amber-900 dark:text-amber-300',
+      badgeBg: 'bg-amber-100 text-amber-900 border-amber-300 font-semibold',
       badgeLabel: 'Perhatian',
       icon: AlertTriangle,
       iconColor: 'text-amber-600 dark:text-amber-400',
     },
     violated: {
-      border: 'border-destructive/40',
-      bg: 'bg-destructive/[0.04] dark:bg-destructive/10',
+      border: 'border-[#F7B3AF] dark:border-red-800/60',
+      bg: 'bg-[#FDEEED] dark:bg-red-950/20',
       text: 'text-foreground',
-      badgeBg: 'bg-destructive/10 text-destructive border-destructive/30',
+      titleColor: 'text-[#8A1E18] dark:text-red-300',
+      badgeBg: 'bg-[#FDEEED] text-[#8A1E18] border-[#E8574F]/40 font-semibold',
       badgeLabel: 'Asumsi Dilanggar',
       icon: AlertCircle,
-      iconColor: 'text-destructive',
+      iconColor: 'text-[#E8574F] dark:text-red-400',
     },
   }[status];
 
@@ -56,44 +60,44 @@ export function AssumptionAlert({
   return (
     <div
       className={cn(
-        'rounded-md border p-4 sm:p-4.5 transition-colors space-y-2',
+        'rounded-[16px] border p-4 sm:p-5 transition-colors space-y-3 font-sans',
         config.border,
         config.bg,
         className
       )}
       role="status"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-2.5">
-          <div className="mt-0.5 shrink-0">
-            <Icon className={cn('h-4 w-4', config.iconColor)} />
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 shrink-0">
+          <Icon className={cn('h-5 w-5', config.iconColor)} />
+        </div>
+        <div className="space-y-1 min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h4 className={cn('text-sm sm:text-base font-semibold leading-snug', config.titleColor)}>
+              {title}
+            </h4>
+            <span
+              className={cn(
+                'text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-[4px] border inline-block',
+                config.badgeBg
+              )}
+            >
+              {config.badgeLabel}
+            </span>
           </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h4 className={cn('text-sm font-semibold leading-snug', config.text)}>
-                {title}
-              </h4>
-              <span
-                className={cn(
-                  'text-[10px] font-medium px-1.5 py-0.2 rounded-xs border inline-block',
-                  config.badgeBg
-                )}
-              >
-                {config.badgeLabel}
-              </span>
-            </div>
-            <p className="mt-0.5 text-xs text-foreground/80 leading-relaxed font-sans">
-              {description}
-            </p>
-          </div>
+          <p className="text-xs sm:text-sm text-foreground/85 leading-relaxed">
+            {description}
+          </p>
         </div>
       </div>
 
       {recommendation && (
-        <div className="flex items-start gap-2 pt-2 border-t border-border/40 text-xs text-foreground/85">
-          <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-          <p className="leading-relaxed">
-            <span className="font-semibold text-foreground">Saran Perbaikan Metodologi: </span>
+        <div className="pt-3 border-t border-border/40 text-xs sm:text-sm space-y-1.5">
+          <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-foreground">
+            <ArrowRight className="h-3.5 w-3.5 text-[#2748D6]" />
+            <span>{COPY.layers.whatToDo}</span>
+          </div>
+          <p className="text-foreground/90 leading-relaxed pl-5 font-normal">
             {recommendation}
           </p>
         </div>

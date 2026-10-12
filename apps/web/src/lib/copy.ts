@@ -329,6 +329,102 @@ export const COPY = {
     },
   },
 
+  // Tiga Lapis Penjelasan & Glosarium Teman Belajar
+  layers: {
+    layer1Title: 'Intinya',
+    layer2Title: 'Tabel Baku Bab 4',
+    layer3Title: 'Teks Penjelasan Bab 4',
+    aiNote: 'Ditulis AI dari angka di tabel',
+    whatDoesItMean: 'Apa artinya?',
+    whatToDo: 'Perlu dilakukan apa?',
+    showTrace: 'Lihat cara menghitungnya',
+    hideTrace: 'Tutup cara menghitungnya',
+    copyTableWord: 'Salin tabel untuk Word',
+    copyText: 'Salin teks penjelasan',
+    copied: 'Tersalin ke clipboard',
+  },
+
+  // Glosarium Istilah Statistik (Bahasa Manusia)
+  glossary: {
+    alpha: {
+      term: "Cronbach's Alpha",
+      short: 'Ukuran kekompakan butir kuesioner dalam mengukur variabel yang sama.',
+      detail: 'Jika nilainya di atas 0,60 atau 0,70, kuesionermu terbukti konsisten dan layak dipakai penelitian.',
+      example: 'Contoh: Nilai 0,84 berarti jawaban responden sangat selaras dan tidak bertolak belakang.',
+    },
+    vif: {
+      term: 'Variance Inflation Factor (VIF)',
+      short: 'Deteksi apakah variabel bebas saling tumpang tindih.',
+      detail: 'Nilai VIF di bawah 10 (dan Tolerance di atas 0,10) menandakan model regresi bebas dari masalah multikolinearitas.',
+      example: 'Contoh: Nilai VIF 1,42 berarti variabel bebas berdiri mandiri tanpa saling mengganggu.',
+    },
+    pValue: {
+      term: 'Nilai Sig. (p-value)',
+      short: 'Peluang hubungan atau pengaruh terjadi murni karena kebetulan.',
+      detail: 'Jika Sig. < 0,05, pengaruh dinyatakan signifikan pada tingkat kepercayaan 95%.',
+      example: 'Contoh: Sig. 0,001 jauh lebih kecil dari 0,05, artinya pengaruhnya nyata dan dapat dibuktikan.',
+    },
+    rSquare: {
+      term: 'Koefisien Determinasi (R²)',
+      short: 'Berapa persen variabel terikat (Y) dijelaskan oleh variabel bebas (X).',
+      detail: 'Rentang nilai 0 sampai 1. Sisanya dijelaskan variabel lain di luar model skripsimu.',
+      example: 'Contoh: R² = 0,58 berarti 58% variasi Y ditentukan oleh X, sementara 42% oleh faktor lain.',
+    },
+    fStatistic: {
+      term: 'Uji F (Simultan)',
+      short: 'Uji kelayakan apakah seluruh variabel bebas secara bersama-sama berpengaruh pada Y.',
+      detail: 'Jika F hitung > F tabel dan Sig. < 0,05, model regresi dinyatakan layak dan terbukti.',
+      example: 'Contoh: Kualitas Layanan dan Harga secara serempak memengaruhi Kepuasan Pelanggan.',
+    },
+    tStatistic: {
+      term: 'Uji t (Parsial)',
+      short: 'Uji pengaruh masing-masing variabel bebas secara mandiri terhadap Y.',
+      detail: 'Jika t hitung > t tabel dan Sig. < 0,05, variabel tersebut punya pengaruh nyata.',
+      example: 'Contoh: Kualitas Layanan secara mandiri berpengaruh signifikan terhadap Kepuasan.',
+    },
+  },
+
+  // Panduan Tindakan Nyata Saat Asumsi Dilanggar
+  actionGuidance: {
+    normalitasViolated: {
+      title: 'Residual belum berdistribusi normal',
+      issue: 'Nilai Sig. Kolmogorov-Smirnov < 0,05.',
+      action: 'Periksa data pencilan (outlier) ekstrem pada jawaban responden, atau konsultasikan opsi transformasi data (mis. Logaritma Natural) dengan dosen.',
+    },
+    multikolViolated: {
+      title: 'Terdeteksi multikolinearitas',
+      issue: 'Ada nilai VIF > 10 atau Tolerance < 0,10 antar variabel bebas.',
+      action: 'Dua variabel bebas kemungkinan terlalu mirip maknanya. Pertimbangkan menggabungkan indikatornya atau mengeluarkan salah satu variabel yang redundan.',
+    },
+    heteroViolated: {
+      title: 'Terjadi gejala heteroskedastisitas',
+      issue: 'Nilai Sig. Uji Glejser < 0,05 pada salah satu variabel.',
+      action: 'Varians residual tidak konstan. Solusi umum adalah mentransformasikan variabel ke bentuk Ln atau menggunakan metode estimasi robust.',
+    },
+    validitasFailed: {
+      title: 'Butir kuesioner tidak valid',
+      issue: 'Nilai r hitung lebih kecil dari r tabel (atau Sig. > 0,05).',
+      action: 'Keluarkan butir pertanyaan yang gugur dari perhitungan total variabel, lalu hitung ulang reliabilitasnya.',
+    },
+    reliabilitasLow: {
+      title: "Cronbach's Alpha belum mencukupi",
+      issue: "Nilai Alpha berada di bawah batas minimum (0,60).",
+      action: 'Lihat kolom "Alpha if Item Deleted". Hapus butir dengan korelasi item-total paling rendah untuk menaikkan nilai Alpha secara otomatis.',
+    },
+  },
+
+  // Jaminan Ketenangan Mahasiswa
+  reassurance: {
+    saved: 'Datamu tersimpan otomatis. Kamu bisa istirahat dan lanjut kapan saja.',
+    safe: 'Data responden kamu diisolasi privat dan tidak dibagikan ke siapa pun.',
+    guidedProgress: 'Kamu di sini:',
+    stepUpload: '1. Unggah',
+    stepValidate: '2. Cek Data',
+    stepMap: '3. Petakan',
+    stepTest: '4. Pilih Uji',
+    stepResult: '5. Hasil',
+  },
+
   // Frasa Umum
   common: {
     loading: 'Memuat data...',

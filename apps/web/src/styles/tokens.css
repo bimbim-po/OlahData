@@ -1,22 +1,30 @@
-/* ===== OlahData Design Tokens (Meja Kerja Skripsi) ===== */
+/* ===== OlahData Design Tokens (Teman Belajar yang Pintar) ===== */
 :root {
-  /* Palet Fisik Meja Kerja */
-  --bg-paper: #F5F7FA;
+  /* Palet Meja Belajar Mahasiswa */
+  --bg-paper: #F6F8FC;
   --surface-paper: #FFFFFF;
   --ink-text: #243044;
-  --ink-primary: #1F3FA6;
-  --ink-primary-hover: #162E7A;
-  --ink-highlight: #E8EDFC;
-  --red-revision: #C23B2E;
-  --red-revision-light: #FDF2F1;
-  --green-valid: #2D6B57;
-  --green-valid-light: #F0F7F4;
-  --rule-border: #D5DAE3;
-  --rule-border-subtle: #E8ECF2;
-  --muted-surface: #EEF2F6;
-  --muted-text: #5A6882;
+  --ink-primary: #2748D6;
+  --ink-primary-hover: #1E3BB8;
+  --ink-subtle: #5A6A85;
 
-  /* Pemetaan Semantik - Mode Terang (Default) */
+  /* Kuning Stabilo (Khusus Sorotan Angka Tersambung & Hal yang Sedang Dibaca) */
+  --highlighter-yellow: #FFE14D;
+  --highlighter-yellow-text: #243044;
+
+  /* Status Lulus (Mint Segar) & Perhatian/Galat (Koral Hangat) */
+  --mint-success-bg: #BFEBD9;
+  --mint-success-text: #0E4331;
+  --coral-warning: #E8574F;
+  --coral-warning-bg: #FDEEED;
+  --coral-warning-text: #8E231C;
+
+  /* Garis Lembut (Pemisah Struktur) */
+  --rule-subtle: #E2E7F0;
+  --muted-surface: #EEF3FA;
+  --muted-text: #5A6A85;
+
+  /* Pemetaan Semantik UI */
   --background: var(--bg-paper);
   --foreground: var(--ink-text);
   --card: var(--surface-paper);
@@ -29,49 +37,59 @@
   --secondary-foreground: var(--ink-text);
   --muted: var(--muted-surface);
   --muted-foreground: var(--muted-text);
-  --accent: var(--ink-highlight);
-  --accent-foreground: var(--ink-primary);
-  --destructive: var(--red-revision);
+  --accent: var(--highlighter-yellow);
+  --accent-foreground: var(--highlighter-yellow-text);
+  --destructive: var(--coral-warning);
   --destructive-foreground: #FFFFFF;
-  --warning: #C97A1B;
+  --warning: #E08A1E;
   --warning-foreground: #FFFFFF;
-  --success: var(--green-valid);
-  --success-foreground: #FFFFFF;
-  --border: var(--rule-border);
-  --input: var(--rule-border);
+  --success: var(--mint-success-bg);
+  --success-foreground: var(--mint-success-text);
+  --border: var(--rule-subtle);
+  --input: var(--rule-subtle);
   --ring: var(--ink-primary);
 
   /* Sidebar */
-  --sidebar-bg: #EDF1F7;
+  --sidebar-bg: #F0F4FC;
   --sidebar-foreground: var(--ink-text);
-  --sidebar-border: var(--rule-border);
+  --sidebar-border: var(--rule-subtle);
   --sidebar-accent: var(--ink-primary);
   --sidebar-accent-foreground: #FFFFFF;
 
-  /* Radius Terukur (Tegas, bukan balon membulat) */
-  --radius-none: 0px;
-  --radius-sm: 2px;
-  --radius-md: 4px;
-  --radius-lg: 6px;
-  --radius-xl: 8px;
-  --radius: 4px;
+  /* Bentuk: Radius Bertingkat Menurut Peran Fungsional */
+  --radius-table: 6px;
+  --radius-interactive: 10px;
+  --radius-card: 16px;
+  --radius-dialog: 16px;
+
+  /* Standar Tailwind/Shadcn Mapping */
+  --radius-sm: var(--radius-table);
+  --radius-md: var(--radius-interactive);
+  --radius-lg: var(--radius-card);
+  --radius-xl: 20px;
+  --radius: var(--radius-interactive);
 }
 
-/* Mode Gelap (Meja Kerja Malam Mahasiswa) */
+/* Mode Gelap (Meja Belajar Malam Hari) */
 .dark {
-  --bg-paper: #0F141C;
-  --surface-paper: #17202E;
-  --ink-text: #E1E7F0;
-  --ink-primary: #5379E8;
-  --ink-primary-hover: #6D8FF0;
-  --ink-highlight: #213054;
-  --red-revision: #E05D50;
-  --red-revision-light: #331A18;
-  --green-valid: #4E9B80;
-  --green-valid-light: #152B23;
-  --rule-border: #253347;
-  --rule-border-subtle: #1C2736;
-  --muted-surface: #1E2838;
+  --bg-paper: #0E131F;
+  --surface-paper: #161E2E;
+  --ink-text: #E3E8F2;
+  --ink-primary: #5D7BFA;
+  --ink-primary-hover: #758FFA;
+  --ink-subtle: #94A3B8;
+
+  --highlighter-yellow: #FFE14D;
+  --highlighter-yellow-text: #0E131F;
+
+  --mint-success-bg: #1D4738;
+  --mint-success-text: #A8F0D0;
+  --coral-warning: #F26860;
+  --coral-warning-bg: #381A18;
+  --coral-warning-text: #FFA8A3;
+
+  --rule-subtle: #222D42;
+  --muted-surface: #1E283C;
   --muted-text: #94A3B8;
 
   --background: var(--bg-paper);
@@ -86,21 +104,21 @@
   --secondary-foreground: var(--ink-text);
   --muted: var(--muted-surface);
   --muted-foreground: var(--muted-text);
-  --accent: var(--ink-highlight);
-  --accent-foreground: var(--ink-primary);
-  --destructive: var(--red-revision);
+  --accent: var(--highlighter-yellow);
+  --accent-foreground: var(--highlighter-yellow-text);
+  --destructive: var(--coral-warning);
   --destructive-foreground: #FFFFFF;
-  --warning: #E0A832;
-  --warning-foreground: #0F141C;
-  --success: var(--green-valid);
-  --success-foreground: #FFFFFF;
-  --border: var(--rule-border);
-  --input: var(--rule-border);
+  --warning: #F5A623;
+  --warning-foreground: #0E131F;
+  --success: var(--mint-success-bg);
+  --success-foreground: var(--mint-success-text);
+  --border: var(--rule-subtle);
+  --input: var(--rule-subtle);
   --ring: var(--ink-primary);
 
-  --sidebar-bg: #141B26;
+  --sidebar-bg: #121927;
   --sidebar-foreground: var(--ink-text);
-  --sidebar-border: var(--rule-border);
+  --sidebar-border: var(--rule-subtle);
   --sidebar-accent: var(--ink-primary);
   --sidebar-accent-foreground: #FFFFFF;
 }

@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import { Public_Sans, JetBrains_Mono } from 'next/font/google';
+import { Figtree, JetBrains_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { APP_NAME, APP_DESCRIPTION } from '@/lib/constants';
 import './globals.css';
 
-const publicSans = Public_Sans({
+const figtree = Figtree({
   variable: '--font-sans',
   subsets: ['latin'],
   display: 'swap',
@@ -33,7 +33,7 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={`${publicSans.variable} ${jetbrainsMono.variable} h-full`}
+      className={`${figtree.variable} ${jetbrainsMono.variable} h-full`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col antialiased">

@@ -34,7 +34,7 @@ export function TestCard({ test, isSelected, onToggle, className }: TestCardProp
     <div
       onClick={() => onToggle(test.id)}
       className={cn(
-        'group relative p-4 rounded-xl border transition-all text-left flex flex-col justify-between cursor-pointer select-none',
+        'group relative p-4 rounded-[16px] border transition-all text-left flex flex-col justify-between cursor-pointer select-none',
         isSelected
           ? 'border-primary bg-primary/[0.04] dark:bg-primary/[0.08] shadow-sm ring-1 ring-primary'
           : 'border-border bg-card hover:border-primary/50 hover:bg-muted/30 shadow-2xs',

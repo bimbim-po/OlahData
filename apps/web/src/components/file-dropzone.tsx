@@ -231,13 +231,13 @@ export function FileDropzone({ onFileLoaded, className }: FileDropzoneProps) {
   return (
     <div className={cn('space-y-6', className)}>
       {/* Sample Data Banner / Action */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl border border-primary/20 bg-primary/5 dark:bg-primary/10">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-[16px] border border-primary/20 bg-primary/5 dark:bg-primary/10">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-foreground">
               Ingin coba langsung tanpa menyiapkan file?
             </span>
-            <Badge variant="amber" className="text-[11px] font-normal">
+            <Badge variant="amber" className="text-[11px] font-normal rounded-[6px]">
               {COPY.badges.sampleData}
             </Badge>
           </div>
@@ -249,7 +249,7 @@ export function FileDropzone({ onFileLoaded, className }: FileDropzoneProps) {
           type="button"
           onClick={handleLoadSampleData}
           variant="outline"
-          className="border-primary text-primary hover:bg-primary hover:text-white shrink-0 font-medium cursor-pointer shadow-sm"
+          className="border-primary text-primary hover:bg-primary hover:text-white shrink-0 font-medium cursor-pointer shadow-sm rounded-[10px]"
         >
           <Sparkles className="w-4 h-4 mr-2" />
           Pakai data contoh
@@ -258,7 +258,7 @@ export function FileDropzone({ onFileLoaded, className }: FileDropzoneProps) {
 
       {/* Active Selected File State */}
       {hasLoadedData ? (
-        <div className="p-6 rounded-xl border-2 border-primary/30 bg-card shadow-sm space-y-4">
+        <div className="p-6 rounded-[16px] border-2 border-primary/30 bg-card shadow-sm space-y-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -328,7 +328,7 @@ export function FileDropzone({ onFileLoaded, className }: FileDropzoneProps) {
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
           className={cn(
-            'group relative flex flex-col items-center justify-center p-10 text-center rounded-2xl border-2 border-dashed transition-all cursor-pointer select-none',
+            'group relative flex flex-col items-center justify-center p-10 text-center rounded-[16px] border-2 border-dashed transition-all cursor-pointer select-none',
             isDragging
               ? 'border-primary bg-primary/5 scale-[1.005]'
               : 'border-border/80 hover:border-primary/60 hover:bg-muted/30 bg-card/60'

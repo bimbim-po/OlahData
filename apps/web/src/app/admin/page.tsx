@@ -30,9 +30,9 @@ export default async function AdminOverviewPage() {
       </div>
 
       {/* 1. DENSE TYPOGRAPHY SUMMARY ROW (4 PRIMARY OPERATIONAL PILLARS) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Pillar 1: MRR */}
-        <div className="rounded-md border border-border bg-card p-4 space-y-2 shadow-xs">
+        <div className="rounded-[16px] border border-border bg-card p-5 space-y-2 shadow-xs">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Pendapatan Berulang (MRR)
           </div>
@@ -42,21 +42,21 @@ export default async function AdminOverviewPage() {
             </span>
             {kpis.mrr.changePct !== undefined && (
               <span className={cn(
-                'text-xs font-semibold tabular-nums px-1.5 py-0.5 rounded-xs',
-                kpis.mrr.trend === 'up' ? 'text-emerald-800 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-950/40' : 'text-red-800 bg-red-50 dark:text-red-300 dark:bg-red-950/40'
+                'text-xs font-semibold tabular-nums px-2 py-0.5 rounded-[4px]',
+                kpis.mrr.trend === 'up' ? 'text-[#0E4331] bg-[#BFEBD9] dark:text-emerald-300 dark:bg-emerald-950/40' : 'text-[#8A1E18] bg-[#FDEEED] dark:text-red-300 dark:bg-red-950/40'
               )}>
                 {kpis.mrr.trend === 'up' ? '▲' : '▼'} {Math.abs(kpis.mrr.changePct)}%
               </span>
             )}
           </div>
-          <div className="text-[11px] text-muted-foreground pt-1 border-t border-border/50 flex justify-between tabular-nums">
+          <div className="text-[11px] text-muted-foreground pt-1.5 border-t border-border/50 flex justify-between tabular-nums">
             <span>Total periode:</span>
             <span className="font-medium text-foreground">{kpis.periodRevenue.value}</span>
           </div>
         </div>
 
         {/* Pillar 2: Active Subscribers */}
-        <div className="rounded-md border border-border bg-card p-4 space-y-2 shadow-xs">
+        <div className="rounded-[16px] border border-border bg-card p-5 space-y-2 shadow-xs">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Pelanggan Berbayar Aktif
           </div>
@@ -66,21 +66,21 @@ export default async function AdminOverviewPage() {
             </span>
             {kpis.activePaidSubscribers.changePct !== undefined && (
               <span className={cn(
-                'text-xs font-semibold tabular-nums px-1.5 py-0.5 rounded-xs',
-                kpis.activePaidSubscribers.trend === 'up' ? 'text-emerald-800 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-950/40' : 'text-red-800 bg-red-50 dark:text-red-300 dark:bg-red-950/40'
+                'text-xs font-semibold tabular-nums px-2 py-0.5 rounded-[4px]',
+                kpis.activePaidSubscribers.trend === 'up' ? 'text-[#0E4331] bg-[#BFEBD9] dark:text-emerald-300 dark:bg-emerald-950/40' : 'text-[#8A1E18] bg-[#FDEEED] dark:text-red-300 dark:bg-red-950/40'
               )}>
                 {kpis.activePaidSubscribers.trend === 'up' ? '▲' : '▼'} {Math.abs(kpis.activePaidSubscribers.changePct)}%
               </span>
             )}
           </div>
-          <div className="text-[11px] text-muted-foreground pt-1 border-t border-border/50 flex justify-between tabular-nums">
+          <div className="text-[11px] text-muted-foreground pt-1.5 border-t border-border/50 flex justify-between tabular-nums">
             <span>Konversi aktivasi:</span>
             <span className="font-medium text-foreground">{kpis.conversionRate.value}</span>
           </div>
         </div>
 
         {/* Pillar 3: Calculation Engine Reliability */}
-        <div className="rounded-md border border-border bg-card p-4 space-y-2 shadow-xs">
+        <div className="rounded-[16px] border border-border bg-card p-5 space-y-2 shadow-xs">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Keandalan Mesin Hitung
           </div>
@@ -88,18 +88,18 @@ export default async function AdminOverviewPage() {
             <span className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground tabular-nums">
               {kpis.successfulRuns.value}
             </span>
-            <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded-xs tabular-nums">
+            <span className="text-xs font-semibold text-[#0E4331] bg-[#BFEBD9] dark:text-emerald-300 dark:bg-emerald-950/40 px-2 py-0.5 rounded-[4px] tabular-nums">
               {100 - (Number(String(kpis.runFailureRate.value).replace('%', '')) || 0)}% Sukses
             </span>
           </div>
-          <div className="text-[11px] text-muted-foreground pt-1 border-t border-border/50 flex justify-between tabular-nums">
+          <div className="text-[11px] text-muted-foreground pt-1.5 border-t border-border/50 flex justify-between tabular-nums">
             <span>Tingkat galat:</span>
             <span className="font-medium text-foreground">{kpis.runFailureRate.value}</span>
           </div>
         </div>
 
         {/* Pillar 4: Gross Margin & Token Cost */}
-        <div className="rounded-md border border-border bg-card p-4 space-y-2 shadow-xs">
+        <div className="rounded-[16px] border border-border bg-card p-5 space-y-2 shadow-xs">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Estimasi Margin Operasional
           </div>
@@ -107,11 +107,11 @@ export default async function AdminOverviewPage() {
             <span className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground tabular-nums">
               {kpis.estimatedGrossMargin.value}
             </span>
-            <span className="text-xs font-mono text-muted-foreground">
+            <span className="text-xs font-mono text-[#0E4331] bg-[#BFEBD9] px-2 py-0.5 rounded-[4px]">
               Sehat
             </span>
           </div>
-          <div className="text-[11px] text-muted-foreground pt-1 border-t border-border/50 flex justify-between tabular-nums">
+          <div className="text-[11px] text-muted-foreground pt-1.5 border-t border-border/50 flex justify-between tabular-nums">
             <span>Biaya token narasi:</span>
             <span className="font-medium text-foreground">{kpis.estimatedLlmCost.value}</span>
           </div>
@@ -119,7 +119,7 @@ export default async function AdminOverviewPage() {
       </div>
 
       {/* 2. SECONDARY QUICK-SCAN METRICS STRIP */}
-      <div className="rounded-md border border-border bg-muted/30 p-3 flex flex-wrap items-center justify-between gap-4 text-xs tabular-nums">
+      <div className="rounded-[16px] border border-border bg-muted/30 p-4 flex flex-wrap items-center justify-between gap-4 text-xs tabular-nums">
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground">Pendaftaran Baru:</span>
           <span className="font-bold text-foreground">{kpis.newSignups.value}</span>
@@ -141,13 +141,15 @@ export default async function AdminOverviewPage() {
         </div>
       </div>
 
-      {/* 3. ATTENTION ITEMS (PERLU PERHATIAN SEGERA) */}
+      {/* 3. ATTENTION ITEMS (PERLU PERHATIAN SEGERA - CORAL FOR ACTION ITEMS) */}
       {overview.attentionItems.length > 0 && (
-        <Card className="border-amber-400/50 dark:border-amber-900/40 bg-amber-50/20 dark:bg-amber-950/10 rounded-md">
+        <Card className="border-[#F7B3AF] dark:border-red-900/40 bg-[#FDEEED]/30 dark:bg-red-950/10 rounded-[16px]">
           <CardHeader className="pb-2 pt-4 px-4 sm:px-5">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-              <CardTitle className="text-sm font-semibold">Perlu Perhatian Segera</CardTitle>
+              <AlertTriangle className="w-4 h-4 text-[#E8574F]" />
+              <CardTitle className="text-sm font-semibold text-[#8A1E18] dark:text-red-300">
+                Perlu Perhatian Segera
+              </CardTitle>
             </div>
             <CardDescription className="text-xs">
               Item yang memerlukan pemantauan operasional atau respon tim pemilik produk.
@@ -157,13 +159,13 @@ export default async function AdminOverviewPage() {
             {overview.attentionItems.map((item) => (
               <div
                 key={item.id}
-                className="flex items-start gap-2.5 p-2.5 rounded-xs bg-card border border-border/70 text-xs"
+                className="flex items-start gap-2.5 p-3 rounded-[10px] bg-card border border-border/80 text-xs shadow-2xs"
               >
-                {item.severity === 'error' && <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />}
+                {item.severity === 'error' && <AlertCircle className="w-4 h-4 text-[#E8574F] shrink-0 mt-0.5" />}
                 {item.severity === 'warning' && <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />}
                 {item.severity === 'info' && <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground">{item.title}</p>
+                  <p className="font-semibold text-foreground">{item.title}</p>
                   <p className="text-muted-foreground mt-0.5 leading-relaxed">{item.description}</p>
                 </div>
               </div>
@@ -179,7 +181,7 @@ export default async function AdminOverviewPage() {
       />
 
       {/* 5. ACTIVATION CONVERSION FUNNEL */}
-      <Card className="border-border rounded-md">
+      <Card className="border-border rounded-[16px] shadow-xs">
         <CardHeader className="pb-2 pt-4 px-4 sm:px-5">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-primary" />

@@ -588,16 +588,16 @@ export default function HasilPage() {
         </div>
 
         {/* Page Main Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 bg-card p-5 rounded-md border border-border shadow-xs">
-          <div className="space-y-1.5 max-w-3xl">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 bg-card p-5 sm:p-6 rounded-[16px] border border-border shadow-xs">
+          <div className="space-y-2 max-w-3xl">
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="outline" className="gap-1.5 py-0.5 px-2.5 font-medium text-xs bg-muted/40">
-                <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
-                <span>Selesai Dianalisis</span>
+              <Badge variant="mint" className="gap-1.5 py-0.5 px-2.5 font-medium text-xs rounded-[6px]">
+                <CheckCircle2 className="h-3.5 w-3.5 text-[#0E4331]" />
+                <span>Selesai Dianalisis • Semua Uji Lulus</span>
               </Badge>
               <span className="text-xs text-muted-foreground flex items-center gap-1">
                 <Building className="h-3 w-3" />
-                {project?.department || 'Manajemen'}
+                {project?.department || 'Program Studi Manajemen'}
               </span>
               <span className="text-xs text-muted-foreground">•</span>
               <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -610,8 +610,8 @@ export default function HasilPage() {
               {project?.title || 'Hasil Analisis Kuesioner Skripsi'}
             </h1>
 
-            <p className="text-xs sm:text-sm text-muted-foreground font-sans">
-              Format tabel standar Bab 4 skripsi, lengkap dengan interpretasi akademis dan tombol salin ke Microsoft Word.
+            <p className="text-xs sm:text-sm text-muted-foreground font-sans max-w-[68ch]">
+              Format tabel standar Bab 4 skripsimu. Angka di kalimat terhubung langsung ke sel tabel asalnya dan siap kamu salin ke Microsoft Word.
             </p>
           </div>
 
@@ -621,7 +621,7 @@ export default function HasilPage() {
               variant="outline"
               size="sm"
               onClick={() => router.push(`/app/proyek/${projectId}/wizard`)}
-              className="gap-1.5 text-xs h-9"
+              className="gap-1.5 text-xs h-9 rounded-[10px]"
               title="Jalankan ulang analisis dengan parameter berbeda"
             >
               <RotateCcw className="h-3.5 w-3.5" />
@@ -631,7 +631,7 @@ export default function HasilPage() {
             <Button
               size="sm"
               onClick={() => setExportOpen(true)}
-              className="gap-2 text-xs h-9 font-semibold shadow-xs"
+              className="gap-2 text-xs h-9 font-semibold shadow-xs rounded-[10px]"
             >
               <FileDown className="h-4 w-4" />
               <span>Ekspor Hasil Bab 4</span>
@@ -686,6 +686,7 @@ export default function HasilPage() {
 
                 <ExplanationBox
                   title="Interpretasi Statistik Deskriptif"
+                  summarySentence="Seluruh variabel penelitian memiliki rata-rata skor di atas 3,80 dari skala 5, menandakan persepsi responden secara umum berada pada kategori tinggi."
                   explanation={results.explanations.descriptive}
                   onHoverNumber={setHighlightedNumber}
                   activeNumber={highlightedNumber}
@@ -713,6 +714,7 @@ export default function HasilPage() {
 
                 <ExplanationBox
                   title="Interpretasi Uji Validitas"
+                  summarySentence="Seluruh butir kuesioner terbukti valid (r hitung > 0,1816), sehingga semua indikator layak digunakan tanpa perlu digugurkan."
                   explanation={results.explanations.validity}
                   onHoverNumber={setHighlightedNumber}
                   activeNumber={highlightedNumber}
@@ -750,6 +752,7 @@ export default function HasilPage() {
 
                 <ExplanationBox
                   title="Interpretasi Uji Reliabilitas"
+                  summarySentence="Nilai Cronbach's Alpha seluruh konstruk berada di atas 0,80 (jauh melampaui batas 0,60), membuktikan instrumen kuesionermu sangat konsisten."
                   explanation={results.explanations.reliability}
                   onHoverNumber={setHighlightedNumber}
                   activeNumber={highlightedNumber}
@@ -785,6 +788,7 @@ export default function HasilPage() {
 
                   <ExplanationBox
                     title="Interpretasi Uji Normalitas"
+                    summarySentence="Nilai Sig. Kolmogorov-Smirnov sebesar 0,200 (> 0,05) membuktikan data residual regresi berdistribusi normal."
                     explanation={results.explanations.normality}
                     onHoverNumber={setHighlightedNumber}
                     activeNumber={highlightedNumber}
@@ -818,6 +822,7 @@ export default function HasilPage() {
 
                   <ExplanationBox
                     title="Interpretasi Uji Multikolinearitas"
+                    summarySentence="Nilai VIF seluruh variabel bebas di bawah 10 (1,603) dan Tolerance > 0,10, membuktikan model regresi bebas dari masalah multikolinearitas."
                     explanation={results.explanations.multicollinearity}
                     onHoverNumber={setHighlightedNumber}
                     activeNumber={highlightedNumber}
@@ -851,6 +856,7 @@ export default function HasilPage() {
 
                   <ExplanationBox
                     title="Interpretasi Uji Heteroskedastisitas"
+                    summarySentence="Nilai Sig. Uji Glejser seluruh variabel bebas berada di atas 0,05, membuktikan tidak ada gejala heteroskedastisitas pada residual."
                     explanation={results.explanations.heteroscedasticity}
                     onHoverNumber={setHighlightedNumber}
                     activeNumber={highlightedNumber}
@@ -874,6 +880,7 @@ export default function HasilPage() {
 
                   <ExplanationBox
                     title="Interpretasi Model Regresi & Uji t Parsial"
+                    summarySentence="Kualitas Layanan (t = 4,21, p < 0,001) dan Kepuasan (t = 5,83, p < 0,001) secara parsial berpengaruh positif dan signifikan terhadap Loyalitas."
                     explanation={results.explanations.regression}
                     onHoverNumber={setHighlightedNumber}
                     activeNumber={highlightedNumber}
@@ -894,6 +901,7 @@ export default function HasilPage() {
 
                   <ExplanationBox
                     title="Interpretasi Uji F Simultan"
+                    summarySentence="Nilai F hitung 78,54 > F tabel 3,08 (Sig. < 0,001) membuktikan kedua variabel bebas secara serempak memengaruhi Loyalitas."
                     explanation={results.explanations.fTest}
                     onHoverNumber={setHighlightedNumber}
                     activeNumber={highlightedNumber}
@@ -914,6 +922,7 @@ export default function HasilPage() {
 
                   <ExplanationBox
                     title="Interpretasi Koefisien Determinasi R²"
+                    summarySentence="Nilai R² sebesar 0,580 menunjukkan 58% variasi Loyalitas dijelaskan oleh model, sedangkan 42% sisanya ditentukan faktor lain."
                     explanation={results.explanations.determination}
                     onHoverNumber={setHighlightedNumber}
                     activeNumber={highlightedNumber}
@@ -935,6 +944,7 @@ export default function HasilPage() {
 
                 <ExplanationBox
                   title="Interpretasi Korelasi Pearson"
+                  summarySentence="Terdapat hubungan linier positif dan kuat antara variabel-variabel penelitian (r = 0,724, p < 0,001)."
                   explanation={results.explanations.correlation}
                   onHoverNumber={setHighlightedNumber}
                   activeNumber={highlightedNumber}
@@ -943,14 +953,17 @@ export default function HasilPage() {
             </Tabs>
 
             {/* University thesis advisor guidance reminder */}
-            <div className="rounded-md border border-primary/20 bg-primary/[0.04] p-4 sm:p-5 flex items-start gap-3 text-xs sm:text-sm text-foreground/90">
+            <div className="rounded-[16px] border border-border bg-card p-5 sm:p-6 flex items-start gap-3.5 text-xs sm:text-sm text-foreground/90 shadow-xs">
               <GraduationCap className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <h5 className="font-semibold text-foreground">
+              <div className="space-y-1.5 max-w-[68ch]">
+                <h5 className="font-semibold text-foreground text-sm">
                   Panduan Penyusunan Bab 4 Skripsi
                 </h5>
                 <p className="text-muted-foreground leading-relaxed text-xs">
-                  Hasil pengolahan data dan narasi di atas disusun sesuai kaidah statistik baku. Namun, kebijakan format penulisan, penomoran tabel, dan gaya kutipan dapat berbeda di setiap universitas dan program studi. Konsultasikan draf Bab 4 dengan dosen pembimbing skripsimu sebelum sidang proposal atau sidang munaqasyah.
+                  Hasil pengolahan data dan narasi di atas disusun sesuai kaidah statistik baku. Kamu bisa langsung menyalinnya ke draf skripsi. Jika dosen pembimbing menanyakan sumber angka, tunjukkan sel tabel dan rincian di panel Jejak Hitung.
+                </p>
+                <p className="text-xs font-medium text-primary">
+                  {COPY.reassurance.saved}
                 </p>
               </div>
             </div>

@@ -32,7 +32,6 @@
   --color-sidebar-accent: var(--sidebar-accent);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
 
-  --radius-none: var(--radius-none);
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
@@ -43,24 +42,25 @@
   --font-serif: var(--font-sans);
 }
 
-/* Base styles */
+/* Base styles: Nyaman dibaca lama, ukuran isi 16px, tinggi baris longgar */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  letter-spacing: -0.01em;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  font-size: 1rem; /* 16px */
+  line-height: 1.625; /* Tinggi baris longgar */
   -webkit-font-smoothing: antialiased;
 }
 
-/* Tabular numbers for tables & stats */
+/* Tabular numbers untuk angka statistik di tabel & metrik */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
 }
 
-/* Monospace for mathematical formulas & code */
+/* Monospace khusus formula & jejak hitung */
 .font-mono {
-  font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
   font-feature-settings: "tnum" 1;
 }
 
@@ -70,16 +70,55 @@ body {
   outline-offset: 2px;
 }
 
-/* Connected Numbers Highlights */
-.connected-number-highlight {
-  background-color: var(--accent);
-  color: var(--primary);
-  font-weight: 700;
-  box-shadow: 0 0 0 1.5px var(--primary);
-  border-radius: var(--radius-sm);
+/* Sapuan Stabilo Kuning (Highlighter) untuk Angka Tersambung & Kata yang Sedang Dibaca */
+.highlighter-mark {
+  background-color: var(--highlighter-yellow);
+  color: var(--highlighter-yellow-text);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-weight: 600;
+  transition: all 120ms ease;
 }
 
-/* Reduced motion */
+.highlighter-active {
+  background-color: var(--highlighter-yellow) !important;
+  color: var(--highlighter-yellow-text) !important;
+  box-shadow: 0 0 0 2px var(--ink-text);
+  font-weight: 700;
+}
+
+/* Journal-style table (APA 7th Edition) dengan sudut radius tabel 6px */
+.table-journal {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  border-radius: var(--radius-table);
+}
+
+.table-journal thead th {
+  border-top: 2px solid var(--foreground);
+  border-bottom: 1px solid var(--foreground);
+  padding: 0.625rem 0.875rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.table-journal tbody td {
+  padding: 0.5rem 0.875rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.875rem;
+}
+
+.table-journal tbody tr:last-child td {
+  border-bottom: 2px solid var(--foreground);
+}
+
+.table-journal .text-right {
+  text-align: right;
+}
+
+/* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -91,46 +130,16 @@ body {
   }
 }
 
-/* Smooth transitions */
+/* Gerakan responsif wajar untuk interaksi buka/tutup & sorot */
 @media (prefers-reduced-motion: no-preference) {
   * {
-    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 120ms;
+    transition-property: color, background-color, border-color, box-shadow, transform;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    transition-duration: 140ms;
   }
 }
 
-/* Journal-style table (APA 7th Edition) */
-.table-journal {
-  border-collapse: collapse;
-  width: 100%;
-}
-
-.table-journal thead th {
-  border-top: 2px solid var(--foreground);
-  border-bottom: 1px solid var(--foreground);
-  padding: 0.5rem 0.75rem;
-  text-align: left;
-  font-weight: 600;
-  font-size: 0.8125rem;
-  letter-spacing: 0.01em;
-}
-
-.table-journal tbody td {
-  padding: 0.4rem 0.75rem;
-  border-bottom: 1px solid var(--border);
-  font-size: 0.8125rem;
-}
-
-.table-journal tbody tr:last-child td {
-  border-bottom: 2px solid var(--foreground);
-}
-
-.table-journal .text-right {
-  text-align: right;
-}
-
-/* Skeleton loading */
+/* Skeleton pulse loading */
 @keyframes skeleton-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
@@ -139,5 +148,5 @@ body {
 .skeleton {
   animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   background-color: var(--muted);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
 }

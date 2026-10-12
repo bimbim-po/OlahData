@@ -137,7 +137,7 @@ export default function NewProjectPage() {
                 id="title"
                 rows={3}
                 placeholder="Contoh: Pengaruh Kualitas Layanan dan Persepsi Harga terhadap Kepuasan Pelanggan pada Pengguna E-Commerce"
-                className={`flex w-full rounded-xs border bg-card px-3 py-2 text-xs text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1.5 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 transition-colors resize-none ${
+                className={`flex w-full rounded-[10px] border bg-card px-3 py-2 text-xs text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1.5 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 transition-colors resize-none ${
                   errors.title ? 'border-destructive focus-visible:ring-destructive' : 'border-input'
                 }`}
                 {...register('title')}
@@ -162,7 +162,7 @@ export default function NewProjectPage() {
                 id="department"
                 type="text"
                 placeholder="Mis. Manajemen, Psikologi, Ilmu Komunikasi, Akuntansi"
-                className={`rounded-xs text-xs h-9 ${errors.department ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                className={`rounded-[10px] text-xs h-9 ${errors.department ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                 {...register('department')}
               />
               {errors.department && (
@@ -190,7 +190,7 @@ export default function NewProjectPage() {
                     <div
                       key={type.id}
                       onClick={() => setValue('researchType', type.id, { shouldValidate: true })}
-                      className={`relative flex items-start p-3 rounded-xs border cursor-pointer transition-colors ${
+                      className={`relative flex items-start p-3 rounded-[10px] border cursor-pointer transition-colors ${
                         isSelected
                           ? 'border-primary bg-accent/30 ring-1 ring-primary'
                           : 'border-border bg-card hover:bg-muted/40'
@@ -215,7 +215,7 @@ export default function NewProjectPage() {
                             {type.label}
                           </label>
                           {type.recommended && (
-                            <Badge variant="outline" className="text-[10px] font-normal py-0 px-1.5 bg-muted/60 border-border">
+                            <Badge variant="mint" className="text-[10px] font-normal py-0 px-1.5 rounded-[6px]">
                               Standar Skripsi
                             </Badge>
                           )}
@@ -243,11 +243,11 @@ export default function NewProjectPage() {
                 size="sm"
                 asChild
                 disabled={isSubmitting}
-                className="text-xs"
+                className="text-xs rounded-[10px]"
               >
                 <Link href="/app">Batal</Link>
               </Button>
-              <Button type="submit" size="sm" disabled={isSubmitting} className="min-w-[130px] text-xs font-semibold">
+              <Button type="submit" size="sm" disabled={isSubmitting} className="min-w-[130px] text-xs font-semibold rounded-[10px]">
                 {isSubmitting ? (
                   <span className="flex items-center gap-1.5">
                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />

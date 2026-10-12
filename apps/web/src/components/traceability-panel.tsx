@@ -43,12 +43,12 @@ export function TraceabilityPanel({
   return (
     <div
       className={cn(
-        'rounded-md border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3.5 font-sans',
+        'rounded-[16px] border border-border bg-card p-5 sm:p-6 shadow-xs space-y-4 font-sans',
         className
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between pb-2.5 border-b border-border/60">
+      <div className="flex items-center justify-between pb-3 border-b border-border/60">
         <div className="flex items-center gap-2">
           <FileCheck2 className="h-4 w-4 text-primary" />
           <h3 className="text-sm font-semibold text-foreground tracking-tight">
@@ -58,7 +58,7 @@ export function TraceabilityPanel({
         <div className="flex items-center gap-2">
           <Badge
             variant="outline"
-            className="text-[11px] gap-1 py-0.5 px-2 font-medium bg-muted/40 border-border"
+            className="text-[11px] gap-1 py-0.5 px-2 font-medium bg-muted/40 border-border rounded-[6px]"
           >
             <ShieldCheck className="h-3.5 w-3.5 text-primary" />
             <span>Audit Trail Valid</span>

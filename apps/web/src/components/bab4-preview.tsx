@@ -46,7 +46,7 @@ export function Bab4Preview() {
       navigator.clipboard.writeText(text);
     }
     toast({
-      title: 'Tabel berhasil disalin (format Word)',
+      title: COPY.layers.copied,
       description: 'Tempelkan (Ctrl+V) langsung ke dokumen Word skripsimu.',
       variant: 'success',
     });
@@ -97,82 +97,72 @@ export function Bab4Preview() {
   };
 
   return (
-    <div className="w-full rounded-md border border-border bg-card shadow-xs overflow-hidden">
-      {/* Top Header / Switcher */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border bg-muted/30 px-4 py-2.5 sm:px-5 gap-2.5">
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Contoh Format Bab 4:
-          </span>
-          <div className="inline-flex rounded-xs bg-muted/80 p-0.5 text-xs border border-border/60">
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('regression');
-                setActiveNumber(null);
-              }}
-              className={cn(
-                'rounded-xs px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer',
-                activeTab === 'regression'
-                  ? 'bg-card text-foreground shadow-xs font-semibold'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              Regresi Berganda
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('validity');
-                setActiveNumber(null);
-              }}
-              className={cn(
-                'rounded-xs px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer',
-                activeTab === 'validity'
-                  ? 'bg-card text-foreground shadow-xs font-semibold'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              Uji Validitas
-            </button>
-          </div>
+    <div className="w-full rounded-[16px] border border-border bg-card shadow-xs overflow-hidden font-sans">
+      {/* Tab Switcher Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5 border-b border-border bg-muted/20">
+        <div className="flex items-center gap-1.5 p-1 bg-background border border-border rounded-[10px]">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('regression');
+              setActiveNumber(null);
+            }}
+            className={cn(
+              'px-3 py-1.5 text-xs font-semibold rounded-[6px] transition-colors cursor-pointer',
+              activeTab === 'regression'
+                ? 'bg-primary text-primary-foreground shadow-xs'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            Regresi Berganda
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('validity');
+              setActiveNumber(null);
+            }}
+            className={cn(
+              'px-3 py-1.5 text-xs font-semibold rounded-[6px] transition-colors cursor-pointer',
+              activeTab === 'validity'
+                ? 'bg-primary text-primary-foreground shadow-xs'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            Uji Validitas Item
+          </button>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-muted-foreground tabular-nums">
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />
-          <span>N = 117 Responden (Kuesioner Skala Likert)</span>
+        <div className="flex items-center gap-2">
+          <Badge variant="mint" className="text-[11px] font-medium py-0.5 px-2 rounded-[6px]">
+            {COPY.badges.computedByEngine}
+          </Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCopyTableWord}
+            className="h-8 text-xs gap-1.5 rounded-[10px]"
+            title="Salin tabel format tab-separated untuk Microsoft Word"
+          >
+            <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+            <span>Salin Tabel Word</span>
+          </Button>
         </div>
       </div>
 
-      <div className="p-4 sm:p-5 space-y-4">
-        {/* Table Area */}
-        <div className="space-y-2.5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h3 className="text-sm font-semibold text-foreground">
-                {activeTab === 'regression'
-                  ? 'Tabel 4.15 Hasil Uji Regresi Linier Berganda'
-                  : 'Tabel 4.8 Hasil Uji Validitas Item Variabel Kualitas Layanan (X1)'}
-              </h3>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-[11px] font-normal text-muted-foreground border-border bg-muted/40 px-2 py-0.5">
-                {COPY.badges.computedByEngine}
-              </Badge>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCopyTableWord}
-                className="h-7 text-xs font-medium"
-              >
-                Salin untuk Word
-              </Button>
-            </div>
+      <div className="p-4 sm:p-6 space-y-5">
+        {/* Lapis 2: Table Section */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span className="font-semibold text-foreground">
+              {activeTab === 'regression'
+                ? 'Tabel 4.15 Hasil Analisis Regresi Linier Berganda'
+                : 'Tabel 4.8 Hasil Uji Validitas Item Kuesioner'}
+            </span>
+            <span className="text-[11px]">Format Baku APA 7th Edition</span>
           </div>
 
-          {/* Realistic APA 7th Journal Table */}
-          <div className="overflow-x-auto rounded-xs border border-border/80 bg-card">
+          <div className="overflow-x-auto border border-border rounded-[6px] bg-card">
             {activeTab === 'regression' ? (
               <table className="table-journal min-w-full text-left text-xs font-sans">
                 <thead>
@@ -195,13 +185,13 @@ export function Bab4Preview() {
 
                     return (
                       <tr key={i} className="border-b border-border hover:bg-muted/30 transition-colors">
-                        <td className="py-1.5 px-3 font-medium text-foreground">
+                        <td className="py-2 px-3 font-medium text-foreground">
                           {row.variable}
                         </td>
                         <td
                           className={cn(
-                            'py-1.5 px-3 text-right transition-colors cursor-pointer',
-                            isBMatched && 'bg-accent text-primary font-bold ring-1.5 ring-primary/60 rounded-xs'
+                            'py-2 px-3 text-right transition-colors cursor-pointer',
+                            isBMatched && 'bg-[#FFE14D] text-[#243044] font-bold ring-2 ring-[#FFE14D] rounded-[4px]'
                           )}
                           onMouseEnter={() => setActiveNumber(bStr)}
                           onMouseLeave={() => setActiveNumber(null)}
@@ -209,13 +199,13 @@ export function Bab4Preview() {
                         >
                           {bStr}
                         </td>
-                        <td className="py-1.5 px-3 text-right text-muted-foreground">
+                        <td className="py-2 px-3 text-right text-muted-foreground">
                           {formatNumber(row.stdError, 3)}
                         </td>
                         <td
                           className={cn(
-                            'py-1.5 px-3 text-right font-medium text-primary transition-colors cursor-pointer',
-                            isTMatched && 'bg-accent font-bold ring-1.5 ring-primary/60 rounded-xs'
+                            'py-2 px-3 text-right font-medium transition-colors cursor-pointer',
+                            isTMatched && 'bg-[#FFE14D] text-[#243044] font-bold ring-2 ring-[#FFE14D] rounded-[4px]'
                           )}
                           onMouseEnter={() => setActiveNumber(tStr)}
                           onMouseLeave={() => setActiveNumber(null)}
@@ -223,11 +213,11 @@ export function Bab4Preview() {
                         >
                           {tStr}
                         </td>
-                        <td className="py-1.5 px-3 text-right text-foreground">
+                        <td className="py-2 px-3 text-right text-foreground">
                           {pStr}
                         </td>
-                        <td className="py-1.5 px-3 text-center">
-                          <span className="text-[11px] font-medium text-emerald-800 dark:text-emerald-300">
+                        <td className="py-2 px-3 text-center">
+                          <span className="text-[11px] font-semibold text-[#0E4331] bg-[#BFEBD9] px-2 py-0.5 rounded-[4px]">
                             Signifikan
                           </span>
                         </td>
@@ -259,17 +249,17 @@ export function Bab4Preview() {
                 <tbody className="tabular-nums">
                   {(mockResults.validity ?? []).slice(0, 6).map((row, i) => {
                     const rStr = formatNumber(row.rHitung, 3);
-                    const isRMatched = isMatched(rStr);
+                    const matched = isMatched(rStr);
 
                     return (
                       <tr key={i} className="border-b border-border hover:bg-muted/30 transition-colors">
-                        <td className="py-1.5 px-3 font-medium text-foreground">
+                        <td className="py-2 px-3 font-medium text-foreground">
                           {row.item} (Indikator #{i + 1})
                         </td>
                         <td
                           className={cn(
-                            'py-1.5 px-3 text-right font-medium text-primary transition-colors cursor-pointer',
-                            isRMatched && 'bg-accent font-bold ring-1.5 ring-primary/60 rounded-xs'
+                            'py-2 px-3 text-right transition-colors cursor-pointer',
+                            matched && 'bg-[#FFE14D] text-[#243044] font-bold ring-2 ring-[#FFE14D] rounded-[4px]'
                           )}
                           onMouseEnter={() => setActiveNumber(rStr)}
                           onMouseLeave={() => setActiveNumber(null)}
@@ -277,11 +267,11 @@ export function Bab4Preview() {
                         >
                           {rStr}
                         </td>
-                        <td className="py-1.5 px-3 text-right text-muted-foreground">
+                        <td className="py-2 px-3 text-right text-muted-foreground">
                           {formatNumber(row.rTabel, 4)}
                         </td>
-                        <td className="py-1.5 px-3 text-center">
-                          <span className="text-[11px] font-medium text-emerald-800 dark:text-emerald-300">
+                        <td className="py-2 px-3 text-center">
+                          <span className="text-[11px] font-semibold text-[#0E4331] bg-[#BFEBD9] px-2 py-0.5 rounded-[4px]">
                             Valid
                           </span>
                         </td>
@@ -292,30 +282,30 @@ export function Bab4Preview() {
               </table>
             )}
           </div>
-          <p className="text-[11px] text-muted-foreground italic">
-            Sumber: Data kuesioner diolah dengan mesin statistik OlahData. Format tabel baku APA 7th Edition tanpa garis vertikal.
+          <p className="text-[11px] text-muted-foreground">
+            Sumber: Data kuesioner diolah dengan mesin statistik {COPY.badges.computedByEngine}. Format tabel baku APA 7th Edition tanpa garis vertikal.
           </p>
         </div>
 
-        {/* Narrative Box with Connected Numbers */}
-        <div className="rounded-md border border-border bg-card p-4 space-y-2.5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <Badge variant="outline" className="text-[11px] font-normal text-muted-foreground border-border bg-muted/40 px-2 py-0.5">
-              {COPY.badges.writtenByAI}
+        {/* Lapis 3: Narrative Box with Connected Numbers */}
+        <div className="rounded-[16px] border border-border bg-card p-5 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2.5">
+            <Badge variant="outline" className="text-[11px] font-normal text-muted-foreground border-border bg-muted/40 px-2 py-0.5 rounded-[6px]">
+              {COPY.layers.aiNote}
             </Badge>
 
             <Button
               variant="outline"
               size="sm"
               onClick={() => handleCopy(narrativeText, 'Paragraf penjelasan')}
-              className="h-7 text-xs gap-1"
+              className="h-8 text-xs gap-1.5 rounded-[10px]"
             >
               {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5 text-muted-foreground" />}
               <span>{copied ? 'Tersalin' : 'Salin Paragraf'}</span>
             </Button>
           </div>
 
-          <div className="text-xs sm:text-sm text-foreground/90 leading-relaxed font-sans max-w-prose">
+          <div className="text-sm leading-relaxed text-foreground font-sans max-w-[68ch]">
             {narrativeTokens.map((token, idx) => {
               if (!token.isNumber || !token.raw) {
                 return <span key={idx}>{token.text}</span>;
@@ -329,9 +319,9 @@ export function Bab4Preview() {
                   onMouseLeave={() => setActiveNumber(null)}
                   onClick={() => setActiveNumber(activeNumber === token.raw ? null : token.raw)}
                   className={cn(
-                    'inline-flex items-center px-1 py-0.2 mx-0.5 text-xs font-semibold rounded-xs transition-colors tabular-nums cursor-pointer select-none border border-border/80 bg-muted/60',
-                    'hover:bg-accent hover:border-primary/40 hover:text-primary',
-                    active && 'bg-accent border-primary text-primary font-bold ring-1.5 ring-primary/40'
+                    'inline-flex items-center px-1.5 py-0.5 mx-0.5 text-xs font-semibold rounded-[4px] transition-all tabular-nums cursor-pointer select-none border border-border/80 bg-muted/60',
+                    'hover:bg-[#FFE14D]/40 hover:border-[#FFE14D] hover:text-[#243044]',
+                    active && 'bg-[#FFE14D] border-[#FFE14D] text-[#243044] font-bold ring-2 ring-[#FFE14D] shadow-xs scale-105'
                   )}
                   title={`Sorot nilai ${token.text} di tabel di atas`}
                 >
@@ -341,10 +331,10 @@ export function Bab4Preview() {
             })}
           </div>
 
-          <div className="border-t border-border/60 pt-2 text-[11px] text-muted-foreground flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground pt-2 border-t border-border/50">
             <Info className="h-3.5 w-3.5 text-primary shrink-0" />
             <span>
-              Arahkan kursor atau ketuk angka di paragraf untuk menyorot sel asalnya pada tabel di atas.
+              Arahkan kursor atau sentuh angka bertinta untuk menyorot sel asalnya di lembar tabel di atas secara langsung.
             </span>
           </div>
         </div>

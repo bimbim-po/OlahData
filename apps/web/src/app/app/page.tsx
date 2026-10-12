@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { useToast } from '@/components/ui/toaster';
+import { COPY } from '@/lib/copy';
 
 export default function ProjectsPage() {
   const router = useRouter();
@@ -115,12 +116,12 @@ export default function ProjectsPage() {
   const getStatusBadge = (status: Project['status']) => {
     switch (status) {
       case 'completed':
-        return <Badge variant="success">Selesai</Badge>;
+        return <Badge variant="mint" className="rounded-[6px]">Selesai</Badge>;
       case 'analyzing':
-        return <Badge variant="warning">Sedang dianalisis</Badge>;
+        return <Badge variant="warning" className="rounded-[6px]">Sedang dianalisis</Badge>;
       case 'draft':
       default:
-        return <Badge variant="secondary">Draf</Badge>;
+        return <Badge variant="secondary" className="rounded-[6px]">Draf</Badge>;
     }
   };
 
@@ -132,15 +133,15 @@ export default function ProjectsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            Proyek Saya
+          <h1 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            Meja Kerja Skripsimu
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Kelola data skripsi dan analisis statistik kuesioner Anda.
+          <p className="text-sm text-muted-foreground mt-1 max-w-[68ch]">
+            Kelola data dan analisis statistik kuesionermu. {COPY.reassurance.saved}
           </p>
         </div>
 
@@ -150,13 +151,13 @@ export default function ProjectsPage() {
             variant="outline"
             onClick={handleCreateSample}
             disabled={isCreatingSample}
-            className="text-xs sm:text-sm"
+            className="text-xs sm:text-sm h-10 rounded-[10px]"
           >
             <Sparkles className="h-4 w-4 text-amber-500 mr-1.5" />
             {isCreatingSample ? 'Menyiapkan...' : 'Pakai data contoh'}
           </Button>
 
-          <Button asChild className="text-xs sm:text-sm">
+          <Button asChild className="text-xs sm:text-sm h-10 rounded-[10px] font-semibold">
             <Link href="/app/proyek/baru">
               <Plus className="h-4 w-4 mr-1.5" />
               Proyek baru
@@ -167,13 +168,13 @@ export default function ProjectsPage() {
 
       {/* Filter and Search Bar */}
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Cari berdasarkan judul atau program studi..."
-          className="pl-9 text-sm"
+          className="pl-10 text-sm h-10 rounded-[10px]"
         />
       </div>
 
@@ -199,7 +200,7 @@ export default function ProjectsPage() {
         </div>
       ) : filteredProjects.length === 0 ? (
         /* Empty State */
-        <Card className="border-dashed border-2 p-8 sm:p-12 text-center bg-card/50">
+        <Card className="border-dashed border-2 p-8 sm:p-12 text-center bg-card/50 rounded-[16px]">
           <CardContent className="flex flex-col items-center justify-center p-0 max-w-md mx-auto space-y-4">
             <div className="h-14 w-14 rounded-full bg-secondary flex items-center justify-center text-muted-foreground">
               <FolderKanban className="h-7 w-7" />
@@ -208,14 +209,14 @@ export default function ProjectsPage() {
               <h2 className="text-base sm:text-lg font-bold text-foreground">
                 {searchQuery ? 'Tidak ada proyek yang sesuai' : 'Belum ada proyek penelitian'}
               </h2>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-muted-foreground mt-1 max-w-[68ch]">
                 {searchQuery
                   ? `Tidak ditemukan hasil untuk "${searchQuery}". Coba kata kunci lain.`
                   : 'Mulai proyek baru untuk mengolah data kuesionermu, atau coba langsung dengan data simulasi.'}
               </p>
             </div>
             <div className="flex items-center gap-2.5 pt-1 flex-wrap justify-center">
-              <Button asChild size="sm">
+              <Button asChild size="sm" className="rounded-[10px]">
                 <Link href="/app/proyek/baru">
                   <Plus className="h-3.5 w-3.5 mr-1" />
                   Mulai proyek baru
@@ -226,6 +227,7 @@ export default function ProjectsPage() {
                 size="sm"
                 onClick={handleCreateSample}
                 disabled={isCreatingSample}
+                className="rounded-[10px]"
               >
                 <FileSpreadsheet className="h-3.5 w-3.5 text-primary mr-1" />
                 {isCreatingSample ? 'Menyiapkan...' : 'Buka data simulasi'}
@@ -239,7 +241,7 @@ export default function ProjectsPage() {
           {filteredProjects.map((project) => (
             <Card
               key={project.id}
-              className="group relative flex flex-col justify-between hover:shadow-md hover:border-primary/40 transition-all duration-200"
+              className="group relative flex flex-col justify-between hover:shadow-md hover:border-primary/40 transition-all duration-200 rounded-[16px]"
             >
               <div className="p-5 flex-1 flex flex-col justify-between">
                 {/* Header row: Prodi & Status badge */}
@@ -254,7 +256,7 @@ export default function ProjectsPage() {
                         <DropdownMenuTrigger asChild>
                           <button
                             type="button"
-                            className="h-8 w-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                            className="h-8 w-8 rounded-[10px] flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
                             aria-label="Menu aksi proyek"
                           >
                             <MoreVertical className="h-4 w-4" />
