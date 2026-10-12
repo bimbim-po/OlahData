@@ -1,0 +1,22 @@
+{
+  "name": "olahdata-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm --prefix apps/web run dev",
+    "build": "npm --prefix apps/web run build",
+    "start": "npm --prefix apps/web start",
+    "lint": "npm --prefix apps/web run lint",
+    "stats:dev": "python -m uvicorn services.stats.main:app --reload --port 8000",
+    "stats:test": "pytest services/stats/tests",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down",
+    "gen-types": "node scripts/gen-types.mjs",
+    "db:start": "npx supabase start",
+    "db:reset": "npx supabase db reset",
+    "db:test": "npx supabase test db"
+  }
+}

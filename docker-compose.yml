@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  stats:
+    build:
+      context: ./services/stats
+      dockerfile: Dockerfile
+    container_name: olahdata-stats-service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - STATS_SERVICE_KEY=dev-stats-secret-key-12345
+      - ENGINE_VERSION=1.0.0-beta
+      - ENVIRONMENT=production
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: olahdata-web-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - STATS_SERVICE_URL=http://stats:8000
+      - STATS_SERVICE_KEY=dev-stats-secret-key-12345
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+      - NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.anon
+      - SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.service_role
+      - MIDTRANS_SERVER_KEY=SB-Mid-server-demo-12345
+      - MIDTRANS_CLIENT_KEY=SB-Mid-client-demo-12345
+    depends_on:
+      stats:
+        condition: service_healthy
+
+networks:
+  default:
+    name: olahdata-network

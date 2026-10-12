@@ -1,0 +1,48 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# testing & cache
+coverage/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+
+# next.js & builds
+.next/
+apps/web/.next/
+out/
+apps/web/out/
+build/
+dist/
+
+# misc
+.DS_Store
+*.pem
+*.log
+
+# env files (allow .env.example)
+.env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+
+# Supabase local runtime
+supabase/.temp/
+supabase/.branches/
+
+# vercel & turbopack
+.vercel/
+*.tsbuildinfo
+next-env.d.ts

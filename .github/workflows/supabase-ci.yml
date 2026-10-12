@@ -1,0 +1,54 @@
+name: Supabase Database CI & RLS Verification
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+
+jobs:
+  test-database:
+    name: Supabase Migrations, Tests & RLS Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase Local Stack
+        run: supabase start
+
+      - name: Reset Database and Apply All Migrations & Seed
+        run: supabase db reset
+
+      - name: Run Database Tests (pgTAP)
+        run: supabase test db
+
+      - name: Verify 100% RLS Coverage on Public Tables
+        run: |
+          supabase db query "
+            DO \$\$
+            DECLARE
+              v_unsecured_count INT;
+            BEGIN
+              SELECT COUNT(*) INTO v_unsecured_count
+              FROM pg_class c
+              JOIN pg_namespace n ON n.oid = c.relnamespace
+              WHERE n.nspname = 'public'
+                AND c.relkind = 'r'
+                AND NOT c.relrowsecurity;
+
+              IF v_unsecured_count > 0 THEN
+                RAISE EXCEPTION 'CI GAGAL: Ditemukan % tabel dalam schema public tanpa RLS aktif!', v_unsecured_count;
+              END IF;
+            END \$\$;
+          "

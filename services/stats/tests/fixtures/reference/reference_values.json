@@ -1,0 +1,13 @@
+{
+  "n": 100,
+  "alpha_kl": 0.7057,
+  "alpha_kp": 0.8256,
+  "alpha_lo": 0.684,
+  "r_kl1": 0.8212,
+  "beta_0": 2.3045,
+  "beta_kl": 0.3061,
+  "beta_kp": 0.2645,
+  "r_squared": 0.1806,
+  "adj_r_squared": 0.1637,
+  "f_stat": 10.6892
+}
