@@ -14,10 +14,10 @@ export function KpiCard({ metric }: KpiCardProps) {
   const isDown = metric.trend === 'down';
 
   return (
-    <Card className="border-border/60 shadow-xs hover:border-border transition-colors">
-      <CardContent className="p-4 sm:p-5">
-        <div className="flex items-center justify-between gap-2 mb-2">
-          <span className="text-xs sm:text-sm font-medium text-muted-foreground truncate">
+    <Card className="border-border bg-card shadow-xs transition-colors rounded-md">
+      <CardContent className="p-3.5 sm:p-4">
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <span className="text-xs font-medium text-muted-foreground truncate">
             {metric.label}
           </span>
           <TooltipProvider>
@@ -39,18 +39,18 @@ export function KpiCard({ metric }: KpiCardProps) {
         </div>
 
         <div className="flex items-baseline justify-between gap-2">
-          <div className="text-2xl sm:text-3xl font-serif font-bold tracking-tight tabular-nums">
+          <div className="text-xl sm:text-2xl font-bold tracking-tight tabular-nums text-foreground">
             {metric.hasEnoughData ? metric.value : (
-              <span className="text-sm font-sans font-normal text-muted-foreground">Belum cukup data</span>
+              <span className="text-xs font-normal text-muted-foreground">Belum cukup data</span>
             )}
           </div>
 
           {metric.hasEnoughData && metric.changePct !== undefined && (
             <div
               className={cn(
-                'flex items-center text-xs font-medium tabular-nums px-1.5 py-0.5 rounded-sm',
-                isUp && 'text-emerald-700 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-950/40',
-                isDown && 'text-red-700 bg-red-50 dark:text-red-300 dark:bg-red-950/40',
+                'flex items-center text-[11px] font-semibold tabular-nums px-1.5 py-0.2 rounded-xs',
+                isUp && 'text-emerald-800 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-950/40',
+                isDown && 'text-red-800 bg-red-50 dark:text-red-300 dark:bg-red-950/40',
                 metric.trend === 'neutral' && 'text-muted-foreground bg-muted'
               )}
             >

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useState } from 'react';
-import { Copy, Check, Calculator } from 'lucide-react';
+import { Copy, Check, Table as TableIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -48,7 +48,7 @@ export function ResultTable<T>({
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
-  // Generate tab-separated plain text for pasting into Microsoft Word
+  // Generate tab-separated plain text for pasting cleanly into Microsoft Word
   const handleCopyTable = async () => {
     try {
       const headerLine = columns.map((c) => c.header).join('\t');
@@ -86,14 +86,14 @@ export function ResultTable<T>({
       setTimeout(() => setCopied(false), 2500);
 
       toast({
-        title: 'Tabel berhasil disalin ke papan klip (siap tempel ke Word)',
-        description: 'Buka Microsoft Word lalu tempelkan (Ctrl+V / Cmd+V).',
+        title: 'Tabel berhasil disalin (format Word)',
+        description: 'Buka Microsoft Word lalu tempelkan (Ctrl+V / Cmd+V). Format kolom akan otomatis rapi.',
         variant: 'success',
       });
     } catch {
       toast({
         title: 'Gagal menyalin tabel',
-        description: 'Periksa izin papan klip pada peramban Anda.',
+        description: 'Periksa izin papan klip pada perambanmu.',
         variant: 'error',
       });
     }
@@ -110,7 +110,8 @@ export function ResultTable<T>({
     }
     if (highlightedValue !== undefined && highlightedValue !== null) {
       const target = String(highlightedValue).trim();
-      if (valStr.trim() === target) {
+      const cleanVal = valStr.trim();
+      if (cleanVal === target || (cleanVal.length > 0 && target.length > 0 && (cleanVal.includes(target) || target.includes(cleanVal)))) {
         return true;
       }
     }
@@ -120,38 +121,37 @@ export function ResultTable<T>({
   return (
     <div
       className={cn(
-        'rounded-xl border border-border bg-card p-5 sm:p-6 shadow-xs transition-shadow hover:shadow-sm space-y-4',
+        'rounded-md border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3 transition-colors',
         className
       )}
     >
-      {/* Table Top Header bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      {/* Table Top Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
         <div>
           {tableNumber && (
-            <span className="text-xs font-semibold text-primary uppercase tracking-wider block mb-1">
+            <span className="text-[11px] font-semibold text-primary uppercase tracking-wider block mb-0.5">
               {tableNumber}
             </span>
           )}
-          <h3 className="font-serif text-base sm:text-lg font-bold text-foreground tracking-tight leading-snug">
+          <h3 className="text-sm sm:text-base font-semibold text-foreground tracking-tight leading-snug">
             {title}
           </h3>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           <Badge
-            variant="engine"
-            className="gap-1.5 py-1 px-2.5 font-medium text-xs border"
+            variant="outline"
+            className="text-[11px] font-normal text-muted-foreground border-border bg-muted/40 px-2 py-0.5"
           >
-            <Calculator className="h-3.5 w-3.5 text-primary shrink-0" />
-            <span>{badgeLabel}</span>
+            {badgeLabel}
           </Badge>
 
           <Button
             variant="outline"
             size="sm"
             onClick={handleCopyTable}
-            className="h-8 gap-1.5 text-xs text-foreground hover:bg-muted font-medium transition-all"
-            title="Salin tabel format Microsoft Word (tab-separated)"
+            className="h-7 px-2.5 gap-1.5 text-xs text-foreground hover:bg-muted font-medium transition-colors"
+            title="Salin tabel format tab-separated untuk Microsoft Word"
           >
             {copied ? (
               <>
@@ -161,14 +161,14 @@ export function ResultTable<T>({
             ) : (
               <>
                 <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                <span>{COPY.results.copyTable}</span>
+                <span>Salin untuk Word</span>
               </>
             )}
           </Button>
         </div>
       </div>
 
-      {/* Journal Table Body (APA Bab 4 Style) */}
+      {/* Journal Table Body (APA 7th Edition Style) */}
       <div className="overflow-x-auto -mx-1 sm:mx-0">
         <table className="table-journal w-full text-left text-sm font-sans">
           <thead>
@@ -177,7 +177,7 @@ export function ResultTable<T>({
                 <th
                   key={col.key}
                   className={cn(
-                    'py-2.5 px-3 font-semibold text-foreground text-xs sm:text-sm tracking-wide',
+                    'py-2 px-3 font-semibold text-foreground text-xs tracking-normal',
                     col.align === 'right' && 'text-right',
                     col.align === 'center' && 'text-center',
                     col.className
@@ -211,20 +211,30 @@ export function ResultTable<T>({
                         : String(rawVal ?? '');
 
                     const highlighted = isCellHighlighted(rKey, col.key, valStr);
+                    const sanitizedNum = valStr.replace(/[^a-zA-Z0-9]/g, '-');
 
                     return (
                       <td
                         key={col.key}
+                        tabIndex={0}
+                        data-cell-num={sanitizedNum}
                         onMouseEnter={() =>
                           onHoverCell?.(rKey, col.key, rawVal as string | number)
                         }
                         onMouseLeave={() => onHoverCell?.(null, null, null)}
+                        onFocus={() =>
+                          onHoverCell?.(rKey, col.key, rawVal as string | number)
+                        }
+                        onBlur={() => onHoverCell?.(null, null, null)}
+                        onClick={() =>
+                          onHoverCell?.(rKey, col.key, rawVal as string | number)
+                        }
                         className={cn(
-                          'py-2 px-3 text-xs sm:text-sm transition-all',
+                          'py-1.5 px-3 text-xs transition-all outline-none',
                           col.align === 'right' && 'text-right tabular-nums',
                           col.align === 'center' && 'text-center',
                           highlighted &&
-                            'bg-primary/15 text-primary font-bold ring-2 ring-primary/40 rounded-sm scale-[1.02] shadow-xs'
+                            'bg-accent text-primary font-bold ring-1.5 ring-primary/60 rounded-xs scale-[1.01]'
                         )}
                       >
                         {col.render ? col.render(row, index) : valStr}
@@ -240,8 +250,8 @@ export function ResultTable<T>({
 
       {/* Table Footer Note */}
       {note && (
-        <p className="text-xs text-muted-foreground italic pt-1 border-t border-border/50">
-          {note}
+        <p className="text-xs text-muted-foreground pt-1 border-t border-border/50">
+          Catatan: {note}
         </p>
       )}
     </div>

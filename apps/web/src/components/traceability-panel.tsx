@@ -43,24 +43,24 @@ export function TraceabilityPanel({
   return (
     <div
       className={cn(
-        'rounded-xl border border-border bg-card p-5 shadow-xs space-y-4 font-sans',
+        'rounded-md border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3.5 font-sans',
         className
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-border/60">
+      <div className="flex items-center justify-between pb-2.5 border-b border-border/60">
         <div className="flex items-center gap-2">
           <FileCheck2 className="h-4 w-4 text-primary" />
-          <h3 className="font-serif text-base font-bold text-foreground">
+          <h3 className="text-sm font-semibold text-foreground tracking-tight">
             {COPY.results.traceTitle}
           </h3>
         </div>
         <div className="flex items-center gap-2">
           <Badge
-            variant="pine"
-            className="text-[11px] gap-1 py-0.5 px-2 font-semibold"
+            variant="outline"
+            className="text-[11px] gap-1 py-0.5 px-2 font-medium bg-muted/40 border-border"
           >
-            <ShieldCheck className="h-3.5 w-3.5" />
+            <ShieldCheck className="h-3.5 w-3.5 text-primary" />
             <span>Audit Trail Valid</span>
           </Badge>
           <button
@@ -80,7 +80,7 @@ export function TraceabilityPanel({
       </div>
 
       {/* Panel Content */}
-      <div className={cn('space-y-3.5 text-xs', !isOpen && 'hidden md:block')}>
+      <div className={cn('space-y-3 text-xs', !isOpen && 'hidden md:block')}>
         {/* Test Name */}
         <div className="flex items-start gap-2.5">
           <Sliders className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
@@ -167,7 +167,7 @@ export function TraceabilityPanel({
         </div>
 
         {/* Academic Note */}
-        <div className="pt-3 border-t border-border/50 text-[11px] text-muted-foreground leading-relaxed bg-muted/30 p-2.5 rounded-lg">
+        <div className="pt-2.5 border-t border-border/50 text-[11px] text-muted-foreground leading-relaxed bg-muted/40 p-2.5 rounded-xs">
           <span className="font-semibold text-foreground">Integritas Akademik: </span>
           Setiap proses analisis direkam dengan hash kriptografis untuk mencegah p-hacking dan manipulasi data pada sidang skripsi.
         </div>

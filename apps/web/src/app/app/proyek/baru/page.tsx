@@ -6,13 +6,14 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { ArrowLeft, Sparkles, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { createProject } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/toaster';
+import { Badge } from '@/components/ui/badge';
 
 const projectSchema = z.object({
   title: z
@@ -83,7 +84,7 @@ export default function NewProjectPage() {
 
       toast({
         title: 'Proyek berhasil dibuat',
-        description: 'Mengarahkan ke halaman analisis...',
+        description: 'Mengarahkan ke lembar analisis data...',
         variant: 'success',
       });
 
@@ -91,7 +92,7 @@ export default function NewProjectPage() {
     } catch {
       toast({
         title: 'Gagal membuat proyek',
-        description: 'Terjadi kesalahan pada sistem. Silakan coba lagi.',
+        description: 'Terjadi kendala pada sistem. Silakan ulangi kembali.',
         variant: 'error',
       });
       setIsSubmitting(false);
@@ -99,44 +100,44 @@ export default function NewProjectPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-4">
       {/* Back button */}
       <div>
         <Button
           variant="ghost"
           size="sm"
           asChild
-          className="text-muted-foreground hover:text-foreground -ml-2"
+          className="text-muted-foreground hover:text-foreground -ml-2 text-xs"
         >
           <Link href="/app">
-            <ArrowLeft className="h-4 w-4 mr-1.5" />
-            Kembali ke Proyek
+            <ArrowLeft className="h-3.5 w-3.5 mr-1" />
+            Kembali ke Meja Kerja
           </Link>
         </Button>
       </div>
 
-      <Card className="border-border shadow-sm">
-        <CardHeader className="space-y-1">
-          <CardTitle className="font-serif text-2xl font-bold tracking-tight text-foreground">
-            Mulai Proyek Baru
+      <Card className="border-border shadow-xs rounded-md">
+        <CardHeader className="space-y-1 pb-3">
+          <CardTitle className="text-xl font-bold tracking-tight text-foreground">
+            Mulai Proyek Skripsi Baru
           </CardTitle>
-          <CardDescription className="text-muted-foreground text-sm">
-            Isi informasi dasar skripsi atau penelitian Anda. Konfigurasi data dan variabel akan dilakukan pada langkah selanjutnya.
+          <CardDescription className="text-muted-foreground text-xs">
+            Isi informasi dasar skripsimu. Konfigurasi dataset dan pemetaan variabel akan dilakukan pada langkah selanjutnya.
           </CardDescription>
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {/* Judul Skripsi */}
-            <div className="space-y-2">
-              <Label htmlFor="title" className="text-sm font-semibold">
+            <div className="space-y-1.5">
+              <Label htmlFor="title" className="text-xs font-semibold">
                 Judul Skripsi / Penelitian <span className="text-destructive">*</span>
               </Label>
               <textarea
                 id="title"
                 rows={3}
-                placeholder="Contoh: Pengaruh Kualitas Layanan dan Harga terhadap Kepuasan Pelanggan pada Pengguna E-Commerce"
-                className={`flex w-full rounded-lg border bg-card px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 transition-colors resize-none ${
+                placeholder="Contoh: Pengaruh Kualitas Layanan dan Persepsi Harga terhadap Kepuasan Pelanggan pada Pengguna E-Commerce"
+                className={`flex w-full rounded-xs border bg-card px-3 py-2 text-xs text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1.5 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 transition-colors resize-none ${
                   errors.title ? 'border-destructive focus-visible:ring-destructive' : 'border-input'
                 }`}
                 {...register('title')}
@@ -146,22 +147,22 @@ export default function NewProjectPage() {
                   {errors.title.message}
                 </p>
               ) : (
-                <p className="text-xs text-muted-foreground">
-                  Gunakan judul resmi atau rencana judul skripsi Anda (minimal 5 karakter).
+                <p className="text-[11px] text-muted-foreground">
+                  Gunakan rencana judul skripsi resmimu (minimal 5 karakter).
                 </p>
               )}
             </div>
 
             {/* Program Studi / Jurusan */}
-            <div className="space-y-2">
-              <Label htmlFor="department" className="text-sm font-semibold">
+            <div className="space-y-1.5">
+              <Label htmlFor="department" className="text-xs font-semibold">
                 Program Studi / Jurusan <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="department"
                 type="text"
                 placeholder="Mis. Manajemen, Psikologi, Ilmu Komunikasi, Akuntansi"
-                className={errors.department ? 'border-destructive focus-visible:ring-destructive' : ''}
+                className={`rounded-xs text-xs h-9 ${errors.department ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                 {...register('department')}
               />
               {errors.department && (
@@ -172,55 +173,54 @@ export default function NewProjectPage() {
             </div>
 
             {/* Jenis Penelitian Kuantitatif */}
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <div>
-                <Label className="text-sm font-semibold">
-                  Jenis Penelitian Kuantitatif <span className="text-destructive">*</span>
+                <Label className="text-xs font-semibold">
+                  Desain Analisis Kuantitatif <span className="text-destructive">*</span>
                 </Label>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Pilih desain analisis yang sesuai dengan bab metodologi penelitian Anda.
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Pilih model pengujian hipotesis yang sesuai dengan metodologi penelitianmu.
                 </p>
               </div>
 
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 {RESEARCH_TYPES.map((type) => {
                   const isSelected = selectedResearchType === type.id;
                   return (
                     <div
                       key={type.id}
                       onClick={() => setValue('researchType', type.id, { shouldValidate: true })}
-                      className={`relative flex items-start p-3.5 rounded-lg border cursor-pointer transition-all ${
+                      className={`relative flex items-start p-3 rounded-xs border cursor-pointer transition-colors ${
                         isSelected
-                          ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                          : 'border-border bg-card hover:bg-muted/50'
+                          ? 'border-primary bg-accent/30 ring-1 ring-primary'
+                          : 'border-border bg-card hover:bg-muted/40'
                       }`}
                     >
-                      <div className="flex h-5 items-center mr-3">
+                      <div className="flex h-5 items-center mr-2.5">
                         <input
                           type="radio"
                           id={type.id}
                           value={type.id}
                           checked={isSelected}
                           onChange={() => setValue('researchType', type.id, { shouldValidate: true })}
-                          className="h-4 w-4 text-primary accent-primary"
+                          className="h-3.5 w-3.5 text-primary accent-primary"
                         />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <label
                             htmlFor={type.id}
-                            className="font-medium text-sm text-foreground cursor-pointer"
+                            className="font-semibold text-xs text-foreground cursor-pointer"
                           >
                             {type.label}
                           </label>
                           {type.recommended && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 text-[10px] font-semibold">
-                              <Sparkles className="h-3 w-3" />
-                              Umum Dipakai
-                            </span>
+                            <Badge variant="outline" className="text-[10px] font-normal py-0 px-1.5 bg-muted/60 border-border">
+                              Standar Skripsi
+                            </Badge>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
                           {type.description}
                         </p>
                       </div>
@@ -236,23 +236,25 @@ export default function NewProjectPage() {
             </div>
 
             {/* Submit & Cancel Buttons */}
-            <div className="pt-4 border-t border-border flex items-center justify-end gap-3">
+            <div className="pt-3 border-t border-border flex items-center justify-end gap-2.5">
               <Button
                 type="button"
                 variant="outline"
+                size="sm"
                 asChild
                 disabled={isSubmitting}
+                className="text-xs"
               >
                 <Link href="/app">Batal</Link>
               </Button>
-              <Button type="submit" disabled={isSubmitting} className="min-w-[140px]">
+              <Button type="submit" size="sm" disabled={isSubmitting} className="min-w-[130px] text-xs font-semibold">
                 {isSubmitting ? (
-                  <span className="flex items-center gap-2">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
                     Menyimpan...
                   </span>
                 ) : (
-                  'Lanjut ke Analisis'
+                  'Lanjut ke Pemetaan'
                 )}
               </Button>
             </div>

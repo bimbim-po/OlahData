@@ -1,98 +1,98 @@
 import { APP_NAME } from './constants';
 
 export const COPY = {
-  // Navigation
+  // Navigasi Utama
   nav: {
     beranda: 'Beranda',
     harga: 'Harga',
     masuk: 'Masuk',
     daftar: 'Daftar',
-    proyek: 'Proyek',
+    proyek: 'Meja Kerja',
     panduan: 'Panduan',
     langganan: 'Langganan',
     pengaturan: 'Pengaturan',
     keluar: 'Keluar',
   },
 
-  // Landing page
+  // Beranda (Marketing & Landing)
   hero: {
-    title: 'Olah data kuesioner skripsi — tanpa SPSS, tanpa ribet',
-    subtitle: `${APP_NAME} membantu mahasiswa tingkat akhir menganalisis data kuesioner skala Likert: uji validitas, reliabilitas, asumsi klasik, hingga regresi linier berganda. Hasilnya langsung dalam format tabel Bab 4.`,
-    ctaPrimary: 'Coba gratis',
-    ctaSecondary: 'Lihat contoh hasil',
+    title: 'Olah data kuesioner skripsi langsung jadi tabel Bab 4',
+    subtitle: `${APP_NAME} memandu mahasiswa tingkat akhir menganalisis data kuesioner skala Likert: validitas item-total, reliabilitas Cronbach's Alpha, asumsi klasik, hingga regresi linier. Setiap angka memiliki jejak hitung dan tersambung langsung ke sel tabel asalnya.`,
+    ctaPrimary: 'Buka meja kerja gratis',
+    ctaSecondary: 'Lihat contoh tabel Bab 4',
   },
 
-  // How it works
+  // Alur Kerja Meja Kerja
   howItWorks: {
-    title: 'Cara kerja',
+    title: 'Alur kerja analisis',
     steps: [
       {
         number: '1',
-        title: 'Unggah data',
-        description: 'Unggah file Excel atau CSV berisi respons kuesioner Anda.',
+        title: 'Unggah berkas kuesioner',
+        description: 'Unggah lembar tabulasi kuesionermu dalam format Excel (.xlsx) atau CSV.',
       },
       {
         number: '2',
-        title: 'Validasi & petakan',
-        description: 'Sistem memeriksa kualitas data dan Anda memetakan variabel ke konstruk penelitian.',
+        title: 'Periksa data & petakan konstruk',
+        description: 'Sistem memeriksa kelengkapan data responden, lalu kamu mengelompokkan item pertanyaan ke variabel penelitian.',
       },
       {
         number: '3',
         title: 'Pilih uji statistik',
-        description: 'Pilih uji yang diperlukan — ada rekomendasi otomatis berdasarkan desain penelitian.',
+        description: 'Pilih metode uji yang disyaratkan dosen pembimbing dengan rekomendasi terarah berdasarkan desain hipotesis.',
       },
       {
         number: '4',
-        title: 'Dapatkan hasil',
-        description: 'Tabel hasil gaya jurnal, penjelasan bahasa Indonesia, siap salin ke Bab 4 skripsi.',
+        title: 'Peroleh tabel Bab 4 & jejak hitung',
+        description: 'Tabel berstandar APA 7th dan narasi penjelasan angka tersambung siap kamu salin ke naskah skripsi.',
       },
     ],
   },
 
-  // Available tests
+  // Daftar Uji Statistik
   availableTests: {
-    title: 'Uji statistik yang tersedia',
+    title: 'Uji statistik yang didukung',
     tests: [
-      { name: 'Statistik Deskriptif', description: 'Mean, median, standar deviasi, distribusi frekuensi' },
-      { name: 'Uji Validitas', description: 'Korelasi item-total (r hitung vs r tabel)' },
-      { name: 'Uji Reliabilitas', description: "Cronbach's Alpha per konstruk dan alpha jika item dihapus" },
-      { name: 'Uji Normalitas', description: 'Kolmogorov-Smirnov untuk asumsi distribusi normal' },
-      { name: 'Uji Multikolinearitas', description: 'Tolerance dan VIF antar variabel bebas' },
-      { name: 'Uji Heteroskedastisitas', description: 'Uji Glejser untuk varians residual' },
-      { name: 'Regresi Linier Berganda', description: 'Pengaruh simultan dan parsial variabel bebas terhadap variabel terikat' },
+      { name: 'Statistik Deskriptif', description: 'Mean, median, deviasi standar, rentang skor, dan sebaran frekuensi' },
+      { name: 'Uji Validitas', description: 'Korelasi Pearson Product Moment (r-hitung dibandingkan r-tabel)' },
+      { name: 'Uji Reliabilitas', description: "Cronbach's Alpha per konstruk instrumen dan alpha if item deleted" },
+      { name: 'Uji Normalitas', description: 'Kolmogorov-Smirnov untuk memeriksa sebaran residual' },
+      { name: 'Uji Multikolinearitas', description: 'Nilai Tolerance dan VIF antar variabel independen' },
+      { name: 'Uji Heteroskedastisitas', description: 'Uji Glejser untuk mendeteksi varians residual' },
+      { name: 'Regresi Linier Berganda', description: 'Persamaan regresi, koefisien B, standard error, dan nilai beta' },
       { name: 'Uji t (Parsial)', description: 'Signifikansi pengaruh masing-masing variabel bebas' },
-      { name: 'Uji F (Simultan)', description: 'Signifikansi pengaruh seluruh variabel bebas secara bersama-sama' },
-      { name: 'Koefisien Determinasi', description: 'R² — proporsi varians yang dijelaskan model' },
-      { name: 'Korelasi Pearson', description: 'Kekuatan dan arah hubungan antar variabel' },
-      { name: 'ANOVA Satu Arah', description: 'Perbedaan rata-rata antar kelompok' },
+      { name: 'Uji F (Simultan)', description: 'Signifikansi pengaruh seluruh variabel bebas secara bersamaan' },
+      { name: 'Koefisien Determinasi', description: 'Nilai R, R Square, dan Adjusted R Square model' },
+      { name: 'Korelasi Pearson', description: 'Kekuatan dan arah hubungan linier antar variabel' },
+      { name: 'ANOVA Satu Arah', description: 'Uji perbedaan nilai rata-rata antar kelompok sampel' },
     ],
   },
 
-  // What we don't do
+  // Batasan Etika Akademik
   notDoing: {
-    title: 'Yang tidak kami lakukan',
+    title: 'Prinsip integritas akademik kami',
     items: [
       {
-        title: 'Tidak membuat data responden',
-        description: 'Kami tidak membuat, mengisi, menyimulasikan, atau memanipulasi data responden. Data harus berasal dari kuesioner penelitian Anda yang sesungguhnya.',
+        title: 'Tidak memanipulasi data responden',
+        description: 'Kami tidak membuat, mengubah, atau menyimulasikan data jawaban responden. Data harus murni dari lembar kuesioner penelitianmu.',
       },
       {
-        title: 'Tidak menulis skripsi',
-        description: 'Kami menyediakan tabel dan penjelasan angka, bukan menulis Bab 4 Anda. Penjelasan adalah alat bantu interpretasi, bukan pengganti analisis mandiri.',
+        title: 'Tidak menulis naskah skripsi',
+        description: 'Kami menyediakan tabel baku dan penjelasan logika angka, bukan menyusun Bab 4 untukmu. Penjelasan berfungsi sebagai panduan agar kamu memahami makna angka saat sidang.',
       },
       {
-        title: 'Tidak menjamin kelulusan',
-        description: 'Hasil analisis bergantung pada kualitas data dan desain penelitian. Konsultasikan dengan dosen pembimbing untuk interpretasi akhir.',
+        title: 'Tidak menjamin kelulusan sidang',
+        description: 'Kebenaran hasil analisis bergantung pada kualitas instrumen dan metodologi penelitianmu. Selalu diskusikan tafsir hasil dengan dosen pembimbing.',
       },
     ],
   },
 
-  // Pricing
+  // Harga & Paket
   pricing: {
-    title: 'Harga',
-    subtitle: 'Pilih paket yang sesuai kebutuhan skripsi Anda',
-    disclaimer: 'Harga contoh, belum final. Dapat berubah sebelum peluncuran.',
-    campusNote: 'Untuk kampus/prodi: hubungi kami untuk paket institusi.',
+    title: 'Pilihan paket meja kerja',
+    subtitle: 'Pilih akses yang sesuai dengan tahapan penyusunan skripsimu',
+    disclaimer: 'Tarif simulasi pra-rilis, dapat disesuaikan sebelum peluncuran resmi.',
+    campusNote: 'Untuk kerja sama program studi atau laboratorium: hubungi kami untuk paket institusi.',
     plans: [
       {
         id: 'free',
@@ -101,26 +101,26 @@ export const COPY = {
         period: '',
         features: [
           '1 proyek aktif',
-          'Maks. 50 responden',
-          'Statistik deskriptif & validitas',
-          'Ekspor dengan tanda air',
+          'Maksimal 50 data responden',
+          'Statistik deskriptif & uji validitas',
+          'Ekspor berpenanda air',
         ],
         cta: 'Mulai gratis',
         highlighted: false,
       },
       {
         id: 'monthly',
-        name: 'Bulanan',
+        name: 'Akses Bulanan',
         price: 39000,
         period: '/bulan',
         features: [
           '5 proyek aktif',
-          'Responden tidak terbatas',
-          'Semua uji statistik',
+          'Data responden tanpa batas',
+          'Seluruh uji statistik lengkap',
           'Ekspor Word & PDF tanpa tanda air',
           'Pernyataan Penggunaan Alat',
         ],
-        cta: 'Berlangganan',
+        cta: 'Pilih bulanan',
         highlighted: true,
       },
       {
@@ -129,214 +129,214 @@ export const COPY = {
         price: 99000,
         period: '/3 bulan',
         features: [
-          'Proyek tidak terbatas',
-          'Responden tidak terbatas',
-          'Semua uji statistik',
+          'Proyek tanpa batas',
+          'Data responden tanpa batas',
+          'Seluruh uji statistik lengkap',
           'Ekspor Word & PDF tanpa tanda air',
           'Pernyataan Penggunaan Alat',
           'Riwayat versi analisis',
         ],
-        cta: 'Berlangganan',
+        cta: 'Pilih paket skripsi',
         highlighted: false,
       },
     ],
   },
 
-  // FAQ
+  // Pertanyaan Umum (FAQ)
   faq: {
     title: 'Pertanyaan yang sering diajukan',
     items: [
       {
-        q: 'Apakah hasil analisis ini sah untuk skripsi?',
-        a: `${APP_NAME} menggunakan rumus statistik standar yang sama dengan SPSS atau software statistik lainnya. Setiap hasil dilengkapi jejak hitung dan Pernyataan Penggunaan Alat yang bisa dilampirkan ke skripsi. Pastikan untuk berkonsultasi dengan dosen pembimbing mengenai kebijakan kampus Anda.`,
+        q: 'Apakah hasil analisis ini sah untuk sidang skripsi?',
+        a: `${APP_NAME} menggunakan rumus statistik baku yang identik dengan perangkat lunak metodologi standar. Setiap hasil dilengkapi jejak hitung formula dan lembar Pernyataan Penggunaan Alat yang dapat kamu lampirkan ke naskah skripsi.`,
       },
       {
-        q: 'Bagaimana jika dosen tidak mengizinkan penggunaan alat ini?',
-        a: 'Setiap kampus memiliki kebijakan berbeda. Kami menyediakan Pernyataan Penggunaan Alat dan jejak hitung yang transparan. Diskusikan dengan dosen pembimbing sebelum menggunakan.',
+        q: 'Bagaimana jika dosen pembimbing menanyakan dari mana angka diperoleh?',
+        a: 'Setiap angka pada kalimat penjelasan terhubung langsung ke sel tabel asalnya, dan panel Jejak Hitung merinci rumus matematika, derajat kebebasan (df), serta nilai pembanding tabel r/t/F.',
       },
       {
-        q: 'Apakah data saya aman?',
-        a: 'Data Anda diproses secara lokal di peramban dan di server terenkripsi. Kami tidak membagikan data kepada pihak ketiga. Anda dapat menghapus semua data kapan saja.',
+        q: 'Apakah kerahasiaan data kuesioner terjamin?',
+        a: 'Data responden kamu disimpan dengan isolasi tingkat baris (Row-Level Security). Kami tidak pernah menjual atau membagikan data penelitianmu kepada pihak mana pun.',
       },
       {
-        q: 'Apa perbedaan angka yang dihitung mesin dan penjelasan AI?',
-        a: 'Semua angka (koefisien, p-value, statistik uji) dihitung oleh mesin statistik menggunakan rumus matematika pasti — bukan AI. AI hanya membantu menulis kalimat penjelasan dari angka yang sudah dihitung tersebut. Setiap bagian diberi label yang jelas.',
+        q: 'Apa perbedaan angka kalkulasi dan kalimat penjelasan?',
+        a: 'Seluruh koefisien, nilai signifikansi, dan tabel dihitung oleh mesin statistik berbasis formula matematika pasti. Narasi penjelasan menyusun kalimat interpretasi baku sesuai format pelaporan Bab 4.',
       },
       {
-        q: 'Format file apa yang didukung?',
-        a: 'Excel (.xlsx, .xls) dan CSV. Pastikan data dalam format tabel dengan baris sebagai responden dan kolom sebagai item kuesioner.',
+        q: 'Format berkas apa yang dapat diunggah?',
+        a: 'Format Excel (.xlsx, .xls) dan CSV. Pastikan data tersusun dalam bentuk matriks: baris mewakili nomor responden dan kolom mewakili item pertanyaan kuesioner.',
       },
     ],
   },
 
-  // Badges
+  // Penanda & Status (Badges)
   badges: {
-    computedByEngine: 'Dihitung oleh mesin statistik',
-    writtenByAI: 'Penjelasan ditulis AI dari angka di tabel',
-    sampleData: 'Data contoh, bukan data penelitian',
-    draft: 'DRAF',
-    samplePrice: 'Harga contoh, belum final',
+    computedByEngine: 'Dihitung mesin statistik (rumus baku)',
+    writtenByAI: 'Kaidah pelaporan Bab 4',
+    sampleData: 'Dataset contoh simulasi',
+    draft: 'Draf',
+    samplePrice: 'Tarif simulasi',
     simulasi: 'Simulasi',
   },
 
-  // Wizard
+  // Wizard Analisis
   wizard: {
     steps: [
-      'Unggah Data',
+      'Unggah Berkas',
       'Validasi Data',
       'Petakan Variabel',
       'Pilih Uji',
-      'Ringkasan & Jalankan',
+      'Ringkasan & Analisis',
     ],
     upload: {
-      title: 'Unggah file data kuesioner',
-      description: 'Seret dan lepas file Excel atau CSV, atau klik untuk memilih file.',
-      sampleButton: 'Pakai data contoh',
-      sampleDescription: 'Muat dataset contoh 120 responden × 18 item (3 konstruk: Kualitas Layanan, Kepuasan, Loyalitas)',
-      limits: 'Maks. 5 MB. Format: .xlsx, .xls, .csv',
+      title: 'Unggah berkas kuesioner',
+      description: 'Pilih lembar tabulasi kuesioner dalam format Excel atau CSV.',
+      sampleButton: 'Gunakan data contoh',
+      sampleDescription: 'Muat dataset simulasi 120 responden × 18 item pertanyaan (Konstruk: Kualitas Layanan, Kepuasan, Loyalitas)',
+      limits: 'Maksimal 15 MB. Format: .xlsx, .xls, .csv',
     },
     validation: {
-      title: 'Validasi data',
-      description: 'Periksa kualitas data sebelum analisis.',
-      noIssues: 'Tidak ditemukan masalah pada data.',
-      deleteRow: 'Hapus baris ini dari analisis',
-      reupload: 'Kembali unggah file',
-      criticalError: 'Perbaiki galat kritis sebelum melanjutkan.',
+      title: 'Validasi data responden',
+      description: 'Memeriksa kelengkapan respons sebelum perhitungan statistik dimulai.',
+      noIssues: 'Seluruh data responden lengkap dan siap diolah.',
+      deleteRow: 'Keluarkan baris responden ini dari analisis',
+      reupload: 'Unggah ulang berkas',
+      criticalError: 'Selesaikan catatan merah sebelum melanjutkan ke pemetaan variabel.',
     },
     mapping: {
-      title: 'Petakan variabel',
-      description: 'Kelompokkan item kuesioner ke konstruk penelitian dan tentukan peran variabel.',
+      title: 'Petakan variabel & konstruk',
+      description: 'Kelompokkan item pertanyaan kuesioner ke konstruk penelitian dan tentukan perannya.',
       independent: 'Variabel Bebas (X)',
       dependent: 'Variabel Terikat (Y)',
       construct: 'Konstruk',
-      addConstruct: 'Tambah konstruk',
+      addConstruct: 'Tambah konstruk baru',
     },
     testSelection: {
       title: 'Pilih uji statistik',
-      description: 'Pilih uji yang akan dijalankan. Rekomendasi ditandai berdasarkan pemetaan variabel.',
-      recommended: 'Direkomendasikan',
-      prerequisite: 'Prasyarat',
+      description: 'Pilih metode uji yang disyaratkan dalam hipotesis penelitianmu.',
+      recommended: 'Sesuai desain hipotesis',
+      prerequisite: 'Uji prasyarat',
     },
     summary: {
       title: 'Ringkasan & jalankan analisis',
-      description: 'Periksa kembali pengaturan sebelum menjalankan analisis.',
-      runButton: 'Jalankan analisis',
-      running: 'Menjalankan analisis...',
+      description: 'Periksa kembali parameter pengujian sebelum mesin menghitung hasil.',
+      runButton: 'Mulai hitung statistik',
+      running: 'Mesin sedang menghitung...',
     },
   },
 
-  // Results
+  // Lembar Hasil
   results: {
-    title: 'Hasil Analisis',
-    copyTable: 'Salin tabel',
-    copyExplanation: 'Salin penjelasan',
-    copied: 'Tersalin!',
-    export: 'Ekspor',
+    title: 'Lembar Hasil Analisis',
+    copyTable: 'Salin format Word',
+    copyExplanation: 'Salin narasi',
+    copied: 'Tersalin',
+    export: 'Ekspor naskah',
     traceTitle: 'Jejak Hitung',
     traceFields: {
       test: 'Uji',
       dataVersion: 'Versi dataset',
       respondents: 'Jumlah responden',
-      parameters: 'Parameter',
-      timestamp: 'Waktu',
+      parameters: 'Parameter uji',
+      timestamp: 'Waktu hitung',
       engineVersion: 'Versi mesin',
     },
   },
 
-  // Export
+  // Ekspor Dokumen
   export: {
-    title: 'Ekspor hasil',
-    format: 'Format',
+    title: 'Ekspor lembar Bab 4',
+    format: 'Format naskah',
     sections: 'Bagian yang disertakan',
     includeStatement: 'Sertakan Pernyataan Penggunaan Alat',
-    watermarkNote: 'Paket gratis: hasil akan memiliki tanda air. Upgrade untuk menghapus.',
-    downloadButton: 'Unduh',
-    upgradeButton: 'Upgrade paket',
+    watermarkNote: 'Paket gratis menyertakan tanda air pada lembar ekspor. Tingkatkan paket untuk naskah bersih.',
+    downloadButton: 'Unduh berkas',
+    upgradeButton: 'Pilih paket skripsi',
   },
 
-  // Tool usage statement
+  // Pernyataan Penggunaan Alat
   toolStatement: {
     title: 'Pernyataan Penggunaan Alat',
-    description: `Halaman ini menjelaskan cara melampirkan Pernyataan Penggunaan Alat ke skripsi Anda. Pernyataan ini bertujuan menjaga transparansi akademik.`,
-    advice: 'Kami menyarankan untuk mengikuti pedoman kampus masing-masing terkait penggunaan alat bantu analisis data.',
-    template: `Dalam penelitian ini, pengolahan data statistik dilakukan dengan bantuan perangkat lunak ${APP_NAME} (versi [VERSI]). Seluruh data berasal dari kuesioner yang disebarkan kepada responden secara langsung oleh peneliti. Perhitungan statistik (termasuk uji validitas, reliabilitas, asumsi klasik, dan regresi) dilakukan oleh mesin statistik ${APP_NAME} menggunakan rumus matematika standar. Penjelasan naratif atas hasil perhitungan dihasilkan dengan bantuan kecerdasan buatan dan telah diperiksa oleh peneliti. Hasil lengkap beserta jejak hitung tersedia di lampiran [NOMOR LAMPIRAN].`,
+    description: 'Halaman ini menyajikan draf Pernyataan Penggunaan Alat untuk lampiran skripsimu demi menjaga transparansi akademik.',
+    advice: 'Konsultasikan dengan dosen pembimbing mengenai format lampiran yang berlaku di program studimu.',
+    template: `Dalam penelitian ini, pengolahan data statistik dilakukan dengan bantuan perangkat lunak ${APP_NAME} (versi [VERSI]). Seluruh data berasal dari lembar tabulasi kuesioner yang disebarkan kepada responden oleh peneliti. Perhitungan statistik (mencakup uji validitas, reliabilitas, asumsi klasik, dan regresi) dieksekusi oleh mesin statistik ${APP_NAME} menggunakan rumus matematika baku. Penjelasan interpretasi angka disusun berdasarkan kaidah pelaporan standar Bab 4 dan telah ditinjau langsung oleh peneliti. Jejak hitung formula lengkap dilampirkan pada Lampiran [NOMOR LAMPIRAN].`,
   },
 
-  // Auth
+  // Autentikasi
   auth: {
     masuk: 'Masuk',
     daftar: 'Daftar',
-    email: 'Alamat email',
+    email: 'Alamat email kampus atau pribadi',
     password: 'Kata sandi',
     name: 'Nama lengkap',
-    university: 'Universitas',
+    university: 'Perguruan tinggi / Universitas',
     forgotPassword: 'Lupa kata sandi?',
     noAccount: 'Belum punya akun?',
     hasAccount: 'Sudah punya akun?',
     googleButton: 'Lanjut dengan Google',
-    googleToast: 'Fitur login Google belum aktif.',
+    googleToast: 'Masuk dengan Google belum diaktifkan.',
   },
 
-  // Projects
+  // Manajemen Proyek
   projects: {
-    title: 'Proyek Saya',
-    newProject: 'Proyek baru',
-    search: 'Cari proyek...',
+    title: 'Daftar Proyek Skripsi',
+    newProject: 'Mulai proyek baru',
+    search: 'Cari judul penelitian atau variabel...',
     empty: {
-      title: 'Belum ada proyek',
-      description: 'Mulai proyek baru untuk mengolah data kuesioner Anda, atau coba dengan data contoh.',
-      ctaPrimary: 'Proyek baru',
-      ctaSecondary: 'Coba data contoh',
+      title: 'Belum ada proyek penelitian',
+      description: 'Mulai proyek baru untuk mengolah kuesionermu, atau coba pelajari dengan dataset simulasi.',
+      ctaPrimary: 'Mulai proyek baru',
+      ctaSecondary: 'Buka data simulasi',
     },
     status: {
       draft: 'Draf',
-      analyzing: 'Sedang dianalisis',
+      analyzing: 'Sedang dihitung',
       completed: 'Selesai',
     },
   },
 
-  // Settings
+  // Pengaturan
   settings: {
-    title: 'Pengaturan',
-    profile: 'Profil',
-    theme: 'Tema',
+    title: 'Pengaturan Meja Kerja',
+    profile: 'Profil Mahasiswa',
+    theme: 'Mode Tampilan',
     themeOptions: {
-      light: 'Terang',
-      dark: 'Gelap',
-      system: 'Ikuti sistem',
+      light: 'Meja Kerja Terang (Kertas)',
+      dark: 'Meja Kerja Malam',
+      system: 'Ikuti preferensi sistem',
     },
-    deleteData: 'Hapus data',
-    deleteConfirm: 'Ketik nama proyek untuk mengonfirmasi penghapusan:',
-    deleteWarning: 'Tindakan ini tidak dapat dibatalkan.',
+    deleteData: 'Hapus data proyek',
+    deleteConfirm: 'Ketik judul proyek untuk mengonfirmasi penghapusan permanen:',
+    deleteWarning: 'Peringatan: Tindakan ini menghapus seluruh dataset dan riwayat uji secara permanen.',
   },
 
-  // Subscription
+  // Langganan
   subscription: {
-    title: 'Langganan',
+    title: 'Status Langganan',
     activePlan: 'Paket aktif',
-    usage: 'Pemakaian',
+    usage: 'Penggunaan kuota',
     changePlan: 'Ganti paket',
-    billingHistory: 'Riwayat tagihan',
+    billingHistory: 'Riwayat transaksi',
   },
 
-  // Footer
+  // Kaki Halaman (Footer)
   footer: {
-    tagline: `${APP_NAME} — Alat bantu analisis data kuesioner untuk skripsi kuantitatif.`,
+    tagline: `${APP_NAME} — Meja kerja analisis data kuesioner untuk skripsi kuantitatif mahasiswa Indonesia.`,
     links: {
-      product: 'Produk',
-      legal: 'Hukum',
-      support: 'Dukungan',
+      product: 'Perangkat',
+      legal: 'Etika & Privasi',
+      support: 'Bantuan Metodologi',
     },
   },
 
-  // Common
+  // Frasa Umum
   common: {
-    loading: 'Memuat...',
-    error: 'Terjadi kesalahan',
-    retry: 'Coba lagi',
+    loading: 'Memuat data...',
+    error: 'Terjadi kendala',
+    retry: 'Coba ulangi',
     cancel: 'Batal',
     save: 'Simpan',
-    next: 'Selanjutnya',
+    next: 'Lanjutkan',
     previous: 'Sebelumnya',
     close: 'Tutup',
     delete: 'Hapus',
@@ -345,3 +345,5 @@ export const COPY = {
     confirm: 'Konfirmasi',
   },
 } as const;
+
+export type CopyDictionary = typeof COPY;

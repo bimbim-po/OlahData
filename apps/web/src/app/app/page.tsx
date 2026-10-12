@@ -205,29 +205,30 @@ export default function ProjectsPage() {
               <FolderKanban className="h-7 w-7" />
             </div>
             <div>
-              <h2 className="font-serif text-lg sm:text-xl font-bold text-foreground">
-                {searchQuery ? 'Tidak ada proyek yang sesuai' : 'Belum ada proyek'}
+              <h2 className="text-base sm:text-lg font-bold text-foreground">
+                {searchQuery ? 'Tidak ada proyek yang sesuai' : 'Belum ada proyek penelitian'}
               </h2>
-              <p className="text-sm text-muted-foreground mt-1.5">
+              <p className="text-xs text-muted-foreground mt-1">
                 {searchQuery
                   ? `Tidak ditemukan hasil untuk "${searchQuery}". Coba kata kunci lain.`
-                  : 'Mulai proyek baru untuk mengolah data kuesioner Anda, atau coba langsung dengan data contoh bawaan.'}
+                  : 'Mulai proyek baru untuk mengolah data kuesionermu, atau coba langsung dengan data simulasi.'}
               </p>
             </div>
-            <div className="flex items-center gap-3 pt-2 flex-wrap justify-center">
-              <Button asChild>
+            <div className="flex items-center gap-2.5 pt-1 flex-wrap justify-center">
+              <Button asChild size="sm">
                 <Link href="/app/proyek/baru">
-                  <Plus className="h-4 w-4 mr-1.5" />
-                  Proyek baru
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  Mulai proyek baru
                 </Link>
               </Button>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={handleCreateSample}
                 disabled={isCreatingSample}
               >
-                <Sparkles className="h-4 w-4 text-amber-500 mr-1.5" />
-                {isCreatingSample ? 'Menyiapkan...' : 'Coba data contoh'}
+                <FileSpreadsheet className="h-3.5 w-3.5 text-primary mr-1" />
+                {isCreatingSample ? 'Menyiapkan...' : 'Buka data simulasi'}
               </Button>
             </div>
           </CardContent>
@@ -284,20 +285,20 @@ export default function ProjectsPage() {
                     href={getProjectHref(project)}
                     className="block group-hover:text-primary transition-colors"
                   >
-                    <h3 className="font-serif font-bold text-base sm:text-lg text-foreground line-clamp-2 leading-snug">
+                    <h3 className="font-semibold text-sm sm:text-base text-foreground line-clamp-2 leading-snug">
                       {project.title}
                     </h3>
                   </Link>
 
                   {/* Research type */}
-                  <p className="text-xs text-muted-foreground mt-1.5 line-clamp-1">
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
                     {project.researchType}
                   </p>
                 </div>
 
                 {/* Footer metadata */}
-                <div className="pt-4 mt-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-                  <div className="flex items-center gap-1.5" title="Jumlah responden">
+                <div className="pt-3 mt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5" title="Jumlah data responden">
                     <Users className="h-3.5 w-3.5" />
                     <span className="tabular-nums">
                       {project.respondentCount > 0
@@ -316,7 +317,7 @@ export default function ProjectsPage() {
               {/* Clickable Card Overlay */}
               <Link
                 href={getProjectHref(project)}
-                className="absolute inset-x-0 bottom-0 top-12 z-0 rounded-b-xl"
+                className="absolute inset-x-0 bottom-0 top-12 z-0 rounded-b-md"
                 aria-label={`Buka ${project.title}`}
               />
             </Card>
@@ -329,7 +330,7 @@ export default function ProjectsPage() {
         open={!!projectToDelete}
         onOpenChange={(open) => !open && setProjectToDelete(null)}
         title="Hapus Proyek?"
-        description={`Apakah Anda yakin ingin menghapus proyek "${projectToDelete?.title}"? Seluruh konfigurasi dan data pada proyek ini akan dihapus secara permanen.`}
+        description={`Apakah kamu yakin ingin menghapus proyek "${projectToDelete?.title}"? Seluruh konfigurasi dan data pada proyek ini akan dihapus secara permanen.`}
         confirmLabel="Hapus Proyek"
         cancelLabel="Batal"
         variant="destructive"

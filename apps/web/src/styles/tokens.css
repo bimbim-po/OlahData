@@ -1,0 +1,106 @@
+/* ===== OlahData Design Tokens (Meja Kerja Skripsi) ===== */
+:root {
+  /* Palet Fisik Meja Kerja */
+  --bg-paper: #F5F7FA;
+  --surface-paper: #FFFFFF;
+  --ink-text: #243044;
+  --ink-primary: #1F3FA6;
+  --ink-primary-hover: #162E7A;
+  --ink-highlight: #E8EDFC;
+  --red-revision: #C23B2E;
+  --red-revision-light: #FDF2F1;
+  --green-valid: #2D6B57;
+  --green-valid-light: #F0F7F4;
+  --rule-border: #D5DAE3;
+  --rule-border-subtle: #E8ECF2;
+  --muted-surface: #EEF2F6;
+  --muted-text: #5A6882;
+
+  /* Pemetaan Semantik - Mode Terang (Default) */
+  --background: var(--bg-paper);
+  --foreground: var(--ink-text);
+  --card: var(--surface-paper);
+  --card-foreground: var(--ink-text);
+  --popover: var(--surface-paper);
+  --popover-foreground: var(--ink-text);
+  --primary: var(--ink-primary);
+  --primary-foreground: #FFFFFF;
+  --secondary: var(--muted-surface);
+  --secondary-foreground: var(--ink-text);
+  --muted: var(--muted-surface);
+  --muted-foreground: var(--muted-text);
+  --accent: var(--ink-highlight);
+  --accent-foreground: var(--ink-primary);
+  --destructive: var(--red-revision);
+  --destructive-foreground: #FFFFFF;
+  --warning: #C97A1B;
+  --warning-foreground: #FFFFFF;
+  --success: var(--green-valid);
+  --success-foreground: #FFFFFF;
+  --border: var(--rule-border);
+  --input: var(--rule-border);
+  --ring: var(--ink-primary);
+
+  /* Sidebar */
+  --sidebar-bg: #EDF1F7;
+  --sidebar-foreground: var(--ink-text);
+  --sidebar-border: var(--rule-border);
+  --sidebar-accent: var(--ink-primary);
+  --sidebar-accent-foreground: #FFFFFF;
+
+  /* Radius Terukur (Tegas, bukan balon membulat) */
+  --radius-none: 0px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  --radius: 4px;
+}
+
+/* Mode Gelap (Meja Kerja Malam Mahasiswa) */
+.dark {
+  --bg-paper: #0F141C;
+  --surface-paper: #17202E;
+  --ink-text: #E1E7F0;
+  --ink-primary: #5379E8;
+  --ink-primary-hover: #6D8FF0;
+  --ink-highlight: #213054;
+  --red-revision: #E05D50;
+  --red-revision-light: #331A18;
+  --green-valid: #4E9B80;
+  --green-valid-light: #152B23;
+  --rule-border: #253347;
+  --rule-border-subtle: #1C2736;
+  --muted-surface: #1E2838;
+  --muted-text: #94A3B8;
+
+  --background: var(--bg-paper);
+  --foreground: var(--ink-text);
+  --card: var(--surface-paper);
+  --card-foreground: var(--ink-text);
+  --popover: var(--surface-paper);
+  --popover-foreground: var(--ink-text);
+  --primary: var(--ink-primary);
+  --primary-foreground: #FFFFFF;
+  --secondary: var(--muted-surface);
+  --secondary-foreground: var(--ink-text);
+  --muted: var(--muted-surface);
+  --muted-foreground: var(--muted-text);
+  --accent: var(--ink-highlight);
+  --accent-foreground: var(--ink-primary);
+  --destructive: var(--red-revision);
+  --destructive-foreground: #FFFFFF;
+  --warning: #E0A832;
+  --warning-foreground: #0F141C;
+  --success: var(--green-valid);
+  --success-foreground: #FFFFFF;
+  --border: var(--rule-border);
+  --input: var(--rule-border);
+  --ring: var(--ink-primary);
+
+  --sidebar-bg: #141B26;
+  --sidebar-foreground: var(--ink-text);
+  --sidebar-border: var(--rule-border);
+  --sidebar-accent: var(--ink-primary);
+  --sidebar-accent-foreground: #FFFFFF;
+}

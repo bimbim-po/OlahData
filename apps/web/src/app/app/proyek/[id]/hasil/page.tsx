@@ -10,7 +10,6 @@ import {
   CheckCircle2,
   ArrowLeft,
   GraduationCap,
-  Sparkles,
   BarChart3,
   Layers,
   CheckSquare,
@@ -589,11 +588,11 @@ export default function HasilPage() {
         </div>
 
         {/* Page Main Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 bg-card p-6 rounded-2xl border border-border shadow-xs">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 bg-card p-5 rounded-md border border-border shadow-xs">
           <div className="space-y-1.5 max-w-3xl">
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="pine" className="gap-1.5 py-0.5 px-2.5 font-semibold text-xs">
-                <CheckCircle2 className="h-3.5 w-3.5" />
+              <Badge variant="outline" className="gap-1.5 py-0.5 px-2.5 font-medium text-xs bg-muted/40">
+                <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
                 <span>Selesai Dianalisis</span>
               </Badge>
               <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -607,7 +606,7 @@ export default function HasilPage() {
               </span>
             </div>
 
-            <h1 className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-foreground tracking-tight leading-snug">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground tracking-tight leading-snug">
               {project?.title || 'Hasil Analisis Kuesioner Skripsi'}
             </h1>
 
@@ -944,14 +943,14 @@ export default function HasilPage() {
             </Tabs>
 
             {/* University thesis advisor guidance reminder */}
-            <div className="rounded-xl border border-primary/20 bg-primary/[0.04] p-4 sm:p-5 flex items-start gap-3 text-xs sm:text-sm text-foreground/90">
+            <div className="rounded-md border border-primary/20 bg-primary/[0.04] p-4 sm:p-5 flex items-start gap-3 text-xs sm:text-sm text-foreground/90">
               <GraduationCap className="h-5 w-5 text-primary shrink-0 mt-0.5" />
               <div className="space-y-1">
                 <h5 className="font-semibold text-foreground">
                   Panduan Penyusunan Bab 4 Skripsi
                 </h5>
                 <p className="text-muted-foreground leading-relaxed text-xs">
-                  Hasil pengolahan data dan narasi di atas disusun sesuai kaidah statistik baku. Namun, kebijakan format penulisan, penomoran tabel, dan gaya kutipan dapat berbeda di setiap universitas dan program studi. Konsultasikan draf Bab 4 Anda dengan dosen pembimbing skripsi sebelum sidang proposal atau sidang munaqasyah.
+                  Hasil pengolahan data dan narasi di atas disusun sesuai kaidah statistik baku. Namun, kebijakan format penulisan, penomoran tabel, dan gaya kutipan dapat berbeda di setiap universitas dan program studi. Konsultasikan draf Bab 4 dengan dosen pembimbing skripsimu sebelum sidang proposal atau sidang munaqasyah.
                 </p>
               </div>
             </div>
@@ -974,13 +973,13 @@ export default function HasilPage() {
             />
 
             {/* Tool usage statement banner in sidebar */}
-            <div className="rounded-xl border border-border bg-card p-4 space-y-2 text-xs">
+            <div className="rounded-md border border-border bg-card p-4 space-y-2 text-xs">
               <div className="flex items-center gap-1.5 font-semibold text-foreground">
                 <Info className="h-3.5 w-3.5 text-primary shrink-0" />
                 <span>Pernyataan Penggunaan Alat</span>
               </div>
               <p className="text-muted-foreground text-[11px] leading-relaxed">
-                Anda dapat melampirkan surat pernyataan transparansi penggunaan {APP_NAME} pada berkas lampiran skripsi Anda.
+                Kamu dapat melampirkan surat pernyataan transparansi penggunaan {APP_NAME} pada berkas lampiran skripsimu.
               </p>
               <Button
                 variant="outline"

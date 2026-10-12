@@ -13,10 +13,10 @@ export function Footer() {
           {/* Brand info */}
           <div className="md:col-span-2">
             <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-serif font-bold text-lg">
+              <div className="flex h-7 w-7 items-center justify-center rounded-xs bg-primary text-primary-foreground font-bold text-sm">
                 O
               </div>
-              <span className="font-serif text-xl font-bold tracking-tight text-foreground">
+              <span className="text-lg font-bold tracking-tight text-foreground">
                 {APP_NAME}
               </span>
             </Link>

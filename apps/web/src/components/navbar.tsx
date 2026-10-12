@@ -34,10 +34,10 @@ export function Navbar() {
           href="/"
           className="flex items-center gap-2 group transition-opacity hover:opacity-90"
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-serif font-bold text-xl shadow-xs">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xs bg-primary text-primary-foreground font-bold text-base shadow-xs">
             O
           </div>
-          <span className="font-serif text-2xl font-bold tracking-tight text-foreground">
+          <span className="text-xl font-bold tracking-tight text-foreground">
             {APP_NAME}
           </span>
         </Link>
