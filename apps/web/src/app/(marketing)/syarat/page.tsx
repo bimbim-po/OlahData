@@ -1,9 +1,23 @@
 import * as React from 'react';
 import Link from 'next/link';
-import { FileText, ShieldAlert, Scale, CheckCircle2 } from 'lucide-react';
-import { APP_NAME } from '@/lib/constants';
+import { FileText, ShieldAlert, Scale, CheckCircle2, AlertTriangle, Mail } from 'lucide-react';
+import { APP_NAME, BUILD_DATE } from '@/lib/constants';
 import { COPY } from '@/lib/copy';
+import { CONTACT_EMAIL } from '@/lib/plans';
 import { Badge } from '@/components/ui/badge';
+
+export const metadata = {
+  title: `Syarat & Ketentuan Layanan | ${APP_NAME}`,
+  description: 'Syarat dan ketentuan layanan OlahData untuk pengolahan data kuesioner skripsi kuantitatif. Menjunjung integritas akademik dan transparansi riset mahasiswa.',
+  openGraph: {
+    title: `Syarat & Ketentuan Layanan | ${APP_NAME}`,
+    description: 'Syarat dan ketentuan layanan OlahData untuk pengolahan data kuesioner skripsi kuantitatif. Menjunjung integritas akademik dan transparansi riset mahasiswa.',
+    url: 'https://olahdata.id/syarat',
+    siteName: APP_NAME,
+    locale: 'id_ID',
+    type: 'website',
+  },
+};
 
 export default function SyaratPage() {
   return (
@@ -15,14 +29,14 @@ export default function SyaratPage() {
             {COPY.badges.draft}
           </Badge>
           <span className="text-xs text-muted-foreground">
-            Terakhir diperbarui: 1 Oktober 2024
+            Terakhir diperbarui: {BUILD_DATE}
           </span>
         </div>
         <h1 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
           Syarat & Ketentuan Penggunaan {APP_NAME}
         </h1>
         <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-          Harap membaca syarat dan ketentuan berikut secara saksama sebelum mengakses atau menggunakan platform {APP_NAME}. Dengan mendaftar atau menggunakan layanan, Anda menyetujui kewajiban etika dan batasan hukum berikut.
+          Harap membaca syarat dan ketentuan berikut secara saksama sebelum mengakses atau menggunakan platform {APP_NAME}. Dengan mendaftar atau menggunakan layanan, Anda menyetujui kewajiban etika riset dan batasan hukum berikut.
         </p>
       </div>
 
@@ -33,7 +47,10 @@ export default function SyaratPage() {
             1. Definisi dan Ruang Lingkup Layanan
           </h2>
           <p>
-            {APP_NAME} adalah perangkat lunak berbasis komputasi web yang dirancang khusus untuk memfasilitasi pengolahan data kuesioner skala Likert melalui formula statistik standar (seperti uji validitas, reliabilitas, uji asumsi klasik, dan regresi berganda) serta menyediakan draf kalimat interpretasi hasil pengolahan.
+            {APP_NAME} adalah perangkat lunak komputasi web yang dirancang khusus untuk memfasilitasi pengolahan data kuesioner skala Likert melalui formula statistik baku (mencakup uji validitas, reliabilitas, uji asumsi klasik, dan regresi linier berganda).
+          </p>
+          <p>
+            {APP_NAME} menghitung angka dan menyusun draf interpretasi dari angka tersebut. Draf wajib Anda periksa dan tulis ulang dengan bahasa Anda sendiri sebelum dimasukkan ke dalam naskah skripsi.
           </p>
         </section>
 
@@ -45,10 +62,16 @@ export default function SyaratPage() {
           <p>
             Pengguna adalah peneliti independen yang memikul tanggung jawab penuh secara akademik dan moral atas karya ilmiah yang disusun. Pengguna berjanji dan menjamin bahwa:
           </p>
-          <ul className="list-disc pl-6 space-y-1.5 text-muted-foreground">
-            <li><strong className="text-foreground">Orisinalitas Data:</strong> Seluruh baris data yang diunggah ke platform bersumber dari instrumen kuesioner asli yang dibagikan secara sah kepada responden penelitian.</li>
-            <li><strong className="text-foreground">Bebas Fabrikasi:</strong> Pengguna tidak menggunakan layanan ini untuk mengunggah data fiktif, data hasil rekayasa, atau manipulasi guna memaksakan signifikansi hipotesis.</li>
-            <li><strong className="text-foreground">Verifikasi Mandiri:</strong> Pengguna wajib memvalidasi kembali kecocokan angka, tingkat signifikansi, dan narasi penjelasan dengan pedoman penulisan skripsi perguruan tinggi masing-masing.</li>
+          <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+            <li>
+              <strong className="text-foreground">Orisinalitas Data:</strong> Seluruh baris data yang diunggah ke platform bersumber dari instrumen kuesioner asli yang dibagikan secara sah kepada responden penelitian.
+            </li>
+            <li>
+              <strong className="text-foreground">Bebas Fabrikasi:</strong> Pengguna tidak menggunakan layanan ini untuk mengunggah data fiktif, data hasil rekayasa, atau manipulasi guna memaksakan signifikansi hipotesis. {APP_NAME} tidak menyediakan fitur apa pun untuk membuat, mengisi otomatis, atau mengubah tanggapan responden.
+            </li>
+            <li>
+              <strong className="text-foreground">Verifikasi Mandiri:</strong> Pengguna wajib memvalidasi kembali kecocokan angka, tingkat signifikansi, dan narasi penjelasan dengan pedoman penulisan skripsi perguruan tinggi masing-masing.
+            </li>
           </ul>
         </section>
 
@@ -57,12 +80,13 @@ export default function SyaratPage() {
           <h2 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
             3. Batasan Layanan dan Penafian (Disclaimer)
           </h2>
-          <div className="rounded-xl border border-border bg-card p-4 space-y-2 text-xs sm:text-sm">
-            <p className="font-semibold text-foreground">
-              PERHATIAN KHUSUS MENGENAI KELULUSAN DAN KEPUTUSAN SIDANG:
+          <div className="rounded-xl border border-border bg-card p-5 space-y-2.5 text-xs sm:text-sm">
+            <p className="font-semibold text-foreground flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span>KOMITMEN KEJUJURAN ILMIAH & BATASAN LAYANAN:</span>
             </p>
-            <p className="text-muted-foreground">
-              {APP_NAME} merupakan sarana bantu pengolahan data statistik semata. {APP_NAME} tidak bertindak sebagai jasa pembuatan skripsi (joki), tidak menuliskan isi Bab 4 secara keseluruhan, dan sama sekali tidak menjamin kelulusan sidang ujian skripsi atau persetujuan dosen pembimbing.
+            <p className="text-muted-foreground leading-relaxed">
+              {APP_NAME} menghitung angka dan menyusun draf interpretasi dari angka tersebut. Draf wajib Anda periksa dan tulis ulang dengan bahasa Anda sendiri. {APP_NAME} merupakan sarana bantu kalkulasi statistik matematis, bukan jasa joki skripsi, dan tidak memberikan jaminan kelulusan sidang atau persetujuan dosen pembimbing.
             </p>
           </div>
         </section>
@@ -73,32 +97,74 @@ export default function SyaratPage() {
             4. Karakteristik Mesin Hitung & Narasi AI
           </h2>
           <p>
-            Pengguna memahami bahwa platform membedakan secara tegas antara:
+            Pengguna memahami dan menyetujui pembagian kerja sistem dalam platform:
           </p>
-          <ul className="list-disc pl-6 space-y-1.5 text-muted-foreground">
-            <li><strong className="text-foreground">Mesin Statistik:</strong> Menghasilkan nilai numerik eksak melalui algoritma deterministik matematis standar industri riset.</li>
-            <li><strong className="text-foreground">Penjelasan AI:</strong> Berfungsi sebagai draf paragraf interpretasi bahasa Indonesia yang merujuk pada tabel hitung tersebut. AI tidak menciptakan fakta di luar angka tabel dan wajib ditinjau oleh peneliti sebelum disalin ke skripsi.</li>
+          <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+            <li>
+              <strong className="text-foreground">Mesin Statistik Deterministik:</strong> Angka-angka statistik dihitung secara pasti menggunakan rumus matematika baku yang dapat dicek ulang di SPSS atau JASP, bukan oleh kecerdasan buatan (AI).
+            </li>
+            <li>
+              <strong className="text-foreground">Draf Interpretasi Berbantuan AI:</strong> Kalimat penjelasan interpretasi disusun dengan bantuan AI semata-mata dari angka tabel yang telah terhitung. AI tidak menciptakan angka atau asumsi baru, dan draf tersebut wajib Anda telaah secara kritis.
+            </li>
           </ul>
         </section>
 
         {/* Section 5 */}
         <section className="space-y-3">
           <h2 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
-            5. Akun, Hak Akses, dan Berlangganan
+            5. Akun, Hak Akses, dan Kebijakan Pengembalian Dana (Refund)
           </h2>
           <p>
-            Pengguna bertanggung jawab menjaga kerahasiaan kredensial akun. Paket langganan berbayar memberikan hak pemakaian fitur sesuai batasan paket yang tertera pada halaman Harga. Pembayaran yang telah diproses tidak dapat dikembalikan setelah analisis berhasil dijalankan dan diunduh.
+            Pengguna bertanggung jawab menjaga kerahasiaan kredensial akun masing-masing. Hak akses fitur dan kuota proyek mengikuti ketentuan paket yang dipilih pada halaman Harga.
           </p>
+          <div className="rounded-xl border border-border bg-card p-4 space-y-2 text-xs sm:text-sm">
+            <h3 className="font-semibold text-foreground">Kebijakan Pengembalian Dana (Refund):</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              Pengembalian dana hanya dapat diajukan jika terjadi kegagalan teknis pada sistem yang menyebabkan proses analisis tidak dapat diselesaikan sama sekali. Pembayaran yang telah diproses <strong>tidak dapat dikembalikan</strong> apabila:
+            </p>
+            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+              <li>
+                <strong className="text-foreground">Analisis Berhasil:</strong> Kondisi ketika sistem telah menyelesaikan kalkulasi statistik dan menampilkan tabel hasil serta draf interpretasi pada antarmuka pengguna tanpa galat fatal sistem.
+              </li>
+              <li>
+                <strong className="text-foreground">Diunduh:</strong> Kondisi ketika pengguna telah mengekspor berkas naskah (.docx / .pdf), menyalin tabel atau penjelasan ke papan klip (clipboard), atau memanfaatkan luaran hasil olah data.
+              </li>
+            </ul>
+          </div>
         </section>
 
         {/* Section 6 */}
         <section className="space-y-3">
           <h2 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
-            6. Hukum yang Mengatur
+            6. Hukum yang Mengatur & Forum Penyelesaian Sengketa
           </h2>
           <p>
-            Syarat dan ketentuan ini diatur dan ditafsirkan berdasarkan hukum Negara Kesatuan Republik Indonesia. Setiap perselisihan yang timbul akan diupayakan diselesaikan terlebih dahulu melalui musyawarah untuk mufakat.
+            Syarat dan ketentuan ini diatur dan ditafsirkan berdasarkan hukum Negara Kesatuan Republik Indonesia. Setiap perselisihan yang timbul dari atau sehubungan dengan penggunaan layanan akan diupayakan untuk diselesaikan secara musyawarah untuk mufakat terlebih dahulu.
           </p>
+          <div className="rounded-lg border-2 border-dashed border-amber-300 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20 p-4 text-xs sm:text-sm">
+            <span className="font-mono font-bold text-amber-800 dark:text-amber-300 block mb-1">
+              [ISI OLEH PEMILIK]
+            </span>
+            <p className="text-amber-900/90 dark:text-amber-200/90">
+              Apabila penyelesaian secara musyawarah tidak mencapai kesepakatan dalam jangka waktu 30 (tiga puluh) hari kalender, maka para pihak sepakat untuk menyelesaikan sengketa tersebut melalui yurisdiksi eksklusif di [ISI OLEH PEMILIK: Contoh Pengadilan Negeri Jakarta Selatan / Badan Arbitrase Nasional Indonesia].
+            </p>
+          </div>
+        </section>
+
+        {/* Section 7 */}
+        <section className="space-y-3">
+          <h2 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
+            7. Kontak Layanan
+          </h2>
+          <p>
+            Untuk pertanyaan seputar syarat layanan, klarifikasi langganan, atau dukungan bantuan akademik, hubungi tim kami melalui:
+          </p>
+          <div className="inline-flex items-center gap-2 text-primary font-medium text-xs sm:text-sm">
+            <Mail className="h-4 w-4" />
+            <a href={`mailto:${CONTACT_EMAIL}`} className="underline">
+              {CONTACT_EMAIL}
+            </a>
+          </div>
         </section>
       </div>
 

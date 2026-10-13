@@ -1,11 +1,29 @@
 import * as React from 'react';
 import Link from 'next/link';
-import { Shield, Lock, Trash2, FileCheck, Info } from 'lucide-react';
-import { APP_NAME } from '@/lib/constants';
+import { Shield, Lock, Trash2, FileCheck, Info, CreditCard, Database, Cookie } from 'lucide-react';
+import { APP_NAME, BUILD_DATE } from '@/lib/constants';
 import { COPY } from '@/lib/copy';
+import { PLANS } from '@/lib/plans';
 import { Badge } from '@/components/ui/badge';
 
+export const metadata = {
+  title: `Kebijakan Privasi Perlindungan Riset | ${APP_NAME}`,
+  description: 'Kebijakan privasi OlahData menjamin keamanan dataset kuesioner responden. Admin hanya melihat metadata dan data riset tidak pernah dijual atau dimanipulasi.',
+  openGraph: {
+    title: `Kebijakan Privasi Perlindungan Riset | ${APP_NAME}`,
+    description: 'Kebijakan privasi OlahData menjamin keamanan dataset kuesioner responden. Admin hanya melihat metadata dan data riset tidak pernah dijual atau dimanipulasi.',
+    url: 'https://olahdata.id/privasi',
+    siteName: APP_NAME,
+    locale: 'id_ID',
+    type: 'website',
+  },
+};
+
 export default function PrivasiPage() {
+  const freeRetention = PLANS.find((p) => p.id === 'free')?.retentionDays ?? 30;
+  const monthlyRetention = PLANS.find((p) => p.id === 'monthly')?.retentionDays ?? 365;
+  const thesisRetention = PLANS.find((p) => p.id === 'thesis')?.retentionDays ?? 730;
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 space-y-10">
       {/* Header with Draft Badge */}
@@ -15,7 +33,7 @@ export default function PrivasiPage() {
             {COPY.badges.draft}
           </Badge>
           <span className="text-xs text-muted-foreground">
-            Terakhir diperbarui: 1 Oktober 2024
+            Terakhir diperbarui: {BUILD_DATE}
           </span>
         </div>
         <h1 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
@@ -30,15 +48,27 @@ export default function PrivasiPage() {
         {/* Section 1 */}
         <section className="space-y-3">
           <h2 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
-            1. Prinsip Utama Perlindungan Riset
+            1. Prinsip Utama Perlindungan Riset & Data Responden
           </h2>
           <p>
             {APP_NAME} menyadari bahwa dataset kuesioner yang Anda unggah merupakan data berharga hasil kerja keras penelitian ilmiah. Prinsip dasar kami meliputi:
           </p>
-          <ul className="list-disc pl-6 space-y-1.5 text-muted-foreground">
-            <li><strong className="text-foreground">Hak Milik Eksklusif:</strong> Seluruh dataset dan luaran statistik sepenuhnya milik peneliti; kami tidak pernah mengklaim hak cipta atas data Anda.</li>
-            <li><strong className="text-foreground">Larangan Monetisasi:</strong> Kami tidak pernah menjual, menyewakan, atau membagikan data responden kepada pihak ketiga mana pun untuk tujuan periklanan atau komersial.</li>
-            <li><strong className="text-foreground">Bebas Pelatihan Model:</strong> Data kuesioner Anda tidak digunakan untuk melatih (train) model kecerdasan buatan publik.</li>
+          <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+            <li>
+              <strong className="text-foreground">Hak Milik Eksklusif:</strong> Seluruh dataset dan luaran statistik sepenuhnya milik peneliti; kami tidak pernah mengklaim hak cipta atas data Anda.
+            </li>
+            <li>
+              <strong className="text-foreground">Tanpa Fabrikasi atau Manipulasi:</strong> {APP_NAME} tidak pernah membuat, mengisi otomatis, mensimulasikan, atau mengubah data tanggapan responden survei Anda. Sistem hanya memproses data numerik mentah persis sesuai dengan berkas yang Anda unggah.
+            </li>
+            <li>
+              <strong className="text-foreground">Akses Admin Terbatas (Hanya Metadata):</strong> Administrator sistem OlahData hanya dapat melihat metadata administratif (seperti stempel waktu proses, jumlah baris data, ukuran berkas, dan status komputasi). Administrator tidak pernah memiliki hak akses atau melihat isi data jawaban responden survei Anda.
+            </li>
+            <li>
+              <strong className="text-foreground">Larangan Monetisasi:</strong> Kami tidak pernah menjual, menyewakan, atau membagikan data responden kepada pihak ketiga mana pun untuk tujuan periklanan atau komersial.
+            </li>
+            <li>
+              <strong className="text-foreground">Bebas Pelatihan Model:</strong> Data kuesioner Anda tidak digunakan untuk melatih (train) model kecerdasan buatan publik.
+            </li>
           </ul>
         </section>
 
@@ -52,13 +82,25 @@ export default function PrivasiPage() {
             <div className="rounded-xl border border-border bg-card p-4">
               <h3 className="font-serif font-bold text-sm text-foreground">a. Informasi Akun Pengguna</h3>
               <p className="text-xs text-muted-foreground mt-1">
-                Nama lengkap, alamat surat elektronik (email), nama perguruan tinggi, dan preferensi kata sandi terenkripsi (salt & hash).
+                Nama lengkap, alamat surat elektronik (email), nama perguruan tinggi, dan kredensial kata sandi terenkripsi (salt & hash).
               </p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4">
               <h3 className="font-serif font-bold text-sm text-foreground">b. Data Kuesioner & Konfigurasi Proyek</h3>
               <p className="text-xs text-muted-foreground mt-1">
                 Tabel skor kuesioner (berformat .xlsx, .xls, .csv), label variabel/konstruk, serta pilihan uji statistik yang Anda konfigurasi.
+              </p>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4">
+              <h3 className="font-serif font-bold text-sm text-foreground">c. Data Transaksi Pembayaran</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Seluruh transaksi pembayaran diproses langsung oleh penyedia gerbang pembayaran resmi berlisensi (Midtrans). {APP_NAME} tidak pernah menyimpan nomor kartu kredit/debit, tanggal kedaluwarsa kartu, maupun kode CVV pengguna di peladen kami.
+              </p>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4">
+              <h3 className="font-serif font-bold text-sm text-foreground">d. Cookie dan Analitik Penggunaan</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Cookie dan analitik yang kami gunakan hanya mencakup metadata penggunaan teknis (seperti sesi login akun aktif dan telemetri kestabilan aplikasi). Kami tidak melacak aktivitas penjelajahan di luar platform ini.
               </p>
             </div>
           </div>
@@ -70,7 +112,7 @@ export default function PrivasiPage() {
             3. Pemrosesan Data & Keamanan Teknis
           </h2>
           <p>
-            Seluruh transmisi data antara peramban web Anda dan peladen kami dilindungi protokol enkripsi mutakhir (TLS 1.3). Penyimpanan data dienkripsi dengan standar AES-256. Validasi data dan perhitungan statistik primer dioptimalkan sedemikian rupa guna meminimalkan eksposur transmisi yang tidak perlu.
+            Seluruh transmisi data antara peramban web Anda dan peladen kami dilindungi protokol enkripsi mutakhir (TLS 1.3). Penyimpanan data dienkripsi dengan standar AES-256. Validasi data dan perhitungan statistik primer dieksekusi secara deterministik menggunakan mesin algoritma matematika baku guna menjamin kepastian numerik.
           </p>
         </section>
 
@@ -87,10 +129,18 @@ export default function PrivasiPage() {
         {/* Section 5 */}
         <section className="space-y-3">
           <h2 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
-            5. Hak Penghapusan Data (Right to Erasure)
+            5. Masa Retensi & Hak Penghapusan Data (Right to Erasure)
           </h2>
           <p>
-            Anda memiliki hak mutlak untuk menghapus proyek penelitian, dataset terunggah, maupun akun Anda kapan saja melalui panel Pengaturan. Setelah dihapus oleh Anda, data akan terhapus secara permanen dari sistem aktif kami tanpa pencadangan residual.
+            Masa penyimpanan data proyek dan dataset pada akun Anda diatur berdasarkan ketentuan konfigurasi paket aktif:
+          </p>
+          <ul className="list-disc pl-6 space-y-1.5 text-muted-foreground">
+            <li><strong className="text-foreground">Paket Coba Gratis:</strong> Disimpan selama {freeRetention} hari kalender.</li>
+            <li><strong className="text-foreground">Paket Bulanan:</strong> Disimpan selama {monthlyRetention} hari kalender (1 tahun).</li>
+            <li><strong className="text-foreground">Paket Skripsi:</strong> Disimpan selama {thesisRetention} hari kalender (2 tahun) untuk menjamin ketersediaan riwayat hingga sidang dan yudisium selesai.</li>
+          </ul>
+          <p className="mt-3">
+            Anda memiliki hak mutlak untuk menghapus proyek penelitian, dataset terunggah, maupun akun Anda kapan saja melalui menu Pengaturan. Setelah dihapus oleh Anda, data akan dihapus dari sistem aktif dan dari cadangan sesuai siklus penyimpanan cadangan penyedia.
           </p>
         </section>
 

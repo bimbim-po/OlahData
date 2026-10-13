@@ -140,9 +140,9 @@ export function PernyataanPenggunaanPage() {
         </h2>
         <div className="space-y-4">
           <div className="rounded-xl border border-border bg-card p-5 space-y-2">
-            <h3 className="font-serif font-bold text-base text-foreground flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs">1</span>
-              Bab 3: Bagian Metode Penelitian (Teknik Analisis Data)
+            <h3 className="font-serif font-bold text-base text-foreground flex items-center gap-2.5">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">1</span>
+              <span>1. Bab 3: Bagian Metode Penelitian (Teknik Analisis Data)</span>
             </h3>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed pl-8">
               Sebutkan secara singkat di akhir sub-bab teknik analisis data: <em>&ldquo;Pengolahan data statistik dibantu menggunakan perangkat lunak {APP_NAME} versi {APP_VERSION} untuk uji validitas, reliabilitas, uji asumsi klasik, dan analisis regresi.&rdquo;</em>
@@ -150,9 +150,9 @@ export function PernyataanPenggunaanPage() {
           </div>
 
           <div className="rounded-xl border border-border bg-card p-5 space-y-2">
-            <h3 className="font-serif font-bold text-base text-foreground flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs">2</span>
-              Bagian Lampiran (Appendix)
+            <h3 className="font-serif font-bold text-base text-foreground flex items-center gap-2.5">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">2</span>
+              <span>2. Bagian Lampiran (Appendix)</span>
             </h3>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed pl-8">
               Cantumkan templat teks pernyataan di atas pada halaman pengantar lampiran hasil olah data, diikuti dengan lembar Jejak Hitung (Audit Trail) dan tabel luaran statistik lengkap yang diekspor dari {APP_NAME}.
@@ -172,7 +172,7 @@ export function PernyataanPenggunaanPage() {
           </p>
         </div>
         <Button asChild className="gap-2 shrink-0">
-          <Link href="/daftar">
+          <Link href="/app/proyek/baru">
             <span>Buka Proyek Baru</span>
             <ArrowRight className="h-4 w-4" />
           </Link>
