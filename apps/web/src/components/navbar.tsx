@@ -9,6 +9,7 @@ import { COPY } from '@/lib/copy';
 import { useAuthStore } from '@/stores/auth-store';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
+import { Logo } from '@/components/logo';
 import { cn } from '@/lib/utils';
 
 export function Navbar() {
@@ -32,14 +33,9 @@ export function Navbar() {
         {/* Logo */}
         <Link
           href="/"
-          className="flex items-center gap-2 group transition-opacity hover:opacity-90 shrink-0"
+          className="flex items-center group transition-opacity hover:opacity-90 shrink-0"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-xs bg-primary text-primary-foreground font-bold text-base shadow-xs">
-            O
-          </div>
-          <span className="text-xl font-bold tracking-tight text-foreground">
-            {APP_NAME}
-          </span>
+          <Logo size="md" />
         </Link>
 
         {/* Desktop Navigation */}

@@ -200,7 +200,7 @@ export function ExplanationBox({
                     <p className="text-muted-foreground">
                       {item.detail}
                     </p>
-                    <div className="text-[11px] text-[#2748D6] bg-primary/5 p-2 rounded-[6px] border border-primary/10 mt-1">
+                    <div className="text-[11px] text-primary bg-primary/5 p-2 rounded-[6px] border border-primary/10 mt-1">
                       {item.example}
                     </div>
                   </div>
@@ -269,7 +269,7 @@ export function ExplanationBox({
               className={cn(
                 'inline-flex items-center px-1.5 py-0.5 mx-0.5 text-xs font-semibold rounded-[4px] transition-all duration-150 tabular-nums cursor-pointer select-none touch-manipulation',
                 'bg-muted/70 text-foreground border border-border/80 hover:bg-[#FFE14D]/40 hover:border-[#FFE14D] hover:text-[#243044]',
-                'focus-visible:ring-2 focus-visible:ring-[#2748D6] focus-visible:outline-none',
+                'focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
                 isMatching &&
                   'bg-[#FFE14D] text-[#243044] border-[#FFE14D] font-bold ring-2 ring-[#FFE14D] shadow-xs scale-105'
               )}

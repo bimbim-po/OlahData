@@ -17,6 +17,7 @@ import {
 import { APP_NAME, APP_VERSION } from '@/lib/constants';
 import { useAuthStore } from '@/stores/auth-store';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { LogoIcon } from '@/components/logo';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
@@ -162,8 +163,8 @@ export function AppShell({ children }: AppShellProps) {
         {/* Top Logo & App Title */}
         <div className="p-4 lg:p-6 border-b border-sidebar-border/70 flex items-center justify-between">
           <Link href="/app" className="flex items-center gap-2.5 group w-full justify-center lg:justify-start">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-base shadow-xs shrink-0">
-              OD
+            <div className="relative flex items-center justify-center p-1 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shrink-0">
+              <LogoIcon size={32} />
             </div>
             <div className="hidden lg:block min-w-0">
               <div className="font-bold text-lg tracking-tight text-foreground group-hover:text-primary transition-colors truncate">

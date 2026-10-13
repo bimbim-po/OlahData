@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="100 100 824 824" fill="none">
+  <!-- Col 1 (Cyan #38B6FF) -->
+  <circle cx="205" cy="826" r="94" fill="#38B6FF" />
+  <!-- Col 2 (Vibrant Blue #5170FF) -->
+  <circle cx="409" cy="622" r="94" fill="#5170FF" />
+  <circle cx="409" cy="826" r="94" fill="#5170FF" />
+  <!-- Col 3 (Royal Blue #004AAD) -->
+  <circle cx="614" cy="418" r="94" fill="#004AAD" />
+  <circle cx="614" cy="622" r="94" fill="#004AAD" />
+  <circle cx="614" cy="826" r="94" fill="#004AAD" />
+  <!-- Col 4 (Deep Ultramarine #1800AD) -->
+  <circle cx="818" cy="214" r="94" fill="#1800AD" />
+  <circle cx="818" cy="418" r="94" fill="#1800AD" />
+  <circle cx="818" cy="622" r="94" fill="#1800AD" />
+  <circle cx="818" cy="826" r="94" fill="#1800AD" />
+</svg>

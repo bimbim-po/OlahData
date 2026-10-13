@@ -21,6 +21,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { LogoIcon } from '@/components/logo';
 import { cn } from '@/lib/utils';
 import type { AdminRoleT } from '@/lib/db.types';
 
@@ -67,8 +68,8 @@ export function AdminShell({ children, adminEmail, adminRole }: AdminShellProps)
       >
         <div className="h-16 px-5 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-950/20 border border-emerald-800/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-serif font-bold text-base">
-              Ω
+            <div className="relative flex items-center justify-center p-1 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shrink-0">
+              <LogoIcon size={30} />
             </div>
             <div>
               <div className="font-serif font-bold text-sm tracking-tight flex items-center gap-1.5">

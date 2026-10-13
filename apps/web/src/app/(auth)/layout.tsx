@@ -2,6 +2,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { APP_NAME } from '@/lib/constants';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { Logo } from '@/components/logo';
 
 export default function AuthLayout({
   children,
@@ -14,14 +15,9 @@ export default function AuthLayout({
       <header className="w-full px-4 sm:px-8 py-5 flex items-center justify-between">
         <Link
           href="/"
-          className="flex items-center gap-2 group transition-opacity hover:opacity-90"
+          className="flex items-center group transition-opacity hover:opacity-90"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-serif font-bold text-lg">
-            O
-          </div>
-          <span className="font-serif text-xl font-bold tracking-tight text-foreground">
-            {APP_NAME}
-          </span>
+          <Logo size="md" />
         </Link>
         <ThemeToggle />
       </header>

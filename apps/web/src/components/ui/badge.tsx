@@ -32,6 +32,10 @@ const badgeVariants = cva(
           'border-border bg-muted/60 text-muted-foreground',
         ai:
           'border-border bg-muted/60 text-muted-foreground',
+        brand:
+          'border-transparent bg-[#004AAD] text-white dark:bg-[#5D7CFF] dark:text-white font-semibold',
+        cyan:
+          'border-transparent bg-[#38B6FF]/15 text-[#004AAD] dark:bg-[#38B6FF]/20 dark:text-[#38B6FF] font-semibold',
       },
     },
     defaultVariants: {

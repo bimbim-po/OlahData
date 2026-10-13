@@ -94,7 +94,7 @@ export function AssumptionAlert({
       {recommendation && (
         <div className="pt-3 border-t border-border/40 text-xs sm:text-sm space-y-1.5">
           <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-foreground">
-            <ArrowRight className="h-3.5 w-3.5 text-[#2748D6]" />
+            <ArrowRight className="h-3.5 w-3.5 text-primary" />
             <span>{COPY.layers.whatToDo}</span>
           </div>
           <p className="text-foreground/90 leading-relaxed pl-5 font-normal">

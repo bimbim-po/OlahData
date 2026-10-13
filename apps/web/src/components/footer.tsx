@@ -2,6 +2,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { APP_NAME } from '@/lib/constants';
 import { COPY } from '@/lib/copy';
+import { Logo } from '@/components/logo';
 
 export function Footer() {
   const currentYear = 2026;
@@ -12,13 +13,8 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4 lg:grid-cols-5">
           {/* Brand info */}
           <div className="md:col-span-2">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-xs bg-primary text-primary-foreground font-bold text-sm">
-                O
-              </div>
-              <span className="text-lg font-bold tracking-tight text-foreground">
-                {APP_NAME}
-              </span>
+            <Link href="/" className="flex items-center group">
+              <Logo size="md" />
             </Link>
             <p className="mt-3 text-sm text-muted-foreground leading-relaxed max-w-md">
               {COPY.footer.tagline}

@@ -43,10 +43,15 @@
   --text-primary: #243044;
   --text-secondary: #3E4D66;    /* Rasio 7.5:1 thd #F6F8FC */
   --text-muted: #526077;        /* Rasio 5.5:1 thd #F6F8FC (Lolos WCAG AA 4.5:1) */
-  --text-disabled: #8493A8;
-  --text-link: #2748D6;         /* Rasio 6.5:1 */
-  --ink-primary: #2748D6;
-  --ink-primary-hover: #1E3BB8;
+  /* Warna Brand Bertema Logo OlahData (Cyan #38B6FF -> Vibrant #5170FF -> Royal #004AAD -> Indigo #1800AD) */
+  --brand-cyan: #38B6FF;
+  --brand-vibrant: #5170FF;
+  --brand-royal: #004AAD;
+  --brand-indigo: #1800AD;
+
+  --text-link: #004AAD;         /* Rasio 8.1:1 thd #FFFFFF (Lolos WCAG AAA) */
+  --ink-primary: #004AAD;       /* Royal Blue dari Logo OlahData */
+  --ink-primary-hover: #1800AD; /* Ultramarine dari Logo OlahData */
   --ink-subtle: #526077;
 
   /* Kuning Stabilo (Khusus Sorotan Angka Tersambung & Hal yang Sedang Dibaca) */
@@ -130,10 +135,14 @@
   --text-primary: #F1F5F9;
   --text-secondary: #CBD5E1;    /* Rasio 10.5:1 thd #0E131F */
   --text-muted: #A3B3CC;        /* Rasio 6.5:1 thd #0E131F, 5.2:1 thd #161E2E (Lolos WCAG AA 4.5:1) */
-  --text-disabled: #64748B;
-  --text-link: #758FFA;         /* Rasio 7.2:1 thd #0E131F */
-  --ink-primary: #5D7BFA;
-  --ink-primary-hover: #758FFA;
+  --brand-cyan: #38B6FF;
+  --brand-vibrant: #5D7CFF;
+  --brand-royal: #004AAD;
+  --brand-indigo: #1800AD;
+
+  --text-link: #5D7CFF;         /* Rasio 5.1:1 thd #0E131F (Lolos WCAG AA) */
+  --ink-primary: #5D7CFF;       /* Versi luminous dari #5170FF untuk latar gelap */
+  --ink-primary-hover: #7E9CFF;
   --ink-subtle: #A3B3CC;
 
   /* Kuning Stabilo Tetap dengan Teks Gelap di Kedua Mode */

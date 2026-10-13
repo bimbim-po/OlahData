@@ -29,7 +29,7 @@ export function StepIndicator({
           <span className="text-foreground font-semibold">
             {COPY.reassurance.guidedProgress}
           </span>
-          <span className="text-[#2748D6] font-bold">
+          <span className="text-primary font-bold">
             {steps[currentStep]}
           </span>
           <span className="text-muted-foreground/60">({currentStep + 1} dari {steps.length})</span>
@@ -66,7 +66,7 @@ export function StepIndicator({
                     isCompleted
                       ? 'bg-[#BFEBD9] text-[#0E4331] font-bold border border-[#98D8BE]'
                       : isCurrent
-                      ? 'border-2 border-[#2748D6] bg-[#2748D6] text-white font-bold shadow-xs'
+                      ? 'border-2 border-primary bg-primary text-primary-foreground font-bold shadow-xs'
                       : 'border border-border bg-muted/60 text-muted-foreground'
                   )}
                 >
@@ -78,7 +78,7 @@ export function StepIndicator({
                     className={cn(
                       'text-[11px] uppercase tracking-wider',
                       isCurrent
-                        ? 'text-[#2748D6] font-bold'
+                        ? 'text-primary font-bold'
                         : isCompleted
                         ? 'text-[#0E4331] font-semibold'
                         : 'text-muted-foreground'
@@ -117,7 +117,7 @@ export function StepIndicator({
       {/* Mobile Stepper */}
       <div className="flex md:hidden items-center justify-between p-3.5 rounded-[16px] border border-border bg-card shadow-xs">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-full bg-[#2748D6] text-white flex items-center justify-center text-xs font-bold shrink-0">
+          <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">
             {currentStep + 1}
           </div>
           <div className="text-xs">
@@ -135,7 +135,7 @@ export function StepIndicator({
               className={cn(
                 'h-1.5 rounded-full transition-all',
                 idx === currentStep
-                  ? 'w-6 bg-[#2748D6]'
+                  ? 'w-6 bg-primary'
                   : idx < currentStep
                   ? 'w-2 bg-[#98D8BE]'
                   : 'w-2 bg-muted'
