@@ -98,7 +98,7 @@ export function ResultTable<T>({
     } catch {
       toast({
         title: 'Gagal menyalin tabel',
-        description: 'Periksa izin papan klip pada perambanmu.',
+        description: 'Periksa izin papan klip pada peramban Anda.',
         variant: 'error',
       });
     }

@@ -296,9 +296,9 @@ export function LiveDemo({ className, autoPlay = true }: LiveDemoProps) {
         >
           <div className="flex items-center justify-between mb-1.5 text-[11px]">
             <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-foreground">
+              <h3 className="font-semibold text-foreground text-[11px] inline">
                 2. Tabel 4.8 Hasil Uji Reliabilitas
-              </span>
+              </h3>
               <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-primary/10 text-primary font-medium text-[10px]">
                 <ShieldCheck className="h-3 w-3" />
                 Dihitung oleh program
@@ -360,7 +360,7 @@ export function LiveDemo({ className, autoPlay = true }: LiveDemoProps) {
                   <td className="py-2 px-2.5 text-center">
                     <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0E4331] bg-[#BFEBD9] px-2 py-0.5 rounded-[4px]">
                       <CheckCircle2 className="h-3 w-3" />
-                      Lulus Reliabel
+                      Reliabel
                     </span>
                   </td>
                 </tr>
@@ -405,7 +405,7 @@ export function LiveDemo({ className, autoPlay = true }: LiveDemoProps) {
                   <td className="py-2 px-2.5 text-center">
                     <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0E4331] bg-[#BFEBD9] px-2 py-0.5 rounded-[4px]">
                       <CheckCircle2 className="h-3 w-3" />
-                      Lulus Reliabel
+                      Reliabel
                     </span>
                   </td>
                 </tr>
@@ -425,7 +425,7 @@ export function LiveDemo({ className, autoPlay = true }: LiveDemoProps) {
         >
           <div className="flex items-center justify-between text-[11px] text-muted-foreground border-b border-border/50 pb-1">
             <span className="font-semibold text-foreground">
-              3. Penjelasan Narasi Bab 4 (Tersambung ke Sel):
+              3. Draf interpretasi (dibantu AI, dari angka terhitung):
             </span>
             <span className="text-[10px] tabular-nums">Ambang batas: α &gt; 0,70</span>
           </div>
@@ -471,7 +471,7 @@ export function LiveDemo({ className, autoPlay = true }: LiveDemoProps) {
             >
               0,845
             </button>
-            . Karena kedua nilai lebih besar dari 0,70, instrumen penelitian dinyatakan terbukti reliabel.
+            . Karena kedua nilai lebih besar dari 0,70, instrumen penelitian dinyatakan memenuhi kriteria reliabilitas (alfa Cronbach &gt; 0,70).
           </p>
         </div>
 

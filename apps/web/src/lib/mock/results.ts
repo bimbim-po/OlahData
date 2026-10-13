@@ -88,103 +88,105 @@ export const mockTestOptions: TestOption[] = [
   },
 ];
 
+// N = 120, k = 2 prediktor (X1: Kualitas Layanan, X2: Kepuasan Pelanggan, Y: Loyalitas Pelanggan)
 const descriptiveData: DescriptiveResult[] = [
   {
     variable: 'Kualitas Layanan (X1)',
-    mean: 3.682,
-    median: 3.700,
-    stdDev: 0.548,
-    min: 2.167,
+    mean: 2.843,
+    median: 2.833,
+    stdDev: 1.103,
+    min: 1.000,
     max: 5.000,
-    n: 117,
+    n: 120,
   },
   {
     variable: 'Kepuasan Pelanggan (X2)',
-    mean: 3.745,
-    median: 3.833,
-    stdDev: 0.562,
-    min: 2.000,
+    mean: 3.047,
+    median: 3.000,
+    stdDev: 1.120,
+    min: 1.000,
     max: 5.000,
-    n: 117,
+    n: 120,
   },
   {
     variable: 'Loyalitas Pelanggan (Y)',
-    mean: 3.712,
-    median: 3.667,
-    stdDev: 0.589,
-    min: 2.000,
+    mean: 3.067,
+    median: 3.167,
+    stdDev: 1.204,
+    min: 1.000,
     max: 5.000,
-    n: 117,
+    n: 120,
   },
 ];
 
-const rTabelValue = 0.1816; // df = 117 - 2 = 115, alpha = 0.05
+// N = 120, df = 120 - 2 = 118, alpha = 0.05 -> r tabel = 0.1793
+const rTabelValue = 0.1793;
 
 const validityData: ValidityResult[] = [
   // Kualitas Layanan (KL1 - KL6)
-  { item: 'KL1', construct: 'Kualitas Layanan', rHitung: 0.672, rTabel: rTabelValue, valid: true },
-  { item: 'KL2', construct: 'Kualitas Layanan', rHitung: 0.715, rTabel: rTabelValue, valid: true },
-  { item: 'KL3', construct: 'Kualitas Layanan', rHitung: 0.648, rTabel: rTabelValue, valid: true },
-  { item: 'KL4', construct: 'Kualitas Layanan', rHitung: 0.734, rTabel: rTabelValue, valid: true },
-  { item: 'KL5', construct: 'Kualitas Layanan', rHitung: 0.691, rTabel: rTabelValue, valid: true },
-  { item: 'KL6', construct: 'Kualitas Layanan', rHitung: 0.663, rTabel: rTabelValue, valid: true },
-  // Kepuasan (KP1 - KP6)
-  { item: 'KP1', construct: 'Kepuasan', rHitung: 0.704, rTabel: rTabelValue, valid: true },
-  { item: 'KP2', construct: 'Kepuasan', rHitung: 0.728, rTabel: rTabelValue, valid: true },
-  { item: 'KP3', construct: 'Kepuasan', rHitung: 0.689, rTabel: rTabelValue, valid: true },
-  { item: 'KP4', construct: 'Kepuasan', rHitung: 0.741, rTabel: rTabelValue, valid: true },
-  { item: 'KP5', construct: 'Kepuasan', rHitung: 0.677, rTabel: rTabelValue, valid: true },
-  { item: 'KP6', construct: 'Kepuasan', rHitung: 0.719, rTabel: rTabelValue, valid: true },
-  // Loyalitas (LO1 - LO6)
-  { item: 'LO1', construct: 'Loyalitas', rHitung: 0.755, rTabel: rTabelValue, valid: true },
-  { item: 'LO2', construct: 'Loyalitas', rHitung: 0.712, rTabel: rTabelValue, valid: true },
-  { item: 'LO3', construct: 'Loyalitas', rHitung: 0.698, rTabel: rTabelValue, valid: true },
-  { item: 'LO4', construct: 'Loyalitas', rHitung: 0.763, rTabel: rTabelValue, valid: true },
-  { item: 'LO5', construct: 'Loyalitas', rHitung: 0.684, rTabel: rTabelValue, valid: true },
-  { item: 'LO6', construct: 'Loyalitas', rHitung: 0.730, rTabel: rTabelValue, valid: true },
+  { item: 'KL1', construct: 'Kualitas Layanan', rHitung: 0.860, rTabel: rTabelValue, valid: true },
+  { item: 'KL2', construct: 'Kualitas Layanan', rHitung: 0.831, rTabel: rTabelValue, valid: true },
+  { item: 'KL3', construct: 'Kualitas Layanan', rHitung: 0.844, rTabel: rTabelValue, valid: true },
+  { item: 'KL4', construct: 'Kualitas Layanan', rHitung: 0.856, rTabel: rTabelValue, valid: true },
+  { item: 'KL5', construct: 'Kualitas Layanan', rHitung: 0.839, rTabel: rTabelValue, valid: true },
+  { item: 'KL6', construct: 'Kualitas Layanan', rHitung: 0.866, rTabel: rTabelValue, valid: true },
+  // Kepuasan Pelanggan (KP1 - KP6)
+  { item: 'KP1', construct: 'Kepuasan Pelanggan', rHitung: 0.848, rTabel: rTabelValue, valid: true },
+  { item: 'KP2', construct: 'Kepuasan Pelanggan', rHitung: 0.852, rTabel: rTabelValue, valid: true },
+  { item: 'KP3', construct: 'Kepuasan Pelanggan', rHitung: 0.857, rTabel: rTabelValue, valid: true },
+  { item: 'KP4', construct: 'Kepuasan Pelanggan', rHitung: 0.871, rTabel: rTabelValue, valid: true },
+  { item: 'KP5', construct: 'Kepuasan Pelanggan', rHitung: 0.853, rTabel: rTabelValue, valid: true },
+  { item: 'KP6', construct: 'Kepuasan Pelanggan', rHitung: 0.849, rTabel: rTabelValue, valid: true },
+  // Loyalitas Pelanggan (LO1 - LO6)
+  { item: 'LO1', construct: 'Loyalitas Pelanggan', rHitung: 0.882, rTabel: rTabelValue, valid: true },
+  { item: 'LO2', construct: 'Loyalitas Pelanggan', rHitung: 0.874, rTabel: rTabelValue, valid: true },
+  { item: 'LO3', construct: 'Loyalitas Pelanggan', rHitung: 0.893, rTabel: rTabelValue, valid: true },
+  { item: 'LO4', construct: 'Loyalitas Pelanggan', rHitung: 0.884, rTabel: rTabelValue, valid: true },
+  { item: 'LO5', construct: 'Loyalitas Pelanggan', rHitung: 0.877, rTabel: rTabelValue, valid: true },
+  { item: 'LO6', construct: 'Loyalitas Pelanggan', rHitung: 0.882, rTabel: rTabelValue, valid: true },
 ];
 
 const reliabilityData: ReliabilityResult[] = [
   {
     construct: 'Kualitas Layanan',
-    cronbachAlpha: 0.842,
+    cronbachAlpha: 0.923,
     itemCount: 6,
     reliable: true,
     alphaIfDeleted: [
-      { item: 'KL1', alpha: 0.815 },
-      { item: 'KL2', alpha: 0.806 },
-      { item: 'KL3', alpha: 0.821 },
-      { item: 'KL4', alpha: 0.801 },
-      { item: 'KL5', alpha: 0.811 },
-      { item: 'KL6', alpha: 0.817 },
+      { item: 'KL1', alpha: 0.906 },
+      { item: 'KL2', alpha: 0.912 },
+      { item: 'KL3', alpha: 0.910 },
+      { item: 'KL4', alpha: 0.907 },
+      { item: 'KL5', alpha: 0.910 },
+      { item: 'KL6', alpha: 0.906 },
     ],
   },
   {
-    construct: 'Kepuasan',
-    cronbachAlpha: 0.865,
+    construct: 'Kepuasan Pelanggan',
+    cronbachAlpha: 0.931,
     itemCount: 6,
     reliable: true,
     alphaIfDeleted: [
-      { item: 'KP1', alpha: 0.841 },
-      { item: 'KP2', alpha: 0.835 },
-      { item: 'KP3', alpha: 0.845 },
-      { item: 'KP4', alpha: 0.832 },
-      { item: 'KP5', alpha: 0.848 },
-      { item: 'KP6', alpha: 0.838 },
+      { item: 'KP1', alpha: 0.919 },
+      { item: 'KP2', alpha: 0.919 },
+      { item: 'KP3', alpha: 0.918 },
+      { item: 'KP4', alpha: 0.914 },
+      { item: 'KP5', alpha: 0.919 },
+      { item: 'KP6', alpha: 0.919 },
     ],
   },
   {
-    construct: 'Loyalitas',
-    cronbachAlpha: 0.881,
+    construct: 'Loyalitas Pelanggan',
+    cronbachAlpha: 0.945,
     itemCount: 6,
     reliable: true,
     alphaIfDeleted: [
-      { item: 'LO1', alpha: 0.854 },
-      { item: 'LO2', alpha: 0.862 },
-      { item: 'LO3', alpha: 0.866 },
-      { item: 'LO4', alpha: 0.851 },
-      { item: 'LO5', alpha: 0.869 },
-      { item: 'LO6', alpha: 0.858 },
+      { item: 'LO1', alpha: 0.934 },
+      { item: 'LO2', alpha: 0.936 },
+      { item: 'LO3', alpha: 0.932 },
+      { item: 'LO4', alpha: 0.934 },
+      { item: 'LO5', alpha: 0.935 },
+      { item: 'LO6', alpha: 0.934 },
     ],
   },
 ];
@@ -192,8 +194,8 @@ const reliabilityData: ReliabilityResult[] = [
 const normalityData: NormalityResult[] = [
   {
     test: 'Kolmogorov-Smirnov (Unstandardized Residual)',
-    statistic: 0.058,
-    pValue: 0.200,
+    statistic: 0.046,
+    pValue: 0.950,
     normal: true,
   },
 ];
@@ -201,14 +203,14 @@ const normalityData: NormalityResult[] = [
 const multicollinearityData: MulticollinearityResult[] = [
   {
     variable: 'Kualitas Layanan (X1)',
-    tolerance: 0.624,
-    vif: 1.603,
+    tolerance: 0.709,
+    vif: 1.410,
     problematic: false,
   },
   {
     variable: 'Kepuasan Pelanggan (X2)',
-    tolerance: 0.624,
-    vif: 1.603,
+    tolerance: 0.709,
+    vif: 1.410,
     problematic: false,
   },
 ];
@@ -217,80 +219,84 @@ const heteroscedasticityData: HeteroscedasticityResult[] = [
   {
     test: 'Glejser',
     variable: 'Kualitas Layanan (X1)',
-    tHitung: 0.812,
-    pValue: 0.418,
+    tHitung: 0.978,
+    pValue: 0.330,
     significant: false,
   },
   {
     test: 'Glejser',
     variable: 'Kepuasan Pelanggan (X2)',
-    tHitung: 0.543,
-    pValue: 0.588,
+    tHitung: -0.060,
+    pValue: 0.953,
     significant: false,
   },
 ];
 
+// OLS regression: Y = 0.380 + 0.484 X1 + 0.430 X2
+// N = 120, k = 2 prediktor, df_res = 117
 const regressionData: RegressionResult[] = [
   {
     variable: '(Konstanta)',
-    coefficient: 4.120,
-    stdError: 1.250,
-    tHitung: 3.296,
-    pValue: 0.001,
-    significant: true,
+    coefficient: 0.380,
+    stdError: 0.238,
+    tHitung: 1.595,
+    pValue: 0.114,
+    significant: false,
   },
   {
     variable: 'Kualitas Layanan (X1)',
-    coefficient: 0.385,
-    stdError: 0.078,
-    tHitung: 4.936,
+    coefficient: 0.484,
+    stdError: 0.081,
+    tHitung: 6.000,
     pValue: 0.000,
     significant: true,
   },
   {
     variable: 'Kepuasan Pelanggan (X2)',
-    coefficient: 0.442,
-    stdError: 0.082,
-    tHitung: 5.390,
+    coefficient: 0.430,
+    stdError: 0.079,
+    tHitung: 5.422,
     pValue: 0.000,
     significant: true,
   },
 ];
 
+// F = (R2/k) / ((1 - R2)/(n - k - 1)) = (0.5476/2) / ((1 - 0.5476)/117) = 70.824
 const fTestData: FTestResult = {
-  fHitung: 48.652,
-  fTabel: 3.076,
+  fHitung: 70.824,
+  fTabel: 3.074,
   pValue: 0.000,
   significant: true,
 };
 
+// Adjusted R2 = 1 - (1 - R2)*(n - 1)/(n - k - 1) = 1 - (1 - 0.5476)*119/117 = 0.540
 const determinationData: DeterminationResult = {
-  rSquare: 0.460,
-  adjustedRSquare: 0.451,
-  stdError: 1.842,
+  rSquare: 0.548,
+  adjustedRSquare: 0.540,
+  stdError: 0.817,
 };
 
 const correlationData: CorrelationResult[] = [
   {
-    variable1: 'Kualitas Layanan',
-    variable2: 'Kepuasan Pelanggan',
-    coefficient: 0.613,
-    pValue: 0.000,
-    significant: true,
-    strength: 'Kuat',
-  },
-  {
-    variable1: 'Kualitas Layanan',
-    variable2: 'Loyalitas Pelanggan',
-    coefficient: 0.582,
+    variable1: 'Kualitas Layanan (X1)',
+    variable2: 'Kepuasan Pelanggan (X2)',
+    coefficient: 0.539,
     pValue: 0.000,
     significant: true,
     strength: 'Sedang',
   },
   {
-    variable1: 'Kepuasan Pelanggan',
-    variable2: 'Loyalitas Pelanggan',
-    coefficient: 0.628,
+    variable1: 'Kualitas Layanan (X1)',
+    variable2: 'Loyalitas Pelanggan (Y)',
+    coefficient: 0.679,
+    pValue: 0.000,
+    significant: true,
+    strength: 'Kuat',
+  },
+  {
+    variable1: 'Kepuasan Pelanggan (X2)',
+    variable2: 'Loyalitas Pelanggan (Y)',
+    coefficient: 0.655,
     pValue: 0.000,
     significant: true,
     strength: 'Kuat',
@@ -301,174 +307,33 @@ const minValidityRHitung = Math.min(...validityData.map((v) => v.rHitung));
 const maxValidityRHitung = Math.max(...validityData.map((v) => v.rHitung));
 
 const explanations: Record<string, string> = {
-  descriptive: `Berdasarkan analisis statistik deskriptif terhadap ${formatNumber(
-    descriptiveData[0].n
-  )} responden, variabel ${descriptiveData[0].variable} memiliki rata-rata sebesar ${formatNumber(
-    descriptiveData[0].mean,
-    3
-  )} dengan standar deviasi ${formatNumber(descriptiveData[0].stdDev, 3)}. Variabel ${
-    descriptiveData[1].variable
-  } memiliki nilai rata-rata sebesar ${formatNumber(
-    descriptiveData[1].mean,
-    3
-  )} dengan standar deviasi ${formatNumber(descriptiveData[1].stdDev, 3)}. Sementara itu, variabel ${
-    descriptiveData[2].variable
-  } mencatatkan rata-rata sebesar ${formatNumber(
-    descriptiveData[2].mean,
-    3
-  )} dan standar deviasi ${formatNumber(
-    descriptiveData[2].stdDev,
-    3
-  )}. Seluruh variabel penelitian menunjukkan kecenderungan skor dalam kategori baik hingga sangat baik pada skala pengukuran.`,
+  descriptive: `Berdasarkan analisis statistik deskriptif terhadap 120 responden, variabel Kualitas Layanan (X1) memiliki rata-rata sebesar 2,843 dengan standar deviasi 1,103. Variabel Kepuasan Pelanggan (X2) memiliki nilai rata-rata sebesar 3,047 dengan standar deviasi 1,120. Sementara itu, variabel Loyalitas Pelanggan (Y) mencatatkan rata-rata sebesar 3,067 dan standar deviasi 1,204. Seluruh variabel penelitian menunjukkan sebaran skor yang representatif pada skala pengukuran 1 sampai 5.`,
 
-  validity: `Pengujian validitas instrumen dilakukan dengan membandingkan nilai r hitung korelasi Pearson Product Moment terhadap nilai r tabel sebesar ${formatNumber(
-    rTabelValue,
-    4
-  )} pada taraf signifikansi 0,05 (df = 115). Seluruh item kuesioner (${formatNumber(
-    validityData.length
-  )} butir pernyataan) menunjukkan nilai r hitung yang berkisar antara ${formatNumber(
-    minValidityRHitung,
-    3
-  )} hingga ${formatNumber(
-    maxValidityRHitung,
-    3
-  )}, yang mana seluruhnya lebih besar dari nilai r tabel (${formatNumber(
-    rTabelValue,
-    4
-  )}). Dengan demikian, setiap butir pernyataan pada konstruk Kualitas Layanan, Kepuasan, dan Loyalitas dinyatakan valid dan layak digunakan sebagai alat pengumpulan data.`,
+  validity: `Pengujian validitas instrumen dilakukan dengan membandingkan nilai r hitung korelasi Pearson Product Moment terhadap nilai r tabel sebesar 0,1793 pada taraf signifikansi 0,05 (df = 118, N = 120). Seluruh item kuesioner (18 butir pernyataan) menunjukkan nilai r hitung yang berkisar antara 0,831 hingga 0,893, yang mana seluruhnya lebih besar dari nilai r tabel (0,1793). Dengan demikian, setiap butir pernyataan pada konstruk Kualitas Layanan (X1), Kepuasan Pelanggan (X2), dan Loyalitas Pelanggan (Y) dinyatakan valid dan layak digunakan sebagai alat pengumpulan data.`,
 
-  reliability: `Uji reliabilitas terhadap ketiga konstruk penelitian menggunakan koefisien Cronbach's Alpha menghasilkan nilai reliabilitas yang sangat memuaskan di atas ambang batas 0,60 (maupun 0,70). Konstruk ${
-    reliabilityData[0].construct
-  } memperoleh nilai alpha sebesar ${formatNumber(
-    reliabilityData[0].cronbachAlpha,
-    3
-  )}, konstruk ${reliabilityData[1].construct} sebesar ${formatNumber(
-    reliabilityData[1].cronbachAlpha,
-    3
-  )}, dan konstruk ${reliabilityData[2].construct} sebesar ${formatNumber(
-    reliabilityData[2].cronbachAlpha,
-    3
-  )}. Hasil ini mengindikasikan bahwa seluruh instrumen memiliki konsistensi internal yang tinggi dan reliabel untuk pengukuran berulang.`,
+  reliability: `Uji reliabilitas terhadap ketiga konstruk penelitian menggunakan koefisien Cronbach's Alpha menghasilkan nilai reliabilitas yang memenuhi kriteria reliabilitas (alfa Cronbach > 0,70). Konstruk Kualitas Layanan (X1) memperoleh nilai alpha sebesar 0,923, konstruk Kepuasan Pelanggan (X2) sebesar 0,931, dan konstruk Loyalitas Pelanggan (Y) sebesar 0,945. Hasil ini mengindikasikan bahwa seluruh instrumen memiliki konsistensi internal yang tinggi dan reliabel untuk pengukuran berulang.`,
 
-  normality: `Uji normalitas residual dilakukan menggunakan uji Kolmogorov-Smirnov pada model regresi terestimasi. Nilai statistik uji Kolmogorov-Smirnov yang diperoleh adalah sebesar ${formatNumber(
-    normalityData[0].statistic,
-    3
-  )} dengan nilai signifikansi (p-value) sebesar ${formatNumber(
-    normalityData[0].pValue,
-    3
-  )}. Karena nilai signifikansi tersebut lebih besar dari tingkat signifikansi α = 0,05, dapat disimpulkan bahwa data residual terdistribusi secara normal dan asumsi normalitas terpenuhi.`,
+  normality: `Uji normalitas residual dilakukan menggunakan uji Kolmogorov-Smirnov pada model regresi terestimasi (N = 120). Nilai statistik uji Kolmogorov-Smirnov yang diperoleh adalah sebesar 0,046 dengan nilai signifikansi (p-value) sebesar 0,950. Karena nilai signifikansi tersebut lebih besar dari tingkat signifikansi α = 0,05, dapat disimpulkan bahwa data residual terdistribusi secara normal dan asumsi normalitas terpenuhi.`,
 
-  multicollinearity: `Uji multikolinearitas bertujuan menguji apakah ditemukan korelasi antar variabel independen dalam model regresi. Nilai tolerance untuk kedua variabel independen (${
-    multicollinearityData[0].variable
-  } dan ${multicollinearityData[1].variable}) adalah ${formatNumber(
-    multicollinearityData[0].tolerance,
-    3
-  )} yang berada di atas 0,10. Selain itu, nilai Variance Inflation Factor (VIF) untuk kedua variabel adalah ${formatNumber(
-    multicollinearityData[0].vif,
-    3
-  )} yang jauh di bawah ambang batas 10,00. Dengan demikian, model regresi dinyatakan terbebas dari masalah multikolinearitas.`,
+  multicollinearity: `Uji multikolinearitas bertujuan menguji apakah ditemukan korelasi tinggi antar variabel independen dalam model regresi. Nilai tolerance untuk kedua variabel independen (Kualitas Layanan (X1) dan Kepuasan Pelanggan (X2)) adalah 0,709 yang berada di atas 0,10. Selain itu, nilai Variance Inflation Factor (VIF) untuk kedua variabel adalah 1,410 yang jauh di bawah ambang batas 10,00. Dengan demikian, model regresi dinyatakan terbebas dari masalah multikolinearitas.`,
 
-  heteroscedasticity: `Pengujian gejala heteroskedastisitas dilakukan menggunakan uji Glejser dengan meregresikan nilai residual absolut terhadap masing-masing variabel bebas. Nilai signifikansi uji Glejser untuk ${
-    heteroscedasticityData[0].variable
-  } adalah ${formatNumber(
-    heteroscedasticityData[0].pValue,
-    3
-  )} (t hitung = ${formatNumber(
-    heteroscedasticityData[0].tHitung,
-    3
-  )}) dan untuk ${heteroscedasticityData[1].variable} adalah ${formatNumber(
-    heteroscedasticityData[1].pValue,
-    3
-  )} (t hitung = ${formatNumber(
-    heteroscedasticityData[1].tHitung,
-    3
-  )}). Karena kedua nilai signifikansi lebih besar dari 0,05, maka tidak terdapat gejala heteroskedastisitas pada model regresi yang digunakan.`,
+  heteroscedasticity: `Pengujian gejala heteroskedastisitas dilakukan menggunakan uji Glejser dengan meregresikan nilai residual absolut terhadap masing-masing variabel bebas. Nilai signifikansi uji Glejser untuk Kualitas Layanan (X1) adalah 0,330 (t hitung = 0,978) dan untuk Kepuasan Pelanggan (X2) adalah 0,953 (t hitung = -0,060). Karena kedua nilai signifikansi lebih besar dari 0,05, maka tidak terdapat gejala heteroskedastisitas pada model regresi yang digunakan.`,
 
-  regression: `Persamaan regresi linier berganda yang dihasilkan adalah Y = ${formatNumber(
-    regressionData[0].coefficient,
-    3
-  )} + ${formatNumber(regressionData[1].coefficient, 3)}X1 + ${formatNumber(
-    regressionData[2].coefficient,
-    3
-  )}X2. Pengujian parsial (uji t) menunjukkan bahwa variabel ${
-    regressionData[1].variable
-  } berpengaruh positif dan signifikan terhadap Loyalitas Pelanggan dengan t hitung sebesar ${formatNumber(
-    regressionData[1].tHitung,
-    3
-  )} dan nilai signifikansi ${formatNumber(
-    regressionData[1].pValue,
-    3
-  )} < 0,05. Demikian pula, variabel ${
-    regressionData[2].variable
-  } berpengaruh positif dan signifikan terhadap Loyalitas Pelanggan dengan t hitung sebesar ${formatNumber(
-    regressionData[2].tHitung,
-    3
-  )} dan signifikansi ${formatNumber(
-    regressionData[2].pValue,
-    3
-  )} < 0,05. Nilai koefisien positif menunjukkan bahwa peningkatan kualitas layanan dan kepuasan secara langsung mendorong peningkatan loyalitas pelanggan.`,
+  regression: `Persamaan regresi linier berganda yang dihasilkan adalah Y = 0,380 + 0,484X1 + 0,430X2. Pengujian parsial (uji t) menunjukkan bahwa variabel Kualitas Layanan (X1) berpengaruh positif dan signifikan terhadap Loyalitas Pelanggan (Y) dengan t hitung sebesar 6,000 dan nilai signifikansi 0,000 < 0,05. Demikian pula, variabel Kepuasan Pelanggan (X2) berpengaruh positif dan signifikan terhadap Loyalitas Pelanggan (Y) dengan t hitung sebesar 5,422 dan signifikansi 0,000 < 0,05. Nilai koefisien positif menunjukkan bahwa peningkatan kualitas layanan dan kepuasan pelanggan berpengaruh positif dan signifikan terhadap loyalitas pelanggan.`,
 
-  fTest: `Uji signifikansi simultan (uji F) menghasilkan nilai F hitung sebesar ${formatNumber(
-    fTestData.fHitung,
-    3
-  )} yang lebih besar dari nilai F tabel sebesar ${formatNumber(
-    fTestData.fTabel,
-    3
-  )} dengan nilai signifikansi sebesar ${formatNumber(
-    fTestData.pValue,
-    3
-  )} < 0,05. Hal ini membuktikan bahwa Kualitas Layanan (X1) dan Kepuasan Pelanggan (X2) secara serempak atau bersama-sama berpengaruh signifikan terhadap Loyalitas Pelanggan (Y). Model regresi yang dibangun terbukti fit dan layak untuk menjelaskan variasi variabel terikat.`,
+  fTest: `Uji signifikansi simultan (uji F) dengan N = 120 dan 2 prediktor menghasilkan nilai F hitung sebesar 70,824 yang lebih besar dari nilai F tabel sebesar 3,074 dengan nilai signifikansi sebesar 0,000 < 0,05. Hal ini membuktikan bahwa Kualitas Layanan (X1) dan Kepuasan Pelanggan (X2) secara serempak atau bersama-sama berpengaruh signifikan terhadap Loyalitas Pelanggan (Y). Model regresi yang dibangun terbukti fit dan layak untuk menjelaskan variasi variabel terikat.`,
 
-  determination: `Berdasarkan tabel koefisien determinasi, diperoleh nilai R Square sebesar ${formatNumber(
-    determinationData.rSquare,
-    3
-  )} dan Adjusted R Square sebesar ${formatNumber(
-    determinationData.adjustedRSquare,
-    3
-  )}. Hal ini mengindikasikan bahwa sebesar ${formatNumber(
-    determinationData.adjustedRSquare * 100,
-    1
-  )}% variasi pada loyalitas pelanggan dapat dijelaskan secara bersama oleh kualitas layanan dan kepuasan pelanggan. Sementara itu, sisa variasi sebesar ${formatNumber(
-    (1 - determinationData.adjustedRSquare) * 100,
-    1
-  )}% dipengaruhi oleh variabel lain di luar model penelitian ini. Nilai standar error estimasi adalah sebesar ${formatNumber(
-    determinationData.stdError,
-    3
-  )}.`,
+  determination: `Berdasarkan tabel koefisien determinasi (N = 120, k = 2), diperoleh nilai R Square sebesar 0,548 dan Adjusted R Square sebesar 0,540. Hal ini mengindikasikan bahwa sebesar 54,0% variasi pada Loyalitas Pelanggan (Y) dapat dijelaskan secara bersama oleh Kualitas Layanan (X1) dan Kepuasan Pelanggan (X2). Sementara itu, sisa variasi sebesar 46,0% dipengaruhi oleh variabel lain di luar model penelitian ini. Nilai standar error estimasi adalah sebesar 0,817.`,
 
-  correlation: `Analisis korelasi Pearson menunjukkan korelasi antara ${
-    correlationData[0].variable1
-  } dan ${correlationData[0].variable2} sebesar ${formatNumber(
-    correlationData[0].coefficient,
-    3
-  )} (kategori ${correlationData[0].strength}, p = ${formatNumber(
-    correlationData[0].pValue,
-    3
-  )}). Hubungan antara ${correlationData[1].variable1} dan ${
-    correlationData[1].variable2
-  } memiliki koefisien korelasi sebesar ${formatNumber(
-    correlationData[1].coefficient,
-    3
-  )} (kategori ${correlationData[1].strength}, p = ${formatNumber(
-    correlationData[1].pValue,
-    3
-  )}). Sedangkan korelasi antara ${correlationData[2].variable1} dan ${
-    correlationData[2].variable2
-  } mencapai ${formatNumber(
-    correlationData[2].coefficient,
-    3
-  )} (kategori ${correlationData[2].strength}, p = ${formatNumber(
-    correlationData[2].pValue,
-    3
-  )}). Seluruh pasangan variabel berkorelasi positif secara signifikan pada tingkat signifikansi 0,01.`,
+  correlation: `Analisis korelasi Pearson menunjukkan korelasi antara Kualitas Layanan (X1) dan Kepuasan Pelanggan (X2) sebesar 0,539 (kategori Sedang, p = 0,000). Hubungan antara Kualitas Layanan (X1) dan Loyalitas Pelanggan (Y) memiliki koefisien korelasi sebesar 0,679 (kategori Kuat, p = 0,000). Sedangkan korelasi antara Kepuasan Pelanggan (X2) dan Loyalitas Pelanggan (Y) mencapai 0,655 (kategori Kuat, p = 0,000). Seluruh pasangan variabel berkorelasi positif secara signifikan pada tingkat signifikansi 0,01.`,
 };
 
 export const mockResults: AnalysisResults = {
   id: 'result-1',
   projectId: 'project-1',
   dataVersionId: 'dv-2',
-  respondentCount: 117,
-  timestamp: '2024-10-01T14:30:00Z',
+  respondentCount: 120,
+  timestamp: '2026-10-13T14:30:00Z',
   engineVersion: ENGINE_VERSION,
   significanceLevel: 0.05,
   descriptive: descriptiveData,

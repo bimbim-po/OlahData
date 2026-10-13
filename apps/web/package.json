@@ -7,6 +7,7 @@
     "build": "next build",
     "build:export": "node scripts/build-export.mjs",
     "deploy:pages": "npx wrangler pages deploy out --project-name=olah-data --branch=main",
+    "test:stats": "npx tsx src/lib/__tests__/test-regression-formula.ts",
     "start": "next start",
     "lint": "eslint"
   },

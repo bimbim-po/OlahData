@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { formatNumber } from '@/lib/format';
-import { COPY } from '@/lib/constants';
+import { COPY } from '@/lib/copy';
 import type { DatasetRow, DataIssue } from '@/lib/api/types';
 
 export interface TargetCell {

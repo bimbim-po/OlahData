@@ -24,7 +24,7 @@ export function Bab4Preview() {
     setCopied(true);
     toast({
       title: `${label} berhasil disalin`,
-      description: 'Format siap kamu tempelkan langsung ke dokumen Bab 4 skripsimu.',
+      description: 'Format siap Anda tempelkan langsung ke dokumen Bab 4 skripsi Anda.',
       variant: 'success',
     });
     setTimeout(() => setCopied(false), 2000);
@@ -52,7 +52,7 @@ export function Bab4Preview() {
       success = await copyWordTable({
         tableNumber: 'Tabel 4.15',
         title: 'Hasil Uji Regresi Linier Berganda',
-        note: 'F = 48,652, R² = 0,460, F Tabel = 3,076',
+        note: 'N = 120 responden, k = 2 prediktor, F Hitung = 70,824, R² = 0,548, Adjusted R² = 0,540, F Tabel = 3,074',
         columns,
         rows,
       });
@@ -72,7 +72,7 @@ export function Bab4Preview() {
       success = await copyWordTable({
         tableNumber: 'Tabel 4.8',
         title: 'Hasil Uji Validitas Item Variabel Kualitas Layanan (X1)',
-        note: 'N = 117 responden',
+        note: 'N = 120 responden, r Tabel (α=0,05, df=118) = 0,1793',
         columns,
         rows,
       });
@@ -189,12 +189,12 @@ export function Bab4Preview() {
         {/* Lapis 2: Table Section */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span className="font-semibold text-foreground">
+            <h3 className="font-semibold text-foreground text-xs sm:text-sm">
               {activeTab === 'regression'
                 ? 'Tabel 4.15 Hasil Analisis Regresi Linier Berganda'
-                : 'Tabel 4.8 Hasil Uji Validitas Item Kuesioner'}
-            </span>
-            <span className="text-[11px]">Format Baku APA 7th Edition</span>
+                : 'Tabel 4.8 Hasil Uji Validitas Item Variabel Kualitas Layanan (X1)'}
+            </h3>
+            <span className="text-[11px] whitespace-nowrap">Format Baku APA 7th Edition</span>
           </div>
 
           <div className="overflow-x-auto border border-border rounded-[6px] bg-card">
@@ -203,11 +203,11 @@ export function Bab4Preview() {
                 <thead>
                   <tr className="border-t-2 border-b border-foreground text-foreground font-semibold">
                     <th className="py-2 px-3">Variabel</th>
-                    <th className="py-2 px-3 text-right">Koefisien (B)</th>
-                    <th className="py-2 px-3 text-right">Std. Error</th>
-                    <th className="py-2 px-3 text-right">t Hitung</th>
-                    <th className="py-2 px-3 text-right">Sig. (p)</th>
-                    <th className="py-2 px-3 text-center">Keterangan</th>
+                    <th className="py-2 px-3 text-right whitespace-nowrap">Koefisien (B)</th>
+                    <th className="py-2 px-3 text-right whitespace-nowrap">Std. Error</th>
+                    <th className="py-2 px-3 text-right whitespace-nowrap">t Hitung</th>
+                    <th className="py-2 px-3 text-right whitespace-nowrap">Sig. (p)</th>
+                    <th className="py-2 px-3 text-center whitespace-nowrap">Keterangan</th>
                   </tr>
                 </thead>
                 <tbody className="tabular-nums">
@@ -220,12 +220,12 @@ export function Bab4Preview() {
 
                     return (
                       <tr key={i} className="border-b border-border hover:bg-muted/30 transition-colors">
-                        <td className="py-2 px-3 font-medium text-foreground">
+                        <td className="py-2 px-3 font-medium text-foreground whitespace-nowrap">
                           {row.variable}
                         </td>
                         <td
                           className={cn(
-                            'py-2 px-3 text-right transition-colors cursor-pointer',
+                            'py-2 px-3 text-right transition-colors cursor-pointer whitespace-nowrap',
                             isBMatched && 'bg-[#FFE14D] text-[#243044] font-bold ring-2 ring-[#FFE14D] rounded-[4px]'
                           )}
                           onMouseEnter={() => setActiveNumber(bStr)}
@@ -234,12 +234,12 @@ export function Bab4Preview() {
                         >
                           {bStr}
                         </td>
-                        <td className="py-2 px-3 text-right text-muted-foreground">
+                        <td className="py-2 px-3 text-right text-muted-foreground whitespace-nowrap">
                           {formatNumber(row.stdError, 3)}
                         </td>
                         <td
                           className={cn(
-                            'py-2 px-3 text-right font-medium transition-colors cursor-pointer',
+                            'py-2 px-3 text-right font-medium transition-colors cursor-pointer whitespace-nowrap',
                             isTMatched && 'bg-[#FFE14D] text-[#243044] font-bold ring-2 ring-[#FFE14D] rounded-[4px]'
                           )}
                           onMouseEnter={() => setActiveNumber(tStr)}
@@ -248,10 +248,10 @@ export function Bab4Preview() {
                         >
                           {tStr}
                         </td>
-                        <td className="py-2 px-3 text-right text-foreground">
+                        <td className="py-2 px-3 text-right text-foreground whitespace-nowrap">
                           {pStr}
                         </td>
-                        <td className="py-2 px-3 text-center">
+                        <td className="py-2 px-3 text-center whitespace-nowrap">
                           <span className="text-[11px] font-semibold text-[#0E4331] bg-[#BFEBD9] px-2 py-0.5 rounded-[4px]">
                             Signifikan
                           </span>
@@ -261,11 +261,13 @@ export function Bab4Preview() {
                   })}
                   <tr className="border-b-2 border-foreground bg-muted/20 text-xs text-muted-foreground">
                     <td colSpan={6} className="py-2 px-3">
-                      <div className="flex flex-wrap gap-4 text-xs tabular-nums">
-                        <span>F Hitung = <strong>48,652</strong> (Sig = 0,000)</span>
-                        <span>R² = <strong>0,460</strong></span>
-                        <span>Adjusted R² = <strong>0,451</strong></span>
-                        <span>F Tabel = <strong>3,076</strong></span>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs tabular-nums text-foreground/90">
+                        <span className="whitespace-nowrap">N = <strong>120</strong></span>
+                        <span className="whitespace-nowrap">Jumlah Prediktor (k) = <strong>2</strong></span>
+                        <span className="whitespace-nowrap">F Hitung = <strong>70,824</strong> (Sig = 0,000)</span>
+                        <span className="whitespace-nowrap">R² = <strong>0,548</strong></span>
+                        <span className="whitespace-nowrap">Adjusted R² = <strong>0,540</strong></span>
+                        <span className="whitespace-nowrap">F Tabel = <strong>3,074</strong></span>
                       </div>
                     </td>
                   </tr>
@@ -276,9 +278,9 @@ export function Bab4Preview() {
                 <thead>
                   <tr className="border-t-2 border-b border-foreground text-foreground font-semibold">
                     <th className="py-2 px-3">Item Pernyataan</th>
-                    <th className="py-2 px-3 text-right">r Hitung</th>
-                    <th className="py-2 px-3 text-right">r Tabel (α=0,05)</th>
-                    <th className="py-2 px-3 text-center">Status</th>
+                    <th className="py-2 px-3 text-right whitespace-nowrap">r Hitung</th>
+                    <th className="py-2 px-3 text-right whitespace-nowrap">r Tabel (α=0,05)</th>
+                    <th className="py-2 px-3 text-center whitespace-nowrap">Status</th>
                   </tr>
                 </thead>
                 <tbody className="tabular-nums">
@@ -288,12 +290,12 @@ export function Bab4Preview() {
 
                     return (
                       <tr key={i} className="border-b border-border hover:bg-muted/30 transition-colors">
-                        <td className="py-2 px-3 font-medium text-foreground">
+                        <td className="py-2 px-3 font-medium text-foreground whitespace-nowrap">
                           {row.item} (Indikator #{i + 1})
                         </td>
                         <td
                           className={cn(
-                            'py-2 px-3 text-right transition-colors cursor-pointer',
+                            'py-2 px-3 text-right transition-colors cursor-pointer whitespace-nowrap',
                             matched && 'bg-[#FFE14D] text-[#243044] font-bold ring-2 ring-[#FFE14D] rounded-[4px]'
                           )}
                           onMouseEnter={() => setActiveNumber(rStr)}
@@ -302,10 +304,10 @@ export function Bab4Preview() {
                         >
                           {rStr}
                         </td>
-                        <td className="py-2 px-3 text-right text-muted-foreground">
+                        <td className="py-2 px-3 text-right text-muted-foreground whitespace-nowrap">
                           {formatNumber(row.rTabel, 4)}
                         </td>
-                        <td className="py-2 px-3 text-center">
+                        <td className="py-2 px-3 text-center whitespace-nowrap">
                           <span className="text-[11px] font-semibold text-[#0E4331] bg-[#BFEBD9] px-2 py-0.5 rounded-[4px]">
                             Valid
                           </span>
@@ -313,6 +315,15 @@ export function Bab4Preview() {
                       </tr>
                     );
                   })}
+                  <tr className="border-b-2 border-foreground bg-muted/20 text-xs text-muted-foreground">
+                    <td colSpan={4} className="py-2.5 px-3">
+                      <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs tabular-nums text-foreground/90">
+                        <span className="whitespace-nowrap">N = <strong>120</strong> responden</span>
+                        <span className="whitespace-nowrap">Derajat Kebebasan (df) = <strong>118</strong></span>
+                        <span className="whitespace-nowrap">r Tabel (α=0,05) = <strong>0,1793</strong></span>
+                      </div>
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             )}

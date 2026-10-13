@@ -91,13 +91,13 @@ export function ExplanationBox({
 
       toast({
         title: COPY.layers.copied,
-        description: 'Teks penjelasan berformat Word berhasil disalin. Tempelkan (Ctrl+V) langsung ke pembahasan Bab 4 skripsimu.',
+        description: 'Teks penjelasan berformat Word berhasil disalin. Tempelkan (Ctrl+V) langsung ke pembahasan Bab 4 skripsi Anda.',
         variant: 'success',
       });
     } catch {
       toast({
         title: 'Gagal menyalin penjelasan',
-        description: 'Periksa izin papan klip pada perambanmu.',
+        description: 'Periksa izin papan klip pada peramban Anda.',
         variant: 'error',
       });
     }
