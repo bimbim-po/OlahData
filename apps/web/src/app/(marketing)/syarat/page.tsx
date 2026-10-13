@@ -5,6 +5,8 @@ import { APP_NAME, BUILD_DATE } from '@/lib/constants';
 import { COPY } from '@/lib/copy';
 import { CONTACT_EMAIL } from '@/lib/plans';
 import { Badge } from '@/components/ui/badge';
+import { Breadcrumb } from '@/components/breadcrumb';
+import { PageActions } from '@/components/page-actions';
 
 export const metadata = {
   title: `Syarat & Ketentuan Layanan | ${APP_NAME}`,
@@ -21,7 +23,10 @@ export const metadata = {
 
 export default function SyaratPage() {
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 space-y-10">
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 space-y-10">
+      {/* Breadcrumb */}
+      <Breadcrumb items={[{ label: 'Syarat & Ketentuan', href: '/syarat' }]} />
+
       {/* Header with Draft Badge */}
       <div className="space-y-4 border-b border-border pb-8">
         <div className="flex items-center gap-2">
@@ -35,7 +40,7 @@ export default function SyaratPage() {
         <h1 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
           Syarat & Ketentuan Penggunaan {APP_NAME}
         </h1>
-        <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+        <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-[70ch]">
           Harap membaca syarat dan ketentuan berikut secara saksama sebelum mengakses atau menggunakan platform {APP_NAME}. Dengan mendaftar atau menggunakan layanan, Anda menyetujui kewajiban etika riset dan batasan hukum berikut.
         </p>
       </div>
@@ -168,14 +173,13 @@ export default function SyaratPage() {
         </section>
       </div>
 
-      <div className="pt-6 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
-        <Link href="/privasi" className="hover:text-foreground underline">
-          ← Lihat Kebijakan Privasi
-        </Link>
-        <Link href="/" className="hover:text-foreground">
-          Kembali ke Beranda
-        </Link>
-      </div>
+      {/* PageActions Navigasi Halaman */}
+      <PageActions
+        prevHref="/privasi"
+        prevLabel="Kembali ke Kebijakan Privasi"
+        nextHref="/pernyataan-penggunaan"
+        nextLabel="Lanjut ke Panduan Penggunaan"
+      />
     </div>
   );
 }

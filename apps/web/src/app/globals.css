@@ -48,7 +48,16 @@
 }
 
 /* Base styles: Nyaman dibaca lama, ukuran isi 16px, tinggi baris longgar */
+html {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
+  max-width: 100%;
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;

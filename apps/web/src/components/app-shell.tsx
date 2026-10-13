@@ -18,6 +18,7 @@ import { APP_NAME, APP_VERSION } from '@/lib/constants';
 import { useAuthStore } from '@/stores/auth-store';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { LogoIcon } from '@/components/logo';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
@@ -35,39 +36,43 @@ interface AppShellProps {
 
 const NAV_ITEMS = [
   {
-    name: 'Meja Kerja',
+    name: 'Proyek',
     shortName: 'Proyek',
     href: '/app',
     icon: FolderKanban,
-    isActive: (pathname: string) => pathname === '/app' || (pathname.startsWith('/app/proyek') && pathname !== '/app/proyek/baru'),
+    isActive: (pathname: string) =>
+      pathname === '/app' ||
+      (pathname.startsWith('/app/proyek') && pathname !== '/app/proyek/baru'),
   },
   {
-    name: 'Analisis Baru',
-    shortName: 'Uji Baru',
+    name: 'Proyek baru',
+    shortName: 'Proyek baru',
     href: '/app/proyek/baru',
     icon: PlusCircle,
     isActive: (pathname: string) => pathname === '/app/proyek/baru',
   },
   {
-    name: 'Bantuan & Panduan',
-    shortName: 'Bantuan',
-    href: '/pernyataan-penggunaan',
-    icon: BookOpen,
-    isActive: (pathname: string) => pathname.startsWith('/pernyataan-penggunaan') || pathname.startsWith('/panduan'),
-  },
-  {
-    name: 'Langganan',
-    shortName: 'Paket',
+    name: 'Riwayat',
+    shortName: 'Riwayat',
     href: '/app/langganan',
     icon: CreditCard,
     isActive: (pathname: string) => pathname.startsWith('/app/langganan'),
   },
   {
     name: 'Pengaturan',
-    shortName: 'Akun',
+    shortName: 'Pengaturan',
     href: '/app/pengaturan',
     icon: Settings,
     isActive: (pathname: string) => pathname.startsWith('/app/pengaturan'),
+  },
+  {
+    name: 'Bantuan',
+    shortName: 'Bantuan',
+    href: '/pernyataan-penggunaan',
+    icon: BookOpen,
+    isActive: (pathname: string) =>
+      pathname.startsWith('/pernyataan-penggunaan') ||
+      pathname.startsWith('/panduan'),
   },
 ];
 
@@ -157,7 +162,7 @@ export function AppShell({ children }: AppShellProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col md:flex-row antialiased">
+    <div className="min-h-screen bg-background text-foreground flex flex-col md:flex-row antialiased w-full max-w-full overflow-x-hidden">
       {/* Desktop Sidebar (lg:w-64) & Tablet Rail (md:w-20 lg:hidden) */}
       <aside className="hidden md:flex flex-col border-r border-sidebar-border bg-sidebar-bg shrink-0 h-screen sticky top-0 transition-all duration-200 md:w-20 lg:w-64">
         {/* Top Logo & App Title */}
@@ -177,8 +182,21 @@ export function AppShell({ children }: AppShellProps) {
           </Link>
         </div>
 
+        {/* Tombol Proyek Baru Selalu Terlihat */}
+        <div className="p-3 lg:px-3 lg:pt-3 lg:pb-1">
+          <Button
+            asChild
+            className="w-full justify-center lg:justify-start gap-2.5 font-bold shadow-xs min-h-[44px] h-11 rounded-lg"
+          >
+            <Link href="/app/proyek/baru" title="Mulai Proyek Baru">
+              <PlusCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
+              <span className="hidden lg:inline">Proyek Baru</span>
+            </Link>
+          </Button>
+        </div>
+
         {/* Navigation Links */}
-        <nav className="flex-1 px-2 lg:px-3 py-4 space-y-1.5 overflow-y-auto">
+        <nav className="flex-1 px-2 lg:px-3 py-2 space-y-1 overflow-y-auto">
           {NAV_ITEMS.map((item) => {
             const active = item.isActive(pathname);
             const Icon = item.icon;
@@ -228,7 +246,7 @@ export function AppShell({ children }: AppShellProps) {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 w-full max-w-full overflow-x-hidden">
         {/* Top Header */}
         <header className="sticky top-0 z-30 h-14 sm:h-16 border-b border-border bg-card/90 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-2">
           {/* Back Button (Mobile & Tablet) + Breadcrumbs / Title */}
@@ -317,6 +335,7 @@ export function AppShell({ children }: AppShellProps) {
       >
         {NAV_ITEMS.map((item) => {
           const active = item.isActive(pathname);
+          const isCreate = item.href === '/app/proyek/baru';
           const Icon = item.icon;
           return (
             <Link
@@ -328,8 +347,25 @@ export function AppShell({ children }: AppShellProps) {
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <div className={`p-1 rounded-full transition-colors ${active ? 'bg-primary/10' : ''}`}>
-                <Icon className={`h-5 w-5 ${active ? 'text-primary' : 'text-muted-foreground'}`} />
+              <div
+                className={`p-1.5 rounded-full transition-colors ${
+                  isCreate
+                    ? 'bg-primary text-primary-foreground shadow-xs'
+                    : active
+                    ? 'bg-primary/10 text-primary'
+                    : ''
+                }`}
+              >
+                <Icon
+                  className={`h-5 w-5 ${
+                    isCreate
+                      ? 'text-primary-foreground'
+                      : active
+                      ? 'text-primary'
+                      : 'text-muted-foreground'
+                  }`}
+                  aria-hidden="true"
+                />
               </div>
               <span className="truncate max-w-[64px]">{item.shortName}</span>
             </Link>

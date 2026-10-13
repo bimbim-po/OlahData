@@ -5,6 +5,8 @@ import { APP_NAME, BUILD_DATE } from '@/lib/constants';
 import { COPY } from '@/lib/copy';
 import { PLANS } from '@/lib/plans';
 import { Badge } from '@/components/ui/badge';
+import { Breadcrumb } from '@/components/breadcrumb';
+import { PageActions } from '@/components/page-actions';
 
 export const metadata = {
   title: `Kebijakan Privasi Perlindungan Riset | ${APP_NAME}`,
@@ -25,7 +27,10 @@ export default function PrivasiPage() {
   const thesisRetention = PLANS.find((p) => p.id === 'thesis')?.retentionDays ?? 730;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 space-y-10">
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 space-y-10">
+      {/* Breadcrumb */}
+      <Breadcrumb items={[{ label: 'Kebijakan Privasi', href: '/privasi' }]} />
+
       {/* Header with Draft Badge */}
       <div className="space-y-4 border-b border-border pb-8">
         <div className="flex items-center gap-2">
@@ -39,7 +44,7 @@ export default function PrivasiPage() {
         <h1 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
           Kebijakan Privasi {APP_NAME}
         </h1>
-        <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+        <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-[70ch]">
           Dokumen ini menjabarkan komitmen {APP_NAME} dalam melindungi data pribadi pengguna dan menjaga kerahasiaan dataset responden survei penelitian skripsi Anda, sejalan dengan prinsip perlindungan data akademik dan Undang-Undang Perlindungan Data Pribadi (UU PDP).
         </p>
       </div>
@@ -158,14 +163,13 @@ export default function PrivasiPage() {
         </section>
       </div>
 
-      <div className="pt-6 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
-        <Link href="/syarat" className="hover:text-foreground underline">
-          Lihat Syarat & Ketentuan →
-        </Link>
-        <Link href="/" className="hover:text-foreground">
-          Kembali ke Beranda
-        </Link>
-      </div>
+      {/* PageActions Navigasi Halaman */}
+      <PageActions
+        prevHref="/"
+        prevLabel="Kembali ke Beranda"
+        nextHref="/syarat"
+        nextLabel="Lanjut ke Syarat & Ketentuan"
+      />
     </div>
   );
 }

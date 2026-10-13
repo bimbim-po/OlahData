@@ -30,6 +30,7 @@ import { ExplanationBox } from '@/components/explanation-box';
 import { AssumptionAlert } from '@/components/assumption-alert';
 import { TraceabilityPanel } from '@/components/traceability-panel';
 import { ExportDialog } from '@/components/export-dialog';
+import { PageActions } from '@/components/page-actions';
 import { useToast } from '@/components/ui/toaster';
 import { formatNumber, formatDateTime } from '@/lib/format';
 import { getProject, getResult } from '@/lib/api';
@@ -782,21 +783,21 @@ export default function HasilPage() {
     <div className="min-h-screen bg-background text-foreground py-6 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Top Breadcrumb & Navigation */}
-        <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground border-b border-border pb-3">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground border-b border-border pb-3">
+          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
             <Link
-              href="/app/proyek"
-              className="hover:text-primary transition-colors flex items-center gap-1 font-medium"
+              href="/app"
+              className="hover:text-primary transition-colors flex items-center gap-1 font-medium shrink-0"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               <span>Daftar Proyek</span>
             </Link>
             <span>/</span>
-            <span className="text-foreground font-semibold truncate max-w-[200px] sm:max-w-xs">
+            <span className="text-foreground font-semibold truncate max-w-[120px] sm:max-w-xs">
               {project?.title || 'Detail Analisis'}
             </span>
             <span>/</span>
-            <span className="text-primary font-medium">Hasil Bab 4</span>
+            <span className="text-primary font-medium shrink-0">Hasil Bab 4</span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -887,32 +888,34 @@ export default function HasilPage() {
           <main className="lg:col-span-8 xl:col-span-9 space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               {/* Tab Navigation List */}
-              <TabsList className="bg-card border border-border p-1 gap-1">
-                <TabsTrigger value="descriptive" className="gap-1.5">
-                  <BarChart3 className="h-3.5 w-3.5" />
-                  <span>Deskriptif</span>
-                </TabsTrigger>
-                <TabsTrigger value="validity" className="gap-1.5">
-                  <CheckSquare className="h-3.5 w-3.5" />
-                  <span>Validitas</span>
-                </TabsTrigger>
-                <TabsTrigger value="reliability" className="gap-1.5">
-                  <Layers className="h-3.5 w-3.5" />
-                  <span>Reliabilitas</span>
-                </TabsTrigger>
-                <TabsTrigger value="assumptions" className="gap-1.5">
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  <span>Asumsi Klasik</span>
-                </TabsTrigger>
-                <TabsTrigger value="regression" className="gap-1.5">
-                  <TrendingUp className="h-3.5 w-3.5" />
-                  <span>Regresi Linier</span>
-                </TabsTrigger>
-                <TabsTrigger value="correlation" className="gap-1.5">
-                  <GitCompare className="h-3.5 w-3.5" />
-                  <span>Korelasi</span>
-                </TabsTrigger>
-              </TabsList>
+              <div className="w-full overflow-x-auto pb-1 -mb-1">
+                <TabsList className="bg-card border border-border p-1 gap-1 min-w-max">
+                  <TabsTrigger value="descriptive" className="gap-1.5">
+                    <BarChart3 className="h-3.5 w-3.5" />
+                    <span>Deskriptif</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="validity" className="gap-1.5">
+                    <CheckSquare className="h-3.5 w-3.5" />
+                    <span>Validitas</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="reliability" className="gap-1.5">
+                    <Layers className="h-3.5 w-3.5" />
+                    <span>Reliabilitas</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="assumptions" className="gap-1.5">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    <span>Asumsi Klasik</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="regression" className="gap-1.5">
+                    <TrendingUp className="h-3.5 w-3.5" />
+                    <span>Regresi Linier</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="correlation" className="gap-1.5">
+                    <GitCompare className="h-3.5 w-3.5" />
+                    <span>Korelasi</span>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
               {/* 1. STATISTIK DESKRIPTIF */}
               <TabsContent value="descriptive" className="space-y-6 mt-4">
@@ -1247,6 +1250,14 @@ export default function HasilPage() {
             </div>
           </aside>
         </div>
+
+        {/* PageActions Navigasi Halaman */}
+        <PageActions
+          prevHref={`/app/proyek/${projectId}/analisis`}
+          prevLabel="Kembali ke Pengaturan Analisis"
+          nextHref="/app"
+          nextLabel="Selesai & Buka Daftar Proyek"
+        />
       </div>
 
       {/* Export Dialog */}

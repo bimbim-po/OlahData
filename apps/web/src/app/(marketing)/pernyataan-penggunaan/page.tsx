@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/components/ui/toaster';
+import { Breadcrumb } from '@/components/breadcrumb';
+import { PageActions } from '@/components/page-actions';
 
 export function PernyataanPenggunaanPage() {
   const [copied, setCopied] = React.useState(false);
@@ -28,7 +30,10 @@ export function PernyataanPenggunaanPage() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 space-y-12">
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 space-y-10">
+      {/* Breadcrumb */}
+      <Breadcrumb items={[{ label: 'Panduan Penggunaan Alat', href: '/pernyataan-penggunaan' }]} />
+
       {/* Header */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
@@ -42,7 +47,7 @@ export function PernyataanPenggunaanPage() {
         <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-foreground">
           {COPY.toolStatement.title}
         </h1>
-        <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
+        <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-[70ch]">
           {COPY.toolStatement.description}
         </p>
       </div>
@@ -161,23 +166,13 @@ export function PernyataanPenggunaanPage() {
         </div>
       </section>
 
-      {/* CTA Box */}
-      <div className="rounded-2xl border border-border bg-muted/40 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
-          <h4 className="font-serif font-bold text-base text-foreground">
-            Sudah siap melakukan uji statistik kuesioner?
-          </h4>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            Mulai proyek baru dan dapatkan lembar jejak hitung otomatis.
-          </p>
-        </div>
-        <Button asChild className="gap-2 shrink-0">
-          <Link href="/app/proyek/baru">
-            <span>Buka Proyek Baru</span>
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </Button>
-      </div>
+      {/* PageActions Navigasi Halaman */}
+      <PageActions
+        prevHref="/syarat"
+        prevLabel="Kembali ke Syarat & Ketentuan"
+        nextHref="/app/proyek/baru?contoh=1"
+        nextLabel="Coba dengan Data Contoh"
+      />
     </div>
   );
 }

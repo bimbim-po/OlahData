@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { COMPARISON_SECTIONS, INSTITUTION_PLAN, PLANS } from '@/lib/plans';
+import { Breadcrumb } from '@/components/breadcrumb';
+import { PageActions } from '@/components/page-actions';
 
 export default function HargaPage() {
   const pricingFaq = [
@@ -26,7 +28,10 @@ export default function HargaPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 space-y-12">
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8 space-y-10">
+      {/* Breadcrumb */}
+      <Breadcrumb items={[{ label: 'Pilihan Harga', href: '/harga' }]} />
+
       {/* Title & Disclaimer */}
       <div className="text-center max-w-2xl mx-auto space-y-2.5">
         <div className="inline-flex items-center gap-1.5 border border-border bg-muted/60 px-2 py-0.5 text-xs text-foreground font-medium rounded-xs">
@@ -271,13 +276,15 @@ export default function HargaPage() {
         <p className="text-xs text-muted-foreground mb-4">
           Daftar gratis tanpa kartu kredit dan buka meja kerja analisis Anda sekarang.
         </p>
-        <Button asChild size="default" className="font-semibold text-xs px-5">
-          <Link href="/daftar">
-            <span>Coba Gratis</span>
-            <ArrowRight className="h-3.5 w-3.5 ml-1" />
-          </Link>
-        </Button>
       </div>
+
+      {/* PageActions Navigasi Halaman */}
+      <PageActions
+        prevHref="/"
+        prevLabel="Kembali ke Beranda"
+        nextHref="/daftar"
+        nextLabel="Lanjut Daftar Gratis"
+      />
     </div>
   );
 }

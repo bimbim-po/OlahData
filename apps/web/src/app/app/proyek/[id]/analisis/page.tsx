@@ -168,39 +168,39 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
     <div className="min-h-screen bg-background pb-16">
       {/* Top Breadcrumb & Project Header */}
       <div className="border-b border-border bg-card/60 backdrop-blur-xs sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <Link
               href={`/app/proyek/${projectId}`}
-              className="p-1.5 rounded-lg border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer shrink-0"
               title="Kembali ke Ringkasan Proyek"
             >
               <ArrowLeft className="w-4 h-4" />
             </Link>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground font-mono">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[11px] text-muted-foreground font-mono">
                   Proyek #{projectId}
                 </span>
-                <span className="text-xs text-muted-foreground">•</span>
-                <span className="text-xs font-medium text-primary">
+                <span className="text-[11px] text-muted-foreground">•</span>
+                <span className="text-[11px] font-medium text-primary">
                   Wisaya Analisis
                 </span>
                 {usingSampleData && (
-                  <Badge variant="amber" className="text-[10px] py-0 px-2">
+                  <Badge variant="amber" className="text-[10px] py-0 px-1.5">
                     {COPY.badges.sampleData}
                   </Badge>
                 )}
               </div>
-              <h1 className="text-sm sm:text-base font-semibold text-foreground truncate max-w-md sm:max-w-xl">
+              <h1 className="text-xs sm:text-base font-semibold text-foreground truncate">
                 {project?.title || 'Pengolahan Data Kuesioner'}
               </h1>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <Badge variant="outline" className="text-[11px] font-mono tabular-nums">
-              Versi: dv-{dataVersion}
+              dv-{dataVersion}
             </Badge>
           </div>
         </div>
@@ -232,20 +232,37 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
 
             <FileDropzone />
 
-            <div className="flex items-center justify-between pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
-              <span className="text-xs text-muted-foreground hidden sm:inline">
-                {COPY.reassurance.saved}
-              </span>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
               <Button
-                type="button"
+                asChild
+                variant="outline"
                 size="lg"
-                onClick={nextStep}
-                disabled={fileData.length === 0}
-                className="cursor-pointer font-semibold rounded-[10px] ml-auto min-h-[44px]"
+                className="cursor-pointer rounded-[10px] min-h-[44px]"
               >
-                Lanjut ke Validasi Data
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <Link href="/app">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Kembali ke Proyek
+                </Link>
               </Button>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                {fileData.length === 0 && (
+                  <span className="text-xs text-muted-foreground text-center sm:text-right font-medium">
+                    Unggah berkas kuesioner Anda terlebih dahulu untuk lanjut
+                  </span>
+                )}
+                <Button
+                  type="button"
+                  size="lg"
+                  onClick={nextStep}
+                  disabled={fileData.length === 0}
+                  className="cursor-pointer font-semibold rounded-[10px] min-h-[44px]"
+                  title={fileData.length === 0 ? 'Unggah berkas kuesioner Anda terlebih dahulu' : undefined}
+                >
+                  Lanjut ke Validasi Data
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -312,7 +329,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
             </div>
 
             {/* Navigation Buttons */}
-            <div className="flex items-center justify-between pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
               <Button
                 type="button"
                 variant="outline"
@@ -324,10 +341,10 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                 Kembali ke Unggah
               </Button>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                 {criticalErrorCount > 0 && (
-                  <span className="text-xs text-destructive font-medium hidden sm:inline">
-                    Selesaikan semua galat kritis untuk lanjut
+                  <span className="text-xs text-destructive text-center sm:text-right font-medium">
+                    Selesaikan semua galat kritis ({criticalErrorCount}) untuk lanjut
                   </span>
                 )}
                 <Button
@@ -336,6 +353,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                   onClick={nextStep}
                   disabled={criticalErrorCount > 0}
                   className="cursor-pointer font-semibold rounded-[10px] min-h-[44px]"
+                  title={criticalErrorCount > 0 ? `Terdapat ${criticalErrorCount} galat kritis yang perlu diselesaikan` : undefined}
                 >
                   Lanjut ke Petakan Variabel
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -364,7 +382,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
             />
 
             {/* Navigation Buttons */}
-            <div className="flex items-center justify-between pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
               <Button
                 type="button"
                 variant="outline"
@@ -376,10 +394,10 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                 Kembali ke Validasi
               </Button>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                 {!isMappingValid && (
-                  <span className="text-xs text-amber-600 dark:text-amber-400 font-medium hidden sm:inline">
-                    Diperlukan min. 1 variabel X dan 1 variabel Y
+                  <span className="text-xs text-amber-600 dark:text-amber-400 text-center sm:text-right font-medium">
+                    Diperlukan min. 1 variabel bebas (X) dan 1 variabel terikat (Y)
                   </span>
                 )}
                 <Button
@@ -388,6 +406,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                   onClick={nextStep}
                   disabled={!isMappingValid}
                   className="cursor-pointer font-semibold rounded-[10px] min-h-[44px]"
+                  title={!isMappingValid ? 'Petakan minimal 1 variabel bebas (X) dan 1 variabel terikat (Y)' : undefined}
                 >
                   Lanjut ke Pilih Uji
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -450,7 +469,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
             </div>
 
             {/* Navigation Buttons */}
-            <div className="flex items-center justify-between pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
               <Button
                 type="button"
                 variant="outline"
@@ -462,10 +481,10 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                 Kembali ke Pemetaan
               </Button>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                 {selectedTests.length === 0 && (
-                  <span className="text-xs text-destructive font-medium hidden sm:inline">
-                    Pilih minimal 1 uji statistik
+                  <span className="text-xs text-destructive text-center sm:text-right font-medium">
+                    Pilih minimal 1 uji statistik untuk lanjut
                   </span>
                 )}
                 <Button
@@ -474,6 +493,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                   onClick={nextStep}
                   disabled={selectedTests.length === 0}
                   className="cursor-pointer font-semibold rounded-[10px] min-h-[44px]"
+                  title={selectedTests.length === 0 ? 'Pilih minimal 1 uji statistik' : undefined}
                 >
                   Lanjut ke Ringkasan
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -681,7 +701,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
               </div>
             ) : (
               /* Ready to run CTA */
-              <div className="flex items-center justify-between pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
                 <Button
                   type="button"
                   variant="outline"

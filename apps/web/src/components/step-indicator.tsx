@@ -40,8 +40,8 @@ export function StepIndicator({
         </div>
       </div>
 
-      {/* Desktop / Tablet Stepper */}
-      <ol className="hidden md:flex items-center w-full justify-between gap-2 p-3.5 rounded-[16px] border border-border bg-card shadow-xs">
+      {/* Desktop Stepper */}
+      <ol className="hidden lg:flex items-center w-full justify-between gap-2 p-3.5 rounded-[16px] border border-border bg-card shadow-xs">
         {steps.map((label, index) => {
           const stepNum = index as WizardStep;
           const isCompleted = currentStep > stepNum;
@@ -114,8 +114,8 @@ export function StepIndicator({
         })}
       </ol>
 
-      {/* Mobile Stepper */}
-      <div className="flex md:hidden items-center justify-between p-3.5 rounded-[16px] border border-border bg-card shadow-xs">
+      {/* Mobile & Tablet Stepper */}
+      <div className="flex lg:hidden items-center justify-between p-3.5 rounded-[16px] border border-border bg-card shadow-xs">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">
             {currentStep + 1}

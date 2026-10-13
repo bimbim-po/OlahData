@@ -188,13 +188,13 @@ export function Bab4Preview() {
       <div className="p-4 sm:p-6 space-y-5">
         {/* Lapis 2: Table Section */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-xs text-muted-foreground">
             <h3 className="font-semibold text-foreground text-xs sm:text-sm">
               {activeTab === 'regression'
                 ? 'Tabel 4.15 Hasil Analisis Regresi Linier Berganda'
                 : 'Tabel 4.8 Hasil Uji Validitas Item Variabel Kualitas Layanan (X1)'}
             </h3>
-            <span className="text-[11px] whitespace-nowrap">Format Baku APA 7th Edition</span>
+            <span className="text-[11px] whitespace-normal sm:whitespace-nowrap">Format Baku APA 7th Edition</span>
           </div>
 
           <div className="overflow-x-auto border border-border rounded-[6px] bg-card">

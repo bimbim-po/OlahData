@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { Navbar } from '@/components/navbar';
-import { Footer } from '@/components/footer';
+import { SiteHeader } from '@/components/site-header';
+import { SiteFooter } from '@/components/site-footer';
 
 export default function MarketingLayout({
   children,
@@ -9,11 +9,11 @@ export default function MarketingLayout({
 }) {
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
-      <Navbar />
-      <main className="flex-1">
+      <SiteHeader />
+      <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
         {children}
       </main>
-      <Footer />
+      <SiteFooter />
     </div>
   );
 }

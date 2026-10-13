@@ -21,6 +21,7 @@ import { Bab4Preview } from '@/components/bab4-preview';
 import { PricingCards } from '@/components/pricing-cards';
 import { cn } from '@/lib/utils';
 import { LiveDemo } from '@/components/live-demo';
+import { PageActions } from '@/components/page-actions';
 
 export const metadata: Metadata = {
   title: `${APP_NAME} — Olah Data Kuesioner Skripsi Kuantitatif Tanpa SPSS`,
@@ -37,7 +38,7 @@ export const metadata: Metadata = {
 
 export default function MarketingPage() {
   return (
-    <div className="flex flex-col gap-12 sm:gap-16 pb-16">
+    <div className="flex flex-col gap-16 sm:gap-20 lg:gap-24 pb-20">
       {/* 1. HERO 5 DETIK PERTAMA: DUA KOLOM DESKTOP & DEMO TRANSFORMATIF */}
       <section className="relative pt-4 sm:pt-6 lg:pt-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start lg:items-center">
@@ -308,6 +309,12 @@ export default function MarketingPage() {
             {COPY.reassurance.saved}
           </p>
         </div>
+
+        {/* PageActions Navigasi Halaman */}
+        <PageActions
+          nextHref="/harga"
+          nextLabel="Lihat Pilihan Harga"
+        />
       </section>
     </div>
   );
