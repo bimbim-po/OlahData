@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -28,8 +28,10 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-export default function MasukPage() {
+function MasukForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const lanjut = searchParams.get('lanjut') || '/app';
   const { toast } = useToast();
   const authLogin = useAuthStore((state) => state.login);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -40,6 +42,7 @@ export default function MasukPage() {
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
+    mode: 'onChange',
     defaultValues: {
       email: '',
       password: '',
@@ -56,7 +59,7 @@ export default function MasukPage() {
         description: `Selamat datang kembali, ${user.name}!`,
         variant: 'success',
       });
-      router.push('/app');
+      router.push(lanjut);
     } catch {
       toast({
         title: 'Gagal masuk',
@@ -75,6 +78,8 @@ export default function MasukPage() {
       variant: 'default',
     });
   };
+
+  const daftarHref = lanjut !== '/app' ? `/daftar?lanjut=${encodeURIComponent(lanjut)}` : '/daftar';
 
   return (
     <Card className="border-border bg-card shadow-sm rounded-2xl">
@@ -207,7 +212,7 @@ export default function MasukPage() {
         <p>
           {COPY.auth.noAccount}{' '}
           <Link
-            href="/daftar"
+            href={daftarHref}
             className="font-semibold text-primary underline underline-offset-4 hover:opacity-85"
           >
             {COPY.auth.daftar}
@@ -215,5 +220,20 @@ export default function MasukPage() {
         </p>
       </CardFooter>
     </Card>
+  );
+}
+
+export default function MasukPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <Card className="border-border bg-card shadow-sm rounded-2xl p-8 text-center">
+          <div className="h-6 w-32 bg-muted rounded mx-auto animate-pulse mb-4" />
+          <div className="h-10 w-full bg-muted/60 rounded animate-pulse" />
+        </Card>
+      }
+    >
+      <MasukForm />
+    </React.Suspense>
   );
 }

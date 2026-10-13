@@ -1,4 +1,5 @@
 import { APP_NAME } from './constants';
+import { PLANS } from './plans';
 
 export const COPY = {
   // Navigasi Utama
@@ -16,9 +17,9 @@ export const COPY = {
 
   // Beranda (Marketing & Landing)
   hero: {
-    title: 'Unggah data kuesionermu. Dapatkan tabel Bab 4 dan penjelasan yang bisa kamu jelaskan sendiri.',
-    subtitle: 'Angka dihitung program dengan rumus statistik baku, bukan AI. Setiap angka di naskah tersambung ke sel asalnya agar kamu paham saat bimbingan.',
-    ctaPrimary: 'Coba dengan data contoh',
+    title: 'Unggah data kuesioner Anda. Dapatkan tabel Bab 4 dan penjelasan yang bisa Anda jelaskan sendiri.',
+    subtitle: 'Angka dihitung program dengan rumus statistik baku, bukan AI. Setiap angka di naskah tersambung ke sel asalnya agar Anda paham saat bimbingan.',
+    ctaPrimary: 'Coba Gratis',
     ctaSecondary: 'Unggah berkas sendiri',
     microCopy: 'Data responden aman • Tanpa manipulasi • Format baku APA 7th',
   },
@@ -30,12 +31,12 @@ export const COPY = {
       {
         number: '1',
         title: 'Unggah berkas kuesioner',
-        description: 'Unggah lembar tabulasi kuesionermu dalam format Excel (.xlsx) atau CSV.',
+        description: 'Unggah lembar tabulasi kuesioner Anda dalam format Excel (.xlsx) atau CSV.',
       },
       {
         number: '2',
         title: 'Periksa data & petakan konstruk',
-        description: 'Sistem memeriksa kelengkapan data responden, lalu kamu mengelompokkan item pertanyaan ke variabel penelitian.',
+        description: 'Sistem memeriksa kelengkapan data responden, lalu Anda mengelompokkan butir pertanyaan ke variabel penelitian.',
       },
       {
         number: '3',
@@ -45,7 +46,7 @@ export const COPY = {
       {
         number: '4',
         title: 'Peroleh tabel Bab 4 & jejak hitung',
-        description: 'Tabel berstandar APA 7th dan narasi penjelasan angka tersambung siap kamu salin ke naskah skripsi.',
+        description: 'Tabel berstandar APA 7th dan draf penjelasan angka tersambung siap Anda salin ke naskah skripsi.',
       },
     ],
   },
@@ -75,15 +76,15 @@ export const COPY = {
     items: [
       {
         title: 'Tidak memanipulasi data responden',
-        description: 'Kami tidak membuat, mengubah, atau menyimulasikan data jawaban responden. Data harus murni dari lembar kuesioner penelitianmu.',
+        description: 'Kami tidak membuat, mengubah, atau menyimulasikan data jawaban responden. Data harus murni dari lembar kuesioner penelitian Anda.',
       },
       {
-        title: 'Tidak menulis naskah skripsi',
-        description: 'Kami menyediakan tabel baku dan penjelasan logika angka, bukan menyusun Bab 4 untukmu. Penjelasan berfungsi sebagai panduan agar kamu memahami makna angka saat sidang.',
+        title: 'Draf interpretasi wajib diperiksa mandiri',
+        description: 'OlahData menghitung angka dan menyusun draf interpretasi dari angka tersebut. Draf wajib Anda periksa dan tulis ulang dengan bahasa Anda sendiri.',
       },
       {
         title: 'Tidak menjamin kelulusan sidang',
-        description: 'Kebenaran hasil analisis bergantung pada kualitas instrumen dan metodologi penelitianmu. Selalu diskusikan tafsir hasil dengan dosen pembimbing.',
+        description: 'Kebenaran hasil analisis bergantung pada kualitas instrumen dan metodologi penelitian Anda. Selalu diskusikan tafsir hasil dengan dosen pembimbing.',
       },
     ],
   },
@@ -91,56 +92,10 @@ export const COPY = {
   // Harga & Paket
   pricing: {
     title: 'Pilihan paket meja kerja',
-    subtitle: 'Pilih akses yang sesuai dengan tahapan penyusunan skripsimu',
+    subtitle: 'Pilih akses yang sesuai dengan tahapan penyusunan skripsi Anda',
     disclaimer: 'Tarif simulasi pra-rilis, dapat disesuaikan sebelum peluncuran resmi.',
     campusNote: 'Untuk kerja sama program studi atau laboratorium: hubungi kami untuk paket institusi.',
-    plans: [
-      {
-        id: 'free',
-        name: 'Coba Gratis',
-        price: 0,
-        period: '',
-        features: [
-          '1 proyek aktif',
-          'Maksimal 50 data responden',
-          'Statistik deskriptif & uji validitas',
-          'Ekspor berpenanda air',
-        ],
-        cta: 'Mulai gratis',
-        highlighted: false,
-      },
-      {
-        id: 'monthly',
-        name: 'Akses Bulanan',
-        price: 39000,
-        period: '/bulan',
-        features: [
-          '5 proyek aktif',
-          'Data responden tanpa batas',
-          'Seluruh uji statistik lengkap',
-          'Ekspor Word & PDF tanpa tanda air',
-          'Pernyataan Penggunaan Alat',
-        ],
-        cta: 'Pilih bulanan',
-        highlighted: true,
-      },
-      {
-        id: 'thesis',
-        name: 'Paket Skripsi',
-        price: 99000,
-        period: '/3 bulan',
-        features: [
-          'Proyek tanpa batas',
-          'Data responden tanpa batas',
-          'Seluruh uji statistik lengkap',
-          'Ekspor Word & PDF tanpa tanda air',
-          'Pernyataan Penggunaan Alat',
-          'Riwayat versi analisis',
-        ],
-        cta: 'Pilih paket skripsi',
-        highlighted: false,
-      },
-    ],
+    plans: PLANS,
   },
 
   // Pertanyaan Umum (FAQ)
@@ -149,31 +104,31 @@ export const COPY = {
     items: [
       {
         q: 'Apakah hasil analisis ini sah untuk sidang skripsi?',
-        a: `${APP_NAME} menggunakan rumus statistik baku yang identik dengan perangkat lunak metodologi standar. Setiap hasil dilengkapi jejak hitung formula dan lembar Pernyataan Penggunaan Alat yang dapat kamu lampirkan ke naskah skripsi.`,
+        a: `${APP_NAME} memakai rumus baku yang dapat dicek ulang di SPSS atau JASP. Setiap hasil dilengkapi Jejak Hitung (rumus formula, derajat kebebasan df, nilai kritis pembanding) serta dokumen Pernyataan Penggunaan Alat yang dapat Anda lampirkan ke naskah skripsi.`,
       },
       {
         q: 'Bagaimana jika dosen pembimbing menanyakan dari mana angka diperoleh?',
-        a: 'Setiap angka pada kalimat penjelasan terhubung langsung ke sel tabel asalnya, dan panel Jejak Hitung merinci rumus matematika, derajat kebebasan (df), serta nilai pembanding tabel r/t/F.',
+        a: 'Setiap angka pada draf interpretasi terhubung langsung ke sel tabel asalnya. Panel Jejak Hitung merinci rumus matematika, derajat kebebasan (df), serta nilai pembanding tabel r/t/F agar Anda memahami dan dapat menjelaskan asal-usul angka secara mandiri saat bimbingan.',
       },
       {
         q: 'Apakah kerahasiaan data kuesioner terjamin?',
-        a: 'Data responden kamu disimpan dengan isolasi tingkat baris (Row-Level Security). Kami tidak pernah menjual atau membagikan data penelitianmu kepada pihak mana pun.',
+        a: 'Data responden Anda tersimpan aman dengan isolasi tingkat baris (Row-Level Security). OlahData tidak membuat, mengisi, atau mengubah data responden. Admin hanya melihat metadata teknis, bukan isi kuesioner. Data Anda tidak pernah dijual atau digunakan untuk melatih model AI.',
       },
       {
         q: 'Apa perbedaan angka kalkulasi dan kalimat penjelasan?',
-        a: 'Seluruh koefisien, nilai signifikansi, dan tabel dihitung oleh mesin statistik berbasis formula matematika pasti. Narasi penjelasan menyusun kalimat interpretasi baku sesuai format pelaporan Bab 4.',
+        a: 'Angka statistik dihitung oleh mesin deterministik berbasis rumus matematika baku, bukan oleh AI. AI hanya membantu menyusun draf kalimat interpretasi dari angka terhitung tersebut, yang wajib Anda periksa dan sesuaikan kembali dengan bahasa Anda sendiri.',
       },
       {
         q: 'Format berkas apa yang dapat diunggah?',
-        a: 'Format Excel (.xlsx, .xls) dan CSV. Pastikan data tersusun dalam bentuk matriks: baris mewakili nomor responden dan kolom mewakili item pertanyaan kuesioner.',
+        a: 'Format berkas Excel (.xlsx, .xls) dan CSV dengan struktur tabulasi standar: baris mewakili nomor responden dan kolom mewakili butir pertanyaan instrumen.',
       },
     ],
   },
 
   // Penanda & Status (Badges)
   badges: {
-    computedByEngine: 'Dihitung mesin statistik (rumus baku)',
-    writtenByAI: 'Kaidah pelaporan Bab 4',
+    computedByEngine: 'Dihitung mesin statistik deterministik (rumus baku, bukan AI)',
+    writtenByAI: 'Draf interpretasi (dibantu AI, dari angka terhitung)',
     sampleData: 'Dataset contoh simulasi',
     draft: 'Draf',
     samplePrice: 'Tarif simulasi',
@@ -193,7 +148,7 @@ export const COPY = {
       title: 'Unggah berkas kuesioner',
       description: 'Pilih lembar tabulasi kuesioner dalam format Excel atau CSV.',
       sampleButton: 'Gunakan data contoh',
-      sampleDescription: 'Muat dataset simulasi 120 responden × 18 item pertanyaan (Konstruk: Kualitas Layanan, Kepuasan, Loyalitas)',
+      sampleDescription: 'Muat dataset simulasi 120 responden × 18 butir pertanyaan (Konstruk: Kualitas Layanan, Kepuasan, Loyalitas)',
       limits: 'Maksimal 15 MB. Format: .xlsx, .xls, .csv',
     },
     validation: {
@@ -206,7 +161,7 @@ export const COPY = {
     },
     mapping: {
       title: 'Petakan variabel & konstruk',
-      description: 'Kelompokkan item pertanyaan kuesioner ke konstruk penelitian dan tentukan perannya.',
+      description: 'Kelompokkan butir pertanyaan kuesioner ke konstruk penelitian dan tentukan perannya.',
       independent: 'Variabel Bebas (X)',
       dependent: 'Variabel Terikat (Y)',
       construct: 'Konstruk',
@@ -214,7 +169,7 @@ export const COPY = {
     },
     testSelection: {
       title: 'Pilih uji statistik',
-      description: 'Pilih metode uji yang disyaratkan dalam hipotesis penelitianmu.',
+      description: 'Pilih metode uji yang disyaratkan dalam hipotesis penelitian Anda.',
       recommended: 'Sesuai desain hipotesis',
       prerequisite: 'Uji prasyarat',
     },
@@ -258,9 +213,9 @@ export const COPY = {
   // Pernyataan Penggunaan Alat
   toolStatement: {
     title: 'Pernyataan Penggunaan Alat',
-    description: 'Halaman ini menyajikan draf Pernyataan Penggunaan Alat untuk lampiran skripsimu demi menjaga transparansi akademik.',
-    advice: 'Konsultasikan dengan dosen pembimbing mengenai format lampiran yang berlaku di program studimu.',
-    template: `Dalam penelitian ini, pengolahan data statistik dilakukan dengan bantuan perangkat lunak ${APP_NAME} (versi [VERSI]). Seluruh data berasal dari lembar tabulasi kuesioner yang disebarkan kepada responden oleh peneliti. Perhitungan statistik (mencakup uji validitas, reliabilitas, asumsi klasik, dan regresi) dieksekusi oleh mesin statistik ${APP_NAME} menggunakan rumus matematika baku. Penjelasan interpretasi angka disusun berdasarkan kaidah pelaporan standar Bab 4 dan telah ditinjau langsung oleh peneliti. Jejak hitung formula lengkap dilampirkan pada Lampiran [NOMOR LAMPIRAN].`,
+    description: 'Halaman ini menyajikan draf Pernyataan Penggunaan Alat untuk lampiran skripsi Anda demi menjaga transparansi akademik.',
+    advice: 'Konsultasikan dengan dosen pembimbing mengenai format lampiran yang berlaku di program studi Anda.',
+    template: `Dalam penelitian ini, pengolahan data statistik dilakukan dengan bantuan perangkat lunak ${APP_NAME} (versi [VERSI]). Seluruh data berasal dari lembar tabulasi kuesioner yang disebarkan kepada responden oleh peneliti. Angka statistik dihitung oleh mesin statistik deterministik menggunakan rumus matematika baku, bukan oleh AI. Penjelasan interpretasi disusun dengan bantuan AI dan telah saya periksa serta sesuaikan dengan bahasa saya sendiri. Jejak hitung formula lengkap dilampirkan pada Lampiran [NOMOR LAMPIRAN].`,
   },
 
   // Autentikasi
@@ -285,7 +240,7 @@ export const COPY = {
     search: 'Cari judul penelitian atau variabel...',
     empty: {
       title: 'Belum ada proyek penelitian',
-      description: 'Mulai proyek baru untuk mengolah kuesionermu, atau coba pelajari dengan dataset simulasi.',
+      description: 'Mulai proyek baru untuk mengolah kuesioner Anda, atau coba pelajari dengan dataset simulasi.',
       ctaPrimary: 'Mulai proyek baru',
       ctaSecondary: 'Buka data simulasi',
     },
@@ -303,39 +258,19 @@ export const COPY = {
     theme: 'Mode Tampilan',
     themeOptions: {
       light: 'Meja Kerja Terang (Kertas)',
-      dark: 'Meja Kerja Malam',
-      system: 'Ikuti preferensi sistem',
+      dark: 'Meja Kerja Gelap',
+      system: 'Ikuti Perangkat',
     },
-    deleteData: 'Hapus data proyek',
-    deleteConfirm: 'Ketik judul proyek untuk mengonfirmasi penghapusan permanen:',
-    deleteWarning: 'Peringatan: Tindakan ini menghapus seluruh dataset dan riwayat uji secara permanen.',
+    dangerZone: 'Zona Berbahaya',
+    deleteAccount: 'Hapus akun dan semua proyek',
   },
 
-  // Langganan
-  subscription: {
-    title: 'Status Langganan',
-    activePlan: 'Paket aktif',
-    usage: 'Penggunaan kuota',
-    changePlan: 'Ganti paket',
-    billingHistory: 'Riwayat transaksi',
-  },
-
-  // Kaki Halaman (Footer)
-  footer: {
-    tagline: `${APP_NAME} — Meja kerja analisis data kuesioner untuk skripsi kuantitatif mahasiswa Indonesia.`,
-    links: {
-      product: 'Perangkat',
-      legal: 'Etika & Privasi',
-      support: 'Bantuan Metodologi',
-    },
-  },
-
-  // Tiga Lapis Penjelasan & Glosarium Teman Belajar
+  // Lapis Informasi
   layers: {
     layer1Title: 'Intinya',
     layer2Title: 'Tabel Baku Bab 4',
     layer3Title: 'Teks Penjelasan Bab 4',
-    aiNote: 'Ditulis AI dari angka di tabel',
+    aiNote: 'Draf interpretasi (dibantu AI, dari angka terhitung)',
     whatDoesItMean: 'Apa artinya?',
     whatToDo: 'Perlu dilakukan apa?',
     showTrace: 'Lihat cara menghitungnya',
@@ -350,38 +285,38 @@ export const COPY = {
     alpha: {
       term: "Cronbach's Alpha",
       short: 'Ukuran kekompakan butir kuesioner dalam mengukur variabel yang sama.',
-      detail: 'Jika nilainya di atas 0,60 atau 0,70, kuesionermu terbukti konsisten dan layak dipakai penelitian.',
-      example: 'Contoh: Nilai 0,84 berarti jawaban responden sangat selaras dan tidak bertolak belakang.',
+      detail: 'Jika nilainya di atas 0,60 atau 0,70, kuesioner Anda memenuhi kriteria reliabilitas (alfa Cronbach > 0,70) dan layak dipakai penelitian.',
+      example: 'Contoh: Nilai 0,92 berarti jawaban responden sangat selaras dan tidak bertolak belakang.',
     },
     vif: {
       term: 'Variance Inflation Factor (VIF)',
       short: 'Deteksi apakah variabel bebas saling tumpang tindih.',
       detail: 'Nilai VIF di bawah 10 (dan Tolerance di atas 0,10) menandakan model regresi bebas dari masalah multikolinearitas.',
-      example: 'Contoh: Nilai VIF 1,42 berarti variabel bebas berdiri mandiri tanpa saling mengganggu.',
+      example: 'Contoh: Nilai VIF 1,41 berarti variabel bebas berdiri mandiri tanpa saling mengganggu.',
     },
     pValue: {
       term: 'Nilai Sig. (p-value)',
       short: 'Peluang hubungan atau pengaruh terjadi murni karena kebetulan.',
       detail: 'Jika Sig. < 0,05, pengaruh dinyatakan signifikan pada tingkat kepercayaan 95%.',
-      example: 'Contoh: Sig. 0,001 jauh lebih kecil dari 0,05, artinya pengaruhnya nyata dan dapat dibuktikan.',
+      example: 'Contoh: Sig. 0,000 jauh lebih kecil dari 0,05, artinya pengaruhnya nyata dan dapat dibuktikan.',
     },
     rSquare: {
       term: 'Koefisien Determinasi (R²)',
       short: 'Berapa persen variabel terikat (Y) dijelaskan oleh variabel bebas (X).',
-      detail: 'Rentang nilai 0 sampai 1. Sisanya dijelaskan variabel lain di luar model skripsimu.',
-      example: 'Contoh: R² = 0,58 berarti 58% variasi Y ditentukan oleh X, sementara 42% oleh faktor lain.',
+      detail: 'Rentang nilai 0 sampai 1. Sisanya dijelaskan variabel lain di luar model skripsi Anda.',
+      example: 'Contoh: R² = 0,55 berarti 55% variasi Y ditentukan oleh X, sementara 45% oleh faktor lain.',
     },
     fStatistic: {
       term: 'Uji F (Simultan)',
       short: 'Uji kelayakan apakah seluruh variabel bebas secara bersama-sama berpengaruh pada Y.',
       detail: 'Jika F hitung > F tabel dan Sig. < 0,05, model regresi dinyatakan layak dan terbukti.',
-      example: 'Contoh: Kualitas Layanan dan Harga secara serempak memengaruhi Kepuasan Pelanggan.',
+      example: 'Contoh: Kualitas Layanan dan Kepuasan Pelanggan secara serempak memengaruhi Loyalitas Pelanggan.',
     },
     tStatistic: {
       term: 'Uji t (Parsial)',
       short: 'Uji pengaruh masing-masing variabel bebas secara mandiri terhadap Y.',
       detail: 'Jika t hitung > t tabel dan Sig. < 0,05, variabel tersebut punya pengaruh nyata.',
-      example: 'Contoh: Kualitas Layanan secara mandiri berpengaruh signifikan terhadap Kepuasan.',
+      example: 'Contoh: Kualitas Layanan secara mandiri berpengaruh signifikan terhadap Loyalitas.',
     },
   },
 
@@ -416,31 +351,41 @@ export const COPY = {
 
   // Jaminan Ketenangan Mahasiswa
   reassurance: {
-    saved: 'Datamu tersimpan otomatis. Kamu bisa istirahat dan lanjut kapan saja.',
-    safe: 'Data responden kamu diisolasi privat dan tidak dibagikan ke siapa pun.',
-    guidedProgress: 'Kamu di sini:',
+    saved: 'Data Anda tersimpan otomatis. Anda bisa istirahat dan lanjut kapan saja.',
+    safe: 'Data responden Anda diisolasi privat dan tidak dibagikan ke siapa pun.',
+    guidedProgress: 'Anda di sini:',
     stepUpload: '1. Unggah',
     stepValidate: '2. Cek Data',
     stepMap: '3. Petakan',
     stepTest: '4. Pilih Uji',
-    stepResult: '5. Hasil',
+    stepResult: '5. Hasil Bab 4',
   },
 
-  // Frasa Umum
+  // Aksi Umum
   common: {
-    loading: 'Memuat data...',
-    error: 'Terjadi kendala',
-    retry: 'Coba ulangi',
+    confirm: 'Konfirmasi',
     cancel: 'Batal',
     save: 'Simpan',
-    next: 'Lanjutkan',
-    previous: 'Sebelumnya',
-    close: 'Tutup',
     delete: 'Hapus',
-    edit: 'Ubah',
     back: 'Kembali',
-    confirm: 'Konfirmasi',
+    next: 'Lanjut',
+  },
+
+  // Footer
+  footer: {
+    tagline: 'Platform komputasi statistik untuk pengolahan data kuesioner skripsi kuantitatif.',
+    links: {
+      product: 'Fitur & Layanan',
+      legal: 'Etika & Kebijakan',
+    },
+  },
+
+  // Aksesibilitas
+  a11y: {
+    tableDescription: 'Tabel hasil analisis statistik berstandar jurnal ilmiah APA 7th Edition tanpa garis vertikal',
+    skipToContent: 'Lewati ke konten utama',
+    toggleTheme: 'Ganti tema tampilan',
+    closeDialog: 'Tutup jendela dialog',
+    loading: 'Memuat data...',
   },
 } as const;
-
-export type CopyDictionary = typeof COPY;

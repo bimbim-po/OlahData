@@ -193,10 +193,10 @@ export default function ProjectsPage() {
             </div>
           )}
           <h1 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            Meja Kerja Skripsimu
+            Meja Kerja Skripsi Anda
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 max-w-[68ch]">
-            Kelola data dan analisis statistik kuesionermu. {COPY.reassurance.saved}
+            Kelola data dan analisis statistik kuesioner Anda. {COPY.reassurance.saved}
           </p>
         </div>
 
@@ -264,7 +264,7 @@ export default function ProjectsPage() {
                 Belum ada proyek penelitian
               </h2>
               <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                Mulai dengan berkas kuesionermu sendiri, atau coba data contoh simulasi untuk melihat hasil dan penjelasan Bab 4 dalam 60 detik.
+                Mulai dengan berkas kuesioner Anda sendiri, atau coba data contoh simulasi untuk melihat hasil dan penjelasan Bab 4 dalam 60 detik.
               </p>
             </div>
             <div className="flex items-center gap-3 pt-2 flex-wrap justify-center">
@@ -382,7 +382,7 @@ export default function ProjectsPage() {
                   {searchQuery ? 'Hasil Pencarian Proyek' : 'Semua Proyek Penelitian'}
                 </h3>
                 <span className="text-xs text-muted-foreground">
-                  {filteredProjects.length} proyek tersimpan di meja kerjamu
+                  {filteredProjects.length} proyek tersimpan di meja kerja Anda
                 </span>
               </div>
 
@@ -505,7 +505,7 @@ export default function ProjectsPage() {
         open={!!projectToDelete}
         onOpenChange={(open) => !open && setProjectToDelete(null)}
         title="Hapus Proyek?"
-        description={`Apakah kamu yakin ingin menghapus proyek "${projectToDelete?.title}"? Seluruh konfigurasi dan data pada proyek ini akan dihapus secara permanen.`}
+        description={`Apakah Anda yakin ingin menghapus proyek "${projectToDelete?.title}"? Seluruh konfigurasi dan data pada proyek ini akan dihapus secara permanen.`}
         confirmLabel="Hapus Proyek"
         cancelLabel="Batal"
         variant="destructive"

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -14,6 +14,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/components/ui/toaster';
 
@@ -24,19 +25,26 @@ const registerSchema = z.object({
   email: z
     .string()
     .min(1, { message: 'Alamat email wajib diisi' })
-    .email({ message: 'Format alamat email tidak valid' }),
+    .email({ message: 'Format alamat email belum tepat (contoh: nama@kampus.ac.id)' }),
   university: z
     .string()
-    .min(2, { message: 'Nama universitas / perguruan tinggi wajib diisi' }),
+    .min(2, { message: 'Nama perguruan tinggi / universitas wajib diisi' }),
   password: z
     .string()
-    .min(6, { message: 'Kata sandi minimal 6 karakter' }),
+    .min(8, { message: 'Kata sandi minimal 8 karakter demi keamanan akun Anda' }),
+  agreeTerms: z
+    .boolean()
+    .refine((val) => val === true, {
+      message: 'Anda wajib menyetujui Syarat & Ketentuan serta Kebijakan Privasi',
+    }),
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
-export default function DaftarPage() {
+function DaftarForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const lanjut = searchParams.get('lanjut') || '/app';
   const { toast } = useToast();
   const authLogin = useAuthStore((state) => state.login);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -44,16 +52,22 @@ export default function DaftarPage() {
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
+    mode: 'onChange',
     defaultValues: {
       name: '',
       email: '',
       university: '',
       password: '',
+      agreeTerms: false,
     },
   });
+
+  const agreeTerms = watch('agreeTerms');
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
@@ -65,7 +79,7 @@ export default function DaftarPage() {
         description: `Selamat datang di ${APP_NAME}, ${user.name}!`,
         variant: 'success',
       });
-      router.push('/app');
+      router.push(lanjut);
     } catch {
       toast({
         title: 'Pendaftaran gagal',
@@ -84,6 +98,8 @@ export default function DaftarPage() {
       variant: 'default',
     });
   };
+
+  const masukHref = lanjut !== '/app' ? `/masuk?lanjut=${encodeURIComponent(lanjut)}` : '/masuk';
 
   return (
     <Card className="border-border bg-card shadow-sm rounded-2xl">
@@ -204,12 +220,15 @@ export default function DaftarPage() {
             <Input
               id="password"
               type="password"
-              placeholder="Minimal 6 karakter"
+              placeholder="Minimal 8 karakter"
               autoComplete="new-password"
               disabled={isLoading}
               {...register('password')}
               className={errors.password ? 'border-destructive focus-visible:ring-destructive' : ''}
             />
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Gunakan minimal 8 karakter (disarankan memadukan huruf dan angka demi keamanan).
+            </p>
             {errors.password && (
               <p className="text-xs text-destructive font-medium mt-1">
                 {errors.password.message}
@@ -217,21 +236,51 @@ export default function DaftarPage() {
             )}
           </div>
 
-          <p className="text-[11px] text-muted-foreground leading-relaxed pt-1">
-            Dengan mendaftar, Anda menyetujui{' '}
-            <Link href="/syarat" className="text-primary underline">
-              Syarat & Ketentuan
-            </Link>{' '}
-            serta{' '}
-            <Link href="/privasi" className="text-primary underline">
-              Kebijakan Privasi
-            </Link>{' '}
-            {APP_NAME}.
-          </p>
+          {/* Checkbox Persetujuan Syarat & Privasi */}
+          <div className="pt-2">
+            <div className="flex items-start gap-2.5">
+              <Checkbox
+                id="agreeTerms"
+                checked={agreeTerms}
+                onCheckedChange={(checked) =>
+                  setValue('agreeTerms', checked === true, { shouldValidate: true })
+                }
+                className="mt-0.5"
+                disabled={isLoading}
+              />
+              <label
+                htmlFor="agreeTerms"
+                className="text-xs text-muted-foreground leading-relaxed cursor-pointer select-none"
+              >
+                Saya telah membaca dan menyetujui{' '}
+                <Link
+                  href="/syarat"
+                  target="_blank"
+                  className="text-primary underline font-medium hover:opacity-85"
+                >
+                  Syarat & Ketentuan
+                </Link>{' '}
+                serta{' '}
+                <Link
+                  href="/privasi"
+                  target="_blank"
+                  className="text-primary underline font-medium hover:opacity-85"
+                >
+                  Kebijakan Privasi
+                </Link>{' '}
+                {APP_NAME}.
+              </label>
+            </div>
+            {errors.agreeTerms && (
+              <p className="text-xs text-destructive font-medium mt-1.5">
+                {errors.agreeTerms.message}
+              </p>
+            )}
+          </div>
 
           <Button
             type="submit"
-            className="w-full font-semibold h-10 mt-2"
+            className="w-full font-semibold h-10 mt-3"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -253,7 +302,7 @@ export default function DaftarPage() {
         <p>
           {COPY.auth.hasAccount}{' '}
           <Link
-            href="/masuk"
+            href={masukHref}
             className="font-semibold text-primary underline underline-offset-4 hover:opacity-85"
           >
             {COPY.auth.masuk}
@@ -261,5 +310,20 @@ export default function DaftarPage() {
         </p>
       </CardFooter>
     </Card>
+  );
+}
+
+export default function DaftarPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <Card className="border-border bg-card shadow-sm rounded-2xl p-8 text-center">
+          <div className="h-6 w-32 bg-muted rounded mx-auto animate-pulse mb-4" />
+          <div className="h-10 w-full bg-muted/60 rounded animate-pulse" />
+        </Card>
+      }
+    >
+      <DaftarForm />
+    </React.Suspense>
   );
 }

@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Sparkles } from 'lucide-react';
 import { createProject } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,8 +51,10 @@ const RESEARCH_TYPES = [
   },
 ];
 
-export default function NewProjectPage() {
+function NewProjectForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isDemo = searchParams.get('contoh') === '1';
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -65,8 +67,8 @@ export default function NewProjectPage() {
   } = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
-      title: '',
-      department: '',
+      title: isDemo ? 'Pengaruh Kualitas Layanan dan Kepuasan Pelanggan terhadap Loyalitas Pelanggan' : '',
+      department: isDemo ? 'Manajemen Pemasaran' : '',
       researchType: 'Regresi Linier Berganda',
     },
   });
@@ -88,7 +90,10 @@ export default function NewProjectPage() {
         variant: 'success',
       });
 
-      router.push(`/app/proyek/${newProject.id}/analisis`);
+      const targetUrl = isDemo
+        ? `/app/proyek/${newProject.id}/analisis?contoh=1`
+        : `/app/proyek/${newProject.id}/analisis`;
+      router.push(targetUrl);
     } catch {
       toast({
         title: 'Gagal membuat proyek',
@@ -101,6 +106,21 @@ export default function NewProjectPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
+      {/* Demo Mode Notice */}
+      {isDemo && (
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-center justify-between gap-3 text-xs sm:text-sm">
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="h-4 w-4 text-primary shrink-0" />
+            <p className="text-foreground">
+              <strong className="font-semibold">Ruang Kerja Simulasi Demo:</strong> Anda dapat langsung mencoba seluruh tahapan analisis menggunakan data contoh tanpa perlu mendaftar.
+            </p>
+          </div>
+          <Badge variant="mint" className="text-[10px] shrink-0 font-medium">
+            Data Contoh
+          </Badge>
+        </div>
+      )}
+
       {/* Back button */}
       <div>
         <Button
@@ -122,7 +142,7 @@ export default function NewProjectPage() {
             Mulai Proyek Skripsi Baru
           </CardTitle>
           <CardDescription className="text-muted-foreground text-xs sm:text-sm">
-            Isi informasi dasar skripsimu. Konfigurasi dataset dan pemetaan variabel akan dilakukan pada langkah selanjutnya.
+            Isi informasi dasar skripsi Anda. Konfigurasi dataset dan pemetaan variabel akan dilakukan pada langkah selanjutnya.
           </CardDescription>
         </CardHeader>
 
@@ -136,7 +156,7 @@ export default function NewProjectPage() {
               <textarea
                 id="title"
                 rows={3}
-                placeholder="Contoh: Pengaruh Kualitas Layanan dan Persepsi Harga terhadap Kepuasan Pelanggan pada Pengguna E-Commerce"
+                placeholder="Contoh: Pengaruh Kualitas Layanan dan Kepuasan Pelanggan terhadap Loyalitas Pelanggan"
                 className={`flex w-full rounded-[10px] border bg-card px-3 py-2.5 text-base sm:text-xs text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1.5 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 transition-colors resize-none ${
                   errors.title ? 'border-destructive focus-visible:ring-destructive' : 'border-input'
                 }`}
@@ -148,7 +168,7 @@ export default function NewProjectPage() {
                 </p>
               ) : (
                 <p className="text-[11px] text-muted-foreground">
-                  Gunakan rencana judul skripsi resmimu (minimal 5 karakter).
+                  Gunakan rencana judul skripsi resmi Anda (minimal 5 karakter).
                 </p>
               )}
             </div>
@@ -179,7 +199,7 @@ export default function NewProjectPage() {
                   Desain Analisis Kuantitatif <span className="text-destructive">*</span>
                 </Label>
                 <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
-                  Pilih model pengujian hipotesis yang sesuai dengan metodologi penelitianmu.
+                  Pilih model pengujian hipotesis yang sesuai dengan metodologi penelitian Anda.
                 </p>
               </div>
 
@@ -267,5 +287,19 @@ export default function NewProjectPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function NewProjectPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="max-w-2xl mx-auto space-y-4">
+          <div className="h-40 w-full bg-muted/40 rounded-[16px] animate-pulse" />
+        </div>
+      }
+    >
+      <NewProjectForm />
+    </React.Suspense>
   );
 }

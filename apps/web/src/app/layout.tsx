@@ -18,11 +18,20 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://olahdata.id'),
   title: {
-    default: `${APP_NAME} — ${APP_DESCRIPTION}`,
+    default: `${APP_NAME} — Olah Data Kuesioner Skripsi Kuantitatif Tanpa SPSS`,
     template: `%s | ${APP_NAME}`,
   },
-  description: APP_DESCRIPTION,
+  description: 'Olah data kuesioner skripsi kuantitatif mudah dan akurat. Hasilkan tabel Bab 4 standar APA 7th serta draf penjelasan otomatis tanpa software statistik rumit.',
+  openGraph: {
+    title: `${APP_NAME} — Olah Data Kuesioner Skripsi Kuantitatif Tanpa SPSS`,
+    description: 'Olah data kuesioner skripsi kuantitatif mudah dan akurat. Hasilkan tabel Bab 4 standar APA 7th serta draf penjelasan otomatis tanpa software statistik rumit.',
+    url: 'https://olahdata.id',
+    siteName: APP_NAME,
+    locale: 'id_ID',
+    type: 'website',
+  },
   icons: {
     icon: [
       { url: '/icon.svg', type: 'image/svg+xml' },

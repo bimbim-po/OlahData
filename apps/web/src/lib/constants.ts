@@ -1,6 +1,8 @@
+import pkg from '../../package.json';
+
 export const APP_NAME = 'OlahData';
 export const APP_DESCRIPTION = 'Olah data kuesioner skripsi kuantitatif tanpa SPSS';
-export const APP_VERSION = '0.1.0';
+export const APP_VERSION = pkg.version;
 export const ENGINE_VERSION = '1.0.0-beta';
 
 export const COLORS = {
@@ -24,5 +26,9 @@ export const FILE_LIMITS = {
 
 export const LIKERT_SCALE = { min: 1, max: 5 } as const;
 
-export { COPY } from './copy';
+export const BUILD_DATE = new Intl.DateTimeFormat('id-ID', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+}).format(new Date());
 

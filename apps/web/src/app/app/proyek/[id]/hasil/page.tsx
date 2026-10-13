@@ -772,7 +772,7 @@ export default function HasilPage() {
     } catch {
       toast({
         title: 'Gagal menyalin tab',
-        description: 'Periksa izin papan klip pada perambanmu.',
+        description: 'Periksa izin papan klip pada peramban Anda.',
         variant: 'error',
       });
     }
@@ -833,7 +833,7 @@ export default function HasilPage() {
             </h1>
 
             <p className="text-xs sm:text-sm text-muted-foreground font-sans max-w-[68ch]">
-              Format tabel standar Bab 4 skripsimu. Angka di kalimat terhubung langsung ke sel tabel asalnya dan siap kamu salin ke Microsoft Word.
+              Format tabel standar Bab 4 skripsi Anda. Angka di kalimat terhubung langsung ke sel tabel asalnya dan siap Anda salin ke Microsoft Word.
             </p>
           </div>
 
@@ -994,7 +994,7 @@ export default function HasilPage() {
 
                 <ExplanationBox
                   title="Interpretasi Uji Reliabilitas"
-                  summarySentence="Nilai Cronbach's Alpha seluruh konstruk berada di atas 0,80 (jauh melampaui batas 0,60), membuktikan instrumen kuesionermu sangat konsisten."
+                  summarySentence="Nilai Cronbach's Alpha seluruh konstruk berada di atas 0,80 (memenuhi kriteria reliabilitas alfa Cronbach > 0,70), menandakan instrumen kuesioner Anda konsisten."
                   explanation={results.explanations.reliability}
                   onHoverNumber={setHighlightedNumber}
                   activeNumber={highlightedNumber}
@@ -1202,7 +1202,7 @@ export default function HasilPage() {
                   Panduan Penyusunan Bab 4 Skripsi
                 </h5>
                 <p className="text-muted-foreground leading-relaxed text-xs">
-                  Hasil pengolahan data dan narasi di atas disusun sesuai kaidah statistik baku. Kamu bisa langsung menyalinnya ke draf skripsi. Jika dosen pembimbing menanyakan sumber angka, tunjukkan sel tabel dan rincian di panel Jejak Hitung.
+                  Hasil pengolahan data dan narasi di atas disusun sesuai kaidah statistik baku. Anda dapat langsung menyalinnya ke draf skripsi. Jika dosen pembimbing menanyakan sumber angka, tunjukkan sel tabel dan rincian di panel Jejak Hitung.
                 </p>
                 <p className="text-xs font-medium text-primary">
                   {COPY.reassurance.saved}
@@ -1234,7 +1234,7 @@ export default function HasilPage() {
                 <span>Pernyataan Penggunaan Alat</span>
               </div>
               <p className="text-muted-foreground text-[11px] leading-relaxed">
-                Kamu dapat melampirkan surat pernyataan transparansi penggunaan {APP_NAME} pada berkas lampiran skripsimu.
+                Anda dapat melampirkan lembar pernyataan transparansi penggunaan {APP_NAME} pada berkas lampiran skripsi Anda.
               </p>
               <Button
                 variant="outline"

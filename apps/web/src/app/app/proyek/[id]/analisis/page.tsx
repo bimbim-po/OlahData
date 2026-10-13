@@ -30,8 +30,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { APP_NAME, ENGINE_VERSION } from '@/lib/constants';
+import { COPY } from '@/lib/copy';
 import { formatNumber } from '@/lib/format';
-import { COPY, APP_NAME, ENGINE_VERSION } from '@/lib/constants';
 import { mockTestOptions } from '@/lib/mock/results';
 import { getProject } from '@/lib/api';
 import type { Project, TestOption, TestType } from '@/lib/api/types';
@@ -225,7 +226,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                 Langkah 1: Unggah Data Kuesioner
               </h2>
               <p className="text-sm text-muted-foreground mt-1 max-w-[68ch]">
-                Unggah spreadsheet data kuesionermu (.xlsx, .xls) atau CSV berisikan tabulasi jawaban responden.
+                Unggah spreadsheet data kuesioner Anda (.xlsx, .xls) atau CSV berisikan tabulasi jawaban responden.
               </p>
             </div>
 
@@ -278,7 +279,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                     Ditemukan {criticalErrorCount} Catatan Kritis pada Data
                   </span>
                   <p className="text-destructive/90 text-xs leading-relaxed max-w-[68ch]">
-                    Perbaiki atau keluarkan baris yang bermasalah sebelum melanjutkan. Data penelitianmu dijaga tetap murni tanpa manipulasi jawaban.
+                    Perbaiki atau keluarkan baris yang bermasalah sebelum melanjutkan. Data penelitian Anda dijaga tetap murni tanpa manipulasi jawaban.
                   </p>
                 </div>
               </div>
@@ -405,7 +406,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                   Langkah 4: Pilih Uji Statistik
                 </h2>
                 <p className="text-sm text-muted-foreground mt-1 max-w-[68ch]">
-                  Pilih uji statistik yang kamu butuhkan untuk Bab 4 skripsi. Uji yang direkomendasikan telah disesuaikan otomatis dengan konstruk penelitianmu.
+                  Pilih uji statistik yang Anda butuhkan untuk Bab 4 skripsi. Uji yang direkomendasikan telah disesuaikan otomatis dengan konstruk penelitian Anda.
                 </p>
               </div>
 

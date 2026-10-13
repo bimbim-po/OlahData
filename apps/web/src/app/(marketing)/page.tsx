@@ -1,6 +1,5 @@
-'use client';
-
 import * as React from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
   Upload,
@@ -21,16 +20,22 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Bab4Preview } from '@/components/bab4-preview';
 import { PricingCards } from '@/components/pricing-cards';
 import { cn } from '@/lib/utils';
-
 import { LiveDemo } from '@/components/live-demo';
 
+export const metadata: Metadata = {
+  title: `${APP_NAME} — Olah Data Kuesioner Skripsi Kuantitatif Tanpa SPSS`,
+  description: 'Olah data kuesioner skripsi kuantitatif mudah dan akurat. Hasilkan tabel Bab 4 standar APA 7th serta draf penjelasan otomatis tanpa software statistik rumit.',
+  openGraph: {
+    title: `${APP_NAME} — Olah Data Kuesioner Skripsi Kuantitatif Tanpa SPSS`,
+    description: 'Olah data kuesioner skripsi kuantitatif mudah dan akurat. Hasilkan tabel Bab 4 standar APA 7th serta draf penjelasan otomatis tanpa software statistik rumit.',
+    url: 'https://olahdata.id',
+    siteName: APP_NAME,
+    locale: 'id_ID',
+    type: 'website',
+  },
+};
+
 export default function MarketingPage() {
-  const [openFaqIndex, setOpenFaqIndex] = React.useState<number | null>(0);
-
-  const toggleFaq = (index: number) => {
-    setOpenFaqIndex(openFaqIndex === index ? null : index);
-  };
-
   return (
     <div className="flex flex-col gap-12 sm:gap-16 pb-16">
       {/* 1. HERO 5 DETIK PERTAMA: DUA KOLOM DESKTOP & DEMO TRANSFORMATIF */}
@@ -150,11 +155,8 @@ export default function MarketingPage() {
               className="border border-border bg-card shadow-xs rounded-[16px]"
             >
               <CardHeader className="p-4 sm:p-5 pb-2">
-                <CardTitle className="text-sm font-semibold text-foreground flex items-center justify-between">
-                  <span>{test.name}</span>
-                  <span className="text-[11px] font-mono text-muted-foreground font-normal">
-                    #{index + 1}
-                  </span>
+                <CardTitle className="text-sm font-semibold text-foreground">
+                  {test.name}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 sm:p-5 pt-0">
@@ -180,7 +182,7 @@ export default function MarketingPage() {
                 {COPY.notDoing.title}
               </h2>
               <p className="mt-1 text-xs sm:text-sm text-muted-foreground max-w-[68ch]">
-                Kejujuran ilmiah adalah landasan kelulusanmu. {APP_NAME} memegang teguh batasan etika penelitian berikut:
+                Kejujuran ilmiah adalah landasan kelulusan Anda. {APP_NAME} memegang teguh batasan etika penelitian berikut:
               </p>
             </div>
           </div>
@@ -206,7 +208,7 @@ export default function MarketingPage() {
 
           <div className="pt-3 border-t border-border/60 text-xs text-muted-foreground flex flex-col sm:flex-row items-center justify-between gap-2">
             <span>
-              Ingin menyertakan lembar keterangan transparan di lampiran skripsimu?
+              Ingin menyertakan lembar keterangan transparan di lampiran skripsi Anda?
             </span>
             <Button asChild variant="link" className="text-xs font-semibold text-primary">
               <Link href="/pernyataan-penggunaan">
@@ -247,35 +249,36 @@ export default function MarketingPage() {
         </div>
 
         <div className="space-y-2.5">
-          {COPY.faq.items.map((item, idx) => {
-            const isOpen = openFaqIndex === idx;
-            return (
-              <div
-                key={idx}
-                className="rounded-[10px] border border-border bg-card overflow-hidden transition-colors shadow-2xs"
-              >
-                <button
-                  type="button"
-                  onClick={() => toggleFaq(idx)}
-                  className="w-full p-4 text-left flex items-center justify-between gap-4 text-xs sm:text-sm font-semibold text-foreground cursor-pointer"
-                  aria-expanded={isOpen}
-                >
-                  <span>{item.q}</span>
-                  <ChevronDown
-                    className={cn(
-                      'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-150',
-                      isOpen && 'rotate-180 text-primary'
-                    )}
-                  />
-                </button>
-                {isOpen && (
-                  <div className="px-4 pb-4 text-xs text-muted-foreground leading-relaxed border-t border-border/50 pt-3 max-w-[68ch]">
-                    {item.a}
+          {COPY.faq.items.map((item, idx) => (
+            <details
+              key={idx}
+              className="group rounded-[10px] border border-border bg-card overflow-hidden transition-colors shadow-2xs"
+              open={idx === 0}
+            >
+              <summary className="w-full p-4 text-left flex items-center justify-between gap-4 text-xs sm:text-sm font-semibold text-foreground cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                <h3 className="text-xs sm:text-sm font-semibold text-foreground">
+                  {item.q}
+                </h3>
+                <ChevronDown
+                  className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-150 group-open:rotate-180 group-open:text-primary"
+                  aria-hidden="true"
+                />
+              </summary>
+              <div className="px-4 pb-4 text-xs text-muted-foreground leading-relaxed border-t border-border/50 pt-3 max-w-[68ch]">
+                <p>{item.a}</p>
+                {idx === 0 && (
+                  <div className="mt-2.5 pt-2 border-t border-border/40">
+                    <Link
+                      href="#contoh-hasil"
+                      className="inline-flex items-center gap-1 text-primary font-medium hover:underline text-xs"
+                    >
+                      Lihat contoh cara memeriksa hasil di tabel Bab 4 &rarr;
+                    </Link>
                   </div>
                 )}
               </div>
-            );
-          })}
+            </details>
+          ))}
         </div>
       </section>
 
@@ -283,15 +286,15 @@ export default function MarketingPage() {
       <section className="px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full">
         <div className="rounded-[16px] border border-border bg-card p-6 sm:p-8 text-center space-y-4 shadow-xs">
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">
-            Buka meja kerja skripsimu hari ini
+            Buka meja kerja skripsi Anda hari ini
           </h2>
           <p className="text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed">
-            Tanpa instalasi perangkat lunak berat, tanpa lisensi mahal, dan tanpa rumus yang membingungkan. Mulai dengan dataset kuesionermu sendiri atau pelajari data simulasi.
+            Tanpa instalasi perangkat lunak berat, tanpa lisensi mahal, dan tanpa rumus yang membingungkan. Mulai dengan dataset kuesioner Anda sendiri atau pelajari data simulasi.
           </p>
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Button asChild size="default" className="w-full sm:w-auto font-semibold text-xs px-5 h-10 rounded-[10px]">
-              <Link href="/app/proyek/baru">
-                <span>Coba dengan Data Contoh (60 Detik)</span>
+              <Link href="/app/proyek/baru?contoh=1">
+                <span>Coba Gratis (Data Contoh 60 Detik)</span>
                 <ArrowRight className="h-3.5 w-3.5 ml-1" />
               </Link>
             </Button>
