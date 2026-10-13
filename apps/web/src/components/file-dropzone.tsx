@@ -245,15 +245,26 @@ export function FileDropzone({ onFileLoaded, className }: FileDropzoneProps) {
             Muat dataset riset standar (120 responden × 18 butir kuesioner + 3 demografi, 3 konstruk: Kualitas Layanan, Kepuasan, Loyalitas).
           </p>
         </div>
-        <Button
-          type="button"
-          onClick={handleLoadSampleData}
-          variant="outline"
-          className="border-primary text-primary hover:bg-primary hover:text-white shrink-0 font-medium cursor-pointer shadow-sm rounded-[10px] min-h-[44px] h-11 sm:h-9"
-        >
-          <Sparkles className="w-4 h-4 mr-2" />
-          Pakai data contoh
-        </Button>
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <a
+            href="/data-contoh/data_kuesioner_pemasaran_100_responden.xlsx"
+            download
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors border border-border bg-background px-3 py-2 rounded-[10px] font-medium"
+            title="Unduh berkas contoh Excel 100 responden"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-primary" />
+            <span>Unduh Contoh Excel</span>
+          </a>
+          <Button
+            type="button"
+            onClick={handleLoadSampleData}
+            variant="outline"
+            className="border-primary text-primary hover:bg-primary hover:text-white shrink-0 font-medium cursor-pointer shadow-sm rounded-[10px] min-h-[44px] h-11 sm:h-9"
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            Pakai data contoh
+          </Button>
+        </div>
       </div>
 
       {/* Active Selected File State */}

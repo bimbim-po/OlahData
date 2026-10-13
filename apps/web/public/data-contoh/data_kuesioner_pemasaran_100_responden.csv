@@ -1,0 +1,101 @@
+No,Jenis_Kelamin,Usia,Pendidikan,Pekerjaan,X1_1,X1_2,X1_3,X1_4,X1_5,X2_1,X2_2,X2_3,X2_4,X2_5,Y_1,Y_2,Y_3,Y_4,Y_5
+1,Laki-laki,23,Sarjana (S1),Mahasiswa,3,3,4,3,3,4,4,4,4,4,3,3,3,3,3
+2,Perempuan,23,Magister (S2),Wiraswasta,4,4,3,4,4,3,4,3,3,3,3,3,3,3,3
+3,Perempuan,29,Diploma (D3),Mahasiswa,4,4,4,4,4,4,4,4,4,5,4,3,4,3,4
+4,Perempuan,33,Sarjana (S1),PNS/BUMN,4,3,3,3,4,3,3,3,3,3,3,3,3,3,3
+5,Laki-laki,29,Diploma (D3),PNS/BUMN,4,4,4,3,4,4,3,4,4,4,3,4,3,3,4
+6,Laki-laki,23,Magister (S2),Wiraswasta,4,4,4,4,4,4,4,4,4,4,3,4,4,4,3
+7,Laki-laki,22,Sarjana (S1),Mahasiswa,5,5,5,5,5,5,5,4,4,5,4,4,4,5,5
+8,Perempuan,22,Magister (S2),Wiraswasta,5,5,5,4,5,4,5,5,5,5,4,4,4,4,4
+9,Perempuan,24,SMA/SMK,Wiraswasta,4,4,4,4,4,4,5,5,5,5,4,4,4,4,4
+10,Perempuan,30,Diploma (D3),Mahasiswa,5,5,4,5,4,4,4,4,4,4,4,4,4,4,4
+11,Laki-laki,27,Magister (S2),Mahasiswa,4,4,4,3,4,3,4,4,3,3,3,3,3,3,3
+12,Perempuan,24,Diploma (D3),Karyawan Swasta,4,4,4,4,5,4,4,4,4,4,4,4,4,4,4
+13,Perempuan,20,Diploma (D3),Wiraswasta,5,5,5,5,5,5,5,5,5,5,4,4,4,4,5
+14,Perempuan,23,Magister (S2),Wiraswasta,4,4,4,3,4,4,4,4,4,4,4,3,4,4,4
+15,Perempuan,33,Diploma (D3),Wiraswasta,4,4,4,4,4,4,4,4,4,4,4,4,4,4,3
+16,Laki-laki,33,SMA/SMK,Mahasiswa,3,3,3,3,3,3,4,4,3,3,3,3,3,3,3
+17,Laki-laki,33,Magister (S2),Mahasiswa,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4
+18,Laki-laki,27,Diploma (D3),Mahasiswa,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3
+19,Perempuan,29,Sarjana (S1),Karyawan Swasta,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3
+20,Perempuan,20,SMA/SMK,Wiraswasta,4,5,4,4,5,4,5,4,4,5,4,4,4,4,4
+21,Laki-laki,34,Sarjana (S1),Mahasiswa,5,5,4,4,4,4,4,4,4,4,4,4,4,4,4
+22,Laki-laki,35,Magister (S2),Wiraswasta,4,4,4,4,4,4,4,4,3,4,4,3,3,4,3
+23,Laki-laki,24,Diploma (D3),Karyawan Swasta,5,4,5,4,4,4,5,5,5,4,4,4,4,4,4
+24,Perempuan,29,SMA/SMK,Karyawan Swasta,4,4,4,4,4,4,4,3,4,3,3,4,3,4,3
+25,Perempuan,28,SMA/SMK,PNS/BUMN,4,4,4,4,4,4,4,4,4,3,3,4,4,4,4
+26,Perempuan,24,Magister (S2),Mahasiswa,3,3,3,4,3,4,4,4,4,4,3,4,3,3,3
+27,Perempuan,23,Sarjana (S1),Karyawan Swasta,3,4,3,3,3,4,3,3,3,3,3,3,3,3,3
+28,Laki-laki,32,Diploma (D3),Mahasiswa,4,4,4,4,4,4,5,4,4,4,4,4,4,4,4
+29,Laki-laki,28,Sarjana (S1),Karyawan Swasta,3,3,3,3,3,4,4,3,4,4,3,4,3,3,3
+30,Laki-laki,24,Magister (S2),Mahasiswa,5,4,5,4,5,5,4,5,5,4,4,4,4,4,4
+31,Perempuan,26,Diploma (D3),Wiraswasta,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3
+32,Laki-laki,30,SMA/SMK,PNS/BUMN,4,4,5,5,5,5,4,5,4,5,4,4,4,4,4
+33,Perempuan,26,SMA/SMK,Wiraswasta,5,4,4,4,4,4,4,4,4,4,3,4,4,3,4
+34,Perempuan,35,Magister (S2),Wiraswasta,4,5,4,5,5,4,4,4,5,5,4,4,4,4,4
+35,Perempuan,23,Magister (S2),PNS/BUMN,3,4,3,4,3,4,3,3,3,3,3,3,3,3,3
+36,Perempuan,22,Diploma (D3),Wiraswasta,4,4,5,4,4,5,5,5,5,5,4,4,5,5,4
+37,Perempuan,35,Diploma (D3),Wiraswasta,5,5,5,5,5,5,5,5,5,5,4,4,4,4,4
+38,Perempuan,32,Diploma (D3),Karyawan Swasta,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3
+39,Laki-laki,21,Magister (S2),PNS/BUMN,4,3,3,3,4,4,4,4,4,4,4,4,4,4,3
+40,Laki-laki,21,Diploma (D3),Karyawan Swasta,4,4,4,4,4,4,4,4,4,4,3,4,4,4,4
+41,Perempuan,35,SMA/SMK,PNS/BUMN,4,5,5,4,5,5,5,5,4,5,4,4,4,4,4
+42,Laki-laki,34,SMA/SMK,PNS/BUMN,5,5,5,5,5,5,5,5,5,5,5,5,5,4,5
+43,Laki-laki,33,Diploma (D3),Karyawan Swasta,4,4,4,4,4,5,4,5,4,4,4,4,4,4,4
+44,Laki-laki,25,SMA/SMK,Wiraswasta,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4
+45,Laki-laki,21,SMA/SMK,Karyawan Swasta,4,4,3,4,4,4,4,4,4,4,3,4,3,4,3
+46,Perempuan,33,Diploma (D3),Mahasiswa,4,4,4,5,4,4,4,4,4,4,4,4,4,4,4
+47,Perempuan,27,Sarjana (S1),Karyawan Swasta,4,3,3,4,4,4,4,4,4,4,4,4,3,3,3
+48,Perempuan,23,SMA/SMK,Wiraswasta,5,4,5,4,4,4,5,4,5,4,4,4,4,4,4
+49,Perempuan,31,Diploma (D3),Karyawan Swasta,3,3,3,4,3,3,3,3,3,3,3,3,3,3,3
+50,Perempuan,20,SMA/SMK,PNS/BUMN,4,4,3,4,4,4,4,4,4,4,4,3,4,4,4
+51,Laki-laki,34,Magister (S2),Karyawan Swasta,3,4,4,4,4,3,4,4,4,3,3,3,3,3,3
+52,Perempuan,35,Diploma (D3),PNS/BUMN,4,4,4,4,4,4,4,4,4,4,3,3,4,3,4
+53,Laki-laki,27,Sarjana (S1),Wiraswasta,4,3,3,3,4,4,4,4,4,4,3,3,4,3,4
+54,Laki-laki,31,Magister (S2),Mahasiswa,4,3,4,4,3,4,4,4,4,4,4,3,4,3,4
+55,Laki-laki,23,Magister (S2),Wiraswasta,4,4,4,4,4,4,4,4,4,4,4,3,4,4,4
+56,Perempuan,26,Diploma (D3),Mahasiswa,4,3,4,3,4,4,4,4,4,4,3,3,3,3,3
+57,Perempuan,24,Magister (S2),PNS/BUMN,3,3,3,3,3,4,3,3,4,4,3,3,3,3,3
+58,Laki-laki,20,Sarjana (S1),PNS/BUMN,5,5,4,4,5,4,4,4,5,4,4,4,4,4,4
+59,Perempuan,28,Magister (S2),Mahasiswa,5,4,4,4,5,5,4,5,4,5,5,4,4,5,4
+60,Perempuan,21,SMA/SMK,Wiraswasta,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3
+61,Perempuan,20,Magister (S2),Wiraswasta,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3
+62,Laki-laki,24,SMA/SMK,Mahasiswa,4,3,3,4,4,3,4,3,3,3,4,4,3,3,3
+63,Laki-laki,33,Sarjana (S1),Mahasiswa,4,4,4,4,4,4,4,3,4,4,3,3,3,4,3
+64,Laki-laki,32,SMA/SMK,Mahasiswa,4,4,4,4,4,4,4,4,4,4,3,4,4,4,4
+65,Perempuan,25,Diploma (D3),Karyawan Swasta,4,4,3,3,3,4,4,4,4,4,4,4,3,4,3
+66,Laki-laki,20,Sarjana (S1),Mahasiswa,4,5,4,4,5,4,5,4,4,4,4,4,4,4,4
+67,Laki-laki,34,Diploma (D3),Mahasiswa,5,5,5,5,5,5,5,5,5,5,5,4,4,5,5
+68,Perempuan,24,SMA/SMK,Mahasiswa,4,4,4,4,4,4,4,4,4,4,3,4,4,3,3
+69,Laki-laki,24,Sarjana (S1),Mahasiswa,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4
+70,Laki-laki,34,SMA/SMK,PNS/BUMN,3,4,4,3,3,3,4,4,4,4,4,3,4,3,3
+71,Laki-laki,30,Diploma (D3),Karyawan Swasta,4,4,4,4,4,3,3,3,4,3,3,3,3,3,3
+72,Perempuan,23,Sarjana (S1),Wiraswasta,4,4,4,3,3,4,4,4,4,4,3,4,3,3,3
+73,Laki-laki,26,Sarjana (S1),PNS/BUMN,3,3,3,3,3,4,3,3,3,3,2,3,3,3,2
+74,Perempuan,20,SMA/SMK,PNS/BUMN,5,4,5,4,5,5,4,4,4,5,4,4,4,4,4
+75,Perempuan,24,Magister (S2),Karyawan Swasta,4,4,4,4,4,4,5,4,4,5,4,4,4,4,4
+76,Laki-laki,35,Sarjana (S1),Karyawan Swasta,3,4,3,4,3,3,4,4,4,4,3,3,3,3,3
+77,Perempuan,20,Sarjana (S1),Karyawan Swasta,5,5,5,5,5,5,5,5,5,5,5,4,4,4,4
+78,Laki-laki,23,SMA/SMK,PNS/BUMN,3,3,3,3,3,4,3,4,4,3,3,3,3,3,3
+79,Laki-laki,23,Magister (S2),Mahasiswa,3,3,4,3,4,3,3,3,3,3,3,3,3,3,3
+80,Perempuan,23,Magister (S2),Karyawan Swasta,3,3,4,4,3,4,3,3,4,4,3,3,3,3,3
+81,Perempuan,28,Magister (S2),PNS/BUMN,4,4,4,4,4,4,4,4,4,4,3,3,3,4,3
+82,Perempuan,30,Magister (S2),PNS/BUMN,4,4,4,4,4,3,3,3,3,4,4,3,3,3,3
+83,Laki-laki,22,Magister (S2),Karyawan Swasta,4,4,4,4,4,4,4,4,4,4,4,4,4,4,3
+84,Laki-laki,32,Magister (S2),Wiraswasta,4,4,4,4,4,4,4,4,4,5,4,4,4,4,4
+85,Laki-laki,20,Diploma (D3),PNS/BUMN,5,4,4,4,4,4,4,5,4,5,4,4,4,4,4
+86,Laki-laki,27,SMA/SMK,Mahasiswa,5,4,5,5,5,4,4,4,4,4,4,4,4,4,4
+87,Laki-laki,29,Diploma (D3),PNS/BUMN,4,4,4,4,5,4,5,5,5,4,4,4,4,4,4
+88,Laki-laki,31,Diploma (D3),Mahasiswa,4,4,4,4,4,4,4,4,4,4,3,4,3,4,3
+89,Perempuan,31,Magister (S2),PNS/BUMN,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3
+90,Perempuan,29,SMA/SMK,Mahasiswa,4,4,5,5,5,4,4,4,4,4,4,4,3,3,4
+91,Laki-laki,27,SMA/SMK,PNS/BUMN,5,4,5,5,5,4,4,4,4,4,4,4,4,4,4
+92,Perempuan,28,SMA/SMK,Wiraswasta,5,4,4,4,4,5,4,5,5,4,4,4,4,4,4
+93,Perempuan,24,Magister (S2),Mahasiswa,3,4,4,4,4,4,4,4,4,4,3,3,3,3,3
+94,Laki-laki,32,Magister (S2),Wiraswasta,4,4,3,3,3,4,4,4,3,4,3,3,3,3,3
+95,Perempuan,26,SMA/SMK,Wiraswasta,5,5,4,5,4,4,5,4,4,4,4,4,4,4,4
+96,Laki-laki,24,Magister (S2),Karyawan Swasta,4,4,5,5,4,5,5,4,4,4,5,4,4,4,4
+97,Perempuan,24,SMA/SMK,Karyawan Swasta,4,3,4,4,3,4,4,4,4,4,3,3,3,4,3
+98,Laki-laki,35,Magister (S2),Wiraswasta,3,4,4,4,3,4,4,4,4,4,3,3,3,3,4
+99,Perempuan,22,SMA/SMK,Karyawan Swasta,3,3,4,4,3,3,4,3,3,3,3,3,3,4,4
+100,Perempuan,27,Sarjana (S1),Karyawan Swasta,4,5,4,4,5,5,5,5,5,5,5,4,5,4,5
