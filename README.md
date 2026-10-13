@@ -47,6 +47,61 @@ olahdata/
 
 ---
 
+## ⚙️ Panduan Pengaturan Supabase (Setup)
+
+Ikuti langkah-langkah di bawah ini untuk menghubungkan aplikasi ke proyek Supabase Anda:
+
+### 1. Konfigurasi Variabel Lingkungan (.env.local)
+1. Salin template `.env.local.example` menjadi `.env.local`:
+   ```bash
+   cp .env.local.example apps/web/.env.local
+   ```
+2. Buka **Supabase Dashboard** > **Project Settings** > **API**:
+   - `NEXT_PUBLIC_SUPABASE_URL`: Gunakan format URL `https://<project-ref>.supabase.co` (pastikan berformat URL, bukan token publishable key).
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Masukkan nilai public `anon` key.
+   - `SUPABASE_SERVICE_ROLE_KEY`: Masukkan nilai `service_role` secret key (hanya untuk server, jangan berikan awalan `NEXT_PUBLIC_`!).
+3. Berkas `.env.local` telah otomatis dilindungi oleh `.gitignore` sehingga tidak akan ter-commit.
+
+### 2. Pengaturan Autentikasi (Auth) di Dashboard Supabase
+1. Masuk ke menu **Authentication** > **Providers** > **Email**:
+   - Pastikan **Enable Email provider** dalam kondisi **ON**.
+   - Untuk kemudahan pengujian lokal, Anda dapat menonaktifkan **Confirm email** (agar akun baru dapat langsung login tanpa verifikasi tautan email), atau biarkan aktif bila ingin alur verifikasi resmi.
+2. Masuk ke menu **Authentication** > **URL Configuration**:
+   - **Site URL**: Atur ke `http://localhost:3000` (atau domain produksi Anda).
+   - **Redirect URLs**: Tambahkan tautan tujuan pengalihan:
+     - `http://localhost:3000/**`
+     - `https://olah-data.pages.dev/**`
+
+### 3. Pengaturan Penyimpanan Berkas Privat (Storage)
+1. Masuk ke menu **Storage** > **New bucket**:
+   - **Bucket name**: `datasets`
+   - **Public bucket**: **OFF** (Wajib dinonaktifkan! File kuesioner mahasiswa bersifat rahasia dan dilindungi RLS).
+   - **File size limit**: `10 MB`
+   - **Allowed MIME types**: `text/csv`, `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`, `application/vnd.ms-excel`, `text/plain`
+2. Simpan bucket. Kebijakan akses (RLS) folder `{user_id}/*` akan otomatis ditegakkan oleh migrasi database.
+
+### 4. Menjalankan Migrasi Skema Database & RLS
+Seluruh skema tabel (`profiles`, `projects`, `datasets`, dll.) dan kebijakan keamanan baris (RLS) tersedia di folder `supabase/migrations/`.
+Jalankan perintah berikut di terminal Anda:
+```bash
+# 1. Tautkan repositori lokal ke proyek Supabase Anda
+npx supabase link --project-ref <project-ref-anda>
+
+# 2. Terapkan seluruh migrasi tabel, trigger, dan kebijakan RLS
+npx supabase db push
+```
+
+### 5. Memeriksa Koneksi di Halaman Pengembang
+Buka browser dan buka halaman diagnostik koneksi:
+🔗 **[http://localhost:3000/dev/koneksi](http://localhost:3000/dev/koneksi)**  
+Halaman ini akan memeriksa:
+- Keterisian variabel lingkungan (tanpa membocorkan nilai kunci).
+- Konektivitas basis data Postgres.
+- Status sesi autentikasi pengguna.
+- Kesiapan akses bucket Storage privat.
+
+---
+
 ## 🚀 Panduan Menjalankan Lokal
 
 ### Cara 1: Menggunakan Docker Compose (Direkomendasikan)

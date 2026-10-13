@@ -52,6 +52,13 @@ export interface DataVersion {
   createdAt: string;
 }
 
+export interface DatasetUploadResult {
+  datasetId: string;
+  storagePath: string;
+  rowCount: number;
+  columnCount: number;
+}
+
 export interface DatasetRow {
   [key: string]: string | number | null;
 }

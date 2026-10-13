@@ -30,16 +30,19 @@ dist/
 *.pem
 *.log
 
-# env files (allow .env.example)
+# env files (allow example templates)
 .env
+.env.local
 .env*.local
 .env.development.local
 .env.test.local
 .env.production.local
 !.env.example
+!.env.local.example
 
 # Supabase local runtime
 supabase/.temp/
+supabase/.temp
 supabase/.branches/
 
 # vercel & turbopack

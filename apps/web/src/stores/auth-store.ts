@@ -52,10 +52,32 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (stored) {
         const user = JSON.parse(stored) as User;
         set({ user, isAuthenticated: true, isLoading: false });
-      } else {
-        set({ isLoading: false });
       }
     } catch {
+      // ignore
+    }
+
+    if (typeof window !== 'undefined') {
+      import('@/lib/api').then(({ getSession }) => {
+        getSession()
+          .then((user) => {
+            if (user) {
+              set({ user, isAuthenticated: true, isLoading: false });
+            } else {
+              // If no active session on Supabase, keep or clear
+              const stored = localStorage.getItem('olahdata-session');
+              if (!stored) {
+                set({ user: null, isAuthenticated: false, isLoading: false });
+              } else {
+                set({ isLoading: false });
+              }
+            }
+          })
+          .catch(() => {
+            set({ isLoading: false });
+          });
+      });
+    } else {
       set({ isLoading: false });
     }
   },

@@ -1,26 +1,51 @@
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
+import { getSupabaseAdminClient } from './admin';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.anon';
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.service_role';
+export { getSupabaseAdminClient };
 
-let serverClient: SupabaseClient | null = null;
-let adminClient: SupabaseClient | null = null;
+/**
+ * Membuat Klien Supabase Server berbasis cookie (@supabase/ssr).
+ * Digunakan di Server Components, Server Actions, dan Route Handlers.
+ */
+export async function createSupabaseServerClient(): Promise<SupabaseClient> {
+  const cookieStore = await cookies();
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-export function getSupabaseServerClient(): SupabaseClient {
-  if (!serverClient) {
-    serverClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: { persistSession: false },
-    });
-  }
-  return serverClient;
+  return createServerClient(url, anonKey, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          );
+        } catch {
+          // Abaikan jika dipanggil dari Server Component murni
+        }
+      },
+    },
+  });
 }
 
-export function getSupabaseAdminClient(): SupabaseClient {
-  if (!adminClient) {
-    adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { persistSession: false },
-    });
-  }
-  return adminClient;
+let syncServerClient: SupabaseClient | null = null;
+
+/**
+ * Klien Supabase Server standar (fallback non-cookie / tokenless).
+ */
+export function getSupabaseServerClient(): SupabaseClient {
+  if (syncServerClient) return syncServerClient;
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon';
+
+  syncServerClient = createClient(url, anonKey, {
+    auth: { persistSession: false },
+  });
+
+  return syncServerClient;
 }
