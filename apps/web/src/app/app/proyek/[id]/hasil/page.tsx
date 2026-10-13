@@ -50,7 +50,22 @@ import { COPY } from '@/lib/copy';
 export default function HasilPage() {
   const params = useParams();
   const router = useRouter();
-  const projectId = (params?.id as string) || 'project-1';
+  
+  // Ambil ID proyek dari params atau pathname (aman untuk SPA fallback & static export)
+  const [projectId, setProjectId] = useState<string>('sample');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const match = window.location.pathname.match(/\/app\/proyek\/([^/]+)/);
+      if (match && match[1]) {
+        setProjectId(match[1]);
+        return;
+      }
+    }
+    if (params?.id) {
+      setProjectId(params.id as string);
+    }
+  }, [params?.id]);
 
   const [project, setProject] = useState<Project | null>(null);
   const [results, setResults] = useState<AnalysisResults | null>(null);
@@ -620,7 +635,7 @@ export default function HasilPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => router.push(`/app/proyek/${projectId}/wizard`)}
+              onClick={() => router.push(`/app/proyek/${projectId}/analisis`)}
               className="gap-1.5 text-xs h-9 rounded-[10px]"
               title="Jalankan ulang analisis dengan parameter berbeda"
             >

@@ -152,8 +152,13 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
         clearInterval(intervalId);
         setTimeout(() => {
           setRunning(false);
-          router.push(`/app/proyek/${projectId}/hasil`);
-        }, 300);
+          const targetUrl = `/app/proyek/${projectId}/hasil`;
+          if (typeof window !== 'undefined') {
+            window.location.href = targetUrl;
+          } else {
+            router.push(targetUrl);
+          }
+        }, 400);
       }
     }, stepInterval);
   };

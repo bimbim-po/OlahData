@@ -39,7 +39,12 @@ try {
   const outDir = path.join(webRoot, 'out');
   if (fs.existsSync(outDir)) {
     // Cloudflare Pages _redirects file for SPA fallback if needed
-    const redirectsContent = `# Cloudflare Pages Redirects for SPA routes\n/app/proyek/* /app/proyek/sample/analisis 200\n`;
+    const redirectsContent = `# Cloudflare Pages Redirects for SPA routes
+/app/proyek/*/hasil /app/proyek/sample/hasil 200
+/app/proyek/*/analisis /app/proyek/sample/analisis 200
+/app/proyek/* /app/proyek/sample/analisis 200
+/admin/pelanggan/* /admin/pelanggan/sample 200
+`;
     fs.writeFileSync(path.join(outDir, '_redirects'), redirectsContent, 'utf-8');
     console.log('Static export complete in out/ folder.');
   }
