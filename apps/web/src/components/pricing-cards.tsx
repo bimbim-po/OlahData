@@ -1,14 +1,16 @@
 'use client';
 
 import * as React from 'react';
-import { Check, Building2, CheckCircle2 } from 'lucide-react';
+import Link from 'next/link';
+import { Check, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { COPY } from '@/lib/copy';
 import { formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { SubscriptionPlan } from '@/lib/api/types';
+import { PLANS, INSTITUTION_PLAN, IS_PRE_RELEASE_SIMULATION, SIMULATION_LABEL } from '@/lib/plans';
+import { useToast } from '@/components/ui/toaster';
 
 export interface PricingCardsProps {
   currentPlan?: SubscriptionPlan;
@@ -23,25 +25,55 @@ export function PricingCards({
   className,
   showDisclaimer = true,
 }: PricingCardsProps) {
+  const { toast } = useToast();
+
+  const handleAction = (planId: SubscriptionPlan) => {
+    if (onSelectPlan) {
+      onSelectPlan(planId);
+      return;
+    }
+
+    if (planId === 'free') {
+      window.location.href = '/app/proyek/baru?contoh=1';
+      return;
+    }
+
+    if (IS_PRE_RELEASE_SIMULATION) {
+      toast({
+        title: 'Pendaftaran Waiting List',
+        description: 'Terima kasih atas ketertarikan Anda. Akses awal akan segera dihubungi melalui email.',
+        variant: 'default',
+      });
+    }
+  };
+
   return (
     <div className={cn('w-full space-y-6', className)}>
       {showDisclaimer && (
         <div className="flex flex-col sm:flex-row items-center justify-center gap-2 text-center">
           <Badge variant="outline" className="text-[11px] font-medium py-0.5 px-2.5 bg-muted/50 border-border">
-            {COPY.badges.samplePrice}
+            {SIMULATION_LABEL}
           </Badge>
           <span className="text-xs text-muted-foreground">
-            {COPY.pricing.disclaimer}
+            Tarif simulasi pra-rilis, dapat disesuaikan sebelum peluncuran resmi.
           </span>
         </div>
       )}
 
       {/* Pricing Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
-        {COPY.pricing.plans.map((plan) => {
-          const planId = plan.id as SubscriptionPlan;
+        {PLANS.map((plan) => {
+          const planId = plan.id;
           const isCurrent = currentPlan === planId;
           const isHighlighted = plan.highlighted;
+
+          const buttonText = isCurrent
+            ? 'Paket Aktif Saat Ini'
+            : planId === 'free'
+            ? 'Coba Gratis'
+            : IS_PRE_RELEASE_SIMULATION
+            ? 'Daftar waiting list'
+            : plan.ctaText;
 
           return (
             <Card
@@ -53,10 +85,10 @@ export function PricingCards({
                   : 'border-border bg-card hover:border-foreground/30'
               )}
             >
-              {isHighlighted && (
+              {plan.badge && (
                 <div className="absolute -top-2.5 left-4">
                   <Badge variant="mint" className="text-[10px] font-semibold py-0.5 px-2.5 rounded-[6px]">
-                    Rekomendasi Skripsi
+                    {plan.badge}
                   </Badge>
                 </div>
               )}
@@ -74,9 +106,7 @@ export function PricingCards({
                     )}
                   </div>
                   <CardDescription className="min-h-[1.25rem] text-xs">
-                    {planId === 'free' && 'Untuk pengenalan uji deskriptif & validitas'}
-                    {planId === 'monthly' && 'Fleksibel untuk pengerjaan revisi bulanan'}
-                    {planId === 'thesis' && 'Lengkap untuk seluruh proses hingga sidang'}
+                    {plan.description}
                   </CardDescription>
 
                   <div className="mt-3.5 flex items-baseline gap-1">
@@ -114,9 +144,9 @@ export function PricingCards({
                   size="default"
                   className="w-full text-xs font-semibold h-10 rounded-[10px]"
                   disabled={isCurrent}
-                  onClick={() => onSelectPlan?.(planId)}
+                  onClick={() => handleAction(planId)}
                 >
-                  {isCurrent ? 'Paket Aktif Saat Ini' : plan.cta}
+                  {buttonText}
                 </Button>
               </CardFooter>
             </Card>
@@ -127,7 +157,16 @@ export function PricingCards({
       {/* Campus License Note */}
       <div className="rounded-[16px] border border-border/80 bg-card p-4 text-center text-xs text-muted-foreground flex items-center justify-center gap-2 shadow-2xs">
         <Building2 className="h-4 w-4 text-primary shrink-0" />
-        <span>{COPY.pricing.campusNote}</span>
+        <span>
+          Untuk kerja sama program studi atau laboratorium: silakan{' '}
+          <a
+            href={INSTITUTION_PLAN.contactHref}
+            className="text-primary font-medium underline underline-offset-2 hover:opacity-85"
+          >
+            hubungi kami untuk paket institusi
+          </a>
+          .
+        </span>
       </div>
     </div>
   );

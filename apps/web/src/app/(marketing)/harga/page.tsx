@@ -3,48 +3,13 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { Check, X, Building2, Mail, ArrowRight } from 'lucide-react';
-import { COPY } from '@/lib/copy';
 import { PricingCards } from '@/components/pricing-cards';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { COMPARISON_SECTIONS, INSTITUTION_PLAN, PLANS } from '@/lib/plans';
 
 export default function HargaPage() {
-  const comparisonFeatures = [
-    {
-      category: 'Kapasitas & Batasan',
-      items: [
-        { name: 'Jumlah proyek aktif', free: '1 proyek', monthly: '5 proyek', thesis: 'Tidak terbatas' },
-        { name: 'Maksimum data responden', free: '50 responden', monthly: 'Tidak terbatas', thesis: 'Tidak terbatas' },
-        { name: 'Maksimum butir pertanyaan', free: '30 item', monthly: 'Tidak terbatas', thesis: 'Tidak terbatas' },
-        { name: 'Riwayat versi dataset', free: '1 versi', monthly: '5 versi', thesis: 'Riwayat lengkap' },
-      ],
-    },
-    {
-      category: 'Cakupan Uji Statistik',
-      items: [
-        { name: 'Statistik Deskriptif', free: true, monthly: true, thesis: true },
-        { name: 'Uji Validitas Pearson Product Moment', free: true, monthly: true, thesis: true },
-        { name: "Uji Reliabilitas Cronbach's Alpha", free: false, monthly: true, thesis: true },
-        { name: 'Uji Normalitas (Kolmogorov-Smirnov)', free: false, monthly: true, thesis: true },
-        { name: 'Uji Multikolinearitas (VIF & Tolerance)', free: false, monthly: true, thesis: true },
-        { name: 'Uji Heteroskedastisitas (Glejser)', free: false, monthly: true, thesis: true },
-        { name: 'Regresi Linier Berganda (Uji t, Uji F, R²)', free: false, monthly: true, thesis: true },
-        { name: 'Korelasi Pearson & ANOVA Satu Arah', free: false, monthly: true, thesis: true },
-      ],
-    },
-    {
-      category: 'Hasil & Ekspor',
-      items: [
-        { name: 'Format tabel standar APA 7th Edition', free: true, monthly: true, thesis: true },
-        { name: 'Naskah interpretasi kaidah Bab 4', free: true, monthly: true, thesis: true },
-        { name: 'Jejak Hitung (Audit Trail formula)', free: true, monthly: true, thesis: true },
-        { name: 'Ekspor Word (.docx) & PDF', free: 'Dengan penanda air', monthly: 'Bebas penanda air', thesis: 'Bebas penanda air' },
-        { name: 'Dokumen Pernyataan Penggunaan Alat', free: false, monthly: true, thesis: true },
-      ],
-    },
-  ];
-
   const pricingFaq = [
     {
       q: 'Metode pembayaran apa saja yang didukung?',
@@ -52,11 +17,11 @@ export default function HargaPage() {
     },
     {
       q: 'Apakah paket bulanan otomatis memotong saldo?',
-      a: 'Tidak ada perpanjangan otomatis tanpa persetujuanmu. Kamu membayar hanya untuk jangka waktu yang kamu pilih.',
+      a: 'Tidak ada perpanjangan otomatis tanpa persetujuan Anda. Anda membayar hanya untuk jangka waktu yang Anda pilih.',
     },
     {
       q: 'Apakah data proyek hilang jika masa aktif langganan habis?',
-      a: 'Data dan seluruh riwayat analisismu tetap tersimpan aman di akunmu dan dapat kamu buka kembali kapan pun kamu memperbarui paket.',
+      a: 'Data dan seluruh riwayat analisis Anda tetap tersimpan aman di akun Anda dan dapat Anda buka kembali kapan pun Anda memperbarui paket.',
     },
   ];
 
@@ -68,10 +33,10 @@ export default function HargaPage() {
           Investasi Skripsi
         </div>
         <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground">
-          {COPY.pricing.title}
+          Pilihan Paket Meja Kerja
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-          {COPY.pricing.subtitle}. Akses terjangkau untuk ketenangan dan kelancaran persiapan sidang skripsimu.
+          Pilih akses yang sesuai dengan tahapan penyusunan skripsi Anda. Akses terjangkau untuk ketenangan dan kelancaran persiapan sidang skripsi Anda.
         </p>
       </div>
 
@@ -87,47 +52,48 @@ export default function HargaPage() {
             </div>
             <div>
               <h3 className="text-base font-semibold text-foreground">
-                Paket Institusi & Laboratorium Kampus
+                {INSTITUTION_PLAN.name}
               </h3>
               <p className="mt-1 text-xs text-muted-foreground max-w-2xl leading-relaxed">
-                {COPY.pricing.campusNote} Kami menyediakan lisensi laboratorium komputer kampus, lokakarya metodologi kuantitatif, dan akun institusi terpusat.
+                {INSTITUTION_PLAN.description} Kami menyediakan lisensi laboratorium komputer kampus, lokakarya metodologi kuantitatif, dan akun institusi terpusat.
               </p>
             </div>
           </div>
           <div className="shrink-0">
             <Button asChild variant="outline" size="sm" className="gap-2 w-full md:w-auto font-medium text-xs">
-              <a href="mailto:institusi@olahdata.id">
+              <a href={INSTITUTION_PLAN.contactHref}>
                 <Mail className="h-3.5 w-3.5" />
-                <span>Hubungi Tim Kampus</span>
+                <span>{INSTITUTION_PLAN.ctaText}</span>
               </a>
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Comparison Table */}
+      {/* Comparison Table Section */}
       <div className="space-y-4">
         <div className="text-center max-w-xl mx-auto">
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">
             Perbandingan Rinci Fitur
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Periksa detail batasan dan cakupan setiap paket untuk memilih yang paling sesuai dengan kebutuhanmu.
+            Periksa detail batasan dan cakupan setiap paket untuk memilih yang paling sesuai dengan kebutuhan Anda.
           </p>
         </div>
 
-        <div className="overflow-x-auto rounded-md border border-border bg-card shadow-xs">
+        {/* Desktop View: Full Matrix Table */}
+        <div className="hidden md:block overflow-x-auto rounded-md border border-border bg-card shadow-xs">
           <table className="w-full text-left border-collapse text-xs font-sans">
             <thead>
               <tr className="border-b border-border bg-muted/40 font-semibold text-foreground">
-                <th className="py-3 px-4 w-1/2">Fitur Analisis</th>
-                <th className="py-3 px-3 text-center w-1/6">Coba Gratis</th>
-                <th className="py-3 px-3 text-center w-1/6 bg-accent text-primary">Bulanan</th>
-                <th className="py-3 px-3 text-center w-1/6">Paket Skripsi</th>
+                <th scope="col" className="py-3 px-4 w-1/2">Fitur Analisis</th>
+                <th scope="col" className="py-3 px-3 text-center w-1/6">Coba Gratis</th>
+                <th scope="col" className="py-3 px-3 text-center w-1/6 bg-accent text-primary">Bulanan</th>
+                <th scope="col" className="py-3 px-3 text-center w-1/6">Paket Skripsi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
-              {comparisonFeatures.map((section, sIdx) => (
+              {COMPARISON_SECTIONS.map((section, sIdx) => (
                 <React.Fragment key={sIdx}>
                   <tr className="bg-muted/20 font-bold text-[11px] uppercase tracking-wider text-muted-foreground">
                     <td colSpan={4} className="py-2.5 px-4">
@@ -139,37 +105,70 @@ export default function HargaPage() {
                       <td className="py-2.5 px-4 font-medium text-foreground">
                         {item.name}
                       </td>
+
+                      {/* Coba Gratis */}
                       <td className="py-2.5 px-3 text-center text-xs text-muted-foreground">
                         {typeof item.free === 'boolean' ? (
                           item.free ? (
-                            <Check className="h-3.5 w-3.5 text-primary mx-auto" />
+                            <span className="inline-flex items-center justify-center">
+                              <Check className="h-4 w-4 text-primary" aria-hidden="true" />
+                              <span className="sr-only">Termasuk</span>
+                            </span>
                           ) : (
-                            <X className="h-3.5 w-3.5 text-muted-foreground/40 mx-auto" />
+                            <span className="inline-flex items-center justify-center">
+                              <X className="h-4 w-4 text-muted-foreground/40" aria-hidden="true" />
+                              <span className="sr-only">Tidak termasuk</span>
+                            </span>
                           )
                         ) : (
-                          item.free
+                          <span>
+                            {item.free}
+                            <span className="sr-only"> ({item.name}: {item.free})</span>
+                          </span>
                         )}
                       </td>
+
+                      {/* Bulanan */}
                       <td className="py-2.5 px-3 text-center text-xs bg-accent/40 font-medium text-foreground">
                         {typeof item.monthly === 'boolean' ? (
                           item.monthly ? (
-                            <Check className="h-3.5 w-3.5 text-primary mx-auto" />
+                            <span className="inline-flex items-center justify-center">
+                              <Check className="h-4 w-4 text-primary" aria-hidden="true" />
+                              <span className="sr-only">Termasuk</span>
+                            </span>
                           ) : (
-                            <X className="h-3.5 w-3.5 text-muted-foreground/40 mx-auto" />
+                            <span className="inline-flex items-center justify-center">
+                              <X className="h-4 w-4 text-muted-foreground/40" aria-hidden="true" />
+                              <span className="sr-only">Tidak termasuk</span>
+                            </span>
                           )
                         ) : (
-                          item.monthly
+                          <span>
+                            {item.monthly}
+                            <span className="sr-only"> ({item.name}: {item.monthly})</span>
+                          </span>
                         )}
                       </td>
+
+                      {/* Paket Skripsi */}
                       <td className="py-2.5 px-3 text-center text-xs text-muted-foreground">
                         {typeof item.thesis === 'boolean' ? (
                           item.thesis ? (
-                            <Check className="h-3.5 w-3.5 text-primary mx-auto" />
+                            <span className="inline-flex items-center justify-center">
+                              <Check className="h-4 w-4 text-primary" aria-hidden="true" />
+                              <span className="sr-only">Termasuk</span>
+                            </span>
                           ) : (
-                            <X className="h-3.5 w-3.5 text-muted-foreground/40 mx-auto" />
+                            <span className="inline-flex items-center justify-center">
+                              <X className="h-4 w-4 text-muted-foreground/40" aria-hidden="true" />
+                              <span className="sr-only">Tidak termasuk</span>
+                            </span>
                           )
                         ) : (
-                          item.thesis
+                          <span>
+                            {item.thesis}
+                            <span className="sr-only"> ({item.name}: {item.thesis})</span>
+                          </span>
                         )}
                       </td>
                     </tr>
@@ -178,6 +177,68 @@ export default function HargaPage() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile View: Cards per Package */}
+        <div className="block md:hidden space-y-4">
+          {PLANS.map((plan) => {
+            const planKey = plan.id as 'free' | 'monthly' | 'thesis';
+            return (
+              <Card key={plan.id} className="border-border bg-card rounded-[14px] shadow-xs">
+                <CardHeader className="p-4 pb-3 border-b border-border/70">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base font-bold text-foreground">
+                      {plan.name}
+                    </CardTitle>
+                    {plan.badge && (
+                      <Badge variant="mint" className="text-[10px] py-0.5 px-2">
+                        {plan.badge}
+                      </Badge>
+                    )}
+                  </div>
+                  <CardDescription className="text-xs text-muted-foreground">
+                    {plan.price === 0 ? 'Gratis' : `Rp ${plan.price.toLocaleString('id-ID')}${plan.period}`}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-4 space-y-4">
+                  {COMPARISON_SECTIONS.map((section, sIdx) => (
+                    <div key={sIdx} className="space-y-2">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                        {section.category}
+                      </p>
+                      <ul className="space-y-1.5 text-xs divide-y divide-border/40">
+                        {section.items.map((item, iIdx) => {
+                          const val = item[planKey];
+                          return (
+                            <li key={iIdx} className="pt-1.5 flex items-start justify-between gap-2">
+                              <span className="text-foreground/90">{item.name}</span>
+                              <div className="shrink-0 text-right font-medium">
+                                {typeof val === 'boolean' ? (
+                                  val ? (
+                                    <span className="inline-flex items-center gap-1 text-primary text-[11px]">
+                                      <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                                      <span>Termasuk</span>
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 text-muted-foreground/50 text-[11px]">
+                                      <X className="h-3.5 w-3.5" aria-hidden="true" />
+                                      <span>Tidak</span>
+                                    </span>
+                                  )
+                                ) : (
+                                  <span className="text-foreground text-[11px] font-semibold">{val}</span>
+                                )}
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
 
@@ -190,9 +251,9 @@ export default function HargaPage() {
           {pricingFaq.map((faq, i) => (
             <Card key={i} className="border-border bg-card rounded-xs">
               <CardContent className="p-4 space-y-1">
-                <h4 className="text-xs sm:text-sm font-semibold text-foreground">
+                <h3 className="text-xs sm:text-sm font-semibold text-foreground">
                   {faq.q}
-                </h4>
+                </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   {faq.a}
                 </p>
@@ -205,14 +266,14 @@ export default function HargaPage() {
       {/* Bottom CTA */}
       <div className="text-center pt-6 border-t border-border">
         <h3 className="text-lg sm:text-xl font-bold text-foreground mb-2">
-          Siap menguji data kuesionermu minggu ini?
+          Siap menguji data kuesioner Anda minggu ini?
         </h3>
         <p className="text-xs text-muted-foreground mb-4">
-          Daftar gratis tanpa kartu kredit dan buka meja kerja analisismu sekarang.
+          Daftar gratis tanpa kartu kredit dan buka meja kerja analisis Anda sekarang.
         </p>
         <Button asChild size="default" className="font-semibold text-xs px-5">
           <Link href="/daftar">
-            <span>Buka Meja Kerja Gratis</span>
+            <span>Coba Gratis</span>
             <ArrowRight className="h-3.5 w-3.5 ml-1" />
           </Link>
         </Button>

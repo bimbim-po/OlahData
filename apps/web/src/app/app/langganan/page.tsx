@@ -37,55 +37,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/toaster';
+import { PLANS, getPlanConfig } from '@/lib/plans';
 
-const PLANS = [
-  {
-    id: 'free' as SubscriptionPlan,
-    name: 'Coba Gratis',
-    price: 0,
-    period: '',
-    quotaProjects: '1 proyek aktif',
-    quotaRespondents: 'Maks. 50 responden',
-    features: [
-      '1 proyek aktif',
-      'Maks. 50 responden',
-      'Statistik deskriptif & validitas',
-      'Ekspor dengan tanda air',
-    ],
-  },
-  {
-    id: 'monthly' as SubscriptionPlan,
-    name: 'Bulanan',
-    price: 39000,
-    period: '/bulan',
-    quotaProjects: '5 proyek aktif',
-    quotaRespondents: 'Responden tanpa batas',
-    popular: true,
-    features: [
-      '5 proyek aktif',
-      'Responden tanpa batas',
-      'Semua uji statistik lengkap',
-      'Ekspor Word & PDF tanpa tanda air',
-      'Pernyataan Penggunaan Alat',
-    ],
-  },
-  {
-    id: 'thesis' as SubscriptionPlan,
-    name: 'Paket Skripsi',
-    price: 99000,
-    period: '/3 bulan',
-    quotaProjects: 'Proyek tanpa batas',
-    quotaRespondents: 'Responden tanpa batas',
-    features: [
-      'Proyek tanpa batas',
-      'Responden tanpa batas',
-      'Semua uji statistik lengkap',
-      'Ekspor Word & PDF tanpa tanda air',
-      'Pernyataan Penggunaan Alat',
-      'Riwayat versi analisis lengkap',
-    ],
-  },
-];
 
 const PAYMENT_METHODS = [
   { id: 'qris', name: 'QRIS (Gopay, OVO, ShopeePay, Dana)', icon: QrCode },
@@ -288,7 +241,7 @@ export default function SubscriptionPage() {
                   Proyek Aktif
                 </span>
                 <span className="font-semibold tabular-nums text-foreground">
-                  {formatNumber(1)} / {currentPlan.id === 'free' ? formatNumber(1) : currentPlan.id === 'monthly' ? formatNumber(5) : '∞'} Proyek
+                  {formatNumber(1)} / {currentPlan.quotaProjects === Infinity ? '∞' : formatNumber(currentPlan.quotaProjects)} Proyek
                 </span>
               </div>
               <div className="h-2 w-full rounded-full bg-secondary overflow-hidden">
@@ -300,7 +253,7 @@ export default function SubscriptionPage() {
               </div>
               {currentPlan.id === 'free' && (
                 <p className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">
-                  Batas kuota proyek gratis tercapai (1 dari 1 proyek).
+                  Batas kuota proyek gratis tercapai (1 dari {currentPlan.quotaProjects} proyek).
                 </p>
               )}
             </div>
@@ -433,14 +386,14 @@ export default function SubscriptionPage() {
                           <span className="font-semibold text-sm text-foreground">
                             {p.name}
                           </span>
-                          {p.popular && (
-                            <Badge variant="success" className="text-[10px]">
-                              Populer
+                          {p.badge && (
+                            <Badge variant="mint" className="text-[10px]">
+                              {p.badge}
                             </Badge>
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {p.quotaProjects} • {p.quotaRespondents}
+                          {p.quotaProjectsLabel} • {p.quotaRespondentsLabel}
                         </p>
                       </div>
                       <div className="text-right">
