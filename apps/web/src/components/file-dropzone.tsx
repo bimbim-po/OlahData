@@ -249,7 +249,7 @@ export function FileDropzone({ onFileLoaded, className }: FileDropzoneProps) {
           type="button"
           onClick={handleLoadSampleData}
           variant="outline"
-          className="border-primary text-primary hover:bg-primary hover:text-white shrink-0 font-medium cursor-pointer shadow-sm rounded-[10px]"
+          className="border-primary text-primary hover:bg-primary hover:text-white shrink-0 font-medium cursor-pointer shadow-sm rounded-[10px] min-h-[44px] h-11 sm:h-9"
         >
           <Sparkles className="w-4 h-4 mr-2" />
           Pakai data contoh
@@ -286,7 +286,7 @@ export function FileDropzone({ onFileLoaded, className }: FileDropzoneProps) {
               variant="outline"
               size="sm"
               onClick={handleReplaceFile}
-              className="text-xs cursor-pointer"
+              className="text-xs cursor-pointer min-h-[44px] sm:min-h-[36px]"
             >
               <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
               Ganti file
@@ -328,7 +328,7 @@ export function FileDropzone({ onFileLoaded, className }: FileDropzoneProps) {
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
           className={cn(
-            'group relative flex flex-col items-center justify-center p-10 text-center rounded-[16px] border-2 border-dashed transition-all cursor-pointer select-none',
+            'group relative flex flex-col items-center justify-center p-6 sm:p-10 text-center rounded-[16px] border-2 border-dashed transition-all cursor-pointer select-none',
             isDragging
               ? 'border-primary bg-primary/5 scale-[1.005]'
               : 'border-border/80 hover:border-primary/60 hover:bg-muted/30 bg-card/60'
@@ -352,19 +352,27 @@ export function FileDropzone({ onFileLoaded, className }: FileDropzoneProps) {
 
           <div
             className={cn(
-              'w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-105',
+              'w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mb-3 sm:mb-4 transition-transform group-hover:scale-105',
               isDragging ? 'bg-primary text-white shadow-md' : 'bg-primary/10 text-primary'
             )}
           >
-            <UploadCloud className="w-8 h-8" />
+            <UploadCloud className="w-7 h-7 sm:w-8 sm:h-8" />
           </div>
 
-          <h3 className="font-serif text-lg font-semibold text-foreground mb-1">
+          <h3 className="font-serif text-base sm:text-lg font-semibold text-foreground mb-1">
             {isParsing ? 'Sedang membaca file...' : 'Tarik & lepas file data kuesioner di sini'}
           </h3>
-          <p className="text-sm text-muted-foreground max-w-md mb-3">
-            Atau klik untuk memilih file dari komputer Anda. Mendukung spreadsheet Excel dan file CSV.
+          <p className="text-xs sm:text-sm text-muted-foreground max-w-md mb-3">
+            Tarik file ke area ini atau tekan tombol di bawah untuk memilih file dari komputer atau ponsel Anda.
           </p>
+
+          <Button
+            type="button"
+            className="mb-3 min-h-[48px] px-6 text-sm font-semibold rounded-[12px] shadow-sm pointer-events-none"
+          >
+            <UploadCloud className="w-4 h-4 mr-2" />
+            Pilih Berkas Spreadsheet
+          </Button>
 
           <div className="flex items-center gap-2 text-xs text-muted-foreground/80 bg-muted/50 px-3 py-1.5 rounded-full border border-border/50">
             <span>Maks. {FILE_LIMITS.maxSizeMB} MB</span>

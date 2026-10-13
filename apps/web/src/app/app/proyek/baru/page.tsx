@@ -107,21 +107,21 @@ export default function NewProjectPage() {
           variant="ghost"
           size="sm"
           asChild
-          className="text-muted-foreground hover:text-foreground -ml-2 text-xs"
+          className="text-muted-foreground hover:text-foreground -ml-2 text-xs min-h-[44px] inline-flex items-center"
         >
           <Link href="/app">
-            <ArrowLeft className="h-3.5 w-3.5 mr-1" />
+            <ArrowLeft className="h-4 w-4 mr-1.5" />
             Kembali ke Meja Kerja
           </Link>
         </Button>
       </div>
 
-      <Card className="border-border shadow-xs rounded-md">
+      <Card className="border-border shadow-xs rounded-[16px]">
         <CardHeader className="space-y-1 pb-3">
-          <CardTitle className="text-xl font-bold tracking-tight text-foreground">
+          <CardTitle className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
             Mulai Proyek Skripsi Baru
           </CardTitle>
-          <CardDescription className="text-muted-foreground text-xs">
+          <CardDescription className="text-muted-foreground text-xs sm:text-sm">
             Isi informasi dasar skripsimu. Konfigurasi dataset dan pemetaan variabel akan dilakukan pada langkah selanjutnya.
           </CardDescription>
         </CardHeader>
@@ -130,14 +130,14 @@ export default function NewProjectPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {/* Judul Skripsi */}
             <div className="space-y-1.5">
-              <Label htmlFor="title" className="text-xs font-semibold">
+              <Label htmlFor="title" className="text-xs sm:text-sm font-semibold">
                 Judul Skripsi / Penelitian <span className="text-destructive">*</span>
               </Label>
               <textarea
                 id="title"
                 rows={3}
                 placeholder="Contoh: Pengaruh Kualitas Layanan dan Persepsi Harga terhadap Kepuasan Pelanggan pada Pengguna E-Commerce"
-                className={`flex w-full rounded-[10px] border bg-card px-3 py-2 text-xs text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1.5 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 transition-colors resize-none ${
+                className={`flex w-full rounded-[10px] border bg-card px-3 py-2.5 text-base sm:text-xs text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1.5 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 transition-colors resize-none ${
                   errors.title ? 'border-destructive focus-visible:ring-destructive' : 'border-input'
                 }`}
                 {...register('title')}
@@ -155,14 +155,14 @@ export default function NewProjectPage() {
 
             {/* Program Studi / Jurusan */}
             <div className="space-y-1.5">
-              <Label htmlFor="department" className="text-xs font-semibold">
+              <Label htmlFor="department" className="text-xs sm:text-sm font-semibold">
                 Program Studi / Jurusan <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="department"
                 type="text"
                 placeholder="Mis. Manajemen, Psikologi, Ilmu Komunikasi, Akuntansi"
-                className={`rounded-[10px] text-xs h-9 ${errors.department ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                className={`rounded-[10px] text-base sm:text-xs h-11 sm:h-9 ${errors.department ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                 {...register('department')}
               />
               {errors.department && (
@@ -175,10 +175,10 @@ export default function NewProjectPage() {
             {/* Jenis Penelitian Kuantitatif */}
             <div className="space-y-2.5">
               <div>
-                <Label className="text-xs font-semibold">
+                <Label className="text-xs sm:text-sm font-semibold">
                   Desain Analisis Kuantitatif <span className="text-destructive">*</span>
                 </Label>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
+                <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
                   Pilih model pengujian hipotesis yang sesuai dengan metodologi penelitianmu.
                 </p>
               </div>
@@ -190,27 +190,27 @@ export default function NewProjectPage() {
                     <div
                       key={type.id}
                       onClick={() => setValue('researchType', type.id, { shouldValidate: true })}
-                      className={`relative flex items-start p-3 rounded-[10px] border cursor-pointer transition-colors ${
+                      className={`relative flex items-start p-3.5 sm:p-3 rounded-[10px] border cursor-pointer transition-colors ${
                         isSelected
                           ? 'border-primary bg-accent/30 ring-1 ring-primary'
                           : 'border-border bg-card hover:bg-muted/40'
                       }`}
                     >
-                      <div className="flex h-5 items-center mr-2.5">
+                      <div className="flex h-5 items-center mr-3 mt-0.5">
                         <input
                           type="radio"
                           id={type.id}
                           value={type.id}
                           checked={isSelected}
                           onChange={() => setValue('researchType', type.id, { shouldValidate: true })}
-                          className="h-3.5 w-3.5 text-primary accent-primary"
+                          className="h-4 w-4 text-primary accent-primary cursor-pointer"
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <label
                             htmlFor={type.id}
-                            className="font-semibold text-xs text-foreground cursor-pointer"
+                            className="font-semibold text-xs sm:text-sm text-foreground cursor-pointer"
                           >
                             {type.label}
                           </label>
@@ -220,7 +220,7 @@ export default function NewProjectPage() {
                             </Badge>
                           )}
                         </div>
-                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                        <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 leading-relaxed">
                           {type.description}
                         </p>
                       </div>
@@ -236,21 +236,26 @@ export default function NewProjectPage() {
             </div>
 
             {/* Submit & Cancel Buttons */}
-            <div className="pt-3 border-t border-border flex items-center justify-end gap-2.5">
+            <div className="pt-3 border-t border-border flex items-center justify-end gap-3 flex-wrap">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 asChild
                 disabled={isSubmitting}
-                className="text-xs rounded-[10px]"
+                className="text-xs sm:text-sm rounded-[10px] min-h-[44px] h-11 sm:h-10 px-4"
               >
                 <Link href="/app">Batal</Link>
               </Button>
-              <Button type="submit" size="sm" disabled={isSubmitting} className="min-w-[130px] text-xs font-semibold rounded-[10px]">
+              <Button
+                type="submit"
+                size="sm"
+                disabled={isSubmitting}
+                className="min-w-[140px] text-xs sm:text-sm font-semibold rounded-[10px] min-h-[44px] h-11 sm:h-10 px-5"
+              >
                 {isSubmitting ? (
                   <span className="flex items-center gap-1.5">
-                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
                     Menyimpan...
                   </span>
                 ) : (

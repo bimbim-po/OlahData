@@ -1,30 +1,77 @@
 /* ===== OlahData Design Tokens (Teman Belajar yang Pintar) ===== */
 :root {
-  /* Palet Meja Belajar Mahasiswa */
+  /* Skala Jarak 4-pt Tunggal */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Gutter Halaman Responsif */
+  --page-gutter-mobile: 16px;
+  --page-gutter-tablet: 24px;
+  --page-gutter-desktop: 32px;
+
+  /* Z-Index Terkelola Bertingkat */
+  --z-base: 0;
+  --z-sticky: 20;
+  --z-header: 40;
+  --z-action-bar: 50;
+  --z-bottom-nav: 60;
+  --z-sheet: 70;
+  --z-modal: 80;
+  --z-toast: 90;
+
+  /* Safe Area Inset */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  /* Palet Meja Belajar Mahasiswa (Mode Terang) */
   --bg-paper: #F6F8FC;
   --surface-paper: #FFFFFF;
-  --ink-text: #243044;
+  --surface-sunken: #EEF3FA;
+  --surface-raised: #FFFFFF;
+  --surface-accent-subtle: #FFFBEA;
+
+  /* Teks Semantik Terang */
+  --ink-text: #243044;          /* Rasio 11.5:1 thd #F6F8FC */
+  --text-primary: #243044;
+  --text-secondary: #3E4D66;    /* Rasio 7.5:1 thd #F6F8FC */
+  --text-muted: #526077;        /* Rasio 5.5:1 thd #F6F8FC (Lolos WCAG AA 4.5:1) */
+  --text-disabled: #8493A8;
+  --text-link: #2748D6;         /* Rasio 6.5:1 */
   --ink-primary: #2748D6;
   --ink-primary-hover: #1E3BB8;
-  --ink-subtle: #5A6A85;
+  --ink-subtle: #526077;
 
   /* Kuning Stabilo (Khusus Sorotan Angka Tersambung & Hal yang Sedang Dibaca) */
   --highlighter-yellow: #FFE14D;
-  --highlighter-yellow-text: #243044;
+  --highlighter-yellow-text: #243044; /* Teks gelap di atas kuning = Rasio 9.2:1 (AAA) */
+  --text-on-accent: #243044;
 
   /* Status Lulus (Mint Segar) & Perhatian/Galat (Koral Hangat) */
   --mint-success-bg: #BFEBD9;
-  --mint-success-text: #0E4331;
+  --mint-success-text: #0E4331; /* Rasio 7.8:1 thd #BFEBD9 (AAA) */
+  --text-on-success: #0E4331;
   --coral-warning: #E8574F;
   --coral-warning-bg: #FDEEED;
-  --coral-warning-text: #8E231C;
+  --coral-warning-text: #8A1E18; /* Rasio 7.1:1 thd #FDEEED (AAA) */
+  --text-on-warning: #8A1E18;
+  --text-on-danger: #FFFFFF;
 
-  /* Garis Lembut (Pemisah Struktur) */
+  /* Garis Pemisah (Border) */
   --rule-subtle: #E2E7F0;
+  --border-subtle: #E2E7F0;
+  --border-strong: #CBD5E1;
   --muted-surface: #EEF3FA;
-  --muted-text: #5A6A85;
+  --muted-text: #526077;
 
-  /* Pemetaan Semantik UI */
+  /* Pemetaan Semantik UI Dasar */
   --background: var(--bg-paper);
   --foreground: var(--ink-text);
   --card: var(--surface-paper);
@@ -74,23 +121,40 @@
 .dark {
   --bg-paper: #0E131F;
   --surface-paper: #161E2E;
-  --ink-text: #E3E8F2;
+  --surface-sunken: #0A0E17;
+  --surface-raised: #1C263A;
+  --surface-accent-subtle: #2B2610;
+
+  /* Teks Semantik Gelap (Ditingkatkan kecerahannya agar memenuhi WCAG AA >= 4.5:1) */
+  --ink-text: #F1F5F9;          /* Rasio 14.8:1 thd #0E131F */
+  --text-primary: #F1F5F9;
+  --text-secondary: #CBD5E1;    /* Rasio 10.5:1 thd #0E131F */
+  --text-muted: #A3B3CC;        /* Rasio 6.5:1 thd #0E131F, 5.2:1 thd #161E2E (Lolos WCAG AA 4.5:1) */
+  --text-disabled: #64748B;
+  --text-link: #758FFA;         /* Rasio 7.2:1 thd #0E131F */
   --ink-primary: #5D7BFA;
   --ink-primary-hover: #758FFA;
-  --ink-subtle: #94A3B8;
+  --ink-subtle: #A3B3CC;
 
+  /* Kuning Stabilo Tetap dengan Teks Gelap di Kedua Mode */
   --highlighter-yellow: #FFE14D;
-  --highlighter-yellow-text: #0E131F;
+  --highlighter-yellow-text: #0E131F; /* Teks gelap di atas kuning = Rasio 9.5:1 */
+  --text-on-accent: #0E131F;
 
   --mint-success-bg: #1D4738;
-  --mint-success-text: #A8F0D0;
+  --mint-success-text: #A8F0D0; /* Rasio 7.4:1 thd #1D4738 (AAA) */
+  --text-on-success: #A8F0D0;
   --coral-warning: #F26860;
   --coral-warning-bg: #381A18;
-  --coral-warning-text: #FFA8A3;
+  --coral-warning-text: #FFA8A3; /* Rasio 7.8:1 thd #381A18 (AAA) */
+  --text-on-warning: #FFA8A3;
+  --text-on-danger: #FFFFFF;
 
   --rule-subtle: #222D42;
+  --border-subtle: #222D42;
+  --border-strong: #334155;
   --muted-surface: #1E283C;
-  --muted-text: #94A3B8;
+  --muted-text: #A3B3CC;
 
   --background: var(--bg-paper);
   --foreground: var(--ink-text);
@@ -121,4 +185,31 @@
   --sidebar-border: var(--rule-subtle);
   --sidebar-accent: var(--ink-primary);
   --sidebar-accent-foreground: #FFFFFF;
+}
+
+/* Dukungan Aksesibilitas: High Contrast Mode */
+@media (prefers-contrast: more) {
+  :root {
+    --rule-subtle: #94A3B8;
+    --border-subtle: #94A3B8;
+    --border-strong: #475569;
+    --ink-text: #0B0E14;
+    --muted-text: #243044;
+  }
+  .dark {
+    --rule-subtle: #64748B;
+    --border-subtle: #64748B;
+    --border-strong: #94A3B8;
+    --ink-text: #FFFFFF;
+    --muted-text: #E2E8F0;
+  }
+}
+
+@media (forced-colors: active) {
+  :root, .dark {
+    --border: CanvasText;
+    --input: CanvasText;
+    --primary: Highlight;
+    --primary-foreground: HighlightText;
+  }
 }

@@ -32,7 +32,7 @@ export function Navbar() {
         {/* Logo */}
         <Link
           href="/"
-          className="flex items-center gap-2 group transition-opacity hover:opacity-90"
+          className="flex items-center gap-2 group transition-opacity hover:opacity-90 shrink-0"
         >
           <div className="flex h-8 w-8 items-center justify-center rounded-xs bg-primary text-primary-foreground font-bold text-base shadow-xs">
             O
@@ -87,14 +87,14 @@ export function Navbar() {
         </div>
 
         {/* Mobile menu trigger */}
-        <div className="flex items-center gap-2 md:hidden">
+        <div className="flex items-center gap-1.5 md:hidden shrink-0">
           <ThemeToggle />
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label={mobileMenuOpen ? 'Tutup menu' : 'Buka menu'}
-            className="text-foreground"
+            className="text-foreground h-11 w-11 min-h-[44px] min-w-[44px] touch-manipulation"
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
@@ -104,7 +104,7 @@ export function Navbar() {
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="border-b border-border bg-background px-4 py-4 md:hidden animate-in slide-in-from-top-2 duration-200">
-          <div className="flex flex-col space-y-2">
+          <div className="flex flex-col space-y-1.5">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
@@ -113,7 +113,7 @@ export function Navbar() {
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
-                    'rounded-md px-3 py-2.5 text-base font-medium transition-colors',
+                    'rounded-md px-3 py-2.5 min-h-[44px] flex items-center text-base font-medium transition-colors touch-manipulation',
                     isActive
                       ? 'bg-primary/10 text-primary font-semibold'
                       : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -124,9 +124,9 @@ export function Navbar() {
               );
             })}
 
-            <div className="pt-3 mt-2 border-t border-border flex flex-col gap-2">
+            <div className="pt-3 mt-2 border-t border-border flex flex-col gap-2.5">
               {isAuthenticated ? (
-                <Button asChild className="w-full justify-center" onClick={() => setMobileMenuOpen(false)}>
+                <Button asChild className="w-full justify-center min-h-[44px] text-base" onClick={() => setMobileMenuOpen(false)}>
                   <Link href="/app">
                     Buka Aplikasi
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -134,10 +134,10 @@ export function Navbar() {
                 </Button>
               ) : (
                 <>
-                  <Button asChild variant="outline" className="w-full justify-center" onClick={() => setMobileMenuOpen(false)}>
+                  <Button asChild variant="outline" className="w-full justify-center min-h-[44px] text-base" onClick={() => setMobileMenuOpen(false)}>
                     <Link href="/masuk">{COPY.nav.masuk}</Link>
                   </Button>
-                  <Button asChild className="w-full justify-center" onClick={() => setMobileMenuOpen(false)}>
+                  <Button asChild className="w-full justify-center min-h-[44px] text-base" onClick={() => setMobileMenuOpen(false)}>
                     <Link href="/daftar">{COPY.nav.daftar}</Link>
                   </Button>
                 </>

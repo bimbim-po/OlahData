@@ -157,7 +157,7 @@ export default function PelangganPage() {
             Daftar seluruh mahasiswa terdaftar, riwayat paket, dan ringkasan penggunaan (metadata saja).
           </p>
         </div>
-        <Button onClick={exportMetadataCsv} variant="outline" size="sm" className="text-xs">
+        <Button onClick={exportMetadataCsv} variant="outline" size="sm" className="text-xs min-h-[44px] sm:min-h-[36px]">
           <Download className="w-4 h-4 mr-1.5" />
           Ekspor CSV (Metadata Saja)
         </Button>
@@ -167,20 +167,20 @@ export default function PelangganPage() {
       <Card className="border-border/60">
         <CardContent className="p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-muted-foreground" />
+            <Search className="w-4 h-4 absolute left-3 top-3 sm:top-2.5 text-muted-foreground" />
             <Input
               placeholder="Cari nama, email, prodi, atau kampus..."
-              className="pl-9 text-xs h-9"
+              className="pl-9 text-base sm:text-xs h-10 sm:h-9"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
+              <Filter className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
               <select
-                className="h-9 rounded-md border border-input bg-background px-2.5 text-xs shadow-xs"
+                className="h-10 sm:h-9 w-full sm:w-auto rounded-md border border-input bg-background px-2.5 text-sm sm:text-xs shadow-xs"
                 value={planFilter}
                 onChange={(e) => setPlanFilter(e.target.value)}
               >
@@ -191,7 +191,7 @@ export default function PelangganPage() {
               </select>
             </div>
 
-            <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none py-1">
               <Checkbox
                 checked={excludeTest}
                 onCheckedChange={(val) => setExcludeTest(Boolean(val))}
@@ -202,8 +202,86 @@ export default function PelangganPage() {
         </CardContent>
       </Card>
 
-      {/* Table */}
-      <Card className="border-border/60 overflow-hidden">
+      {/* Customer List: Responsive Card List on mobile (<768px), Table on desktop (>=768px) */}
+      {/* Mobile Card List */}
+      <div className="block md:hidden space-y-3">
+        {filteredCustomers.length === 0 ? (
+          <Card className="border-border/60 p-6 text-center text-xs text-muted-foreground">
+            Tidak ada pelanggan yang cocok dengan kriteria pencarian.
+          </Card>
+        ) : (
+          filteredCustomers.map((c) => (
+            <Card key={c.id} className="border-border/60 p-4 space-y-3 shadow-xs">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="font-semibold text-sm text-foreground">{c.nama}</div>
+                  <div className="text-xs text-muted-foreground font-mono mt-0.5">{c.email}</div>
+                </div>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <Badge
+                    variant="secondary"
+                    className={
+                      c.plan === 'monthly'
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                        : c.plan === 'thesis'
+                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300'
+                        : 'bg-muted text-muted-foreground'
+                    }
+                  >
+                    {c.plan}
+                  </Badge>
+                  {c.isTest && (
+                    <Badge variant="outline" className="text-[9px] text-amber-600 border-amber-400">
+                      Akun Uji
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              <div className="text-xs text-muted-foreground space-y-1 pt-1 border-t border-border/50">
+                <div className="flex items-center gap-1.5 text-foreground">
+                  <GraduationCap className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="truncate">{c.prodi}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Building className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="truncate">{c.kampus}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/50 text-xs">
+                <div>
+                  <span className="text-[11px] text-muted-foreground block">Proyek / Uji</span>
+                  <span className="font-semibold text-foreground tabular-nums">
+                    {c.projectsCount} <span className="font-normal text-muted-foreground">({c.analysesCount} uji)</span>
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[11px] text-muted-foreground block">Total Bayar</span>
+                  <span className="font-mono font-semibold text-foreground tabular-nums">
+                    Rp{c.totalPaid.toLocaleString('id-ID')}
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-border/50 flex items-center justify-between gap-2">
+                <span className="text-[11px] text-muted-foreground">
+                  Daftar: {c.createdAt.split('T')[0]}
+                </span>
+                <Button asChild variant="outline" size="sm" className="min-h-[44px] px-4 text-xs font-medium">
+                  <Link href={`/admin/pelanggan/${c.id}`} className="flex items-center gap-1.5">
+                    <span>Lihat Detail</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </Link>
+                </Button>
+              </div>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table */}
+      <Card className="border-border/60 overflow-hidden hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-muted/50 border-b border-border text-muted-foreground font-medium uppercase tracking-wider text-[10px]">
@@ -271,7 +349,7 @@ export default function PelangganPage() {
                       {c.createdAt.split('T')[0]}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <Button asChild variant="ghost" size="sm" className="h-7 text-xs">
+                      <Button asChild variant="ghost" size="sm" className="h-8 min-h-[32px] text-xs">
                         <Link href={`/admin/pelanggan/${c.id}`} className="flex items-center gap-1">
                           <span>Detail</span>
                           <ExternalLink className="w-3 h-3" />

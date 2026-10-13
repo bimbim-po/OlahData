@@ -22,253 +22,57 @@ import { Bab4Preview } from '@/components/bab4-preview';
 import { PricingCards } from '@/components/pricing-cards';
 import { cn } from '@/lib/utils';
 
+import { LiveDemo } from '@/components/live-demo';
+
 export default function MarketingPage() {
   const [openFaqIndex, setOpenFaqIndex] = React.useState<number | null>(0);
-  const [demoHoveredNumber, setDemoHoveredNumber] = React.useState<string | null>(null);
 
   const toggleFaq = (index: number) => {
     setOpenFaqIndex(openFaqIndex === index ? null : index);
   };
 
   return (
-    <div className="flex flex-col gap-16 sm:gap-20 pb-16">
-      {/* 1. HERO & INTERACTIVE WORKBENCH (ABOVE THE FOLD) */}
-      <section className="relative pt-8 sm:pt-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-        {/* Section Header */}
-        <div className="max-w-3xl mb-8">
-          <div className="inline-flex items-center gap-1.5 border border-border bg-muted/60 px-2.5 py-1 text-xs text-foreground font-medium rounded-[6px] mb-3">
-            <BookOpen className="h-3.5 w-3.5 text-primary" />
-            <span>Meja Kerja Analisis Data Kuesioner Skripsi Kuantitatif</span>
-          </div>
-
-          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-foreground leading-[1.18]">
-            {COPY.hero.title}
-          </h1>
-
-          <p className="mt-3 text-sm sm:text-base text-muted-foreground leading-relaxed max-w-[68ch]">
-            {COPY.hero.subtitle}
-          </p>
-
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            <Button asChild size="default" className="font-semibold text-xs px-4 h-10 rounded-[10px]">
-              <Link href="/app/proyek/baru">
-                <span>Coba dengan Data Contoh (60 Detik)</span>
-                <ArrowRight className="h-3.5 w-3.5 ml-1" />
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="default" className="text-xs h-10 rounded-[10px]">
-              <a href="#contoh-hasil">
-                {COPY.hero.ctaSecondary}
-              </a>
-            </Button>
-            <span className="text-xs text-muted-foreground ml-1 tabular-nums">
-              Gratis 1 proyek aktif &bull; Tanpa kartu kredit
-            </span>
-          </div>
-        </div>
-
-        {/* Live Interactive Split Workbench Demonstration */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 rounded-[16px] border border-border bg-card p-5 sm:p-6 shadow-xs">
-          {/* Left Column: Questionnaire Input Simulation */}
-          <div className="lg:col-span-5 flex flex-col justify-between space-y-4 border-b lg:border-b-0 lg:border-r border-border pb-5 lg:pb-0 lg:pr-5">
-            <div>
-              <div className="flex items-center justify-between pb-2.5 border-b border-border/60 mb-3">
-                <div className="flex items-center gap-2">
-                  <TableIcon className="h-4 w-4 text-primary" />
-                  <span className="text-xs font-semibold text-foreground">
-                    Tabulasi Kuesioner (.xlsx / .csv)
-                  </span>
-                </div>
-                <Badge variant="outline" className="text-[10px] py-0 px-1.5 bg-muted/40 rounded-[6px]">
-                  N = 120 Responden
-                </Badge>
-              </div>
-
-              {/* Data Matrix Preview */}
-              <div className="overflow-x-auto border border-border/70 rounded-[6px] bg-muted/20">
-                <table className="table-journal w-full text-xs font-sans">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/60 text-muted-foreground text-[11px]">
-                      <th className="py-1.5 px-2 font-medium">Resp</th>
-                      <th className="py-1.5 px-2 text-right font-medium">X1.1</th>
-                      <th className="py-1.5 px-2 text-right font-medium">X1.2</th>
-                      <th className="py-1.5 px-2 text-right font-medium">X1.3</th>
-                      <th className="py-1.5 px-2 text-right font-medium font-semibold text-foreground">Total X1</th>
-                      <th className="py-1.5 px-2 text-right font-medium font-semibold text-foreground">Y</th>
-                    </tr>
-                  </thead>
-                  <tbody className="tabular-nums text-foreground/80 text-[11px]">
-                    <tr className="border-b border-border/50">
-                      <td className="py-1.5 px-2 text-muted-foreground">R001</td>
-                      <td className="py-1.5 px-2 text-right">4</td>
-                      <td className="py-1.5 px-2 text-right">5</td>
-                      <td className="py-1.5 px-2 text-right">4</td>
-                      <td className="py-1.5 px-2 text-right font-semibold">13</td>
-                      <td className="py-1.5 px-2 text-right">18</td>
-                    </tr>
-                    <tr className="border-b border-border/50">
-                      <td className="py-1.5 px-2 text-muted-foreground">R002</td>
-                      <td className="py-1.5 px-2 text-right">3</td>
-                      <td className="py-1.5 px-2 text-right">4</td>
-                      <td className="py-1.5 px-2 text-right">3</td>
-                      <td className="py-1.5 px-2 text-right font-semibold">10</td>
-                      <td className="py-1.5 px-2 text-right">15</td>
-                    </tr>
-                    <tr className="border-b border-border/50">
-                      <td className="py-1.5 px-2 text-muted-foreground">R003</td>
-                      <td className="py-1.5 px-2 text-right">5</td>
-                      <td className="py-1.5 px-2 text-right">5</td>
-                      <td className="py-1.5 px-2 text-right">5</td>
-                      <td className="py-1.5 px-2 text-right font-semibold">15</td>
-                      <td className="py-1.5 px-2 text-right">20</td>
-                    </tr>
-                    <tr>
-                      <td className="py-1.5 px-2 text-muted-foreground">R004</td>
-                      <td className="py-1.5 px-2 text-right">4</td>
-                      <td className="py-1.5 px-2 text-right">4</td>
-                      <td className="py-1.5 px-2 text-right">4</td>
-                      <td className="py-1.5 px-2 text-right font-semibold">12</td>
-                      <td className="py-1.5 px-2 text-right">17</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
-                Item kuesioner skala Likert otomatis dikelompokkan ke dalam konstruk variabel X dan Y.
-              </p>
+    <div className="flex flex-col gap-12 sm:gap-16 pb-16">
+      {/* 1. HERO 5 DETIK PERTAMA: DUA KOLOM DESKTOP & DEMO TRANSFORMATIF */}
+      <section className="relative pt-4 sm:pt-6 lg:pt-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start lg:items-center">
+          {/* Kolom Kiri: Teks Rata Kiri & Aksi Cepat (Terbaca Penuh < 0,3s) */}
+          <div className="lg:col-span-5 flex flex-col justify-center space-y-3.5 sm:space-y-4">
+            <div className="inline-flex items-center gap-1.5 border border-border bg-muted/60 px-2.5 py-1 text-xs text-foreground font-medium rounded-[6px] w-fit">
+              <BookOpen className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span>Meja Kerja Analisis Skripsi Kuantitatif</span>
             </div>
 
-            <div className="pt-2.5 border-t border-border/60 flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Punya berkas sendiri?</span>
-              <Button asChild size="sm" variant="outline" className="text-xs h-8 rounded-[10px]">
-                <Link href="/app/proyek/baru">Unggah Berkas</Link>
+            <h1 className="text-xl sm:text-3xl lg:text-[2.15rem] font-bold tracking-tight text-foreground leading-[1.22]">
+              {COPY.hero.title}
+            </h1>
+
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-[54ch]">
+              {COPY.hero.subtitle}
+            </p>
+
+            <div className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
+              <Button asChild size="default" className="font-semibold text-xs px-5 min-h-[44px] h-11 rounded-[10px] shadow-xs">
+                <Link href="/app/proyek/baru?contoh=1">
+                  <span>{COPY.hero.ctaPrimary}</span>
+                  <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="default" className="text-xs px-4 min-h-[44px] h-11 rounded-[10px]">
+                <Link href="/app/proyek/baru">
+                  {COPY.hero.ctaSecondary}
+                </Link>
               </Button>
             </div>
+
+            <div className="pt-0.5 text-[11px] text-muted-foreground flex items-center gap-2 flex-wrap">
+              <span>{COPY.hero.microCopy}</span>
+            </div>
           </div>
 
-          {/* Right Column: Live Output Table with Connected Number Sync */}
-          <div className="lg:col-span-7 flex flex-col justify-between space-y-4">
-            <div>
-              <div className="flex items-center justify-between pb-2.5 border-b border-border/60 mb-2.5">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-semibold text-foreground">
-                    Tabel 4.12 Hasil Uji Regresi Linier
-                  </span>
-                </div>
-                <Badge variant="outline" className="text-[10px] py-0 px-1.5 bg-muted/40 rounded-[6px]">
-                  Format Baku APA 7th
-                </Badge>
-              </div>
-
-              {/* Connected Table */}
-              <div className="overflow-x-auto border border-border/70 rounded-[6px] bg-card">
-                <table className="table-journal w-full text-xs font-sans">
-                  <thead>
-                    <tr className="border-b border-foreground text-[11px] font-semibold text-foreground">
-                      <th className="py-2 px-2.5">Variabel</th>
-                      <th className="py-2 px-2.5 text-right">Koefisien (B)</th>
-                      <th className="py-2 px-2.5 text-right">t Hitung</th>
-                      <th className="py-2 px-2.5 text-right">Sig. (p)</th>
-                      <th className="py-2 px-2.5 text-center">Simpulan</th>
-                    </tr>
-                  </thead>
-                  <tbody className="tabular-nums text-xs">
-                    <tr className="border-b border-border">
-                      <td className="py-2 px-2.5 font-medium">Konstanta</td>
-                      <td className="py-2 px-2.5 text-right">2,410</td>
-                      <td className="py-2 px-2.5 text-right">3,124</td>
-                      <td className="py-2 px-2.5 text-right">0,002</td>
-                      <td className="py-2 px-2.5 text-center text-muted-foreground">-</td>
-                    </tr>
-                    <tr className="border-b-2 border-foreground">
-                      <td className="py-2 px-2.5 font-medium">Motivasi Kerja (X1)</td>
-                      <td
-                        className={cn(
-                          'py-2 px-2.5 text-right font-medium transition-all cursor-pointer',
-                          demoHoveredNumber === '0,482' && 'bg-[#FFE14D] text-[#243044] font-bold ring-2 ring-[#FFE14D] rounded-[4px]'
-                        )}
-                        onMouseEnter={() => setDemoHoveredNumber('0,482')}
-                        onMouseLeave={() => setDemoHoveredNumber(null)}
-                      >
-                        0,482
-                      </td>
-                      <td
-                        className={cn(
-                          'py-2 px-2.5 text-right font-medium transition-all cursor-pointer',
-                          demoHoveredNumber === '4,819' && 'bg-[#FFE14D] text-[#243044] font-bold ring-2 ring-[#FFE14D] rounded-[4px]'
-                        )}
-                        onMouseEnter={() => setDemoHoveredNumber('4,819')}
-                        onMouseLeave={() => setDemoHoveredNumber(null)}
-                      >
-                        4,819
-                      </td>
-                      <td
-                        className={cn(
-                          'py-2 px-2.5 text-right transition-all cursor-pointer',
-                          demoHoveredNumber === '0,000' && 'bg-[#FFE14D] text-[#243044] font-bold ring-2 ring-[#FFE14D] rounded-[4px]'
-                        )}
-                        onMouseEnter={() => setDemoHoveredNumber('0,000')}
-                        onMouseLeave={() => setDemoHoveredNumber(null)}
-                      >
-                        0,000
-                      </td>
-                      <td className="py-2 px-2.5 text-center">
-                        <span className="text-[11px] font-semibold text-[#0E4331] bg-[#BFEBD9] px-2 py-0.5 rounded-[4px]">
-                          Signifikan
-                        </span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Connected Narrative Box */}
-            <div className="rounded-[10px] border border-border/80 bg-muted/30 p-3.5 space-y-2">
-              <div className="flex items-center justify-between text-[11px] text-muted-foreground border-b border-border/40 pb-1.5">
-                <span className="font-medium text-foreground">Interpretasi Narasi Bab 4 (Tersambung ke Sel):</span>
-                <span>Rumus OLS α=0,05</span>
-              </div>
-              <p className="text-xs text-foreground/90 leading-relaxed font-sans max-w-[68ch]">
-                Nilai koefisien regresi variabel Motivasi Kerja (X1) adalah{' '}
-                <button
-                  type="button"
-                  onMouseEnter={() => setDemoHoveredNumber('0,482')}
-                  onMouseLeave={() => setDemoHoveredNumber(null)}
-                  className={cn(
-                    'inline-block px-1.5 py-0.5 rounded-[4px] font-semibold tabular-nums border border-border/80 cursor-pointer transition-all',
-                    demoHoveredNumber === '0,482' ? 'bg-[#FFE14D] text-[#243044] border-[#FFE14D] ring-2 ring-[#FFE14D]' : 'bg-card'
-                  )}
-                >
-                  0,482
-                </button>
-                {' '}dengan nilai t-hitung sebesar{' '}
-                <button
-                  type="button"
-                  onMouseEnter={() => setDemoHoveredNumber('4,819')}
-                  onMouseLeave={() => setDemoHoveredNumber(null)}
-                  className={cn(
-                    'inline-block px-1.5 py-0.5 rounded-[4px] font-semibold tabular-nums border border-border/80 cursor-pointer transition-all',
-                    demoHoveredNumber === '4,819' ? 'bg-[#FFE14D] text-[#243044] border-[#FFE14D] ring-2 ring-[#FFE14D]' : 'bg-card'
-                  )}
-                >
-                  4,819
-                </button>
-                {' '}dan signifikansi{' '}
-                <button
-                  type="button"
-                  onMouseEnter={() => setDemoHoveredNumber('0,000')}
-                  onMouseLeave={() => setDemoHoveredNumber(null)}
-                  className={cn(
-                    'inline-block px-1.5 py-0.5 rounded-[4px] font-semibold tabular-nums border border-border/80 cursor-pointer transition-all',
-                    demoHoveredNumber === '0,000' ? 'bg-[#FFE14D] text-[#243044] border-[#FFE14D] ring-2 ring-[#FFE14D]' : 'bg-card'
-                  )}
-                >
-                  0,000
-                </button>
-                . Karena t-hitung 4,819 &gt; 1,984 (t-tabel) dan nilai sig. 0,000 &lt; 0,05, maka hipotesis pertama diterima.
-              </p>
-            </div>
+          {/* Kolom Kanan: Demo Hidup Bertransformasi (0,3s - 5,0s) */}
+          <div className="lg:col-span-7 w-full">
+            <LiveDemo />
           </div>
         </div>
       </section>

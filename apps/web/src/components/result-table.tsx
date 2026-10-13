@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useState } from 'react';
-import { Copy, Check, Table as TableIcon } from 'lucide-react';
+import { Copy, Check, Maximize2, Minimize2, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -47,6 +47,7 @@ export function ResultTable<T>({
 }: ResultTableProps<T>) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Generate tab-separated plain text for pasting cleanly into Microsoft Word
   const handleCopyTable = async () => {
@@ -126,15 +127,16 @@ export function ResultTable<T>({
   return (
     <div
       className={cn(
-        'rounded-[16px] border border-border bg-card p-5 sm:p-6 shadow-xs space-y-3.5 transition-colors font-sans',
+        'rounded-[16px] border border-border bg-card p-4 sm:p-6 shadow-xs space-y-3.5 transition-colors font-sans relative',
+        isFullscreen && 'fixed inset-0 z-50 rounded-none border-none p-6 overflow-y-auto bg-card',
         className
       )}
     >
-      {/* Table Top Header Bar */}
+      {/* Table Top Header Bar (Di luar area gulir horizontal) */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
+        <div className="min-w-0 flex-1">
           {tableNumber && (
-            <span className="text-[11px] font-bold text-primary uppercase tracking-wider block mb-1">
+            <span className="text-[11px] font-bold text-primary uppercase tracking-wider block mb-0.5">
               {tableNumber}
             </span>
           )}
@@ -143,29 +145,50 @@ export function ResultTable<T>({
           </h3>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
           <Badge
             variant="outline"
-            className="text-[11px] font-normal text-muted-foreground border-border bg-muted/40 px-2.5 py-0.5 rounded-[6px]"
+            className="text-[11px] font-normal text-muted-foreground border-border bg-muted/40 px-2.5 py-1 rounded-[6px]"
           >
             {badgeLabel}
           </Badge>
+
+          {/* Tombol Lihat Layar Penuh pada Ponsel */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            className="min-h-[44px] px-2.5 gap-1.5 text-xs text-muted-foreground hover:text-foreground touch-manipulation cursor-pointer"
+            title={isFullscreen ? 'Keluar dari layar penuh' : 'Lihat tabel layar penuh'}
+          >
+            {isFullscreen ? (
+              <>
+                <Minimize2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Kecilkan</span>
+              </>
+            ) : (
+              <>
+                <Maximize2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Layar Penuh</span>
+              </>
+            )}
+          </Button>
 
           <Button
             variant="outline"
             size="sm"
             onClick={handleCopyTable}
-            className="h-8 px-3 gap-1.5 text-xs text-foreground hover:bg-muted font-medium transition-colors rounded-[10px]"
+            className="min-h-[44px] px-3.5 gap-1.5 text-xs text-foreground hover:bg-muted font-medium transition-colors rounded-[10px] touch-manipulation cursor-pointer"
             title="Salin tabel format tab-separated untuk Microsoft Word"
           >
             {copied ? (
               <>
-                <Check className="h-3.5 w-3.5 text-primary" />
+                <Check className="h-4 w-4 text-primary" />
                 <span className="text-primary font-medium">{COPY.results.copied}</span>
               </>
             ) : (
               <>
-                <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                <Copy className="h-4 w-4 text-muted-foreground" />
                 <span>Salin untuk Word</span>
               </>
             )}
@@ -173,16 +196,23 @@ export function ResultTable<T>({
         </div>
       </div>
 
-      {/* Journal Table Body (APA 7th Edition Style with 6px inner radius) */}
-      <div className="overflow-x-auto -mx-1 sm:mx-0 rounded-[6px]">
+      {/* Petunjuk Gulir Ponsel */}
+      <div className="sm:hidden flex items-center justify-between text-[11px] text-muted-foreground bg-muted/30 px-3 py-1.5 rounded-[6px] border border-border/60">
+        <span>Geser tabel ke samping untuk melihat kolom lengkap</span>
+        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+      </div>
+
+      {/* Journal Table Body (Wadah gulir horizontal dengan kolom pertama menempel) */}
+      <div className="relative overflow-x-auto rounded-[6px] border border-border/80 shadow-inner">
         <table className="table-journal w-full text-left text-sm font-sans border-collapse">
           <thead>
-            <tr className="border-t-2 border-b border-foreground">
-              {columns.map((col) => (
+            <tr className="border-t-2 border-b border-foreground bg-muted/20">
+              {columns.map((col, cIdx) => (
                 <th
                   key={col.key}
                   className={cn(
-                    'py-2 px-3 font-semibold text-foreground text-xs tracking-normal',
+                    'py-2.5 px-3 font-semibold text-foreground text-xs tracking-normal whitespace-nowrap',
+                    cIdx === 0 && 'sticky left-0 bg-card z-10 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.1)]',
                     col.align === 'right' && 'text-right',
                     col.align === 'center' && 'text-center',
                     col.className
@@ -204,7 +234,7 @@ export function ResultTable<T>({
                     index === data.length - 1 && 'border-b-2 border-foreground'
                   )}
                 >
-                  {columns.map((col) => {
+                  {columns.map((col, cIdx) => {
                     const rawVal = col.getValue
                       ? col.getValue(row)
                       : (row as Record<string, unknown>)[col.key];
@@ -235,7 +265,8 @@ export function ResultTable<T>({
                           onHoverCell?.(rKey, col.key, rawVal as string | number)
                         }
                         className={cn(
-                          'py-2 px-3 text-xs transition-all outline-none',
+                          'py-2 px-3 text-xs transition-all outline-none whitespace-nowrap',
+                          cIdx === 0 && 'sticky left-0 bg-card z-10 font-medium text-foreground shadow-[2px_0_6px_-2px_rgba(0,0,0,0.1)]',
                           col.align === 'right' && 'text-right tabular-nums',
                           col.align === 'center' && 'text-center',
                           highlighted &&

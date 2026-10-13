@@ -200,7 +200,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-8 pb-32 sm:pb-16">
         {/* Step Indicator */}
         <StepIndicator
           currentStep={currentStep}
@@ -226,7 +226,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
 
             <FileDropzone />
 
-            <div className="flex items-center justify-between pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20">
+            <div className="flex items-center justify-between pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
               <span className="text-xs text-muted-foreground hidden sm:inline">
                 {COPY.reassurance.saved}
               </span>
@@ -306,7 +306,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
             </div>
 
             {/* Navigation Buttons */}
-            <div className="flex items-center justify-between pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20">
+            <div className="flex items-center justify-between pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
               <Button
                 type="button"
                 variant="outline"
@@ -358,7 +358,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
             />
 
             {/* Navigation Buttons */}
-            <div className="flex items-center justify-between pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20">
+            <div className="flex items-center justify-between pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
               <Button
                 type="button"
                 variant="outline"
@@ -444,7 +444,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
             </div>
 
             {/* Navigation Buttons */}
-            <div className="flex items-center justify-between pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20">
+            <div className="flex items-center justify-between pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
               <Button
                 type="button"
                 variant="outline"
@@ -675,7 +675,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
               </div>
             ) : (
               /* Ready to run CTA */
-              <div className="flex items-center justify-between pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20">
+              <div className="flex items-center justify-between pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
                 <Button
                   type="button"
                   variant="outline"

@@ -8,12 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/toaster';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+  BottomSheet,
+  BottomSheetContent,
+  BottomSheetHeader,
+  BottomSheetTitle,
+  BottomSheetTrigger,
+} from '@/components/ui/bottom-sheet';
 import { COPY } from '@/lib/copy';
 
 export interface ExplanationBoxProps {
@@ -99,34 +99,40 @@ export function ExplanationBox({
     }
   };
 
-  const handleSelectNumber = (num: string) => {
-    const nextVal = effectiveHovered === num ? null : num;
-    setLocalHoveredNum(nextVal);
-    onHoverNumber?.(nextVal);
-
-    if (nextVal) {
-      const sanitized = nextVal.replace(/[^a-zA-Z0-9]/g, '-');
-      const targetEl = document.querySelector(`[data-cell-num="${sanitized}"]`);
-      if (targetEl) {
-        targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
-      }
+  const handleSelectNumber = (rawNum: string) => {
+    if (localHoveredNum === rawNum) {
+      setLocalHoveredNum(null);
+      onHoverNumber?.(null);
+    } else {
+      setLocalHoveredNum(rawNum);
+      onHoverNumber?.(rawNum);
     }
   };
 
-  const glossaryItems = Object.values(COPY.glossary);
+  const glossaryItems = [
+    COPY.glossary.pValue,
+    COPY.glossary.alpha,
+    COPY.glossary.vif,
+    COPY.glossary.rSquare,
+    COPY.glossary.tStatistic,
+    COPY.glossary.fStatistic,
+  ];
 
   return (
     <div
       className={cn(
-        'rounded-[16px] border border-border bg-card p-5 sm:p-6 shadow-xs space-y-4 transition-colors font-sans',
+        'rounded-[16px] border border-border bg-card p-4 sm:p-6 space-y-4 shadow-xs relative overflow-hidden transition-all',
         className
       )}
     >
-      {/* Lapis 1: Intinya (Single Summary Sentence if provided) */}
+      {/* Lapis 1: Intinya (Kesimpulan Lugas 1 Kalimat) */}
       {summarySentence && (
-        <div className="rounded-[10px] bg-[#FFE14D]/15 border border-[#FFE14D]/40 p-3.5 sm:p-4 text-[#243044] dark:text-foreground">
-          <div className="flex items-start gap-2.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#2748D6] bg-[#2748D6]/10 px-2 py-0.5 rounded-[4px] shrink-0 mt-0.5">
+        <div className="rounded-[12px] bg-primary/5 border border-primary/20 p-3.5 sm:p-4 text-foreground flex items-start gap-3">
+          <div className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5 font-bold text-xs">
+            1
+          </div>
+          <div className="space-y-1 min-w-0">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-primary block">
               {COPY.layers.layer1Title}
             </span>
             <p className="text-sm sm:text-base font-semibold leading-relaxed max-w-[68ch]">
@@ -153,33 +159,33 @@ export function ExplanationBox({
             {badgeLabel}
           </Badge>
 
-          {/* Interactive "Apa artinya?" helper dialog */}
-          <Dialog open={glossaryOpen} onOpenChange={setGlossaryOpen}>
-            <DialogTrigger asChild>
+          {/* Interactive "Apa artinya?" helper bottom sheet */}
+          <BottomSheet open={glossaryOpen} onOpenChange={setGlossaryOpen}>
+            <BottomSheetTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 px-2.5 gap-1.5 text-xs text-primary hover:text-primary hover:bg-primary/10 font-medium rounded-[10px]"
+                className="min-h-[44px] px-3 gap-1.5 text-xs text-primary hover:text-primary hover:bg-primary/10 font-medium rounded-[10px] touch-manipulation cursor-pointer"
                 title="Buka penjelasan istilah statistik dalam bahasa sederhana"
               >
-                <HelpCircle className="h-3.5 w-3.5" />
+                <HelpCircle className="h-4 w-4" />
                 <span>{COPY.layers.whatDoesItMean}</span>
               </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
+            </BottomSheetTrigger>
+            <BottomSheetContent className="max-w-lg">
+              <BottomSheetHeader>
                 <div className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-primary" />
-                  <DialogTitle className="text-base font-semibold">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                  <BottomSheetTitle className="text-base font-semibold">
                     Kamus Istilah Statistik (Bahasa Mahasiswa)
-                  </DialogTitle>
+                  </BottomSheetTitle>
                 </div>
-              </DialogHeader>
-              <div className="space-y-4 pt-2 text-xs leading-relaxed max-h-[60vh] overflow-y-auto pr-1">
+              </BottomSheetHeader>
+              <div className="space-y-3.5 pt-2 text-xs leading-relaxed max-h-[60vh] overflow-y-auto pr-1">
                 {glossaryItems.map((item, i) => (
                   <div
                     key={i}
-                    className="p-3 rounded-[10px] bg-muted/40 border border-border/80 space-y-1.5"
+                    className="p-3.5 rounded-[12px] bg-muted/40 border border-border/80 space-y-1.5"
                   >
                     <div className="font-semibold text-foreground text-sm">
                       {item.term}
@@ -196,24 +202,24 @@ export function ExplanationBox({
                   </div>
                 ))}
               </div>
-            </DialogContent>
-          </Dialog>
+            </BottomSheetContent>
+          </BottomSheet>
 
           <Button
             variant="outline"
             size="sm"
             onClick={handleCopy}
-            className="h-8 px-3 gap-1.5 text-xs text-foreground hover:bg-muted font-medium transition-colors rounded-[10px]"
+            className="min-h-[44px] px-3.5 gap-1.5 text-xs text-foreground hover:bg-muted font-medium transition-colors rounded-[10px] touch-manipulation cursor-pointer"
             title="Salin paragraf interpretasi narasi untuk Bab 4"
           >
             {copied ? (
               <>
-                <Check className="h-3.5 w-3.5 text-primary" />
+                <Check className="h-4 w-4 text-primary" />
                 <span className="text-primary font-medium">{COPY.layers.copied}</span>
               </>
             ) : (
               <>
-                <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                <Copy className="h-4 w-4 text-muted-foreground" />
                 <span>Salin Teks</span>
               </>
             )}
@@ -257,7 +263,7 @@ export function ExplanationBox({
               }}
               onClick={() => handleSelectNumber(token.rawNumber!)}
               className={cn(
-                'inline-flex items-center px-1.5 py-0.5 mx-0.5 text-xs font-semibold rounded-[4px] transition-all duration-150 tabular-nums cursor-pointer select-none',
+                'inline-flex items-center px-1.5 py-0.5 mx-0.5 text-xs font-semibold rounded-[4px] transition-all duration-150 tabular-nums cursor-pointer select-none touch-manipulation',
                 'bg-muted/70 text-foreground border border-border/80 hover:bg-[#FFE14D]/40 hover:border-[#FFE14D] hover:text-[#243044]',
                 'focus-visible:ring-2 focus-visible:ring-[#2748D6] focus-visible:outline-none',
                 isMatching &&
@@ -275,7 +281,7 @@ export function ExplanationBox({
 
       {/* Subtle Hint */}
       <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground pt-2 border-t border-border/60">
-        <Info className="h-3 w-3 shrink-0 text-primary/70" />
+        <Info className="h-3.5 w-3.5 shrink-0 text-primary/70" />
         <span>
           Arahkan kursor atau ketuk angka bertinta untuk melihat sel asalnya di lembar tabel di atas.
         </span>

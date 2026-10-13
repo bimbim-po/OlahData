@@ -16,10 +16,11 @@ export const COPY = {
 
   // Beranda (Marketing & Landing)
   hero: {
-    title: 'Olah data kuesioner skripsi langsung jadi tabel Bab 4',
-    subtitle: `${APP_NAME} memandu mahasiswa tingkat akhir menganalisis data kuesioner skala Likert: validitas item-total, reliabilitas Cronbach's Alpha, asumsi klasik, hingga regresi linier. Setiap angka memiliki jejak hitung dan tersambung langsung ke sel tabel asalnya.`,
-    ctaPrimary: 'Buka meja kerja gratis',
-    ctaSecondary: 'Lihat contoh tabel Bab 4',
+    title: 'Unggah data kuesionermu. Dapatkan tabel Bab 4 dan penjelasan yang bisa kamu jelaskan sendiri.',
+    subtitle: 'Angka dihitung program dengan rumus statistik baku, bukan AI. Setiap angka di naskah tersambung ke sel asalnya agar kamu paham saat bimbingan.',
+    ctaPrimary: 'Coba dengan data contoh',
+    ctaSecondary: 'Unggah berkas sendiri',
+    microCopy: 'Data responden aman • Tanpa manipulasi • Format baku APA 7th',
   },
 
   // Alur Kerja Meja Kerja

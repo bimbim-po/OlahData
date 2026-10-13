@@ -26,7 +26,7 @@ export function ThemeToggle({ className, showLabels = false }: ThemeToggleProps)
       role="radiogroup"
       aria-label={COPY.settings.theme}
       className={cn(
-        'inline-flex items-center rounded-lg border border-border bg-secondary/50 p-0.5 text-muted-foreground',
+        'inline-flex items-center rounded-lg border border-border bg-secondary/50 p-1 text-muted-foreground',
         className
       )}
     >
@@ -42,14 +42,14 @@ export function ThemeToggle({ className, showLabels = false }: ThemeToggleProps)
             title={label}
             onClick={() => setTheme(mode)}
             className={cn(
-              'inline-flex items-center justify-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-all cursor-pointer',
+              'inline-flex items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all cursor-pointer min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] touch-manipulation',
               isActive
                 ? 'bg-background text-foreground shadow-xs'
                 : 'hover:text-foreground hover:bg-background/40'
             )}
           >
-            <Icon className="h-3.5 w-3.5" />
-            {showLabels && <span>{label}</span>}
+            <Icon className="h-4 w-4" />
+            {showLabels && <span className="ml-1 text-xs">{label}</span>}
           </button>
         );
       })}
