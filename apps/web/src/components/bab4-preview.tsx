@@ -9,6 +9,7 @@ import { mockResults } from '@/lib/mock/results';
 import { formatNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/toaster';
+import { copyWordTable, copyWordNarrative } from '@/lib/word-table';
 
 type ActiveTab = 'regression' | 'validity';
 
@@ -18,8 +19,8 @@ export function Bab4Preview() {
   const [activeNumber, setActiveNumber] = React.useState<string | null>(null);
   const { toast } = useToast();
 
-  const handleCopy = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
+  const handleCopy = async (text: string, label: string) => {
+    await copyWordNarrative(text, label);
     setCopied(true);
     toast({
       title: `${label} berhasil disalin`,
@@ -29,27 +30,61 @@ export function Bab4Preview() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleCopyTableWord = () => {
+  const handleCopyTableWord = async () => {
+    let success = false;
     if (activeTab === 'regression') {
-      const header = 'Variabel\tKoefisien (B)\tStd. Error\tt Hitung\tSig. (p)\tKeterangan';
-      const rows = (mockResults.regression ?? []).map(
-        (r) => `${r.variable}\t${formatNumber(r.coefficient, 3)}\t${formatNumber(r.stdError, 3)}\t${formatNumber(r.tHitung, 3)}\t${formatNumber(r.pValue, 3)}\tSignifikan`
-      );
-      const text = `Tabel 4.15 Hasil Uji Regresi Linier Berganda\n${header}\n${rows.join('\n')}\nCatatan: F = 48,652, R² = 0,460, F Tabel = 3,076`;
-      navigator.clipboard.writeText(text);
+      const columns = [
+        { header: 'Variabel', align: 'left' as const },
+        { header: 'Koefisien (B)', align: 'right' as const },
+        { header: 'Std. Error', align: 'right' as const },
+        { header: 't Hitung', align: 'right' as const },
+        { header: 'Sig. (p)', align: 'right' as const },
+        { header: 'Keterangan', align: 'center' as const },
+      ];
+      const rows = (mockResults.regression ?? []).map((r) => [
+        r.variable,
+        formatNumber(r.coefficient, 3),
+        formatNumber(r.stdError, 3),
+        formatNumber(r.tHitung, 3),
+        formatNumber(r.pValue, 3),
+        'Signifikan',
+      ]);
+      success = await copyWordTable({
+        tableNumber: 'Tabel 4.15',
+        title: 'Hasil Uji Regresi Linier Berganda',
+        note: 'F = 48,652, R² = 0,460, F Tabel = 3,076',
+        columns,
+        rows,
+      });
     } else {
-      const header = 'Item Pernyataan\tr Hitung\tr Tabel (α=0,05)\tStatus';
-      const rows = (mockResults.validity ?? []).slice(0, 6).map(
-        (r, i) => `${r.item} (Indikator #${i + 1})\t${formatNumber(r.rHitung, 3)}\t${formatNumber(r.rTabel, 4)}\tValid`
-      );
-      const text = `Tabel 4.8 Hasil Uji Validitas Item Variabel Kualitas Layanan (X1)\n${header}\n${rows.join('\n')}\nCatatan: N = 117 responden`;
-      navigator.clipboard.writeText(text);
+      const columns = [
+        { header: 'Item Pernyataan', align: 'left' as const },
+        { header: 'r Hitung', align: 'right' as const },
+        { header: 'r Tabel (α=0,05)', align: 'right' as const },
+        { header: 'Status', align: 'center' as const },
+      ];
+      const rows = (mockResults.validity ?? []).slice(0, 6).map((r, i) => [
+        `${r.item} (Indikator #${i + 1})`,
+        formatNumber(r.rHitung, 3),
+        formatNumber(r.rTabel, 4),
+        'Valid',
+      ]);
+      success = await copyWordTable({
+        tableNumber: 'Tabel 4.8',
+        title: 'Hasil Uji Validitas Item Variabel Kualitas Layanan (X1)',
+        note: 'N = 117 responden',
+        columns,
+        rows,
+      });
     }
-    toast({
-      title: COPY.layers.copied,
-      description: 'Tempelkan (Ctrl+V) langsung ke dokumen Word skripsimu.',
-      variant: 'success',
-    });
+
+    if (success) {
+      toast({
+        title: COPY.layers.copied,
+        description: 'Tabel berformat APA Word berhasil disalin. Tempelkan (Ctrl+V) langsung ke lembar Microsoft Word.',
+        variant: 'success',
+      });
+    }
   };
 
   // Render tokens with connected number highlighting

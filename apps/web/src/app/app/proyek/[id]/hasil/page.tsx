@@ -19,6 +19,8 @@ import {
   Info,
   Calendar,
   Building,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,8 +30,10 @@ import { ExplanationBox } from '@/components/explanation-box';
 import { AssumptionAlert } from '@/components/assumption-alert';
 import { TraceabilityPanel } from '@/components/traceability-panel';
 import { ExportDialog } from '@/components/export-dialog';
+import { useToast } from '@/components/ui/toaster';
 import { formatNumber, formatDateTime } from '@/lib/format';
 import { getProject, getResult } from '@/lib/api';
+import { buildWordTableHtml, copyHtmlAndText } from '@/lib/word-table';
 import type {
   Project,
   AnalysisResults,
@@ -73,6 +77,8 @@ export default function HasilPage() {
   const [exportOpen, setExportOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('descriptive');
   const [highlightedNumber, setHighlightedNumber] = useState<string | null>(null);
+  const [copiedTab, setCopiedTab] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     let isMounted = true;
@@ -571,6 +577,207 @@ export default function HasilPage() {
     },
   ];
 
+  const handleCopyActiveTabForWord = async () => {
+    if (!results) return;
+
+    try {
+      let combinedHtml = '';
+      let combinedText = '';
+
+      if (activeTab === 'descriptive') {
+        const tableHtml = buildWordTableHtml({
+          tableNumber: 'Tabel 4.1',
+          title: 'Hasil Analisis Statistik Deskriptif Variabel Penelitian',
+          note: `* Data dihitung dari N = ${results.respondentCount} responden valid menggunakan skala Likert 1-5.`,
+          columns: descriptiveCols.map((c) => ({ header: c.header, align: c.align })),
+          rows: (results.descriptive || []).map((r) => [
+            r.variable,
+            formatNumber(r.n),
+            formatNumber(r.mean, 3),
+            formatNumber(r.median, 3),
+            formatNumber(r.stdDev, 3),
+            formatNumber(r.min, 3),
+            formatNumber(r.max, 3),
+          ]),
+        });
+        const narrativeHtml = `<p style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; text-align: justify; text-indent: 1cm; margin: 12pt 0 6pt 0;">${results.explanations.descriptive}</p>`;
+        combinedHtml = tableHtml + narrativeHtml;
+        combinedText = `Tabel 4.1 Hasil Analisis Statistik Deskriptif Variabel Penelitian\n${results.explanations.descriptive}`;
+      } else if (activeTab === 'validity') {
+        const tableHtml = buildWordTableHtml({
+          tableNumber: 'Tabel 4.2',
+          title: 'Hasil Pengujian Validitas Butir Kuesioner (Pearson Product Moment)',
+          note: `* Nilai r tabel = 0,1816 pada tingkat signifikansi α = 0,05 dan N = ${results.respondentCount}.`,
+          columns: validityCols.map((c) => ({ header: c.header, align: c.align })),
+          rows: (results.validity || []).map((r) => [
+            r.item,
+            r.construct,
+            formatNumber(r.rHitung, 3),
+            formatNumber(r.rTabel, 4),
+            r.valid ? 'Valid' : 'Gugur',
+          ]),
+        });
+        const narrativeHtml = `<p style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; text-align: justify; text-indent: 1cm; margin: 12pt 0 6pt 0;">${results.explanations.validity}</p>`;
+        combinedHtml = tableHtml + narrativeHtml;
+        combinedText = `Tabel 4.2 Hasil Pengujian Validitas Butir Kuesioner\n${results.explanations.validity}`;
+      } else if (activeTab === 'reliability') {
+        const tableHtml = buildWordTableHtml({
+          tableNumber: 'Tabel 4.3',
+          title: "Hasil Pengujian Reliabilitas Konstruk (Cronbach's Alpha)",
+          note: '* Ambang batas reliabilitas yang dapat diterima adalah Cronbach Alpha ≥ 0,600.',
+          columns: reliabilityCols.map((c) => ({ header: c.header, align: c.align })),
+          rows: (results.reliability || []).map((r) => [
+            r.construct,
+            formatNumber(r.itemCount),
+            formatNumber(r.cronbachAlpha, 3),
+            '0,600',
+            r.reliable ? 'Reliabel' : 'Tidak Reliabel',
+          ]),
+        });
+        const narrativeHtml = `<p style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; text-align: justify; text-indent: 1cm; margin: 12pt 0 6pt 0;">${results.explanations.reliability}</p>`;
+        combinedHtml = tableHtml + narrativeHtml;
+        combinedText = `Tabel 4.3 Hasil Pengujian Reliabilitas Konstruk\n${results.explanations.reliability}`;
+      } else if (activeTab === 'assumptions') {
+        const normTable = buildWordTableHtml({
+          tableNumber: 'Tabel 4.4',
+          title: 'Hasil Uji Normalitas Residual (One-Sample Kolmogorov-Smirnov)',
+          note: '* Data berdistribusi normal jika nilai Asymp. Sig. (2-tailed) > 0,05.',
+          columns: normalityCols.map((c) => ({ header: c.header, align: c.align })),
+          rows: (results.normality || []).map((r) => [
+            r.test,
+            formatNumber(r.statistic, 3),
+            formatNumber(r.pValue, 3),
+            '0,050',
+            r.normal ? 'Normal' : 'Tidak Normal',
+          ]),
+        });
+        const multiTable = buildWordTableHtml({
+          tableNumber: 'Tabel 4.5',
+          title: 'Hasil Uji Multikolinearitas (Nilai Tolerance dan VIF)',
+          note: '* Model bebas multikolinearitas jika Tolerance > 0,10 dan VIF < 10,00.',
+          columns: multicollinearityCols.map((c) => ({ header: c.header, align: c.align })),
+          rows: (results.multicollinearity || []).map((r) => [
+            r.variable,
+            formatNumber(r.tolerance, 3),
+            formatNumber(r.vif, 3),
+            '< 10,00',
+            !r.problematic ? 'Bebas' : 'Bermasalah',
+          ]),
+        });
+        const heteroTable = buildWordTableHtml({
+          tableNumber: 'Tabel 4.6',
+          title: 'Hasil Uji Heteroskedastisitas (Metode Regresi Glejser)',
+          note: '* Bebas gejala heteroskedastisitas jika nilai Sig. (p-value) > 0,05.',
+          columns: heteroscedasticityCols.map((c) => ({ header: c.header, align: c.align })),
+          rows: (results.heteroscedasticity || []).map((r) => [
+            r.variable,
+            r.test,
+            formatNumber(r.tHitung, 3),
+            formatNumber(r.pValue, 3),
+            !r.significant ? 'Bebas Gejala' : 'Terjadi Gejala',
+          ]),
+        });
+        const narrativeText =
+          results.explanations.assumptions ||
+          [
+            results.explanations.normality,
+            results.explanations.multicollinearity,
+            results.explanations.heteroscedasticity,
+          ]
+            .filter(Boolean)
+            .join('\n\n');
+        const narrativeHtml = `<p style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; text-align: justify; text-indent: 1cm; margin: 12pt 0 6pt 0;">${narrativeText}</p>`;
+        combinedHtml = normTable + multiTable + heteroTable + narrativeHtml;
+        combinedText = `Uji Asumsi Klasik\n${narrativeText}`;
+      } else if (activeTab === 'regression') {
+        const regTable = buildWordTableHtml({
+          tableNumber: 'Tabel 4.7',
+          title: 'Hasil Analisis Regresi Linier Berganda (Uji t Parsial)',
+          note: `* Tingkat signifikansi α = 0,05. t tabel (df = ${results.respondentCount - 3}) = 1,981.`,
+          columns: regressionCols.map((c) => ({ header: c.header, align: c.align })),
+          rows: (results.regression || []).map((r) => [
+            r.variable,
+            formatNumber(r.coefficient, 3),
+            formatNumber(r.stdError, 3),
+            formatNumber(r.tHitung, 3),
+            formatNumber(r.pValue, 3),
+            r.significant ? 'Signifikan' : 'Tidak',
+          ]),
+        });
+        const fTable = results.fTest
+          ? buildWordTableHtml({
+              tableNumber: 'Tabel 4.8',
+              title: 'Hasil Uji Pengaruh Simultan (Uji F ANOVA)',
+              note: '* F tabel pada tingkat signifikansi α = 0,05 sebesar 3,076.',
+              columns: fTestCols.map((c) => ({ header: c.header, align: c.align })),
+              rows: [
+                [
+                  'Regresi Simultan',
+                  formatNumber(results.fTest.fHitung, 3),
+                  formatNumber(results.fTest.fTabel, 3),
+                  formatNumber(results.fTest.pValue, 3),
+                  results.fTest.significant ? 'Signifikan' : 'Tidak',
+                ],
+              ],
+            })
+          : '';
+        const r2Table = results.determination
+          ? buildWordTableHtml({
+              tableNumber: 'Tabel 4.9',
+              title: 'Hasil Uji Koefisien Determinasi (R Square)',
+              note: '* Dihitung dari model regresi linier berganda OLS.',
+              columns: determinationCols.map((c) => ({ header: c.header, align: c.align })),
+              rows: [
+                [
+                  '1',
+                  formatNumber(results.determination.rSquare, 3),
+                  formatNumber(results.determination.adjustedRSquare, 3),
+                  `${formatNumber(results.determination.adjustedRSquare * 100, 1)}%`,
+                ],
+              ],
+            })
+          : '';
+        const narrativeHtml = `<p style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; text-align: justify; text-indent: 1cm; margin: 12pt 0 6pt 0;">${results.explanations.regression}</p>`;
+        combinedHtml = regTable + fTable + r2Table + narrativeHtml;
+        combinedText = `Hasil Analisis Regresi Linier Berganda\n${results.explanations.regression}`;
+      } else if (activeTab === 'correlation') {
+        const corrTable = buildWordTableHtml({
+          tableNumber: 'Tabel 4.10',
+          title: 'Matriks Koefisien Korelasi Pearson Antar Variabel',
+          note: '* Korelasi signifikan pada tingkat signifikansi α = 0,05 (2-tailed).',
+          columns: correlationCols.map((c) => ({ header: c.header, align: c.align })),
+          rows: (results.correlation || []).map((r) => [
+            `${r.variable1} ↔ ${r.variable2}`,
+            formatNumber(r.coefficient, 3),
+            formatNumber(r.pValue, 3),
+            r.strength,
+            r.significant ? 'Signifikan' : 'Tidak Signifikan',
+          ]),
+        });
+        const narrativeHtml = `<p style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; text-align: justify; text-indent: 1cm; margin: 12pt 0 6pt 0;">${results.explanations.correlation}</p>`;
+        combinedHtml = corrTable + narrativeHtml;
+        combinedText = `Hasil Uji Korelasi Pearson\n${results.explanations.correlation}`;
+      }
+
+      const success = await copyHtmlAndText(combinedHtml, combinedText);
+      if (success) {
+        setCopiedTab(true);
+        setTimeout(() => setCopiedTab(false), 2500);
+        toast({
+          title: COPY.layers.copied,
+          description: 'Seluruh tabel dan narasi tab ini berhasil disalin ke format Word. Tempelkan (Ctrl+V) langsung ke Word.',
+          variant: 'success',
+        });
+      }
+    } catch {
+      toast({
+        title: 'Gagal menyalin tab',
+        description: 'Periksa izin papan klip pada perambanmu.',
+        variant: 'error',
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground py-6 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -641,6 +848,26 @@ export default function HasilPage() {
             >
               <RotateCcw className="h-3.5 w-3.5" />
               <span>Jalankan Ulang</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyActiveTabForWord}
+              className="gap-1.5 text-xs h-9 font-medium rounded-[10px] touch-manipulation cursor-pointer"
+              title="Salin seluruh tabel dan teks pembahasan pada tab ini langsung untuk Word (APA 7th)"
+            >
+              {copiedTab ? (
+                <>
+                  <Check className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-primary font-medium">{COPY.results.copied}</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span>Salin Tab Ini untuk Word</span>
+                </>
+              )}
             </Button>
 
             <Button

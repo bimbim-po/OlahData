@@ -18,6 +18,8 @@ import { getSupabaseBrowserClient } from '../supabase/client';
 import { mockProjects } from '../mock/projects';
 import { mockDataset, mockIssues } from '../mock/dataset-contoh';
 import { mockResults, mockTestOptions } from '../mock/results';
+import { buildWordTableHtml, buildWordDocumentContent } from '../word-table';
+import { formatNumber } from '../format';
 
 // =============================================================================
 // 1. AUTENTIKASI (SUPABASE AUTH + PROFILES)
@@ -675,10 +677,295 @@ export async function getResult(projectId: string): Promise<AnalysisResults> {
 }
 
 export async function exportResult(
-  _projectId: string,
-  _options: ExportOptions
+  projectId: string,
+  options: ExportOptions
 ): Promise<Blob> {
-  // TODO(backend-statistik): Panggil worker pembuatan dokumen Word (.docx) atau PDF
+  const project = await getProject(projectId).catch(() => null);
+  const projectTitle = project?.title || 'Analisis Data Skripsi';
+  const results = await getResult(projectId);
+
+  if (options.format === 'word') {
+    const sections: { title: string; contentHtml: string }[] = [];
+
+    if (options.sections.includes('descriptive')) {
+      const tableHtml = buildWordTableHtml({
+        tableNumber: 'Tabel 4.1',
+        title: 'Hasil Analisis Statistik Deskriptif Variabel Penelitian',
+        note: `* Dihitung dari N = ${results.respondentCount} responden menggunakan skala Likert 1-5.`,
+        columns: [
+          { header: 'Variabel Penelitian', align: 'left' },
+          { header: 'N', align: 'right' },
+          { header: 'Mean', align: 'right' },
+          { header: 'Median', align: 'right' },
+          { header: 'Std Dev', align: 'right' },
+          { header: 'Min', align: 'right' },
+          { header: 'Max', align: 'right' },
+        ],
+        rows: (results.descriptive || []).map((r) => [
+          r.variable,
+          formatNumber(r.n),
+          formatNumber(r.mean, 3),
+          formatNumber(r.median, 3),
+          formatNumber(r.stdDev, 3),
+          formatNumber(r.min, 3),
+          formatNumber(r.max, 3),
+        ]),
+      });
+      const narrativeHtml = `<p>${results.explanations.descriptive}</p>`;
+      sections.push({
+        title: '1. Statistik Deskriptif',
+        contentHtml: tableHtml + narrativeHtml,
+      });
+    }
+
+    if (options.sections.includes('validity')) {
+      const tableHtml = buildWordTableHtml({
+        tableNumber: 'Tabel 4.2',
+        title: 'Hasil Pengujian Validitas Butir Kuesioner (Pearson Product Moment)',
+        note: `* Nilai r tabel = 0,1816 (df = ${results.respondentCount - 2}, α = 0,05).`,
+        columns: [
+          { header: 'Butir Indikator', align: 'left' },
+          { header: 'Konstruk Variabel', align: 'left' },
+          { header: 'r Hitung', align: 'right' },
+          { header: 'r Tabel', align: 'right' },
+          { header: 'Status', align: 'center' },
+        ],
+        rows: (results.validity || []).map((r) => [
+          r.item,
+          r.construct,
+          formatNumber(r.rHitung, 3),
+          formatNumber(r.rTabel, 4),
+          r.valid ? 'Valid' : 'Gugur',
+        ]),
+      });
+      const narrativeHtml = `<p>${results.explanations.validity}</p>`;
+      sections.push({
+        title: '2. Uji Validitas Instrumen',
+        contentHtml: tableHtml + narrativeHtml,
+      });
+    }
+
+    if (options.sections.includes('reliability')) {
+      const tableHtml = buildWordTableHtml({
+        tableNumber: 'Tabel 4.3',
+        title: "Hasil Pengujian Reliabilitas Konstruk (Cronbach's Alpha)",
+        note: '* Ambang batas nilai reliabilitas Cronbach Alpha ≥ 0,600.',
+        columns: [
+          { header: 'Konstruk Variabel', align: 'left' },
+          { header: 'Jumlah Butir', align: 'right' },
+          { header: "Cronbach's Alpha", align: 'right' },
+          { header: 'Ambang Batas', align: 'right' },
+          { header: 'Status', align: 'center' },
+        ],
+        rows: (results.reliability || []).map((r) => [
+          r.construct,
+          formatNumber(r.itemCount),
+          formatNumber(r.cronbachAlpha, 3),
+          '0,600',
+          r.reliable ? 'Reliabel' : 'Tidak Reliabel',
+        ]),
+      });
+      const narrativeHtml = `<p>${results.explanations.reliability}</p>`;
+      sections.push({
+        title: '3. Uji Reliabilitas Instrumen',
+        contentHtml: tableHtml + narrativeHtml,
+      });
+    }
+
+    if (
+      options.sections.includes('normality') ||
+      options.sections.includes('multicollinearity') ||
+      options.sections.includes('heteroscedasticity')
+    ) {
+      const normTable = buildWordTableHtml({
+        tableNumber: 'Tabel 4.4',
+        title: 'Hasil Uji Normalitas Residual (Kolmogorov-Smirnov)',
+        note: '* Berdistribusi normal jika Sig > 0,05.',
+        columns: [
+          { header: 'Uji Statistik', align: 'left' },
+          { header: 'Statistik Uji', align: 'right' },
+          { header: 'Asymp. Sig.', align: 'right' },
+          { header: 'Kriteria (α)', align: 'right' },
+          { header: 'Kesimpulan', align: 'center' },
+        ],
+        rows: (results.normality || []).map((r) => [
+          r.test,
+          formatNumber(r.statistic, 3),
+          formatNumber(r.pValue, 3),
+          '0,050',
+          r.normal ? 'Normal' : 'Tidak Normal',
+        ]),
+      });
+      const multiTable = buildWordTableHtml({
+        tableNumber: 'Tabel 4.5',
+        title: 'Hasil Uji Multikolinearitas (Tolerance & VIF)',
+        note: '* Bebas multikolinearitas jika Tolerance > 0,10 dan VIF < 10,00.',
+        columns: [
+          { header: 'Variabel Bebas', align: 'left' },
+          { header: 'Tolerance', align: 'right' },
+          { header: 'VIF', align: 'right' },
+          { header: 'Batas VIF', align: 'right' },
+          { header: 'Kesimpulan', align: 'center' },
+        ],
+        rows: (results.multicollinearity || []).map((r) => [
+          r.variable,
+          formatNumber(r.tolerance, 3),
+          formatNumber(r.vif, 3),
+          '< 10,00',
+          !r.problematic ? 'Bebas' : 'Bermasalah',
+        ]),
+      });
+      const heteroTable = buildWordTableHtml({
+        tableNumber: 'Tabel 4.6',
+        title: 'Hasil Uji Heteroskedastisitas (Metode Glejser)',
+        note: '* Bebas heteroskedastisitas jika Sig. (p-value) > 0,05.',
+        columns: [
+          { header: 'Variabel Bebas', align: 'left' },
+          { header: 'Metode Pengujian', align: 'left' },
+          { header: 't Hitung', align: 'right' },
+          { header: 'Sig. (p-value)', align: 'right' },
+          { header: 'Kesimpulan', align: 'center' },
+        ],
+        rows: (results.heteroscedasticity || []).map((r) => [
+          r.variable,
+          r.test,
+          formatNumber(r.tHitung, 3),
+          formatNumber(r.pValue, 3),
+          !r.significant ? 'Bebas Gejala' : 'Terjadi Gejala',
+        ]),
+      });
+      const narrativeText =
+        results.explanations.assumptions ||
+        [
+          results.explanations.normality,
+          results.explanations.multicollinearity,
+          results.explanations.heteroscedasticity,
+        ]
+          .filter(Boolean)
+          .join('\n\n');
+      const narrativeHtml = `<p>${narrativeText}</p>`;
+      sections.push({
+        title: '4. Uji Asumsi Klasik',
+        contentHtml: normTable + multiTable + heteroTable + narrativeHtml,
+      });
+    }
+
+    if (options.sections.includes('regression')) {
+      const regTable = buildWordTableHtml({
+        tableNumber: 'Tabel 4.7',
+        title: 'Hasil Analisis Regresi Linier Berganda (Uji t Parsial)',
+        note: `* Tingkat signifikansi α = 0,05.`,
+        columns: [
+          { header: 'Model / Variabel', align: 'left' },
+          { header: 'Koefisien (B)', align: 'right' },
+          { header: 'Std. Error', align: 'right' },
+          { header: 't Hitung', align: 'right' },
+          { header: 'Sig. (p-value)', align: 'right' },
+          { header: 'Signifikansi', align: 'center' },
+        ],
+        rows: (results.regression || []).map((r) => [
+          r.variable,
+          formatNumber(r.coefficient, 3),
+          formatNumber(r.stdError, 3),
+          formatNumber(r.tHitung, 3),
+          formatNumber(r.pValue, 3),
+          r.significant ? 'Signifikan' : 'Tidak',
+        ]),
+      });
+      const fTable = results.fTest
+        ? buildWordTableHtml({
+            tableNumber: 'Tabel 4.8',
+            title: 'Hasil Uji Signifikansi Simultan (Uji F ANOVA)',
+            note: '* F tabel α = 0,05 sebesar 3,076.',
+            columns: [
+              { header: 'Model Uji', align: 'left' },
+              { header: 'F Hitung', align: 'right' },
+              { header: 'F Tabel', align: 'right' },
+              { header: 'Sig. (p-value)', align: 'right' },
+              { header: 'Kesimpulan', align: 'center' },
+            ],
+            rows: [
+              [
+                'Regresi Simultan',
+                formatNumber(results.fTest.fHitung, 3),
+                formatNumber(results.fTest.fTabel, 3),
+                formatNumber(results.fTest.pValue, 3),
+                results.fTest.significant ? 'Signifikan' : 'Tidak',
+              ],
+            ],
+          })
+        : '';
+      const r2Table = results.determination
+        ? buildWordTableHtml({
+            tableNumber: 'Tabel 4.9',
+            title: 'Hasil Uji Koefisien Determinasi (R Square)',
+            note: '* Dihitung dari model regresi linier OLS.',
+            columns: [
+              { header: 'Model', align: 'left' },
+              { header: 'R Square (R²)', align: 'right' },
+              { header: 'Adjusted R Square', align: 'right' },
+              { header: 'Kontribusi (%)', align: 'right' },
+            ],
+            rows: [
+              [
+                '1',
+                formatNumber(results.determination.rSquare, 3),
+                formatNumber(results.determination.adjustedRSquare, 3),
+                `${formatNumber(results.determination.adjustedRSquare * 100, 1)}%`,
+              ],
+            ],
+          })
+        : '';
+      const narrativeHtml = `<p>${results.explanations.regression}</p>`;
+      sections.push({
+        title: '5. Analisis Regresi Linier Berganda',
+        contentHtml: regTable + fTable + r2Table + narrativeHtml,
+      });
+    }
+
+    if (options.sections.includes('correlation')) {
+      const corrTable = buildWordTableHtml({
+        tableNumber: 'Tabel 4.10',
+        title: 'Matriks Koefisien Korelasi Pearson Antar Variabel',
+        note: '* Signifikan pada α = 0,05 (2-tailed).',
+        columns: [
+          { header: 'Variabel 1', align: 'left' },
+          { header: 'Variabel 2', align: 'left' },
+          { header: 'Koefisien (r)', align: 'right' },
+          { header: 'Sig. (p-value)', align: 'right' },
+          { header: 'Signifikansi', align: 'center' },
+        ],
+        rows: (results.correlation || []).map((r) => [
+          r.variable1,
+          r.variable2,
+          formatNumber(r.coefficient, 3),
+          formatNumber(r.pValue, 3),
+          r.significant ? 'Signifikan' : 'Tidak Signifikan',
+        ]),
+      });
+      const narrativeHtml = `<p>${results.explanations.correlation}</p>`;
+      sections.push({
+        title: '6. Analisis Korelasi Pearson',
+        contentHtml: corrTable + narrativeHtml,
+      });
+    }
+
+    if (options.includeStatement) {
+      const statementHtml = `
+        <p class="no-indent" style="font-weight: bold; margin-bottom: 6pt;">Lampiran: Pernyataan Penggunaan Alat Bantu Analisis Data</p>
+        <p>Peneliti menyatakan secara bertanggung jawab bahwa seluruh data kuesioner dalam penelitian ini diolah menggunakan mesin statistik deterministik berlisensi terbuka dan divalidasi keakuratannya. Interpretasi naratif yang dihasilkan diverifikasi kebenarannya oleh peneliti dan disesuaikan dengan konteks bidang ilmu sebelum dimuat dalam naskah skripsi.</p>
+      `;
+      sections.push({
+        title: 'Lampiran Pernyataan Transparansi',
+        contentHtml: statementHtml,
+      });
+    }
+
+    const docHtml = buildWordDocumentContent(projectTitle, sections);
+    return new Blob([docHtml], { type: 'application/msword;charset=utf-8' });
+  }
+
+  // Fallback untuk format lain
   return new Blob(['DRAF HASIL PENGOLAHAN DATA OLAHDATA'], {
     type: 'application/octet-stream',
   });

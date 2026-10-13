@@ -125,7 +125,7 @@ export function ExportDialog({
       });
 
       // Trigger browser download
-      const ext = format === 'word' ? 'docx' : 'pdf';
+      const ext = format === 'word' ? 'doc' : 'pdf';
       const cleanTitle = projectTitle.replace(/[^a-zA-Z0-9_-]/g, '_');
       const filename = `Laporan_Hasil_${cleanTitle || 'OlahData'}.${ext}`;
 

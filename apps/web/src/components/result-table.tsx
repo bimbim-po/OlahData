@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/toaster';
 import { COPY } from '@/lib/copy';
+import { copyWordTable, type WordTableData } from '@/lib/word-table';
 
 export interface ColumnDef<T> {
   key: string;
@@ -49,46 +50,49 @@ export function ResultTable<T>({
   const [copied, setCopied] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Generate tab-separated plain text for pasting cleanly into Microsoft Word
+  // Generate formatted APA 7th HTML table for Microsoft Word + plain text fallback
   const handleCopyTable = async () => {
     try {
-      const headerLine = columns.map((c) => c.header).join('\t');
-      const dataLines = data.map((row) => {
-        return columns
-          .map((c) => {
-            if (c.getValue) {
-              return String(c.getValue(row));
-            }
-            const val = (row as Record<string, unknown>)[c.key];
-            if (typeof val === 'number') {
-              return new Intl.NumberFormat('id-ID', {
-                maximumFractionDigits: 4,
-              }).format(val);
-            }
-            if (typeof val === 'boolean') {
-              return val ? 'Valid' : 'Gugur';
-            }
-            return val !== undefined && val !== null ? String(val) : '';
-          })
-          .join('\t');
+      const rows = data.map((row) => {
+        return columns.map((c) => {
+          if (c.getValue) {
+            return c.getValue(row);
+          }
+          const val = (row as Record<string, unknown>)[c.key];
+          if (typeof val === 'number') {
+            return new Intl.NumberFormat('id-ID', {
+              maximumFractionDigits: 4,
+            }).format(val);
+          }
+          if (typeof val === 'boolean') {
+            return val ? 'Valid' : 'Gugur';
+          }
+          return val !== undefined && val !== null ? String(val) : '';
+        });
       });
 
-      const fullText = [
-        tableNumber ? `${tableNumber} ${title}` : title,
-        headerLine,
-        ...dataLines,
-        note ? `Catatan: ${note}` : '',
-      ]
-        .filter(Boolean)
-        .join('\n');
+      const tableData: WordTableData = {
+        tableNumber,
+        title,
+        note,
+        columns: columns.map((c) => ({
+          header: c.header,
+          align: c.align,
+        })),
+        rows,
+      };
 
-      await navigator.clipboard.writeText(fullText);
+      const success = await copyWordTable(tableData);
+      if (!success) {
+        throw new Error('Clipboard copy failed');
+      }
+
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
 
       toast({
         title: COPY.layers.copied,
-        description: 'Tabel berformat Word berhasil disalin. Buka Microsoft Word dan tekan Paste (Ctrl+V).',
+        description: 'Tabel berformat APA Word berhasil disalin. Tempelkan (Ctrl+V) langsung ke lembar Microsoft Word.',
         variant: 'success',
       });
     } catch {
@@ -179,7 +183,7 @@ export function ResultTable<T>({
             size="sm"
             onClick={handleCopyTable}
             className="min-h-[44px] px-3.5 gap-1.5 text-xs text-foreground hover:bg-muted font-medium transition-colors rounded-[10px] touch-manipulation cursor-pointer"
-            title="Salin tabel format tab-separated untuk Microsoft Word"
+            title="Salin tabel format Microsoft Word (APA 7th)"
           >
             {copied ? (
               <>

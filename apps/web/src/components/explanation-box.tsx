@@ -15,6 +15,7 @@ import {
   BottomSheetTrigger,
 } from '@/components/ui/bottom-sheet';
 import { COPY } from '@/lib/copy';
+import { copyWordNarrative } from '@/lib/word-table';
 
 export interface ExplanationBoxProps {
   title?: string;
@@ -81,13 +82,16 @@ export function ExplanationBox({
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(explanation);
+      const success = await copyWordNarrative(explanation, title);
+      if (!success) {
+        throw new Error('Clipboard copy failed');
+      }
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
 
       toast({
         title: COPY.layers.copied,
-        description: 'Teks penjelasan siap kamu tempelkan ke pembahasan Bab 4 skripsimu.',
+        description: 'Teks penjelasan berformat Word berhasil disalin. Tempelkan (Ctrl+V) langsung ke pembahasan Bab 4 skripsimu.',
         variant: 'success',
       });
     } catch {
