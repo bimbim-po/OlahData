@@ -6,6 +6,8 @@ import type {
   DescriptiveResult,
   ValidityResult,
   ReliabilityResult,
+  ItemTotalStatistic,
+  CaseProcessingSummary,
   RegressionResult,
   FTestResult,
   DeterminationResult,
@@ -14,6 +16,10 @@ import type {
   MulticollinearityResult,
   HeteroscedasticityResult,
   CorrelationResult,
+  DurbinWatsonResult,
+  LinearityResult,
+  DemographicVariableResult,
+  DemographicCategory,
 } from './api/types';
 import {
   matrixMultiply,
@@ -24,9 +30,33 @@ import {
   fisherFPValue,
   fisherFInv,
   standardNormalCdf,
+  getTCritical,
+  getRCritical,
+  getFCritical,
+  getDurbinWatsonBounds,
 } from './math-stats';
 import { ENGINE_VERSION } from './constants';
 import { formatNumber } from './format';
+
+/**
+ * Tingkat Capaian Responden (TCR)
+ * Rumus: (Mean / Nilai Maksimum Skala) * 100%
+ * Standar 5 Kategori:
+ * >= 81%: Sangat Baik / Sangat Tinggi
+ * 61% - 80.99%: Baik / Tinggi
+ * 41% - 60.99%: Cukup / Sedang
+ * 21% - 40.99%: Kurang / Rendah
+ * <= 20.99%: Sangat Kurang / Sangat Rendah
+ */
+export function calculateTCR(mean: number, maxScore: number = 5): { tcr: number; category: string } {
+  const tcr = Number(((mean / maxScore) * 100).toFixed(2));
+  let category = 'Sangat Kurang';
+  if (tcr >= 81) category = 'Sangat Baik';
+  else if (tcr >= 61) category = 'Baik';
+  else if (tcr >= 41) category = 'Cukup';
+  else if (tcr >= 21) category = 'Kurang';
+  return { tcr, category };
+}
 
 export type ConstructDef = Construct;
 
@@ -98,6 +128,90 @@ function pearsonCorrelation(x: number[], y: number[]): { r: number; p: number } 
   const t = r * Math.sqrt(df / Math.max(1e-12, 1 - r * r));
   const p = studentTPValueTwoTailed(t, df);
   return { r, p };
+}
+
+// Linearity ANOVA (Between groups: combined, linearity, deviation from linearity)
+function computeLinearityTest(
+  xVals: number[],
+  yVals: number[],
+  xName: string,
+  yName: string
+): LinearityResult {
+  const n = xVals.length;
+  const yMean = yVals.reduce((a, b) => a + b, 0) / n;
+  const xMean = xVals.reduce((a, b) => a + b, 0) / n;
+
+  // Group Y by distinct X values
+  const groups = new Map<number, number[]>();
+  for (let i = 0; i < n; i++) {
+    const x = xVals[i];
+    const y = yVals[i];
+    const grp = groups.get(x) || [];
+    grp.push(y);
+    groups.set(x, grp);
+  }
+
+  const g = groups.size;
+  let ssBetween = 0;
+  let ssWithin = 0;
+  let ssTotal = 0;
+
+  for (let i = 0; i < n; i++) {
+    ssTotal += (yVals[i] - yMean) ** 2;
+  }
+
+  groups.forEach((yList) => {
+    const grpMean = yList.reduce((a, b) => a + b, 0) / yList.length;
+    ssBetween += yList.length * (grpMean - yMean) ** 2;
+    for (const y of yList) {
+      ssWithin += (y - grpMean) ** 2;
+    }
+  });
+
+  // SS Linearity via Pearson correlation squared
+  let numXY = 0;
+  let denX = 0;
+  for (let i = 0; i < n; i++) {
+    numXY += (xVals[i] - xMean) * (yVals[i] - yMean);
+    denX += (xVals[i] - xMean) ** 2;
+  }
+  const ssLinearity = denX > 1e-12 ? (numXY * numXY) / denX : 0;
+  const ssDeviation = Math.max(0, ssBetween - ssLinearity);
+
+  const dfLinearity = 1;
+  const dfDeviation = Math.max(1, g - 2);
+  const dfWithin = Math.max(1, n - g);
+
+  const msLinearity = ssLinearity / dfLinearity;
+  const msDeviation = ssDeviation / dfDeviation;
+  const msWithin = ssWithin / dfWithin;
+
+  const fLinearity = msWithin > 1e-12 ? msLinearity / msWithin : 0;
+  const fDeviation = msWithin > 1e-12 ? msDeviation / msWithin : 0;
+
+  const sigLinearity = fisherFPValue(fLinearity, dfLinearity, dfWithin);
+  const sigDeviation = fisherFPValue(fDeviation, dfDeviation, dfWithin);
+
+  const isLinear = sigDeviation >= 0.05;
+
+  return {
+    independentVar: xName,
+    dependentVar: yName,
+    ssLinearity: Number(ssLinearity.toFixed(4)),
+    dfLinearity,
+    msLinearity: Number(msLinearity.toFixed(4)),
+    fLinearity: Number(fLinearity.toFixed(4)),
+    sigLinearity: Number(sigLinearity.toFixed(4)),
+    ssDeviation: Number(ssDeviation.toFixed(4)),
+    dfDeviation,
+    msDeviation: Number(msDeviation.toFixed(4)),
+    fDeviation: Number(fDeviation.toFixed(4)),
+    sigDeviation: Number(sigDeviation.toFixed(4)),
+    ssWithin: Number(ssWithin.toFixed(4)),
+    dfWithin,
+    msWithin: Number(msWithin.toFixed(4)),
+    isLinear,
+  };
 }
 
 export function computeDeterministicStats(
@@ -204,7 +318,7 @@ export function computeDeterministicStats(
     sourceMeta: datasetMeta,
   };
 
-  // 1. STATISTIK DESKRIPTIF
+  // 1. STATISTIK DESKRIPTIF & PROFIL DEMOGRAFI
   if (selectedTests.includes('descriptive')) {
     const descResults: DescriptiveResult[] = [];
     constructs.forEach((c) => {
@@ -220,6 +334,10 @@ export function computeDeterministicStats(
       const min = sorted[0];
       const max = sorted[sorted.length - 1];
 
+      // TCR (%) = (Mean / MaxLikert) * 100%
+      const maxScale = max > 5 ? Math.ceil(max) : 5;
+      const { tcr, category: tcrCategory } = calculateTCR(mean, maxScale);
+
       descResults.push({
         variable: c.name,
         n: s.length,
@@ -228,11 +346,13 @@ export function computeDeterministicStats(
         stdDev: Number(stdDev.toFixed(4)),
         min: Number(min.toFixed(4)),
         max: Number(max.toFixed(4)),
+        tcr,
+        tcrCategory,
       });
     });
     results.descriptive = descResults;
 
-    // Per-item descriptive statistics for thesis Bab 4 breakdown
+    // Per-item descriptive statistics with TCR for thesis Bab 4 breakdown
     const itemDescResults: DescriptiveResult[] = [];
     constructs.forEach((c) => {
       c.items.forEach((itemCol) => {
@@ -250,14 +370,21 @@ export function computeDeterministicStats(
           const median = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
           const variance = sampleVariance(vals);
           const stdDev = Math.sqrt(variance);
+          const min = sorted[0];
+          const max = sorted[sorted.length - 1];
+          const maxScale = max > 5 ? Math.ceil(max) : 5;
+          const { tcr, category: tcrCategory } = calculateTCR(mean, maxScale);
+
           itemDescResults.push({
             variable: `${itemCol} (${c.name})`,
             n: vals.length,
             mean: Number(mean.toFixed(4)),
             median: Number(median.toFixed(4)),
             stdDev: Number(stdDev.toFixed(4)),
-            min: Number(sorted[0].toFixed(4)),
-            max: Number(sorted[sorted.length - 1].toFixed(4)),
+            min: Number(min.toFixed(4)),
+            max: Number(max.toFixed(4)),
+            tcr,
+            tcrCategory,
           });
         }
       });
@@ -265,13 +392,81 @@ export function computeDeterministicStats(
     results.itemDescriptive = itemDescResults;
   }
 
+  // PROFIL DEMOGRAFI RESPONDEN (Frekuensi & Persentase)
+  const constructItemSet = new Set<string>();
+  constructs.forEach((c) => c.items.forEach((it) => constructItemSet.add(it)));
+
+  const demoColCandidates: string[] = [];
+  if (datasetMeta?.columns) {
+    datasetMeta.columns.forEach((col) => {
+      if (col.role === 'demographic') {
+        demoColCandidates.push(col.name);
+      }
+    });
+  }
+
+  // Jika tidak terdefinisi di meta, deteksi otomatis kolom demografi umum
+  if (demoColCandidates.length === 0 && rows.length > 0) {
+    const firstRow = rows[0];
+    Object.keys(firstRow).forEach((key) => {
+      if (
+        !constructItemSet.has(key) &&
+        !/^(no|id|timestamp|cap_waktu|waktu|nama|email|nim|telepon)$/i.test(key)
+      ) {
+        demoColCandidates.push(key);
+      }
+    });
+  }
+
+  if (demoColCandidates.length > 0) {
+    const demoResults: DemographicVariableResult[] = [];
+    demoColCandidates.forEach((colName) => {
+      const counts = new Map<string, number>();
+      let totalValid = 0;
+
+      for (let i = 0; i < n; i++) {
+        const raw = processedRows[i][colName];
+        if (raw !== null && raw !== undefined && String(raw).trim() !== '') {
+          const valStr = String(raw).trim();
+          counts.set(valStr, (counts.get(valStr) || 0) + 1);
+          totalValid++;
+        }
+      }
+
+      if (totalValid > 0) {
+        const sortedCategories = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+        let cumSum = 0;
+        const categories: DemographicCategory[] = sortedCategories.map(([cat, freq]) => {
+          const pct = Number(((freq / totalValid) * 100).toFixed(2));
+          cumSum += pct;
+          return {
+            category: cat,
+            frequency: freq,
+            percentage: pct,
+            cumulativePercentage: Number(Math.min(100, cumSum).toFixed(2)),
+          };
+        });
+
+        demoResults.push({
+          variable: colName,
+          totalN: totalValid,
+          categories,
+          majorityCategory: sortedCategories[0][0],
+          majorityPercent: Number(((sortedCategories[0][1] / totalValid) * 100).toFixed(2)),
+        });
+      }
+    });
+    if (demoResults.length > 0) {
+      results.demographics = demoResults;
+    }
+  }
+
   // 2. UJI VALIDITAS (Pearson Product Moment)
   if (selectedTests.includes('validity')) {
     const validityResults: ValidityResult[] = [];
     const df = n - 2;
-    // Critical t for alpha=0.05 two-tailed
-    const tCrit = studentTInv(1.0 - significanceLevel / 2.0, df);
-    const rTabel = Number((tCrit / Math.sqrt(df + tCrit * tCrit)).toFixed(4));
+    // Critical t and r for alpha two-tailed
+    const rTabel = getRCritical(df, significanceLevel);
 
     constructs.forEach((c) => {
       const items = c.items;
@@ -303,7 +498,7 @@ export function computeDeterministicStats(
     results.validity = validityResults;
   }
 
-  // 3. UJI RELIABILITAS (Cronbach's Alpha)
+  // 3. UJI RELIABILITAS (Cronbach's Alpha & Item-Total Statistics)
   if (selectedTests.includes('reliability')) {
     const reliabilityResults: ReliabilityResult[] = [];
 
@@ -312,17 +507,21 @@ export function computeDeterministicStats(
       const k = items.length;
       if (k < 2) return;
 
-      let sumItemVar = 0;
+      const itemValArrays: number[][] = [];
+      const itemVariances: number[] = [];
       const totalScores: number[] = Array.from({ length: n }, () => 0);
 
       items.forEach((it) => {
         const vals = processedRows.map((r) => Number(r[it] || 0));
-        sumItemVar += sampleVariance(vals);
+        itemValArrays.push(vals);
+        const v = sampleVariance(vals);
+        itemVariances.push(v);
         for (let i = 0; i < n; i++) {
           totalScores[i] += vals[i];
         }
       });
 
+      const sumItemVar = itemVariances.reduce((a, b) => a + b, 0);
       const totalVar = sampleVariance(totalScores);
       let alpha = 0;
       if (totalVar > 1e-12) {
@@ -330,12 +529,60 @@ export function computeDeterministicStats(
       }
       const roundedAlpha = Number(alpha.toFixed(4));
 
+      // Item-Total Statistics & Cronbach's Alpha if Item Deleted
+      const itemTotalStats: ItemTotalStatistic[] = [];
+      const alphaIfDeleted: { item: string; alpha: number }[] = [];
+
+      items.forEach((it, idx) => {
+        const restScores: number[] = Array.from({ length: n }, () => 0);
+        for (let i = 0; i < n; i++) {
+          restScores[i] = totalScores[i] - itemValArrays[idx][i];
+        }
+
+        const scaleMean = restScores.reduce((a, b) => a + b, 0) / n;
+        const scaleVariance = sampleVariance(restScores);
+        const { r: correctedItemTotalCorr } = pearsonCorrelation(itemValArrays[idx], restScores);
+
+        // Alpha if item deleted
+        const kSub = k - 1;
+        let alphaDel = 0;
+        if (kSub >= 2 && scaleVariance > 1e-12) {
+          const sumItemVarSub = sumItemVar - itemVariances[idx];
+          alphaDel = (kSub / (kSub - 1)) * (1.0 - sumItemVarSub / scaleVariance);
+        }
+        const roundedAlphaDel = Number(Math.max(0, alphaDel).toFixed(4));
+
+        itemTotalStats.push({
+          item: it,
+          scaleMean: Number(scaleMean.toFixed(4)),
+          scaleVariance: Number(scaleVariance.toFixed(4)),
+          correctedItemTotalCorrelation: Number(correctedItemTotalCorr.toFixed(4)),
+          cronbachAlphaIfDeleted: roundedAlphaDel,
+        });
+
+        alphaIfDeleted.push({
+          item: it,
+          alpha: roundedAlphaDel,
+        });
+      });
+
+      const caseProcessing: CaseProcessingSummary = {
+        validN: n,
+        validPercent: 100.0,
+        excludedN: 0,
+        excludedPercent: 0.0,
+        totalN: n,
+        totalPercent: 100.0,
+      };
+
       reliabilityResults.push({
         construct: c.name,
         cronbachAlpha: roundedAlpha,
         itemCount: k,
         reliable: roundedAlpha >= 0.60,
-        alphaIfDeleted: [],
+        alphaIfDeleted,
+        caseProcessing,
+        itemTotalStats,
       });
     });
     results.reliability = reliabilityResults;
@@ -404,12 +651,19 @@ export function computeDeterministicStats(
         pVals.push(p);
       }
 
-      // F-Test & Determination
+      // F-Test & Determination & Critical Values
       const fStat = msRes > 1e-12 ? msReg / msRes : 0;
       const fPVal = fisherFPValue(fStat, k, dfRes);
-      const fTabel = Number(fisherFInv(1.0 - significanceLevel, k, dfRes).toFixed(4));
+      const fTabel = getFCritical(k, dfRes, significanceLevel);
+      const tTabel = getTCritical(dfRes, significanceLevel);
       const r2 = ssTot > 1e-12 ? 1.0 - ssRes / ssTot : 0;
       const adjR2 = 1.0 - ((1.0 - r2) * (n - 1)) / dfRes;
+
+      results.tTabel = tTabel;
+      results.fTabel = fTabel;
+
+      // Standard deviation of Y for Standardized Beta (Beta)
+      const sY = Math.sqrt(Math.max(1e-12, ssTot / (n - 1)));
 
       if (selectedTests.includes('regression')) {
         const regTable: RegressionResult[] = [
@@ -418,19 +672,30 @@ export function computeDeterministicStats(
             coefficient: Number(beta[0].toFixed(4)),
             stdError: Number(seBeta[0].toFixed(4)),
             tHitung: Number(tStats[0].toFixed(4)),
+            tTabel,
             pValue: Number(pVals[0].toFixed(4)),
             significant: pVals[0] < significanceLevel,
           },
         ];
 
         indepNames.forEach((name, idx) => {
+          const sX = Math.sqrt(sampleVariance(constructScores[name]));
+          const betaStd = sY > 1e-12 ? (beta[idx + 1] * sX) / sY : 0;
+          const { r: rXY } = pearsonCorrelation(constructScores[name], yVec);
+          const seVal = betaStd * rXY * 100.0;
+          const srVal = r2 > 1e-6 ? (seVal / (r2 * 100.0)) * 100.0 : 0;
+
           regTable.push({
             variable: name,
             coefficient: Number(beta[idx + 1].toFixed(4)),
             stdError: Number(seBeta[idx + 1].toFixed(4)),
             tHitung: Number(tStats[idx + 1].toFixed(4)),
+            tTabel,
             pValue: Number(pVals[idx + 1].toFixed(4)),
             significant: pVals[idx + 1] < significanceLevel,
+            standardizedBeta: Number(betaStd.toFixed(4)),
+            sePercent: Number(seVal.toFixed(2)),
+            srPercent: Number(srVal.toFixed(2)),
           });
         });
 
@@ -474,6 +739,52 @@ export function computeDeterministicStats(
         ];
       }
 
+      // AUTOKORELASI: Durbin-Watson (DW)
+      let numDW = 0;
+      let denDW = 0;
+      for (let i = 0; i < n; i++) {
+        denDW += residuals[i] * residuals[i];
+        if (i > 0) {
+          const diff = residuals[i] - residuals[i - 1];
+          numDW += diff * diff;
+        }
+      }
+      const dwStat = denDW > 1e-12 ? Number((numDW / denDW).toFixed(4)) : 2.0;
+      const { dL, dU } = getDurbinWatsonBounds(n, k, significanceLevel);
+      let dwStatus: 'bebas' | 'ragu' | 'terdapat' = 'bebas';
+      let dwConclusion = '';
+
+      if (dwStat > dU && dwStat < (4.0 - dU)) {
+        dwStatus = 'bebas';
+        dwConclusion = `Bebas dari masalah autokorelasi karena dU (${dU.toFixed(3)}) < DW (${dwStat.toFixed(3)}) < 4 - dU (${(4.0 - dU).toFixed(3)}).`;
+      } else if (dwStat < dL) {
+        dwStatus = 'terdapat';
+        dwConclusion = `Terindikasi autokorelasi positif karena DW (${dwStat.toFixed(3)}) < dL (${dL.toFixed(3)}).`;
+      } else if (dwStat > (4.0 - dL)) {
+        dwStatus = 'terdapat';
+        dwConclusion = `Terindikasi autokorelasi negatif karena DW (${dwStat.toFixed(3)}) > 4 - dL (${(4.0 - dL).toFixed(3)}).`;
+      } else {
+        dwStatus = 'ragu';
+        dwConclusion = `Nilai DW (${dwStat.toFixed(3)}) berada di daerah ragu-ragu (antara dL dan dU atau 4-dU dan 4-dL).`;
+      }
+
+      results.durbinWatson = {
+        dwStatistic: dwStat,
+        dL,
+        dU,
+        status: dwStatus,
+        conclusion: dwConclusion,
+      };
+
+      // LINEARITAS: Deviation from Linearity ANOVA
+      const linearityList: LinearityResult[] = [];
+      indepNames.forEach((indepName) => {
+        const xVals = constructScores[indepName];
+        const linRes = computeLinearityTest(xVals, yVec, indepName, targetDep);
+        linearityList.push(linRes);
+      });
+      results.linearity = linearityList;
+
       // 4. UJI ASUMSI KLASIK: NORMALITAS RESIDUAL
       if (selectedTests.includes('normality')) {
         // Kolmogorov-Smirnov test on residuals
@@ -481,13 +792,23 @@ export function computeDeterministicStats(
         const resSd = Math.sqrt(sampleVariance(residuals));
         const sortedRes = [...residuals].sort((a, b) => a - b);
         let maxD = 0;
+        let maxPos = 0;
+        let maxNeg = 0;
 
         for (let i = 0; i < n; i++) {
           const z = resSd > 1e-12 ? (sortedRes[i] - resMean) / resSd : 0;
           const theoretical = standardNormalCdf(z);
           const empirical1 = (i + 1) / n;
           const empirical2 = i / n;
-          const d = Math.max(Math.abs(empirical1 - theoretical), Math.abs(empirical2 - theoretical));
+          const diff1 = empirical1 - theoretical;
+          const diff2 = empirical2 - theoretical;
+
+          if (diff1 > maxPos) maxPos = diff1;
+          if (diff2 > maxPos) maxPos = diff2;
+          if (diff1 < maxNeg) maxNeg = diff1;
+          if (diff2 < maxNeg) maxNeg = diff2;
+
+          const d = Math.max(Math.abs(diff1), Math.abs(diff2));
           if (d > maxD) maxD = d;
         }
 
@@ -505,6 +826,11 @@ export function computeDeterministicStats(
             statistic: Number(maxD.toFixed(4)),
             pValue: Number(ksPVal.toFixed(4)),
             normal: ksPVal >= significanceLevel,
+            mean: Number(resMean.toFixed(4)),
+            stdDev: Number(resSd.toFixed(4)),
+            absoluteDiff: Number(maxD.toFixed(4)),
+            positiveDiff: Number(maxPos.toFixed(4)),
+            negativeDiff: Number(maxNeg.toFixed(4)),
           },
         ];
       }
@@ -589,7 +915,6 @@ export function computeDeterministicStats(
       if (selectedTests.includes('heteroscedasticity')) {
         const heteroResults: HeteroscedasticityResult[] = [];
         const absRes = residuals.map((r) => Math.abs(r));
-        const absResMean = absRes.reduce((a, b) => a + b, 0) / n;
 
         try {
           const XTyGlejser = matrixMultiply(XT, absRes.map((v) => [v]));
@@ -671,9 +996,16 @@ function generateDeterministicExplanations(res: AnalysisResults): Record<string,
 
   if (res.descriptive && res.descriptive.length > 0) {
     const summary = res.descriptive
-      .map((d) => `variabel ${d.variable} memiliki nilai rata-rata (mean) sebesar ${formatNumber(d.mean, 3)} dengan standar deviasi ${formatNumber(d.stdDev, 3)}`)
+      .map((d) => `variabel ${d.variable} memiliki nilai rata-rata (mean) sebesar ${formatNumber(d.mean, 3)} dengan TCR ${d.tcr !== undefined ? `${formatNumber(d.tcr, 1)}% (${d.tcrCategory})` : 'baik'}`)
       .join(', ');
-    exp.descriptive = `Berdasarkan analisis statistik deskriptif terhadap ${res.respondentCount} responden, diperoleh bahwa ${summary}. Nilai tersebut menunjukkan kecenderungan umum penilaian responden terhadap butir-butir indikator dalam penelitian ini.`;
+    exp.descriptive = `Berdasarkan analisis statistik deskriptif terhadap ${res.respondentCount} responden, diperoleh bahwa ${summary}. Nilai Tingkat Capaian Responden (TCR) tersebut menunjukkan bahwa butir-butir indikator dipersepsikan dengan sangat baik oleh mayoritas responden penelitian.`;
+  }
+
+  if (res.demographics && res.demographics.length > 0) {
+    const demoSummary = res.demographics
+      .map((d) => `${d.variable}: mayoritas ${d.majorityCategory} (${formatNumber(d.majorityPercent, 1)}%)`)
+      .join(', ');
+    exp.demographics = `Profil demografi terhadap ${res.respondentCount} responden menunjukkan sebaran karakteristik sebagai berikut: ${demoSummary}. Karakteristik ini mencerminkan representasi populasi target penelitian.`;
   }
 
   if (res.validity && res.validity.length > 0) {
@@ -697,11 +1029,20 @@ function generateDeterministicExplanations(res: AnalysisResults): Record<string,
     const indepRows = res.regression.filter((r) => r.variable !== '(Konstanta)');
     const sigVars = indepRows.filter((r) => r.significant).map((r) => r.variable);
 
-    exp.regression = `Analisis regresi linier berganda menunjukkan model persamaan regresi dengan nilai konstanta ${formatNumber(res.regression[0].coefficient, 3)}. Variabel bebas yang berpengaruh positif dan signifikan terhadap variabel terikat meliputi: ${sigVars.length > 0 ? sigVars.join(', ') : 'tidak ada variabel yang signifikan pada taraf 5%'}. Pengujian simultan (Uji F) menghasilkan nilai F hitung sebesar ${formatNumber(res.fTest.fHitung, 3)} dengan signifikansi ${formatNumber(res.fTest.pValue, 3)} (${res.fTest.significant ? 'berpengaruh signifikan secara simultan' : 'tidak berpengaruh signifikan secara simultan'}). Koefisien determinasi (R²) tercatat sebesar ${formatNumber(res.determination.rSquare, 3)} (Adjusted R² = ${formatNumber(res.determination.adjustedRSquare, 3)}).`;
+    exp.regression = `Analisis regresi linier berganda menunjukkan model persamaan regresi dengan nilai konstanta ${formatNumber(res.regression[0].coefficient, 3)}. Variabel bebas yang berpengaruh positif dan signifikan terhadap variabel terikat meliputi: ${sigVars.length > 0 ? sigVars.join(', ') : 'tidak ada variabel yang signifikan pada taraf 5%'}. Pengujian simultan (Uji F) menghasilkan nilai F hitung sebesar ${formatNumber(res.fTest.fHitung, 3)} dibandingkan F tabel ${formatNumber(res.fTest.fTabel, 3)} dengan signifikansi ${formatNumber(res.fTest.pValue, 3)} (${res.fTest.significant ? 'berpengaruh signifikan secara simultan' : 'tidak berpengaruh signifikan secara simultan'}). Koefisien determinasi (R²) tercatat sebesar ${formatNumber(res.determination.rSquare, 3)} (Adjusted R² = ${formatNumber(res.determination.adjustedRSquare, 3)}).`;
 
     exp.fTest = `Uji simultan ANOVA menghasilkan nilai F hitung ${formatNumber(res.fTest.fHitung, 3)} dibandingkan F tabel ${formatNumber(res.fTest.fTabel, 3)} dengan nilai signifikansi ${formatNumber(res.fTest.pValue, 3)}. Karena ${res.fTest.significant ? 'F hitung > F tabel dan p < 0,05' : 'F hitung <= F tabel atau p >= 0,05'}, maka variabel bebas ${res.fTest.significant ? 'secara bersama-sama berpengaruh signifikan' : 'tidak berpengaruh signifikan secara bersama-sama'}.`;
 
     exp.determination = `Koefisien determinasi (R Square) bernilai ${formatNumber(res.determination.rSquare, 3)}, yang mengindikasikan bahwa sebesar ${formatNumber(res.determination.rSquare * 100, 1)}% variasi variabel terikat dapat dijelaskan oleh variabel bebas dalam model penelitian ini.`;
+
+    // Sumbangan Efektif dan Sumbangan Relatif
+    const seDetails = indepRows
+      .filter((r) => r.sePercent !== undefined && r.srPercent !== undefined)
+      .map((r) => `${r.variable} memberikan SE = ${formatNumber(r.sePercent || 0, 1)}% (SR = ${formatNumber(r.srPercent || 0, 1)}%)`)
+      .join(', ');
+    if (seDetails) {
+      exp.contributions = `Perhitungan kontribusi prediktor menunjukkan: ${seDetails}. Total sumbangan efektif setara dengan nilai koefisien determinasi (${formatNumber(res.determination.rSquare * 100, 1)}%).`;
+    }
   }
 
   if (res.normality && res.normality.length > 0) {
@@ -719,6 +1060,17 @@ function generateDeterministicExplanations(res: AnalysisResults): Record<string,
     const hasProblem = res.heteroscedasticity.some((h) => h.significant);
     const summary = res.heteroscedasticity.map((h) => `${h.variable} (Sig. = ${formatNumber(h.pValue, 3)})`).join(', ');
     exp.heteroscedasticity = `Uji heteroskedastisitas dengan metode Glejser menghasilkan signifikansi ${summary}. Karena nilai p ${!hasProblem ? '> 0,05' : '< 0,05'}, maka model regresi ${!hasProblem ? 'bebas dari gejala heteroskedastisitas' : 'terindikasi heteroskedastisitas'}.`;
+  }
+
+  if (res.durbinWatson) {
+    exp.autocorrelation = `Uji autokorelasi menggunakan statistik Durbin-Watson menghasilkan nilai d = ${formatNumber(res.durbinWatson.dwStatistic, 3)} dengan nilai kritis dL = ${formatNumber(res.durbinWatson.dL, 3)} dan dU = ${formatNumber(res.durbinWatson.dU, 3)}. Kesimpulan: ${res.durbinWatson.conclusion}`;
+  }
+
+  if (res.linearity && res.linearity.length > 0) {
+    const linSummary = res.linearity
+      .map((l) => `${l.independentVar} terhadap ${l.dependentVar}: Sig. Deviation = ${formatNumber(l.sigDeviation, 3)} (${l.isLinear ? 'Linier' : 'Tidak Linier'})`)
+      .join('; ');
+    exp.linearity = `Uji linearitas (Test for Linearity) menunjukkan: ${linSummary}. Hubungan dinyatakan linier apabila nilai Sig. Deviation from Linearity > 0,05.`;
   }
 
   if (res.correlation && res.correlation.length > 0) {

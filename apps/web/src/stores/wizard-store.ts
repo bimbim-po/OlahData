@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { Construct, TestType, DatasetRow, DataIssue, AnalysisResults, DatasetSourceMeta } from '@/lib/api/types';
+import { detectMetadataAndPiiColumns, recodeDatasetRows } from '@/lib/google-forms-recode';
 
 export type WizardStep = 0 | 1 | 2 | 3 | 4;
 
@@ -65,6 +66,7 @@ interface WizardState {
   setRunning: (running: boolean) => void;
   setRunProgress: (progress: { step: string; completed: boolean }[]) => void;
   setCurrentResults: (results: AnalysisResults) => void;
+  applyLikertRecode: (columnsToRecode: string[]) => number;
   resetWizard: () => void;
 }
 
@@ -121,8 +123,21 @@ export const useWizardStore = create<WizardState>((set, get) => ({
         defaultRoles[c.name] = c.role;
       });
     } else {
+      // Auto-detect metadata & PII
+      const piiDetections = detectMetadataAndPiiColumns(columns);
+      const piiMap = new Map<string, 'id' | 'ignored'>();
+      piiDetections.forEach((d) => piiMap.set(d.column, d.role));
+
       columns.forEach((c) => {
-        defaultRoles[c] = c.toLowerCase() === 'no' || c.toLowerCase() === 'id' ? 'id' : 'item';
+        if (piiMap.has(c)) {
+          defaultRoles[c] = piiMap.get(c)!;
+        } else if (/^(jenis[\s_]?kelamin|gender|usia|umur|pendidikan|pekerjaan|penghasilan|jurusan|semester|angkatan)$/i.test(c.trim())) {
+          defaultRoles[c] = 'demographic';
+        } else if (c.toLowerCase() === 'no' || c.toLowerCase() === 'id') {
+          defaultRoles[c] = 'id';
+        } else {
+          defaultRoles[c] = 'item';
+        }
       });
     }
 
@@ -247,6 +262,33 @@ export const useWizardStore = create<WizardState>((set, get) => ({
         // ignore localStorage quota
       }
     }
+  },
+
+  applyLikertRecode: (columnsToRecode: string[]) => {
+    const state = get();
+    const { recodedRows, totalCellsConverted } = recodeDatasetRows(state.fileData, columnsToRecode);
+    const updatedMeta = state.datasetMeta
+      ? {
+          ...state.datasetMeta,
+          kind: 'derived' as const,
+          version: state.dataVersion + 1,
+        }
+      : null;
+
+    // Filter out text/string value error issues on recoded columns
+    const colSet = new Set(columnsToRecode);
+    const updatedIssues = state.issues.filter(
+      (issue) => !(issue.column && colSet.has(issue.column) && issue.severity === 'error')
+    );
+
+    set({
+      fileData: recodedRows,
+      dataVersion: state.dataVersion + 1,
+      datasetMeta: updatedMeta,
+      issues: updatedIssues,
+    });
+
+    return totalCellsConverted;
   },
 
   resetWizard: () => set(initialState),

@@ -104,6 +104,8 @@ export interface DescriptiveResult {
   min: number;
   max: number;
   n: number;
+  tcr?: number;
+  tcrCategory?: string;
 }
 
 export interface ValidityResult {
@@ -114,12 +116,31 @@ export interface ValidityResult {
   valid: boolean;
 }
 
+export interface ItemTotalStatistic {
+  item: string;
+  scaleMean: number;
+  scaleVariance: number;
+  correctedItemTotalCorrelation: number;
+  cronbachAlphaIfDeleted: number;
+}
+
+export interface CaseProcessingSummary {
+  validN: number;
+  validPercent: number;
+  excludedN: number;
+  excludedPercent: number;
+  totalN: number;
+  totalPercent: number;
+}
+
 export interface ReliabilityResult {
   construct: string;
   cronbachAlpha: number;
   itemCount: number;
   reliable: boolean;
   alphaIfDeleted: { item: string; alpha: number }[];
+  caseProcessing?: CaseProcessingSummary;
+  itemTotalStats?: ItemTotalStatistic[];
 }
 
 export interface NormalityResult {
@@ -127,6 +148,11 @@ export interface NormalityResult {
   statistic: number;
   pValue: number;
   normal: boolean;
+  mean?: number;
+  stdDev?: number;
+  absoluteDiff?: number;
+  positiveDiff?: number;
+  negativeDiff?: number;
 }
 
 export interface MulticollinearityResult {
@@ -149,8 +175,54 @@ export interface RegressionResult {
   coefficient: number;
   stdError: number;
   tHitung: number;
+  tTabel?: number;
   pValue: number;
   significant: boolean;
+  standardizedBeta?: number;
+  sePercent?: number; // Sumbangan Efektif (%)
+  srPercent?: number; // Sumbangan Relatif (%)
+}
+
+export interface DurbinWatsonResult {
+  dwStatistic: number;
+  dL: number;
+  dU: number;
+  status: 'bebas' | 'ragu' | 'terdapat';
+  conclusion: string;
+}
+
+export interface LinearityResult {
+  independentVar: string;
+  dependentVar: string;
+  ssLinearity: number;
+  dfLinearity: number;
+  msLinearity: number;
+  fLinearity: number;
+  sigLinearity: number;
+  ssDeviation: number;
+  dfDeviation: number;
+  msDeviation: number;
+  fDeviation: number;
+  sigDeviation: number;
+  ssWithin: number;
+  dfWithin: number;
+  msWithin: number;
+  isLinear: boolean;
+}
+
+export interface DemographicCategory {
+  category: string;
+  frequency: number;
+  percentage: number;
+  cumulativePercentage: number;
+}
+
+export interface DemographicVariableResult {
+  variable: string;
+  totalN: number;
+  categories: DemographicCategory[];
+  majorityCategory: string;
+  majorityPercent: number;
 }
 
 export interface FTestResult {
@@ -204,6 +276,11 @@ export interface AnalysisResults {
   determination?: DeterminationResult;
   correlation?: CorrelationResult[];
   anova?: AnovaResult[];
+  durbinWatson?: DurbinWatsonResult;
+  linearity?: LinearityResult[];
+  demographics?: DemographicVariableResult[];
+  tTabel?: number;
+  fTabel?: number;
   explanations: Record<string, string>;
   sourceMeta?: DatasetSourceMeta;
 }

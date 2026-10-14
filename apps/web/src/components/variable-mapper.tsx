@@ -364,25 +364,43 @@ export function VariableMapper({
 
       {/* Unassigned Columns / Demographics Note */}
       {unassignedColumns.length > 0 && (
-        <div className="p-4 rounded-xl border border-border/80 bg-muted/20 space-y-2">
-          <div className="flex items-center gap-2">
-            <HelpCircle className="w-4 h-4 text-muted-foreground" />
-            <h5 className="font-semibold text-xs text-foreground">
-              Kolom Non-Konstruk / Demografi ({unassignedColumns.length} kolom)
-            </h5>
+        <div className="p-4 rounded-xl border border-border/80 bg-muted/20 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <HelpCircle className="w-4 h-4 text-primary" />
+              <h5 className="font-semibold text-xs text-foreground">
+                Kolom Non-Konstruk / Profil Demografi ({unassignedColumns.length} kolom)
+              </h5>
+            </div>
+            <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
+              Otomatis Dianalisis Profilnya
+            </Badge>
           </div>
-          <p className="text-[11px] text-muted-foreground">
-            Kolom-kolom berikut tidak dipetakan ke dalam variabel laten/skala Likert dan akan dikecualikan dari perhitungan regresi:
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Kolom non-item di bawah ini (misalnya data demografi seperti Jenis Kelamin, Usia, Pendidikan) tidak dimasukkan ke dalam skor regresi, melainkan otomatis dihitung tabel frekuensi dan persentasenya untuk naskah Bab 4:
           </p>
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            {unassignedColumns.map((col) => (
-              <span
-                key={col}
-                className="text-xs font-mono px-2 py-0.5 rounded bg-card border border-border text-muted-foreground"
-              >
-                {col}
-              </span>
-            ))}
+          <div className="flex flex-wrap gap-2 pt-0.5">
+            {unassignedColumns.map((col) => {
+              const isDemographic = /^(jenis[\s_]?kelamin|gender|usia|umur|pendidikan|pekerjaan|jurusan|angkatan)$/i.test(col.trim());
+              return (
+                <span
+                  key={col}
+                  className={cn(
+                    'text-xs font-mono px-2.5 py-1 rounded-md border flex items-center gap-1.5',
+                    isDemographic
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-200 font-semibold'
+                      : 'bg-card border-border text-muted-foreground'
+                  )}
+                >
+                  {col}
+                  {isDemographic && (
+                    <span className="text-[10px] px-1 py-0.2 bg-emerald-600 text-white rounded font-sans font-bold">
+                      Demografi
+                    </span>
+                  )}
+                </span>
+              );
+            })}
           </div>
         </div>
       )}

@@ -711,7 +711,7 @@ export async function exportResult(
     if (options.sections.includes('descriptive')) {
       const tableHtml = buildWordTableHtml({
         tableNumber: 'Tabel 4.1',
-        title: 'Hasil Analisis Statistik Deskriptif Variabel Penelitian',
+        title: 'Hasil Analisis Statistik Deskriptif Variabel Penelitian & TCR',
         note: `* Dihitung dari N = ${results.respondentCount} responden menggunakan skala Likert 1-5.`,
         columns: [
           { header: 'Variabel Penelitian', align: 'left' },
@@ -721,6 +721,8 @@ export async function exportResult(
           { header: 'Std Dev', align: 'right' },
           { header: 'Min', align: 'right' },
           { header: 'Max', align: 'right' },
+          { header: 'TCR (%)', align: 'right' },
+          { header: 'Kategori TCR', align: 'center' },
         ],
         rows: (results.descriptive || []).map((r) => [
           r.variable,
@@ -730,12 +732,36 @@ export async function exportResult(
           formatNumber(r.stdDev, 3),
           formatNumber(r.min, 3),
           formatNumber(r.max, 3),
+          r.tcr !== undefined ? `${formatNumber(r.tcr, 1)}%` : '-',
+          r.tcrCategory || '-',
         ]),
       });
+
+      let demoHtml = '';
+      if (results.demographics && results.demographics.length > 0) {
+        demoHtml = results.demographics.map((demo) => buildWordTableHtml({
+          tableNumber: 'Tabel 4.1c',
+          title: `Distribusi Frekuensi Karakteristik Responden Berdasarkan ${demo.variable.replace(/_/g, ' ')}`,
+          note: `* Total responden N = ${results.respondentCount}.`,
+          columns: [
+            { header: 'Kategori / Kelompok', align: 'left' },
+            { header: 'Frekuensi (n)', align: 'right' },
+            { header: 'Persentase (%)', align: 'right' },
+            { header: 'Kumulatif (%)', align: 'right' },
+          ],
+          rows: demo.categories.map((c) => [
+            c.category,
+            formatNumber(c.frequency),
+            `${formatNumber(c.percentage, 1)}%`,
+            `${formatNumber(c.cumulativePercentage, 1)}%`,
+          ]),
+        })).join('<br/>');
+      }
+
       const narrativeHtml = `<p>${results.explanations.descriptive}</p>`;
       sections.push({
-        title: '1. Statistik Deskriptif',
-        contentHtml: tableHtml + narrativeHtml,
+        title: '1. Statistik Deskriptif & Demografi Responden',
+        contentHtml: tableHtml + (demoHtml ? `<br/>${demoHtml}` : '') + narrativeHtml,
       });
     }
 
@@ -855,19 +881,68 @@ export async function exportResult(
           !r.significant ? 'Bebas Gejala' : 'Terjadi Gejala',
         ]),
       });
+
+      const dwTable = results.durbinWatson
+        ? buildWordTableHtml({
+            tableNumber: 'Tabel 4.6b',
+            title: 'Hasil Uji Autokorelasi Durbin-Watson',
+            note: '* Kriteria bebas autokorelasi: dU < d < 4 - dU.',
+            columns: [
+              { header: 'Statistik d', align: 'right' },
+              { header: 'dL', align: 'right' },
+              { header: 'dU', align: 'right' },
+              { header: '4 - dU', align: 'right' },
+              { header: 'Kesimpulan', align: 'center' },
+            ],
+            rows: [[
+              formatNumber(results.durbinWatson.dwStatistic, 4),
+              formatNumber(results.durbinWatson.dL, 4),
+              formatNumber(results.durbinWatson.dU, 4),
+              formatNumber(4 - results.durbinWatson.dU, 4),
+              results.durbinWatson.conclusion,
+            ]],
+          })
+        : '';
+
+      const linTable = results.linearity && results.linearity.length > 0
+        ? buildWordTableHtml({
+            tableNumber: 'Tabel 4.6c',
+            title: 'Hasil Uji Linearitas (Deviation from Linearity ANOVA)',
+            note: '* Sig. Deviation > 0,05 menunjukkan hubungan linier.',
+            columns: [
+              { header: 'Hubungan Variabel', align: 'left' },
+              { header: 'F Deviation', align: 'right' },
+              { header: 'Sig. Deviation', align: 'right' },
+              { header: 'F Linearity', align: 'right' },
+              { header: 'Sig. Linearity', align: 'right' },
+              { header: 'Status Hubungan', align: 'center' },
+            ],
+            rows: results.linearity.map((l) => [
+              `${l.independentVar} → ${l.dependentVar}`,
+              formatNumber(l.fDeviation, 3),
+              formatNumber(l.sigDeviation, 3),
+              formatNumber(l.fLinearity, 3),
+              formatNumber(l.sigLinearity, 3),
+              l.isLinear ? 'Linier' : 'Tidak Linier',
+            ]),
+          })
+        : '';
+
       const narrativeText =
         results.explanations.assumptions ||
         [
           results.explanations.normality,
           results.explanations.multicollinearity,
           results.explanations.heteroscedasticity,
+          results.explanations.durbinWatson,
+          results.explanations.linearity,
         ]
           .filter(Boolean)
           .join('\n\n');
       const narrativeHtml = `<p>${narrativeText}</p>`;
       sections.push({
         title: '4. Uji Asumsi Klasik',
-        contentHtml: normTable + multiTable + heteroTable + narrativeHtml,
+        contentHtml: normTable + multiTable + heteroTable + (dwTable ? `<br/>${dwTable}` : '') + (linTable ? `<br/>${linTable}` : '') + narrativeHtml,
       });
     }
 
@@ -880,7 +955,9 @@ export async function exportResult(
           { header: 'Model / Variabel', align: 'left' },
           { header: 'Koefisien (B)', align: 'right' },
           { header: 'Std. Error', align: 'right' },
+          { header: 'Beta (β)', align: 'right' },
           { header: 't Hitung', align: 'right' },
+          { header: 't Tabel', align: 'right' },
           { header: 'Sig. (p-value)', align: 'right' },
           { header: 'Signifikansi', align: 'center' },
         ],
@@ -888,16 +965,40 @@ export async function exportResult(
           r.variable,
           formatNumber(r.coefficient, 3),
           formatNumber(r.stdError, 3),
+          r.standardizedBeta !== undefined ? formatNumber(r.standardizedBeta, 3) : '-',
           formatNumber(r.tHitung, 3),
+          r.tTabel !== undefined ? formatNumber(r.tTabel, 3) : '-',
           formatNumber(r.pValue, 3),
           r.significant ? 'Signifikan' : 'Tidak',
         ]),
       });
+
+      const predictors = (results.regression || []).filter((r) => !r.variable.toLowerCase().includes('konstanta') && r.sePercent !== undefined);
+      const seSrTable = predictors.length > 0
+        ? buildWordTableHtml({
+            tableNumber: 'Tabel 4.7b',
+            title: 'Sumbangan Efektif (SE %) dan Sumbangan Relatif (SR %)',
+            note: `* Total SE = ${(results.determination?.rSquare ? results.determination.rSquare * 100 : 0).toFixed(2)}%, Total SR = 100,00%.`,
+            columns: [
+              { header: 'Variabel Bebas', align: 'left' },
+              { header: 'Beta (β)', align: 'right' },
+              { header: 'Sumbangan Efektif (SE %)', align: 'right' },
+              { header: 'Sumbangan Relatif (SR %)', align: 'right' },
+            ],
+            rows: predictors.map((r) => [
+              r.variable,
+              r.standardizedBeta !== undefined ? formatNumber(r.standardizedBeta, 3) : '-',
+              r.sePercent !== undefined ? `${formatNumber(r.sePercent, 2)}%` : '-',
+              r.srPercent !== undefined ? `${formatNumber(r.srPercent, 2)}%` : '-',
+            ]),
+          })
+        : '';
+
       const fTable = results.fTest
         ? buildWordTableHtml({
             tableNumber: 'Tabel 4.8',
             title: 'Hasil Uji Signifikansi Simultan (Uji F ANOVA)',
-            note: '* F tabel α = 0,05 sebesar 3,076.',
+            note: `* F tabel α = 0,05 sebesar ${formatNumber(results.fTest.fTabel, 3)}.`,
             columns: [
               { header: 'Model Uji', align: 'left' },
               { header: 'F Hitung', align: 'right' },
@@ -940,7 +1041,7 @@ export async function exportResult(
       const narrativeHtml = `<p>${results.explanations.regression}</p>`;
       sections.push({
         title: '5. Analisis Regresi Linier Berganda',
-        contentHtml: regTable + fTable + r2Table + narrativeHtml,
+        contentHtml: regTable + (seSrTable ? `<br/>${seSrTable}` : '') + fTable + r2Table + narrativeHtml,
       });
     }
 

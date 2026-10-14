@@ -38,6 +38,8 @@ import { formatNumber } from '@/lib/format';
 import { mockTestOptions } from '@/lib/mock/results';
 import { getProject } from '@/lib/api';
 import type { Project, TestOption, TestType } from '@/lib/api/types';
+import { detectLikertTextColumns } from '@/lib/google-forms-recode';
+import { useToast } from '@/components/ui/toaster';
 
 interface AnalisisPageProps {
   params: Promise<{ id: string }>;
@@ -94,11 +96,31 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
     setRunId,
     setDatasetId,
     setCurrentResults,
+    columnRoles,
+    applyLikertRecode,
   } = useWizardStore();
 
+  const { toast } = useToast();
   const [project, setProject] = React.useState<Project | null>(null);
   const [targetCell, setTargetCell] = React.useState<TargetCell | null>(null);
   const [currentExecutionStep, setCurrentExecutionStep] = React.useState(0);
+
+  // Auto-detect Google Forms Likert scale textual responses
+  const detectedLikertColumns = React.useMemo(() => {
+    if (fileData.length === 0) return [];
+    return detectLikertTextColumns(fileData, columns);
+  }, [fileData, columns]);
+
+  const handleRecodeLikert = () => {
+    if (detectedLikertColumns.length === 0) return;
+    const cols = detectedLikertColumns.map((c) => c.column);
+    const total = applyLikertRecode(cols);
+    toast({
+      title: 'Jawaban Teks Berhasil Dikonversi!',
+      description: `${total} sel pada ${cols.length} kolom jawaban telah diubah ke skala angka 1–5 secara deterministik.`,
+      variant: 'success',
+    });
+  };
 
   // Initialize Project in store
   React.useEffect(() => {
@@ -194,8 +216,12 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
               name: col,
               role: (constructs.some((con) => con.items.includes(col))
                 ? 'item'
+                : columnRoles[col]
+                ? columnRoles[col]
                 : col.toLowerCase().includes('id') || col.toLowerCase() === 'no'
                 ? 'id'
+                : /^(jenis[\s_]?kelamin|gender|usia|umur|pendidikan|pekerjaan|jurusan|angkatan)$/i.test(col.trim())
+                ? 'demographic'
                 : 'ignored') as 'id' | 'demographic' | 'item' | 'ignored',
               dataType: 'number',
               missingCount: 0,
@@ -374,6 +400,32 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                 </Badge>
               </div>
             </div>
+
+            {/* Smart Google Forms Auto-Recode Banner */}
+            {detectedLikertColumns.length > 0 && (
+              <div className="p-4 sm:p-5 rounded-[16px] border border-primary/30 bg-primary/10 text-foreground flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <Sparkles className="w-5 h-5 shrink-0 text-primary mt-0.5" />
+                  <div className="space-y-1">
+                    <span className="font-bold text-sm block">
+                      Terdeteksi Jawaban Teks Google Forms pada {detectedLikertColumns.length} Kolom
+                    </span>
+                    <p className="text-xs text-muted-foreground leading-relaxed max-w-[68ch]">
+                      Kolom seperti <code className="font-mono text-primary font-semibold">{detectedLikertColumns.slice(0, 3).map((c) => c.column).join(', ')}{detectedLikertColumns.length > 3 ? '...' : ''}</code> berisi teks (&quot;Sangat Setuju&quot;, &quot;Setuju&quot;, dll). Konversi otomatis ke skala angka 1–5 agar siap diolah statistik secara deterministik.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleRecodeLikert}
+                  className="shrink-0 font-semibold cursor-pointer gap-1.5 rounded-[10px]"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Konversi Otomatis ke Angka 1-5
+                </Button>
+              </div>
+            )}
 
             {/* Critical Error Alert if any */}
             {criticalErrorCount > 0 && (
