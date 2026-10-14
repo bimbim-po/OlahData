@@ -300,56 +300,8 @@ export function AppShell({ children }: AppShellProps) {
           })}
         </nav>
 
-        {/* Bagian Bawah: Paket & Akun Pengguna ala Gemini */}
-        <div className={cn('border-t border-sidebar-border/70 space-y-2', isCollapsed ? 'p-2' : 'p-3')}>
-          {/* Item Paket Minimalis ala Gemini */}
-          {!isCollapsed ? (
-            <button
-              type="button"
-              onClick={() =>
-                openUpgradeModal({
-                  plan: user?.plan === 'monthly' ? 'thesis' : 'monthly',
-                  reason: 'Akses Penuh Seluruh Fitur Skripsi',
-                })
-              }
-              className="w-full text-left flex items-center gap-2.5 p-2 rounded-xl text-xs hover:bg-muted/70 transition-colors text-foreground group border border-border/50 bg-card/40 cursor-pointer"
-              title="Kelola & tingkatkan paket langganan"
-            >
-              <div className="h-7 w-7 rounded-lg bg-amber-500/10 dark:bg-amber-400/15 flex items-center justify-center shrink-0 text-amber-600 dark:text-amber-400">
-                <Sparkles className="h-4 w-4 transition-transform group-hover:scale-110" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-1">
-                  <span className="text-xs font-semibold text-foreground whitespace-nowrap">
-                    {user?.plan === 'monthly' || user?.plan === 'thesis' ? 'Paket Skripsi' : 'Upgrade Paket'}
-                  </span>
-                  <span className="text-[10px] font-medium text-muted-foreground px-1.5 py-0.5 rounded bg-muted border border-border/60 shrink-0">
-                    {getPlanBadgeLabel()}
-                  </span>
-                </div>
-                <span className="text-[11px] text-muted-foreground block truncate mt-0.5">
-                  {user?.plan === 'monthly' || user?.plan === 'thesis' ? 'Akses penuh seluruh uji' : 'Buka semua fitur Bab 4'}
-                </span>
-              </div>
-              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() =>
-                openUpgradeModal({
-                  plan: user?.plan === 'monthly' ? 'thesis' : 'monthly',
-                  reason: 'Akses Penuh Seluruh Fitur Skripsi',
-                })
-              }
-              className="h-10 w-10 mx-auto flex items-center justify-center rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 transition-all cursor-pointer"
-              title={`Paket: ${getPlanBadgeLabel()} - Klik untuk tingkatkan`}
-            >
-              <Sparkles className="h-4 w-4" />
-            </button>
-          )}
-
-          {/* Profil Akun Pengguna dengan Dropdown */}
+        {/* Bagian Bawah: Profil Akun & Status Paket Tunggal (Simple 1 Box) */}
+        <div className={cn('border-t border-sidebar-border/70', isCollapsed ? 'p-2' : 'p-3')}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
@@ -359,56 +311,90 @@ export function AppShell({ children }: AppShellProps) {
                   isCollapsed ? 'h-10 w-10 mx-auto justify-center p-0' : 'p-2 gap-2.5'
                 )}
                 title={user?.name || 'Mahasiswa'}
-                aria-label="Menu akun pengguna"
+                aria-label="Menu akun & langganan"
               >
                 <Avatar className="h-8 w-8 shrink-0 border border-border/60">
                   <AvatarFallback className="text-xs font-semibold bg-primary/10 text-primary">
                     {getUserInitials()}
                   </AvatarFallback>
                 </Avatar>
+
                 {!isCollapsed && (
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className="text-[13px] font-semibold text-foreground truncate group-hover:text-primary transition-colors"
-                      title={user?.name || 'Mahasiswa'}
-                    >
-                      {user?.name || 'Mahasiswa'}
-                    </p>
-                    <p
-                      className="text-[11px] text-muted-foreground truncate"
-                      title={user?.email || 'mahasiswa@kampus.ac.id'}
-                    >
-                      {user?.email || 'mahasiswa@kampus.ac.id'}
-                    </p>
-                  </div>
+                  <>
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className="text-[13px] font-semibold text-foreground truncate group-hover:text-primary transition-colors leading-tight"
+                        title={user?.name || 'Mahasiswa'}
+                      >
+                        {user?.name || 'Mahasiswa'}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5 font-medium">
+                        {user?.plan === 'monthly' || user?.plan === 'thesis' ? (
+                          <span className="text-primary font-semibold">Pro</span>
+                        ) : (
+                          <span>Coba Gratis</span>
+                        )}
+                      </p>
+                    </div>
+
+                    <Settings className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+                  </>
                 )}
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align={isCollapsed ? 'start' : 'end'} side={isCollapsed ? 'right' : 'top'} className="w-60 p-2 ml-2">
+
+            <DropdownMenuContent
+              align={isCollapsed ? 'start' : 'end'}
+              side={isCollapsed ? 'right' : 'top'}
+              className="w-64 p-2 ml-2"
+            >
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-semibold leading-none text-foreground truncate">
-                    {user?.name || 'Mahasiswa Demo'}
-                  </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold leading-none text-foreground truncate">
+                      {user?.name || 'Mahasiswa Demo'}
+                    </p>
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium">
+                      {getPlanBadgeLabel()}
+                    </Badge>
+                  </div>
                   <p className="text-xs leading-none text-muted-foreground truncate">
                     {user?.email || 'mahasiswa@kampus.ac.id'}
                   </p>
-                  <p className="text-[12px] text-primary font-medium mt-1 truncate">
+                  <p className="text-[11px] text-primary font-medium truncate">
                     {user?.university || 'Perguruan Tinggi'}
                   </p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+
+              {/* Opsi Upgrade / Kelola Langganan */}
+              {user?.plan === 'free' ? (
+                <DropdownMenuItem
+                  onClick={() =>
+                    openUpgradeModal({
+                      plan: 'monthly',
+                      reason: 'Akses Penuh Seluruh Fitur Skripsi',
+                    })
+                  }
+                  className="cursor-pointer text-amber-600 dark:text-amber-400 font-semibold focus:text-amber-600 focus:bg-amber-500/10"
+                >
+                  <Sparkles className="h-4 w-4 mr-2 text-amber-500" />
+                  <span>Upgrade ke Pro (Mulai Rp 39rb)</span>
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem asChild>
+                  <Link href="/app/langganan" className="flex items-center gap-2 w-full cursor-pointer">
+                    <Sparkles className="h-4 w-4 text-amber-500" />
+                    <span>Langganan &amp; Kuota</span>
+                  </Link>
+                </DropdownMenuItem>
+              )}
+
               <DropdownMenuItem asChild>
                 <Link href="/app/riwayat" className="flex items-center gap-2 w-full cursor-pointer">
                   <History className="h-4 w-4 text-primary" />
                   <span>Riwayat Analisis</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/app/langganan" className="flex items-center gap-2 w-full cursor-pointer">
-                  <Sparkles className="h-4 w-4 text-amber-500" />
-                  <span>Langganan &amp; Kuota ({getPlanBadgeLabel()})</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>

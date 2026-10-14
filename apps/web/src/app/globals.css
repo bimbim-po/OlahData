@@ -194,3 +194,50 @@ body {
   background-color: var(--muted);
   border-radius: var(--radius-md);
 }
+
+/* ==========================================================================
+   SPSS Output Viewer (Simulasi Lampiran Kertas Resmi SPSS .spv)
+   Selalu berlatar kertas putih bersih dengan header abu-abu dan teks hitam pekat,
+   baik pada Mode Terang maupun Mode Gelap (Dark Mode).
+   ========================================================================== */
+.spss-paper-container {
+  background-color: #ffffff !important;
+  color: #09090b !important;
+  color-scheme: light !important;
+}
+
+.spss-paper-container table {
+  background-color: #ffffff !important;
+  border-color: #18181b !important;
+}
+
+.spss-paper-container thead tr,
+.spss-paper-container thead th,
+.spss-paper-container tr[class*="bg-zinc-100"] {
+  background-color: #f4f4f5 !important; /* bg-zinc-100 */
+  color: #09090b !important;
+  border-color: #18181b !important;
+}
+
+.spss-paper-container th {
+  color: #09090b !important;
+  border-color: #18181b !important;
+  font-weight: 700 !important;
+}
+
+.spss-paper-container td {
+  color: #09090b !important;
+  border-color: #18181b !important;
+}
+
+.spss-paper-container tbody tr:hover {
+  background-color: rgba(244, 244, 245, 0.7) !important;
+}
+
+.spss-paper-container h3,
+.spss-paper-container h4,
+.spss-paper-container p,
+.spss-paper-container span:not([class*="bg-blue-700"]):not([class*="bg-amber-"]):not([class*="text-emerald-"]) {
+  color: #09090b !important;
+}
+
