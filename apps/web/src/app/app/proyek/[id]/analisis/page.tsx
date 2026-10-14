@@ -249,7 +249,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
   return (
     <div className="min-h-screen bg-background pb-16">
       {/* Top Breadcrumb & Project Header */}
-      <div className="border-b border-border bg-card/60 backdrop-blur-xs sticky top-0 z-30">
+      <div className="border-b border-border bg-card/50 relative z-10">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <Link

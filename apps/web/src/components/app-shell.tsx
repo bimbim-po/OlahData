@@ -372,7 +372,7 @@ export function AppShell({ children }: AppShellProps) {
         )}
       >
         {/* Sticky Header Meja Kerja */}
-        <header className="sticky top-0 z-30 h-16 border-b border-border bg-card/90 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-2">
+        <header className="sticky top-0 z-40 h-16 border-b border-border bg-card/95 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-2">
           {/* Breadcrumb / Nav Back */}
           <div className="flex items-center gap-2 min-w-0 flex-1">
             {parentRoute && (
