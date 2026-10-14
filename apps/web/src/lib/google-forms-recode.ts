@@ -36,6 +36,7 @@ const LIKERT_MAP: Record<string, number> = {
   '3 - neutral': 3,
   '3': 3,
   'n': 3,
+  'rg': 3,
   'rr': 3,
   'cukup': 3,
   'kadang-kadang': 3,
@@ -66,6 +67,14 @@ const LIKERT_MAP: Record<string, number> = {
   'sangat buruk': 1,
   'tidak pernah': 1,
 };
+
+export const STANDARD_LIKERT_PREVIEW = [
+  { score: 5, label: 'Sangat Setuju', aliases: 'SS, Strongly Agree, 5' },
+  { score: 4, label: 'Setuju', aliases: 'S, Agree, 4' },
+  { score: 3, label: 'Netral / Ragu-ragu', aliases: 'N, RG, RR, Neutral, Cukup, 3' },
+  { score: 2, label: 'Tidak Setuju', aliases: 'TS, Disagree, Kurang Setuju, KS, 2' },
+  { score: 1, label: 'Sangat Tidak Setuju', aliases: 'STS, Strongly Disagree, 1' },
+];
 
 export interface LikertColumnDetection {
   column: string;
@@ -170,13 +179,13 @@ export function detectMetadataAndPiiColumns(
 
   columns.forEach((col) => {
     const clean = col.trim().toLowerCase();
-    if (/^(timestamp|cap[\s_]?waktu|waktu|date|tanggal)$/i.test(clean)) {
+    if (/^(timestamp|cap[\s_]?waktu|waktu|date|tanggal|waktu[\s_]?pengisian)$/i.test(clean)) {
       results.push({ column: col, role: 'ignored', reason: 'Cap waktu otomatis Google Forms' });
-    } else if (/^(nama|name|nama[\s_]?lengkap|email|alamat[\s_]?email)$/i.test(clean)) {
+    } else if (/^(nama|name|nama[\s_]?lengkap|email|alamat[\s_]?email|email[\s_]?address|username)$/i.test(clean)) {
       results.push({ column: col, role: 'ignored', reason: 'Data pribadi responden (PII)' });
-    } else if (/^(nim|npm|nisn|nik|no[\s_]?hp|nomor[\s_]?telepon|no[\s_]?wa)$/i.test(clean)) {
+    } else if (/^(nim|npm|nisn|nik|no[\s_]?hp|nomor[\s_]?telepon|no[\s_]?wa|nomor[\s_]?whatsapp)$/i.test(clean)) {
       results.push({ column: col, role: 'ignored', reason: 'Identitas / Kontak responden' });
-    } else if (/^(no|nomor|id)$/i.test(clean)) {
+    } else if (/^(no|nomor|id|no\.|nomor[\s_]?responden)$/i.test(clean)) {
       results.push({ column: col, role: 'id', reason: 'Nomor indeks responden' });
     }
   });

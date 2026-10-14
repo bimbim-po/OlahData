@@ -11,6 +11,7 @@ import {
   ShieldAlert,
   Loader2,
   Check,
+  Highlighter,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -37,6 +38,7 @@ export interface ExportDialogProps {
   onOpenChange: (open: boolean) => void;
   userPlan?: 'free' | 'monthly' | 'thesis';
   results?: AnalysisResults | null;
+  onOpenReferenceTables?: () => void;
 }
 
 const AVAILABLE_SECTIONS: { id: TestType; label: string; description: string }[] = [
@@ -89,6 +91,7 @@ export function ExportDialog({
   onOpenChange,
   userPlan: propPlan,
   results,
+  onOpenReferenceTables,
 }: ExportDialogProps) {
   const { toast } = useToast();
   const authUser = useAuthStore((s) => s.user);
@@ -304,6 +307,36 @@ export function ExportDialog({
                 </p>
               </button>
             </div>
+
+            {onOpenReferenceTables && (
+              <div className="mt-3 p-3 rounded-xl border border-amber-500/30 bg-amber-50/60 dark:bg-amber-950/20 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-[#FFE14D] text-slate-900 shrink-0">
+                    <Highlighter className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="font-semibold text-xs text-foreground block">
+                      Tabel Referensi r, t, &amp; F (Ditandai Stabilo Otomatis)
+                    </span>
+                    <p className="text-[11px] text-muted-foreground">
+                      Baris derajat bebas (df) proyek Anda otomatis disorot kuning untuk lampiran skripsi.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    onOpenChange(false);
+                    onOpenReferenceTables();
+                  }}
+                  className="text-xs h-8 shrink-0 font-medium border-amber-500/40 hover:bg-amber-500/20 cursor-pointer text-amber-900 dark:text-amber-200"
+                >
+                  Buka Tabel Stabilo
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Gaya Bahasa Interpretasi Narasi (Khusus Mode Word Naskah Bab 4) */}

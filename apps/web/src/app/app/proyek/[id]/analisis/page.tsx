@@ -19,6 +19,8 @@ import {
   Database,
   ShieldCheck,
   HelpCircle,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 import { useWizardStore, type WizardStep } from '@/stores/wizard-store';
@@ -40,7 +42,7 @@ import { formatNumber } from '@/lib/format';
 import { mockTestOptions } from '@/lib/mock/results';
 import { getProject } from '@/lib/api';
 import type { Project, TestOption, TestType } from '@/lib/api/types';
-import { detectLikertTextColumns } from '@/lib/google-forms-recode';
+import { detectLikertTextColumns, detectMetadataAndPiiColumns, STANDARD_LIKERT_PREVIEW } from '@/lib/google-forms-recode';
 import { useToast } from '@/components/ui/toaster';
 import { usePlanGate, isSampleProject } from '@/lib/entitlements';
 
@@ -130,11 +132,16 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
     nextStep();
   };
 
-  // Auto-detect Google Forms Likert scale textual responses
+  // Auto-detect Google Forms Likert scale textual responses and metadata
+  const [showLikertMapping, setShowLikertMapping] = React.useState(false);
   const detectedLikertColumns = React.useMemo(() => {
     if (fileData.length === 0) return [];
     return detectLikertTextColumns(fileData, columns);
   }, [fileData, columns]);
+
+  const detectedMetadataCols = React.useMemo(() => {
+    return detectMetadataAndPiiColumns(columns);
+  }, [columns]);
 
   const handleRecodeLikert = () => {
     if (detectedLikertColumns.length === 0) return;
@@ -566,6 +573,17 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
               </div>
             )}
 
+            {/* Smart Google Forms Auto-Recode Banner in Step 1 */}
+            {detectedLikertColumns.length > 0 && (
+              <LikertRecodeBanner
+                detectedLikertColumns={detectedLikertColumns}
+                detectedMetadataCols={detectedMetadataCols}
+                showLikertMapping={showLikertMapping}
+                setShowLikertMapping={setShowLikertMapping}
+                onRecode={handleRecodeLikert}
+              />
+            )}
+
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
               <Button
                 asChild
@@ -615,30 +633,15 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
               </div>
             </div>
 
-            {/* Smart Google Forms Auto-Recode Banner */}
+            {/* Smart Google Forms Auto-Recode Banner in Step 2 */}
             {detectedLikertColumns.length > 0 && (
-              <div className="p-4 sm:p-5 rounded-[16px] border border-primary/30 bg-primary/10 text-foreground flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <Wrench className="w-5 h-5 shrink-0 text-primary mt-0.5" />
-                  <div className="space-y-1">
-                    <span className="font-bold text-sm block">
-                      Terdeteksi Jawaban Teks Google Forms pada {detectedLikertColumns.length} Kolom
-                    </span>
-                    <p className="text-xs text-muted-foreground leading-relaxed max-w-[68ch]">
-                      Kolom seperti <code className="font-mono text-primary font-semibold">{detectedLikertColumns.slice(0, 3).map((c) => c.column).join(', ')}{detectedLikertColumns.length > 3 ? '...' : ''}</code> berisi teks (&quot;Sangat Setuju&quot;, &quot;Setuju&quot;, dll). Konversi otomatis ke skala angka 1–5 agar siap diolah statistik secara deterministik.
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleRecodeLikert}
-                  className="shrink-0 font-semibold cursor-pointer gap-1.5 rounded-[10px]"
-                >
-                  <Binary className="w-4 h-4" />
-                  Konversi Otomatis ke Angka 1-5
-                </Button>
-              </div>
+              <LikertRecodeBanner
+                detectedLikertColumns={detectedLikertColumns}
+                detectedMetadataCols={detectedMetadataCols}
+                showLikertMapping={showLikertMapping}
+                setShowLikertMapping={setShowLikertMapping}
+                onRecode={handleRecodeLikert}
+              />
             )}
 
             {/* Critical Error Alert if any */}
@@ -1496,6 +1499,92 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+interface LikertRecodeBannerProps {
+  detectedLikertColumns: ReturnType<typeof detectLikertTextColumns>;
+  detectedMetadataCols: ReturnType<typeof detectMetadataAndPiiColumns>;
+  showLikertMapping: boolean;
+  setShowLikertMapping: React.Dispatch<React.SetStateAction<boolean>>;
+  onRecode: () => void;
+}
+
+function LikertRecodeBanner({
+  detectedLikertColumns,
+  detectedMetadataCols,
+  showLikertMapping,
+  setShowLikertMapping,
+  onRecode,
+}: LikertRecodeBannerProps) {
+  if (detectedLikertColumns.length === 0) return null;
+
+  return (
+    <div className="p-4 sm:p-5 rounded-[16px] border border-primary/30 bg-primary/10 text-foreground space-y-3">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <Wrench className="w-5 h-5 shrink-0 text-primary mt-0.5" />
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-bold text-sm">
+                Terdeteksi Format Google Forms ({detectedLikertColumns.length} Kolom Jawaban Teks)
+              </span>
+              <Badge variant="outline" className="text-[11px] bg-background/60">
+                Skala Likert
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed max-w-[70ch]">
+              Kolom kuesioner seperti <code className="font-mono text-primary font-semibold">{detectedLikertColumns.slice(0, 3).map((c) => c.column).join(', ')}{detectedLikertColumns.length > 3 ? '...' : ''}</code> berisi respons teks (&quot;Sangat Setuju&quot;, &quot;Setuju&quot;, dll). Konversikan otomatis ke skala angka 1–5 agar siap diolah statistik secara deterministik.
+            </p>
+            {detectedMetadataCols.length > 0 && (
+              <p className="text-[11px] text-muted-foreground/90 pt-0.5">
+                🛡️ Kolom metadata &amp; identitas Google Forms diabaikan otomatis: <span className="font-medium text-foreground">{detectedMetadataCols.map((c) => c.column).join(', ')}</span>
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowLikertMapping((prev) => !prev)}
+            className="text-xs text-primary hover:text-primary gap-1 cursor-pointer"
+          >
+            {showLikertMapping ? 'Tutup Pemetaan' : 'Lihat Pemetaan'}
+            {showLikertMapping ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={onRecode}
+            className="font-semibold cursor-pointer gap-1.5 rounded-[10px]"
+          >
+            <Binary className="w-4 h-4" />
+            Konversi Otomatis Teks ke Angka (1–5)
+          </Button>
+        </div>
+      </div>
+
+      {showLikertMapping && (
+        <div className="pt-3 border-t border-primary/20 text-xs">
+          <p className="font-semibold text-foreground mb-2">Pratinjau Standar Konversi Skala Likert 1–5:</p>
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+            {STANDARD_LIKERT_PREVIEW.map((item) => (
+              <div key={item.score} className="p-2.5 rounded-[8px] bg-background/80 border border-primary/20">
+                <div className="flex items-center justify-between font-bold text-primary mb-1">
+                  <span>Skor {item.score}</span>
+                  <span className="text-[10px] text-muted-foreground">({item.label})</span>
+                </div>
+                <div className="text-[11px] text-muted-foreground leading-tight">
+                  {item.aliases}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

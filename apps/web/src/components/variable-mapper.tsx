@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { Construct, VariableRole } from '@/lib/api/types';
+import { detectMetadataAndPiiColumns } from '@/lib/google-forms-recode';
 
 interface VariableMapperProps {
   columns: string[];
@@ -30,10 +31,16 @@ export function VariableMapper({
   onChange,
   className,
 }: VariableMapperProps) {
-  // Candidate item columns (exclude row counter 'No' and ID)
-  const candidateColumns = React.useMemo(() => {
-    return columns.filter((col) => col !== 'No' && col !== 'id' && col !== 'ID');
+  const metadataColumns = React.useMemo(() => {
+    return new Set(detectMetadataAndPiiColumns(columns).map((c) => c.column));
   }, [columns]);
+
+  // Candidate item columns (exclude row counter 'No', ID, and detected metadata/PII)
+  const candidateColumns = React.useMemo(() => {
+    return columns.filter(
+      (col) => !metadataColumns.has(col) && col !== 'No' && col !== 'id' && col !== 'ID'
+    );
+  }, [columns, metadataColumns]);
 
   // Which columns are assigned to which construct
   const assignedColumnMap = React.useMemo(() => {

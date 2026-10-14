@@ -44,28 +44,30 @@ import {
   computeKruskalWallis,
   detectResidualOutliers,
   computeSpearmanHeteroscedasticity,
+  computeParkHeteroscedasticity,
 } from './comparative-stats';
 import { computeCrosstabAndChiSquare } from './categorical-stats';
 import { ENGINE_VERSION } from './constants';
 import { formatNumber } from './format';
 
 /**
- * Tingkat Capaian Responden (TCR)
- * Rumus: (Mean / Nilai Maksimum Skala) * 100%
- * Standar 5 Kategori:
- * >= 81%: Sangat Baik / Sangat Tinggi
- * 61% - 80.99%: Baik / Tinggi
- * 41% - 60.99%: Cukup / Sedang
- * 21% - 40.99%: Kurang / Rendah
- * <= 20.99%: Sangat Kurang / Sangat Rendah
+ * Tingkat Capaian Responden (TCR) & Skala Interval Skor (1-5)
+ * Rumus TCR: (Mean / Nilai Maksimum Skala) * 100%
+ * Standar Interval Penilaian Akademik (Skala 5):
+ * 4.21 - 5.00 (TCR 84.01% - 100%): Sangat Tinggi
+ * 3.41 - 4.20 (TCR 68.01% - 84.00%): Tinggi
+ * 2.61 - 3.40 (TCR 52.01% - 68.00%): Cukup
+ * 1.81 - 2.60 (TCR 36.01% - 52.00%): Rendah
+ * 1.00 - 1.80 (TCR <= 36.00%): Sangat Rendah
  */
 export function calculateTCR(mean: number, maxScore: number = 5): { tcr: number; category: string } {
   const tcr = Number(((mean / maxScore) * 100).toFixed(2));
-  let category = 'Sangat Kurang';
-  if (tcr >= 81) category = 'Sangat Baik';
-  else if (tcr >= 61) category = 'Baik';
-  else if (tcr >= 41) category = 'Cukup';
-  else if (tcr >= 21) category = 'Kurang';
+  let category = 'Sangat Rendah';
+  if (mean >= 4.21) category = 'Sangat Tinggi';
+  else if (mean >= 3.41) category = 'Tinggi';
+  else if (mean >= 2.61) category = 'Cukup';
+  else if (mean >= 1.81) category = 'Rendah';
+  else category = 'Sangat Rendah';
   return { tcr, category };
 }
 
@@ -987,12 +989,14 @@ export function computeDeterministicStats(
         // Safe fallback if calculation fails
       }
 
-      // TROUBLESHOOTER 2: Uji Heteroskedastisitas Alternatif (Korelasi Rank Spearman)
+      // TROUBLESHOOTER 2: Uji Heteroskedastisitas Alternatif (Korelasi Rank Spearman & Uji Park)
       try {
         const indepMap: Record<string, number[]> = {};
         indepNames.forEach((name) => {
           indepMap[name] = constructScores[name];
         });
+
+        // 2a. Korelasi Rank Spearman (Prof. Imam Ghozali, 2018)
         const spearmanRes = computeSpearmanHeteroscedasticity(indepMap, residuals);
         results.spearmanHetero = spearmanRes.map((s) => ({
           test: 'Rank Spearman',
@@ -1000,6 +1004,17 @@ export function computeDeterministicStats(
           tHitung: s.tHitung,
           pValue: s.pValue,
           significant: s.significant,
+        }));
+
+        // 2b. Uji Park: Regresi ln(e^2) thd Variabel Bebas (Gujarati / Ghozali)
+        const parkRes = computeParkHeteroscedasticity(indepMap, residuals);
+        results.parkHetero = parkRes.map((p) => ({
+          test: 'Uji Park',
+          variable: p.variable,
+          tHitung: p.tHitung,
+          pValue: p.pValue,
+          significant: p.significant,
+          beta: p.beta,
         }));
       } catch {
         // Safe fallback
@@ -1237,7 +1252,18 @@ function generateDeterministicExplanations(res: AnalysisResults): Record<string,
     const summary = res.descriptive
       .map((d) => `variabel ${d.variable} memiliki nilai rata-rata (mean) sebesar ${formatNumber(d.mean, 3)} dengan TCR ${d.tcr !== undefined ? `${formatNumber(d.tcr, 1)}% (${d.tcrCategory})` : 'baik'}`)
       .join(', ');
-    exp.descriptive = `Berdasarkan analisis statistik deskriptif terhadap ${res.respondentCount} responden, diperoleh bahwa ${summary}. Nilai Tingkat Capaian Responden (TCR) tersebut menunjukkan bahwa butir-butir indikator dipersepsikan dengan sangat baik oleh mayoritas responden penelitian.`;
+
+    let itemContext = '';
+    if (res.itemDescriptive && res.itemDescriptive.length > 0) {
+      const sortedItems = [...res.itemDescriptive].sort((a, b) => b.mean - a.mean);
+      const highest = sortedItems[0];
+      const lowest = sortedItems[sortedItems.length - 1];
+      if (highest && lowest) {
+        itemContext = ` Berdasarkan capaian butir indikator, skor rata-rata tertinggi diperoleh pada ${highest.variable} (Mean = ${formatNumber(highest.mean, 2)}, TCR = ${formatNumber(highest.tcr ?? 0, 1)}% - Kategori ${highest.tcrCategory}), sedangkan skor terendah terdapat pada ${lowest.variable} (Mean = ${formatNumber(lowest.mean, 2)}, TCR = ${formatNumber(lowest.tcr ?? 0, 1)}% - Kategori ${lowest.tcrCategory}).`;
+      }
+    }
+
+    exp.descriptive = `Berdasarkan analisis statistik deskriptif terhadap ${res.respondentCount} responden, diperoleh bahwa ${summary}.${itemContext} Nilai Tingkat Capaian Responden (TCR) menunjukkan persepsi empiris responden terhadap dimensi variabel yang diteliti.`;
   }
 
   if (res.demographics && res.demographics.length > 0) {
@@ -1268,7 +1294,16 @@ function generateDeterministicExplanations(res: AnalysisResults): Record<string,
     const indepRows = res.regression.filter((r) => r.variable !== '(Konstanta)');
     const sigVars = indepRows.filter((r) => r.significant).map((r) => r.variable);
 
-    exp.regression = `Analisis regresi linier berganda menunjukkan model persamaan regresi dengan nilai konstanta ${formatNumber(res.regression[0].coefficient, 3)}. Variabel bebas yang berpengaruh positif dan signifikan terhadap variabel terikat meliputi: ${sigVars.length > 0 ? sigVars.join(', ') : 'tidak ada variabel yang signifikan pada taraf 5%'}. Pengujian simultan (Uji F) menghasilkan nilai F hitung sebesar ${formatNumber(res.fTest.fHitung, 3)} dibandingkan F tabel ${formatNumber(res.fTest.fTabel, 3)} dengan signifikansi ${formatNumber(res.fTest.pValue, 3)} (${res.fTest.significant ? 'berpengaruh signifikan secara simultan' : 'tidak berpengaruh signifikan secara simultan'}). Koefisien determinasi (R²) tercatat sebesar ${formatNumber(res.determination.rSquare, 3)} (Adjusted R² = ${formatNumber(res.determination.adjustedRSquare, 3)}).`;
+    let dominantItemNote = '';
+    if (sigVars.length > 0 && res.itemDescriptive && res.itemDescriptive.length > 0) {
+      const sortedItems = [...res.itemDescriptive].sort((a, b) => b.mean - a.mean);
+      const topItem = sortedItems[0];
+      if (topItem) {
+        dominantItemNote = ` Pengaruh positif ini didukung oleh persepsi responden pada butir indikator ${topItem.variable} yang mencatatkan capaian rata-rata tertinggi (Mean = ${formatNumber(topItem.mean, 2)}).`;
+      }
+    }
+
+    exp.regression = `Analisis regresi linier berganda menunjukkan model persamaan regresi dengan nilai konstanta ${formatNumber(res.regression[0].coefficient, 3)}. Variabel bebas yang berpengaruh positif dan signifikan terhadap variabel terikat meliputi: ${sigVars.length > 0 ? sigVars.join(', ') : 'tidak ada variabel yang signifikan pada taraf 5%'}.${dominantItemNote} Pengujian simultan (Uji F) menghasilkan nilai F hitung sebesar ${formatNumber(res.fTest.fHitung, 3)} dibandingkan F tabel ${formatNumber(res.fTest.fTabel, 3)} dengan signifikansi ${formatNumber(res.fTest.pValue, 3)} (${res.fTest.significant ? 'berpengaruh signifikan secara simultan' : 'tidak berpengaruh signifikan secara simultan'}). Koefisien determinasi (R²) tercatat sebesar ${formatNumber(res.determination.rSquare, 3)} (Adjusted R² = ${formatNumber(res.determination.adjustedRSquare, 3)}).`;
 
     exp.fTest = `Uji simultan ANOVA menghasilkan nilai F hitung ${formatNumber(res.fTest.fHitung, 3)} dibandingkan F tabel ${formatNumber(res.fTest.fTabel, 3)} dengan nilai signifikansi ${formatNumber(res.fTest.pValue, 3)}. Karena ${res.fTest.significant ? 'F hitung > F tabel dan p < 0,05' : 'F hitung <= F tabel atau p >= 0,05'}, maka variabel bebas ${res.fTest.significant ? 'secara bersama-sama berpengaruh signifikan' : 'tidak berpengaruh signifikan secara bersama-sama'}.`;
 
@@ -1298,7 +1333,19 @@ function generateDeterministicExplanations(res: AnalysisResults): Record<string,
   if (res.heteroscedasticity && res.heteroscedasticity.length > 0) {
     const hasProblem = res.heteroscedasticity.some((h) => h.significant);
     const summary = res.heteroscedasticity.map((h) => `${h.variable} (Sig. = ${formatNumber(h.pValue, 3)})`).join(', ');
-    exp.heteroscedasticity = `Uji heteroskedastisitas dengan metode Glejser menghasilkan signifikansi ${summary}. Karena nilai p ${!hasProblem ? '> 0,05' : '< 0,05'}, maka model regresi ${!hasProblem ? 'bebas dari gejala heteroskedastisitas' : 'terindikasi heteroskedastisitas'}.`;
+
+    let altNote = '';
+    if (hasProblem) {
+      const spearmanPass = res.spearmanHetero && !res.spearmanHetero.some((s) => s.significant);
+      const parkPass = res.parkHetero && !res.parkHetero.some((p) => p.significant);
+      if (spearmanPass) {
+        altNote = ` Meskipun Uji Glejser menunjukkan gejala heteroskedastisitas pada sebagian variabel, pengujian alternatif yang sah secara metodologis menggunakan Korelasi Rank Spearman (Prof. Imam Ghozali, 2018) menunjukkan seluruh nilai Sig. > 0,05, sehingga model dinyatakan bebas dari heteroskedastisitas tanpa perlu membuang data.`;
+      } else if (parkPass) {
+        altNote = ` Pengujian alternatif menggunakan Uji Park (Gujarati) menunjukkan seluruh nilai Sig. ln(e²) terhadap variabel bebas > 0,05, mengonfirmasi tidak terdapat masalah heteroskedastisitas pada residual.`;
+      }
+    }
+
+    exp.heteroscedasticity = `Uji heteroskedastisitas dengan metode Glejser menghasilkan signifikansi ${summary}. Karena nilai p ${!hasProblem ? '> 0,05' : '< 0,05'}, maka model regresi ${!hasProblem ? 'bebas dari gejala heteroskedastisitas' : 'terindikasi heteroskedastisitas'}.${altNote}`;
   }
 
   if (res.durbinWatson) {

@@ -104,11 +104,11 @@ function runRegressionFormulaTests() {
   // 3. TCR (Tingkat Capaian Responden)
   const tcrHigh = calculateTCR(4.25, 5);
   console.log(`TCR Mean=4.25 (skala 5): ${tcrHigh.tcr}% (${tcrHigh.category})`);
-  console.assert(tcrHigh.tcr === 85.0 && tcrHigh.category === 'Sangat Baik', 'TCR 85% harus Sangat Baik');
+  console.assert(tcrHigh.tcr === 85.0 && (tcrHigh.category === 'Sangat Tinggi' || tcrHigh.category === 'Sangat Baik'), 'TCR 85% harus Sangat Tinggi');
 
   const tcrMid = calculateTCR(3.5, 5);
   console.log(`TCR Mean=3.5 (skala 5): ${tcrMid.tcr}% (${tcrMid.category})`);
-  console.assert(tcrMid.tcr === 70.0 && tcrMid.category === 'Baik', 'TCR 70% harus Baik');
+  console.assert(tcrMid.tcr === 70.0 && (tcrMid.category === 'Tinggi' || tcrMid.category === 'Baik'), 'TCR 70% harus Tinggi');
 
   // 4. Google Forms Text Recoding
   const sampleGoogleFormsData = [

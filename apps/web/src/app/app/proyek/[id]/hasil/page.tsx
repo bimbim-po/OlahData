@@ -34,6 +34,8 @@ import {
   Scissors,
   RefreshCw,
   Table as TableIcon,
+  Lock,
+  BookOpen,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,6 +46,7 @@ import { ExplanationBox } from '@/components/explanation-box';
 import { AssumptionAlert } from '@/components/assumption-alert';
 import { TraceabilityPanel } from '@/components/traceability-panel';
 import { ExportDialog } from '@/components/export-dialog';
+import { StatisticalReferenceTablesDialog } from '@/components/statistical-reference-tables-dialog';
 import { DataSourcePanel } from '@/components/data-source-panel';
 import { PageActions } from '@/components/page-actions';
 import { useToast } from '@/components/ui/toaster';
@@ -149,6 +152,8 @@ export default function HasilPage() {
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [showItemDetails, setShowItemDetails] = useState(false);
   const [showSpearmanHetero, setShowSpearmanHetero] = useState(false);
+  const [heteroMethod, setHeteroMethod] = useState<'glejser' | 'park' | 'spearman'>('glejser');
+  const [showReferenceTables, setShowReferenceTables] = useState(false);
   const { toast } = useToast();
   const isSample = isSampleProject(projectId) || isSampleProject(project);
   const { isFree, canExport, openUpgradeModal } = usePlanGate(projectId, isSample);
@@ -190,6 +195,13 @@ export default function HasilPage() {
 
   const handleEliminateOutliers = (rowNumbers: number[]) => {
     if (rowNumbers.length === 0) return;
+    if (isFree) {
+      openUpgradeModal({
+        plan: 'monthly',
+        reason: 'Pembersihan Outlier & Normalisasi Data Otomatis',
+      });
+      return;
+    }
 
     const store = useWizardStore.getState();
     store.eliminateOutliers(rowNumbers);
@@ -2212,6 +2224,61 @@ export default function HasilPage() {
     },
   ];
 
+  // 12b. Park Test Heteroscedasticity Alternative
+  const parkHeteroCols: ColumnDef<HeteroscedasticityResult>[] = [
+    {
+      key: 'variable',
+      header: 'Variabel Bebas',
+      render: (r) => <span className="font-semibold text-foreground">{r.variable}</span>,
+      getValue: (r) => r.variable,
+    },
+    {
+      key: 'test',
+      header: 'Metode Uji',
+      getValue: (r) => r.test,
+    },
+    {
+      key: 'beta',
+      header: 'Koefisien (β)',
+      align: 'right',
+      render: (r) => (
+        <span className="font-mono tabular-nums">
+          {r.beta !== undefined ? formatNumber(r.beta, 4) : '-'}
+        </span>
+      ),
+      getValue: (r) => (r.beta !== undefined ? formatNumber(r.beta, 4) : '-'),
+    },
+    {
+      key: 'tHitung',
+      header: 't Hitung',
+      align: 'right',
+      render: (r) => <span className="font-mono tabular-nums">{formatNumber(r.tHitung, 3)}</span>,
+      getValue: (r) => formatNumber(r.tHitung, 3),
+    },
+    {
+      key: 'pValue',
+      header: 'Sig. (2-tailed)',
+      align: 'right',
+      render: (r) => (
+        <span className={cn('font-semibold font-mono tabular-nums', r.significant ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400')}>
+          {formatNumber(r.pValue, 4)}
+        </span>
+      ),
+      getValue: (r) => formatNumber(r.pValue, 4),
+    },
+    {
+      key: 'significant',
+      header: 'Kesimpulan Homoskedastisitas',
+      align: 'center',
+      render: (r) => (
+        <Badge variant={!r.significant ? 'pine' : 'destructive'} className="text-[12px]">
+          {!r.significant ? 'Bebas Heteroskedastisitas (Sig. > 0,05)' : 'Terindikasi Heteroskedastisitas'}
+        </Badge>
+      ),
+      getValue: (r) => (!r.significant ? 'Bebas' : 'Terindikasi'),
+    },
+  ];
+
   // 13. Chi-Square Tests
   const chiSquareTableCols: ColumnDef<{
     test: string;
@@ -2416,6 +2483,17 @@ export default function HasilPage() {
                 <span>Salin Semua Tabel</span>
               </>
             )}
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowReferenceTables(true)}
+            className="text-[13px] min-h-[40px] px-3.5 gap-1.5 font-medium touch-manipulation cursor-pointer border-amber-500/40 hover:bg-amber-500/10 text-amber-900 dark:text-amber-200"
+            title="Buka lampiran tabel r, t, dan F dengan baris df proyek yang telah distabilo kuning"
+          >
+            <BookOpen className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <span>Tabel r, t, F (Stabilo)</span>
           </Button>
 
           <Button
@@ -2627,38 +2705,20 @@ export default function HasilPage() {
                   </div>
                 )}
 
-                {/* Rincian Deskriptif Per Butir (Bagian Lipat) */}
-                <div className="rounded-[16px] border border-border bg-card overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => setShowItemDetails(!showItemDetails)}
-                    className="w-full p-4 flex items-center justify-between text-[13px] font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors cursor-pointer min-h-[44px]"
-                  >
-                    <span className="flex items-center gap-2">
-                      <BarChart3 className="h-4 w-4 text-primary" />
-                      <span>Rincian Statistik Deskriptif Per Butir Pertanyaan ({results.itemDescriptive?.length || 0} butir)</span>
-                    </span>
-                    {showItemDetails ? (
-                      <ChevronUp className="h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4" />
-                    )}
-                  </button>
-
-                  {showItemDetails && (
-                    <div className="p-4 pt-0">
-                      <ResultTable
-                        tableNumber="Tabel 4.1b"
-                        title="Distribusi Deskriptif Butir Pertanyaan Kuesioner &amp; TCR"
-                        note={`Menampilkan rata-rata, sebaran, nilai ekstrim, dan Tingkat Capaian Responden (TCR %) tiap butir instrumen (N = ${results.respondentCount}).`}
-                        columns={itemDescriptiveCols}
-                        data={results.itemDescriptive || []}
-                        rowKey={(r) => r.variable}
-                        highlightedValue={highlightedNumber}
-                      />
-                    </div>
-                  )}
-                </div>
+                {/* Tabel 4.1B: Distribusi Frekuensi & Kategori Skor per Indikator (TCR) */}
+                {results.itemDescriptive && results.itemDescriptive.length > 0 && (
+                  <div className="space-y-3 pt-2">
+                    <ResultTable
+                      tableNumber="Tabel 4.1B"
+                      title="Distribusi Frekuensi & Kategori Skor per Indikator (Tingkat Capaian Responden / TCR)"
+                      note={`* Kategori Interval Mean: 1,00–1,80 = Sangat Rendah; 1,81–2,60 = Rendah; 2,61–3,40 = Cukup; 3,41–4,20 = Tinggi; 4,21–5,00 = Sangat Tinggi. Rumus TCR = (Mean / 5) × 100%. N = ${results.respondentCount} responden.`}
+                      columns={itemDescriptiveCols}
+                      data={results.itemDescriptive}
+                      rowKey={(r) => r.variable}
+                      highlightedValue={highlightedNumber}
+                    />
+                  </div>
+                )}
 
                 <ExplanationBox
                   title="Interpretasi Statistik Deskriptif &amp; TCR"
@@ -2845,35 +2905,52 @@ export default function HasilPage() {
                                 results.residualOutliers!.outliers.map((o) => o.rowNumber)
                               )
                             }
-                            className="w-full text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-md cursor-pointer font-medium"
+                            className="w-full text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-md cursor-pointer font-medium flex items-center justify-center gap-1.5"
                           >
+                            {isFree && <Lock className="w-3.5 h-3.5" />}
                             Kecualikan {results.residualOutliers.totalOutliers} Responden Outlier &amp; Jalankan Ulang
+                            {isFree && (
+                              <Badge variant="outline" className="text-[10px] text-white border-white/40 ml-1 py-0">
+                                Pro
+                              </Badge>
+                            )}
                           </Button>
                         )}
                       </div>
 
-                      {/* 2. Rank Spearman Alternative Switcher */}
+                      {/* 2. Peralihan Metode Uji Sah (Park & Spearman) */}
                       <div className="p-3.5 rounded-lg bg-background border border-border space-y-2.5">
                         <div className="flex items-center justify-between">
                           <span className="font-semibold text-xs text-foreground">
-                            2. Peralihan Metode Uji Sah (Rank Spearman)
+                            2. Peralihan Uji Heteroskedastisitas Sah
                           </span>
                           <Badge variant="outline" className="text-[10px]">
-                            Prof. Imam Ghozali
+                            Park &amp; Spearman
                           </Badge>
                         </div>
                         <p className="text-[11px] text-muted-foreground">
-                          Uji Korelasi Rank Spearman mengkorelasikan variabel bebas terhadap |residual|. Jika Sig. &gt; 0,05, bebas heteroskedastisitas tanpa perlu memotong data.
+                          Jika Uji Glejser tidak lolos (p &lt; 0,05), beralihlah ke Uji Park (ln(e²)) atau Korelasi Rank Spearman. Jika Sig. &gt; 0,05, model dinyatakan bebas heteroskedastisitas tanpa perlu memotong data.
                         </p>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowSpearmanHetero(!showSpearmanHetero)}
-                          className="w-full text-xs rounded-md cursor-pointer font-medium"
-                        >
-                          {showSpearmanHetero ? 'Sembunyikan Uji Spearman' : 'Tampilkan Uji Rank Spearman'}
-                        </Button>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            type="button"
+                            variant={heteroMethod === 'park' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setHeteroMethod(heteroMethod === 'park' ? 'glejser' : 'park')}
+                            className="text-xs rounded-md cursor-pointer font-medium"
+                          >
+                            {heteroMethod === 'park' ? 'Aktif: Uji Park' : 'Pilih Uji Park'}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={heteroMethod === 'spearman' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setHeteroMethod(heteroMethod === 'spearman' ? 'glejser' : 'spearman')}
+                            className="text-xs rounded-md cursor-pointer font-medium"
+                          >
+                            {heteroMethod === 'spearman' ? 'Aktif: Spearman' : 'Pilih Spearman'}
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2979,35 +3056,123 @@ export default function HasilPage() {
 
                 {/* 4c. Heteroskedastisitas */}
                 <div className="space-y-4 pt-6 border-t border-border">
-                  <div className="border-b border-border pb-2">
-                    <h3 className="font-serif text-lg font-bold text-foreground">
-                      3. Uji Heteroskedastisitas (Metode Glejser)
-                    </h3>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3">
+                    <div>
+                      <h3 className="font-serif text-lg font-bold text-foreground">
+                        3. Uji Heteroskedastisitas
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Memeriksa apakah varians residual konstan (homoskedastisitas). Tersedia 3 metode baku akademik.
+                      </p>
+                    </div>
+
+                    {/* 3-Way Method Switcher */}
+                    <div className="flex items-center gap-1.5 p-1 rounded-lg bg-muted/60 border border-border/60 self-start sm:self-auto">
+                      <button
+                        type="button"
+                        onClick={() => setHeteroMethod('glejser')}
+                        className={cn(
+                          'px-2.5 py-1 text-xs rounded-md font-medium cursor-pointer transition-all flex items-center gap-1.5',
+                          heteroMethod === 'glejser'
+                            ? 'bg-background text-foreground shadow-xs font-semibold'
+                            : 'text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        <span>Uji Glejser</span>
+                        {results.heteroscedasticity && !results.heteroscedasticity.some((h) => h.significant) ? (
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" title="Bebas Heteroskedastisitas" />
+                        ) : (
+                          <span className="w-2 h-2 rounded-full bg-amber-500" title="Terindikasi Gejala" />
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setHeteroMethod('park')}
+                        className={cn(
+                          'px-2.5 py-1 text-xs rounded-md font-medium cursor-pointer transition-all flex items-center gap-1.5',
+                          heteroMethod === 'park'
+                            ? 'bg-background text-foreground shadow-xs font-semibold'
+                            : 'text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        <span>Uji Park (ln(e²))</span>
+                        {results.parkHetero && !results.parkHetero.some((p) => p.significant) ? (
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" title="Bebas Heteroskedastisitas" />
+                        ) : (
+                          <span className="w-2 h-2 rounded-full bg-amber-500" title="Terindikasi Gejala" />
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setHeteroMethod('spearman')}
+                        className={cn(
+                          'px-2.5 py-1 text-xs rounded-md font-medium cursor-pointer transition-all flex items-center gap-1.5',
+                          heteroMethod === 'spearman'
+                            ? 'bg-background text-foreground shadow-xs font-semibold'
+                            : 'text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        <span>Rank Spearman</span>
+                        {results.spearmanHetero && !results.spearmanHetero.some((s) => s.significant) ? (
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" title="Bebas Heteroskedastisitas" />
+                        ) : (
+                          <span className="w-2 h-2 rounded-full bg-amber-500" title="Terindikasi Gejala" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
-                  <ResultTable
-                    tableNumber="Tabel 4.6"
-                    title="Hasil Uji Heteroskedastisitas Menggunakan Metode Glejser"
-                    note="* Variabel dependen uji adalah Nilai Absolut Residual |e_i|. Kriteria: Sig. > 0,05 tidak terdapat gejala heteroskedastisitas."
-                    columns={heteroscedasticityCols}
-                    data={results.heteroscedasticity || []}
-                    rowKey={(r) => r.variable}
-                    highlightedValue={highlightedNumber}
-                  />
+                  {/* Recommendation banner if Glejser failed but alternative passed */}
+                  {results.heteroscedasticity?.some((h) => h.significant) &&
+                    ((results.parkHetero && !results.parkHetero.some((p) => p.significant)) ||
+                      (results.spearmanHetero && !results.spearmanHetero.some((s) => s.significant))) && (
+                      <div className="p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-950/20 text-xs text-foreground flex items-start gap-2.5">
+                        <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="font-semibold text-emerald-800 dark:text-emerald-300 block">
+                            Solusi Metodologis Sah: Gunakan {results.parkHetero && !results.parkHetero.some((p) => p.significant) ? 'Uji Park' : 'Korelasi Rank Spearman'} untuk Bab 4
+                          </span>
+                          <p className="text-muted-foreground mt-0.5 leading-relaxed">
+                            Meskipun Uji Glejser menunjukkan p &lt; 0,05, metode alternatif yang sah secara ekonometrika ({results.parkHetero && !results.parkHetero.some((p) => p.significant) ? 'Uji Park (Gujarati)' : 'Korelasi Rank Spearman (Prof. Dr. Imam Ghozali, 2018)'}) membuktikan seluruh variabel memiliki Sig. &gt; 0,05 (bebas heteroskedastisitas). Anda dapat menggunakan hasil tabel ini untuk penulisan skripsi tanpa memotong data.
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
-                  {/* Alternative Spearman Rank Table if toggled */}
-                  {showSpearmanHetero && results.spearmanHetero && (
-                    <div className="space-y-2 pt-2">
-                      <ResultTable
-                        tableNumber="Tabel 4.6a"
-                        title="Hasil Uji Heteroskedastisitas Alternatif (Korelasi Rank Spearman)"
-                        note="* Rujukan: Prof. Dr. Imam Ghozali (2018). Uji korelasi Rank Spearman antara variabel independen dengan absolute residual. Kriteria: Sig. > 0,05 bebas heteroskedastisitas."
-                        columns={spearmanHeteroCols}
-                        data={results.spearmanHetero}
-                        rowKey={(r) => r.variable}
-                        highlightedValue={highlightedNumber}
-                      />
-                    </div>
+                  {heteroMethod === 'glejser' && (
+                    <ResultTable
+                      tableNumber="Tabel 4.6"
+                      title="Hasil Uji Heteroskedastisitas Menggunakan Metode Glejser"
+                      note="* Variabel dependen uji adalah Nilai Absolut Residual |e_i|. Kriteria: Sig. > 0,05 tidak terdapat gejala heteroskedastisitas."
+                      columns={heteroscedasticityCols}
+                      data={results.heteroscedasticity || []}
+                      rowKey={(r) => r.variable}
+                      highlightedValue={highlightedNumber}
+                    />
+                  )}
+
+                  {heteroMethod === 'park' && (
+                    <ResultTable
+                      tableNumber="Tabel 4.6"
+                      title="Hasil Uji Heteroskedastisitas Menggunakan Metode Uji Park"
+                      note="* Rujukan: Damodar Gujarati / Prof. Dr. Imam Ghozali. Variabel dependen adalah ln(e²). Kriteria: Sig. > 0,05 bebas heteroskedastisitas."
+                      columns={parkHeteroCols}
+                      data={results.parkHetero || []}
+                      rowKey={(r) => r.variable}
+                      highlightedValue={highlightedNumber}
+                    />
+                  )}
+
+                  {heteroMethod === 'spearman' && (
+                    <ResultTable
+                      tableNumber="Tabel 4.6"
+                      title="Hasil Uji Heteroskedastisitas Menggunakan Korelasi Rank Spearman"
+                      note="* Rujukan: Prof. Dr. Imam Ghozali (2018). Uji korelasi Rank Spearman antara variabel independen dengan absolute residual. Kriteria: Sig. > 0,05 bebas heteroskedastisitas."
+                      columns={spearmanHeteroCols}
+                      data={results.spearmanHetero || []}
+                      rowKey={(r) => r.variable}
+                      highlightedValue={highlightedNumber}
+                    />
                   )}
 
                   <ExplanationBox
@@ -3997,6 +4162,8 @@ export default function HasilPage() {
             timestamp={results.timestamp}
             engineVersion={results.engineVersion}
             onDownloadStatement={() => setExportOpen(true)}
+            results={results}
+            projectTitle={project?.title}
           />
 
           {/* Banner Pernyataan Etika Penggunaan Alat */}
@@ -4036,6 +4203,22 @@ export default function HasilPage() {
         open={exportOpen}
         onOpenChange={setExportOpen}
         results={results}
+        onOpenReferenceTables={() => setShowReferenceTables(true)}
+      />
+
+      {/* Statistical Reference Tables Dialog (Ber-Stabilo Otomatis) */}
+      <StatisticalReferenceTablesDialog
+        open={showReferenceTables}
+        onOpenChange={setShowReferenceTables}
+        respondentCount={results.respondentCount}
+        predictorCount={
+          results.regression
+            ? results.regression.filter((r) => r.variable !== '(Konstanta)').length
+            : 2
+        }
+        rTabel={results.validity?.[0]?.rTabel}
+        tTabel={results.tTabel}
+        fTabel={results.fTabel}
       />
     </div>
   );

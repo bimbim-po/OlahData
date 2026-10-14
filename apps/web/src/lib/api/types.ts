@@ -206,6 +206,7 @@ export interface HeteroscedasticityResult {
   tHitung: number;
   pValue: number;
   significant: boolean;
+  beta?: number;
 }
 
 export interface RegressionResult {
@@ -327,6 +328,7 @@ export interface AnalysisResults {
   nonParametric?: NonParametricResult;
   residualOutliers?: OutlierTroubleshooterResult;
   spearmanHetero?: HeteroscedasticityResult[];
+  parkHetero?: HeteroscedasticityResult[];
   crosstab?: CrosstabMatrix;
   chiSquare?: ChiSquareResult;
   riskEstimate?: RiskEstimateResult;

@@ -1054,3 +1054,82 @@ export function computeSpearmanHeteroscedasticity(
 
   return results;
 }
+
+/**
+ * Uji Park untuk Heteroskedastisitas Alternatif (Gujarati / Prof. Imam Ghozali)
+ * Meregresikan ln(e_i^2) terhadap masing-masing variabel bebas.
+ * Kriteria: Jika nilai Sig. (p-value) > 0,05, maka model residual bebas dari masalah heteroskedastisitas.
+ */
+export function computeParkHeteroscedasticity(
+  independentVars: Record<string, number[]>,
+  residuals: number[]
+): {
+  variable: string;
+  beta: number;
+  tHitung: number;
+  pValue: number;
+  significant: boolean;
+  status: string;
+}[] {
+  const n = residuals.length;
+  if (n <= 2) return [];
+
+  // Dependent variable: ln(e_i^2)
+  const lnResidualSq = residuals.map((r) => {
+    const sq = r * r;
+    return Math.log(sq > 1e-10 ? sq : 1e-10);
+  });
+
+  const meanY = lnResidualSq.reduce((a, b) => a + b, 0) / n;
+  const results: {
+    variable: string;
+    beta: number;
+    tHitung: number;
+    pValue: number;
+    significant: boolean;
+    status: string;
+  }[] = [];
+
+  for (const [varName, xVals] of Object.entries(independentVars)) {
+    if (xVals.length !== n) continue;
+    const meanX = xVals.reduce((a, b) => a + b, 0) / n;
+
+    let sxx = 0;
+    let sxy = 0;
+    for (let i = 0; i < n; i++) {
+      const dx = xVals[i] - meanX;
+      const dy = lnResidualSq[i] - meanY;
+      sxx += dx * dx;
+      sxy += dx * dy;
+    }
+
+    if (sxx === 0) continue;
+    const beta = sxy / sxx;
+    const alpha = meanY - beta * meanX;
+
+    let sse = 0;
+    for (let i = 0; i < n; i++) {
+      const yPred = alpha + beta * xVals[i];
+      const err = lnResidualSq[i] - yPred;
+      sse += err * err;
+    }
+
+    const df = n - 2;
+    const s2 = sse / df;
+    const seBeta = Math.sqrt(Math.max(1e-12, s2 / sxx));
+    const t = beta / seBeta;
+    const p = studentTPValueTwoTailed(t, df);
+    const sig = p < 0.05;
+
+    results.push({
+      variable: varName,
+      beta,
+      tHitung: t,
+      pValue: p,
+      significant: sig,
+      status: !sig ? 'Bebas Heteroskedastisitas' : 'Terindikasi Gejala',
+    });
+  }
+
+  return results;
+}
