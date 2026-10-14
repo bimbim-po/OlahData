@@ -285,9 +285,6 @@ export function AppShell({ children }: AppShellProps) {
                     : 'text-sidebar-foreground/80 hover:bg-muted hover:text-sidebar-foreground'
                 )}
               >
-                {active && !isCollapsed && (
-                  <span className="absolute left-1 top-2 bottom-2 w-1 bg-primary-foreground rounded-full" />
-                )}
                 <Icon
                   className={cn(
                     'h-4 w-4 shrink-0',
