@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { ArrowLeft, CheckCircle2, Sparkles } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Sparkles, HelpCircle } from 'lucide-react';
 import { createProject } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -137,13 +137,23 @@ function NewProjectForm() {
       </div>
 
       <Card className="border-border shadow-xs rounded-[16px]">
-        <CardHeader className="space-y-1 pb-3">
-          <CardTitle className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-            Mulai Proyek Skripsi Baru
-          </CardTitle>
-          <CardDescription className="text-muted-foreground text-xs sm:text-sm">
-            Isi informasi dasar skripsi Anda. Konfigurasi dataset dan pemetaan variabel akan dilakukan pada langkah selanjutnya.
-          </CardDescription>
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1">
+              <CardTitle className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                Mulai Proyek Skripsi Baru
+              </CardTitle>
+              <CardDescription className="text-muted-foreground text-xs sm:text-sm">
+                Isi informasi dasar skripsi Anda. Konfigurasi dataset dan pemetaan variabel akan dilakukan pada langkah selanjutnya.
+              </CardDescription>
+            </div>
+            <Button asChild variant="ghost" size="sm" className="h-9 gap-1.5 text-xs text-muted-foreground hover:text-foreground shrink-0">
+              <Link href="/app/bantuan#format-berkas" target="_blank" title="Panduan Format Berkas Kuesioner">
+                <HelpCircle className="h-4 w-4 text-primary" />
+                <span className="hidden sm:inline">Bantuan Berkas</span>
+              </Link>
+            </Button>
+          </div>
         </CardHeader>
 
         <CardContent>

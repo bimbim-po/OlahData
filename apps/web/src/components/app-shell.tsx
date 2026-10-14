@@ -16,6 +16,7 @@ import {
   ChevronLeftSquare,
   ChevronRightSquare,
   ExternalLink,
+  History,
 } from 'lucide-react';
 import { APP_NAME, APP_VERSION } from '@/lib/constants';
 import { useAuthStore } from '@/stores/auth-store';
@@ -58,9 +59,9 @@ const NAV_ITEMS = [
   {
     name: 'Riwayat analisis',
     shortName: 'Riwayat',
-    href: '/app/langganan',
-    icon: CreditCard,
-    isActive: (pathname: string) => pathname.startsWith('/app/langganan'),
+    href: '/app/riwayat',
+    icon: History,
+    isActive: (pathname: string) => pathname.startsWith('/app/riwayat'),
   },
   {
     name: 'Pengaturan',
@@ -72,11 +73,9 @@ const NAV_ITEMS = [
   {
     name: 'Bantuan',
     shortName: 'Bantuan',
-    href: '/panduan',
+    href: '/app/bantuan',
     icon: BookOpen,
-    isActive: (pathname: string) =>
-      pathname.startsWith('/pernyataan-penggunaan') ||
-      pathname.startsWith('/panduan'),
+    isActive: (pathname: string) => pathname.startsWith('/app/bantuan'),
   },
 ];
 
@@ -108,10 +107,14 @@ export function AppShell({ children }: AppShellProps) {
   };
 
   const getParentRoute = () => {
-    if (pathname === '/app/proyek/baru' || pathname.startsWith('/app/proyek/')) {
-      return '/app';
-    }
-    if (pathname.startsWith('/app/langganan') || pathname.startsWith('/app/pengaturan')) {
+    if (
+      pathname === '/app/proyek/baru' ||
+      pathname.startsWith('/app/proyek/') ||
+      pathname.startsWith('/app/riwayat') ||
+      pathname.startsWith('/app/bantuan') ||
+      pathname.startsWith('/app/langganan') ||
+      pathname.startsWith('/app/pengaturan')
+    ) {
       return '/app';
     }
     return null;
@@ -160,11 +163,49 @@ export function AppShell({ children }: AppShellProps) {
         </div>
       );
     }
+    if (pathname.startsWith('/app/riwayat')) {
+      return (
+        <div className="flex items-center gap-1.5 text-xs sm:text-sm min-w-0">
+          <Link href="/app" className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
+            Proyek
+          </Link>
+          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <span className="font-semibold text-foreground truncate">Riwayat Analisis</span>
+        </div>
+      );
+    }
+    if (pathname.startsWith('/app/bantuan')) {
+      return (
+        <div className="flex items-center gap-1.5 text-xs sm:text-sm min-w-0">
+          <Link href="/app" className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
+            Proyek
+          </Link>
+          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <span className="font-semibold text-foreground truncate">Pusat Bantuan</span>
+        </div>
+      );
+    }
     if (pathname.startsWith('/app/langganan')) {
-      return <h1 className="text-sm sm:text-base font-bold text-foreground">Riwayat Analisis &amp; Kuota</h1>;
+      return (
+        <div className="flex items-center gap-1.5 text-xs sm:text-sm min-w-0">
+          <Link href="/app" className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
+            Proyek
+          </Link>
+          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <span className="font-semibold text-foreground truncate">Langganan &amp; Kuota</span>
+        </div>
+      );
     }
     if (pathname.startsWith('/app/pengaturan')) {
-      return <h1 className="text-sm sm:text-base font-bold text-foreground">Pengaturan Akun</h1>;
+      return (
+        <div className="flex items-center gap-1.5 text-xs sm:text-sm min-w-0">
+          <Link href="/app" className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
+            Proyek
+          </Link>
+          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <span className="font-semibold text-foreground truncate">Pengaturan Akun</span>
+        </div>
+      );
     }
     return <span className="font-semibold text-foreground">OlahData</span>;
   };
@@ -381,14 +422,26 @@ export function AppShell({ children }: AppShellProps) {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
+                  <Link href="/app/riwayat" className="flex items-center gap-2 w-full">
+                    <History className="h-4 w-4 text-primary" />
+                    <span>Riwayat Analisis</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link href="/app/langganan" className="flex items-center gap-2 w-full">
                     <Sparkles className="h-4 w-4 text-amber-500" />
-                    <span>Riwayat &amp; Langganan ({getPlanBadgeLabel()})</span>
+                    <span>Langganan &amp; Kuota ({getPlanBadgeLabel()})</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/app/bantuan" className="flex items-center gap-2 w-full">
+                    <BookOpen className="h-4 w-4 text-muted-foreground" />
+                    <span>Pusat Bantuan</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/app/pengaturan" className="flex items-center gap-2 w-full">
-                    <Settings className="h-4 w-4" />
+                    <Settings className="h-4 w-4 text-muted-foreground" />
                     <span>Pengaturan Akun</span>
                   </Link>
                 </DropdownMenuItem>

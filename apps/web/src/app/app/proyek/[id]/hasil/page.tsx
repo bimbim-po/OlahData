@@ -30,6 +30,7 @@ import {
   Share2,
   Loader2,
   SlidersHorizontal,
+  HelpCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -1165,6 +1166,32 @@ export default function HasilPage() {
           >
             <SlidersHorizontal className="h-4 w-4" />
           </Button>
+
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="text-[13px] min-h-[40px] px-2.5 gap-1.5 text-muted-foreground hover:text-foreground touch-manipulation cursor-pointer"
+            title="Buka panduan interpretasi hasil Bab 4"
+          >
+            <Link
+              href={`/app/bantuan#${
+                activeTab === 'reliability'
+                  ? 'reliabilitas'
+                  : activeTab === 'validity'
+                  ? 'validitas'
+                  : activeTab === 'assumptions'
+                  ? 'asumsi-klasik'
+                  : activeTab === 'regression'
+                  ? 'regresi'
+                  : 'panduan-hasil'
+              }`}
+              target="_blank"
+            >
+              <HelpCircle className="h-4 w-4 text-primary" />
+              <span className="hidden sm:inline">Bantuan</span>
+            </Link>
+          </Button>
         </div>
       </div>
 
@@ -1174,7 +1201,7 @@ export default function HasilPage() {
       {/* Tata Letak Dua Kolom: Hasil (minmax(0, 1fr)) + Panel Samping Jejak Hitung (360px) pada >= 1200px */}
       <div className="grid grid-cols-1 min-[1200px]:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start w-full min-w-0">
         {/* Kolom Kiri/Utama: Tab-Tab Uji Statistik */}
-        <main className="w-full min-w-0 space-y-6">
+        <div data-results-column="true" className="w-full min-w-0 space-y-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full min-w-0">
             {/* Scrollable Tabs dengan Shadow Indicator, Fade Gradient, dan Aksesibilitas Penuh */}
             <ScrollableTabs
@@ -1586,7 +1613,7 @@ export default function HasilPage() {
               </p>
             </div>
           </div>
-        </main>
+        </div>
 
         {/* Kolom Kanan / Bawah: Panel Jejak Hitung Audit Trail (360px di Desktop >= 1200px) */}
         <aside className="w-full min-w-0 min-[1200px]:sticky min-[1200px]:top-24 space-y-4">

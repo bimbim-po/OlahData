@@ -16,6 +16,7 @@ import {
   Loader2,
   Database,
   ShieldCheck,
+  HelpCircle,
 } from 'lucide-react';
 
 import { useWizardStore, type WizardStep } from '@/stores/wizard-store';
@@ -280,6 +281,12 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            <Button asChild variant="ghost" size="sm" className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground">
+              <Link href="/app/bantuan#pemetaan-variabel" target="_blank" title="Panduan Pemetaan Variabel & Butir">
+                <HelpCircle className="h-3.5 w-3.5 text-primary" />
+                <span className="hidden sm:inline">Bantuan</span>
+              </Link>
+            </Button>
             <Badge variant="outline" className="text-[11px] font-mono tabular-nums">
               dv-{dataVersion}
             </Badge>

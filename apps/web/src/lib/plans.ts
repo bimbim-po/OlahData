@@ -42,7 +42,8 @@ export interface PlanConfig {
 
 export const IS_PRE_RELEASE_SIMULATION = true;
 export const SIMULATION_LABEL = 'Tarif simulasi pra-rilis';
-export const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'institusi@olahdata.id';
+export const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL?.trim() || '[ISI OLEH PEMILIK]';
+export const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL?.trim() || '[ISI OLEH PEMILIK]';
 
 export const PLANS: PlanConfig[] = [
   {

@@ -229,7 +229,7 @@ async function runLayoutQATests() {
         // e. Lebar kolom hasil di 1890 px antara 900 px dan 1000 px
         if (vp.width === 1890) {
           const colWidth = await page.evaluate(() => {
-            const resultsCol = document.querySelector('main section, [data-results-column="true"]') || document.querySelector('main > div > div > div:first-child');
+            const resultsCol = document.querySelector('[data-results-column="true"]') || document.querySelector('.grid > div:first-child');
             if (!resultsCol) return 0;
             return resultsCol.getBoundingClientRect().width;
           });
