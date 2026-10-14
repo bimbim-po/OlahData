@@ -433,27 +433,27 @@ export default function AnalysisHistoryPage() {
                           {run.status === 'succeeded' && (
                             <Badge
                               variant="outline"
-                              className="text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-500/30 gap-1 text-xs"
+                              className="bg-emerald-500/10 text-emerald-800 border-emerald-500/25 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60 gap-1 text-xs font-medium"
                             >
-                              <CheckCircle2 className="h-3 w-3" />
+                              <CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
                               <span>Berhasil</span>
                             </Badge>
                           )}
                           {run.status === 'running' && (
                             <Badge
                               variant="outline"
-                              className="text-blue-600 bg-blue-50 dark:bg-blue-950/40 dark:text-blue-400 border-blue-500/30 gap-1 text-xs"
+                              className="bg-blue-500/10 text-blue-700 border-blue-500/25 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 gap-1 text-xs font-medium"
                             >
-                              <RefreshCw className="h-3 w-3 animate-spin" />
+                              <RefreshCw className="h-3 w-3 animate-spin text-blue-600 dark:text-blue-400" />
                               <span>Berjalan</span>
                             </Badge>
                           )}
                           {run.status === 'failed' && (
                             <Badge
                               variant="outline"
-                              className="text-destructive bg-destructive/10 border-destructive/30 gap-1 text-xs"
+                              className="bg-destructive/10 text-destructive border-destructive/30 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800/60 gap-1 text-xs font-medium"
                             >
-                              <AlertTriangle className="h-3 w-3" />
+                              <AlertTriangle className="h-3 w-3 text-destructive dark:text-red-400" />
                               <span>Gagal</span>
                             </Badge>
                           )}
