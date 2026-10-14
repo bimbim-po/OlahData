@@ -15,7 +15,6 @@ import {
   Sparkles,
   ChevronLeftSquare,
   ChevronRightSquare,
-  ExternalLink,
   History,
 } from 'lucide-react';
 import { APP_NAME, APP_VERSION } from '@/lib/constants';
@@ -301,43 +300,47 @@ export function AppShell({ children }: AppShellProps) {
           })}
         </nav>
 
-        {/* Bagian Bawah: Kartu Paket & Akun Pengguna (Tanpa Area Gelap Kosong) */}
-        <div className="p-3 border-t border-sidebar-border/70 bg-muted/20 space-y-3">
-          {/* Kartu Paket */}
+        {/* Bagian Bawah: Paket & Akun Pengguna ala Gemini */}
+        <div className="p-3 border-t border-sidebar-border/70 space-y-2">
+          {/* Item Paket Minimalis ala Gemini */}
           {!isCollapsed ? (
-            <div className="p-3 rounded-[12px] bg-card border border-border/80 shadow-2xs space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Paket Anda
-                </span>
-                <Badge
-                  variant={user?.plan === 'monthly' || user?.plan === 'thesis' ? 'success' : 'secondary'}
-                  className="text-[13px] uppercase font-bold tracking-wider py-0.5 px-2"
-                >
-                  {getPlanBadgeLabel()}
-                </Badge>
+            <Link
+              href="/harga"
+              className="flex items-center gap-2.5 p-2 rounded-xl text-xs hover:bg-muted/70 transition-colors text-foreground group border border-border/50 bg-card/40"
+              title="Kelola & tingkatkan paket langganan"
+            >
+              <div className="h-7 w-7 rounded-lg bg-amber-500/10 dark:bg-amber-400/15 flex items-center justify-center shrink-0 text-amber-600 dark:text-amber-400">
+                <Sparkles className="h-4 w-4 transition-transform group-hover:scale-110" />
               </div>
-              <p className="text-[13px] text-muted-foreground leading-snug">
-                {user?.plan === 'free' ? 'Batas wajar skripsi' : 'Akses penuh seluruh uji Bab 4'}
-              </p>
-              <Link
-                href="/harga"
-                className="inline-flex items-center gap-1 text-[13px] text-primary hover:underline font-medium pt-0.5"
-              >
-                <span>Tingkatkan paket</span>
-                <ExternalLink className="h-3.5 w-3.5" />
-              </Link>
-            </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[13px] font-semibold text-foreground truncate">
+                    {user?.plan === 'monthly' || user?.plan === 'thesis' ? 'Paket Skripsi' : 'Tingkatkan Paket'}
+                  </span>
+                  <span className="text-[10px] font-medium text-muted-foreground px-1.5 py-0.5 rounded bg-muted border border-border/60 shrink-0">
+                    {getPlanBadgeLabel()}
+                  </span>
+                </div>
+                <span className="text-[11px] text-muted-foreground block truncate mt-0.5">
+                  {user?.plan === 'monthly' || user?.plan === 'thesis' ? 'Akses penuh seluruh uji' : 'Buka semua fitur Bab 4'}
+                </span>
+              </div>
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
+            </Link>
           ) : (
-            <div className="flex justify-center" title={`Paket: ${getPlanBadgeLabel()}`}>
+            <Link
+              href="/harga"
+              className="flex justify-center p-2 rounded-lg hover:bg-muted transition-colors"
+              title={`Paket: ${getPlanBadgeLabel()} - Klik untuk tingkatkan`}
+            >
               <Sparkles className="h-4 w-4 text-amber-500" />
-            </div>
+            </Link>
           )}
 
           {/* Profil Akun Pengguna dengan Tooltip Penuh & Truncate Rapi */}
           <div
             className={cn(
-              'flex items-center gap-2.5 p-2 rounded-[10px] bg-card border border-border/60',
+              'flex items-center gap-2.5 p-2 rounded-xl hover:bg-muted/50 transition-colors',
               isCollapsed && 'justify-center p-1.5'
             )}
           >
