@@ -70,13 +70,13 @@ export function generateDescriptiveIntinya(descriptive: DescriptiveResult[]): st
   const allSameCategory = items.every((item) => item.category === firstCat);
 
   if (allSameCategory && items.length > 1) {
-    const varDetails = items.map((it) => `${it.variable} (${it.meanStr})`).join(', ');
-    return `Seluruh variabel penelitian berada pada kategori ${firstCat}, yaitu ${varDetails}.`;
+    const varDetails = items.map((it) => `${it.variable} memiliki rata-rata ${it.meanStr} (${firstCat})`).join('; ');
+    return `Seluruh variabel penelitian berada pada kategori ${firstCat}, yaitu: ${varDetails}.`;
   }
 
   // Jika kategori berbeda, sebutkan terpisah secara eksplisit sesuai aturan QA
-  // Contoh: "Kualitas Layanan (X1) berkategori tinggi (4,063); Loyalitas Pelanggan (Y) berkategori sedang (3,210)."
-  const parts = items.map((it) => `${it.variable} berkategori ${it.category} (${it.meanStr})`);
+  // Format: "Kualitas Layanan (X) memiliki rata-rata 3,978 (tinggi); Loyalitas Pelanggan (Y) memiliki rata-rata 3,210 (sedang)."
+  const parts = items.map((it) => `${it.variable} memiliki rata-rata ${it.meanStr} (${it.category})`);
   return parts.join('; ') + '.';
 }
 

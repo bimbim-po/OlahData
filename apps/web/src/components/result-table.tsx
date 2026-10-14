@@ -274,17 +274,17 @@ export function ResultTable<T>({
     <div
       ref={tableContainerRef}
       className={cn(
-        'rounded-[16px] border border-border bg-card p-4 sm:p-6 shadow-xs space-y-3.5 transition-colors font-sans relative',
+        'rounded-[16px] border border-border bg-card p-4 sm:p-6 shadow-xs space-y-4 transition-colors font-sans overflow-clip relative',
         isFullscreen &&
           'fixed inset-0 z-50 rounded-none border-none p-6 overflow-y-auto bg-card',
         className
       )}
     >
       {/* Table Top Header Bar (Di luar area gulir horizontal) */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          {/* Editable Table Number */}
-          <div className="flex items-center gap-2 mb-0.5">
+      <div className="flex flex-col gap-3 w-full min-w-0">
+        {/* Baris Atas: Label Nomor Tabel & Judul Tabel */}
+        <div className="flex flex-col gap-1 w-full min-w-0">
+          <div className="flex items-center gap-2">
             {isEditingNumber ? (
               <div className="flex items-center gap-1.5">
                 <input
@@ -295,16 +295,16 @@ export function ResultTable<T>({
                     if (e.key === 'Enter') handleSaveNumber();
                     if (e.key === 'Escape') setIsEditingNumber(false);
                   }}
-                  className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded border border-primary bg-background text-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="text-[13px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border border-primary bg-background text-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   autoFocus
                 />
                 <button
                   type="button"
                   onClick={handleSaveNumber}
-                  className="p-1 text-primary hover:bg-primary/10 rounded"
+                  className="p-1 text-primary hover:bg-primary/10 rounded cursor-pointer"
                   title="Simpan nomor tabel"
                 >
-                  <CheckCheck className="h-3.5 w-3.5" />
+                  <CheckCheck className="h-4 w-4" />
                 </button>
               </div>
             ) : (
@@ -314,7 +314,7 @@ export function ResultTable<T>({
                   setEditNumberVal(tableNumber);
                   setIsEditingNumber(true);
                 }}
-                className="group inline-flex items-center gap-1 text-[12px] font-bold text-primary uppercase tracking-wider hover:underline cursor-pointer"
+                className="group inline-flex items-center gap-1 text-[13px] font-bold text-primary uppercase tracking-wider hover:underline cursor-pointer"
                 title="Klik untuk mengubah nomor tabel (mis. Tabel 4.1)"
               >
                 <span>{tableNumber}</span>
@@ -323,73 +323,82 @@ export function ResultTable<T>({
             )}
           </div>
 
-          <h3 className="text-sm sm:text-base font-semibold text-foreground tracking-tight leading-snug">
+          <h3 className="text-base sm:text-lg font-semibold text-foreground tracking-tight leading-snug [text-wrap:balance] min-w-[280px]">
             {title}
           </h3>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap shrink-0">
+        {/* Baris Bawah: Lencana Mesin Deterministik (Normal Flow) + Kelompok Tombol Aksi */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 w-full min-w-0 pt-1 border-t border-border/40">
           <Badge
             variant="outline"
-            className="text-[11px] font-normal text-muted-foreground border-border bg-muted/40 px-2.5 py-1 rounded-[6px]"
+            className="text-[13px] font-normal text-muted-foreground border-border bg-muted/40 px-3 py-1 rounded-[6px] min-h-[28px] max-w-full truncate"
+            title={badgeLabel}
           >
             {badgeLabel}
           </Badge>
 
-          {/* Tombol Unduh Gambar Tabel */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDownloadImage}
-            disabled={isDownloadingImage}
-            className="min-h-[44px] px-3 gap-1.5 text-xs text-foreground hover:bg-muted font-medium rounded-[10px] touch-manipulation cursor-pointer"
-            title="Unduh tabel sebagai gambar PNG untuk dimasukkan ke PowerPoint seminar atau naskah"
-          >
-            <Download className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="hidden sm:inline">Unduh Gambar</span>
-          </Button>
+          {/* Kelompok Tombol Aksi */}
+          <div className="flex items-center gap-2 flex-wrap justify-end shrink-0">
+            {/* Tombol Unduh Gambar Tabel */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadImage}
+              disabled={isDownloadingImage}
+              className="min-h-[40px] px-3 gap-1.5 text-[13px] text-foreground hover:bg-muted font-medium rounded-[10px] touch-manipulation cursor-pointer"
+              title="Unduh tabel sebagai gambar PNG untuk dimasukkan ke PowerPoint seminar atau naskah"
+              aria-label="Unduh gambar PNG tabel"
+            >
+              <Download className="h-4 w-4 text-muted-foreground" />
+              <span className="hidden sm:inline">Unduh Gambar</span>
+            </Button>
 
-          {/* Tombol Lihat Layar Penuh */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsFullscreen(!isFullscreen)}
-            className="min-h-[44px] px-2.5 gap-1.5 text-xs text-muted-foreground hover:text-foreground touch-manipulation cursor-pointer"
-            title={isFullscreen ? 'Keluar dari layar penuh' : 'Lihat tabel layar penuh'}
-          >
-            {isFullscreen ? (
-              <>
-                <Minimize2 className="h-4 w-4" />
-                <span className="hidden sm:inline">Kecilkan</span>
-              </>
-            ) : (
-              <>
-                <Maximize2 className="h-4 w-4" />
-                <span className="hidden sm:inline">Layar Penuh</span>
-              </>
-            )}
-          </Button>
+            {/* Tombol Lihat Layar Penuh */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsFullscreen(!isFullscreen)}
+              className="min-h-[40px] px-2.5 gap-1.5 text-[13px] text-muted-foreground hover:text-foreground touch-manipulation cursor-pointer"
+              title={isFullscreen ? 'Keluar dari layar penuh' : 'Lihat tabel layar penuh'}
+              aria-label={isFullscreen ? 'Keluar dari layar penuh' : 'Lihat tabel layar penuh'}
+            >
+              {isFullscreen ? (
+                <>
+                  <Minimize2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Kecilkan</span>
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Layar Penuh</span>
+                </>
+              )}
+            </Button>
 
-          {/* Tombol Salin untuk Word */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleCopyTable}
-            className="min-h-[44px] px-3.5 gap-1.5 text-xs text-foreground hover:bg-muted font-medium transition-colors rounded-[10px] touch-manipulation cursor-pointer"
-            title="Salin tabel format Microsoft Word (APA 7th)"
-          >
-            {copied ? (
-              <>
-                <Check className="h-4 w-4 text-primary" />
-                <span className="text-primary font-medium">{COPY.results.copied}</span>
-              </>
-            ) : (
-              <>
-                <Copy className="h-4 w-4 text-muted-foreground" />
-                <span>Salin untuk Word</span>
-              </>
-            )}
-          </Button>
+            {/* Tombol Salin untuk Word */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyTable}
+              className="min-h-[40px] px-3.5 gap-1.5 text-[13px] text-foreground hover:bg-muted font-medium transition-colors rounded-[10px] touch-manipulation cursor-pointer"
+              title="Salin tabel format Microsoft Word (APA 7th)"
+              aria-label="Salin tabel untuk Microsoft Word"
+            >
+              {copied ? (
+                <>
+                  <Check className="h-4 w-4 text-primary" />
+                  <span className="text-primary font-medium">{COPY.results.copied}</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4 text-muted-foreground" />
+                  <span className="hidden sm:inline">Salin untuk Word</span>
+                  <span className="sm:hidden">Salin</span>
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -409,7 +418,7 @@ export function ResultTable<T>({
                 <th
                   key={col.key}
                   className={cn(
-                    'py-2.5 px-3 font-semibold text-foreground text-xs tracking-normal whitespace-nowrap',
+                    'py-2.5 px-3 font-semibold text-foreground text-[13px] tracking-normal whitespace-nowrap',
                     cIdx === 0 &&
                       'sticky left-0 bg-card z-10 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.1)]',
                     col.align === 'right' && 'text-right',
@@ -465,7 +474,7 @@ export function ResultTable<T>({
                           onHoverCell?.(rKey, col.key, rawVal as string | number)
                         }
                         className={cn(
-                          'py-2.5 px-3 text-xs transition-all outline-none whitespace-nowrap focus-visible:ring-2 focus-visible:ring-primary',
+                          'py-2.5 px-3 text-[13px] transition-all outline-none whitespace-nowrap focus-visible:ring-2 focus-visible:ring-primary',
                           cIdx === 0 &&
                             'sticky left-0 bg-card z-10 font-medium text-foreground shadow-[2px_0_6px_-2px_rgba(0,0,0,0.1)]',
                           col.align === 'right' && 'text-right tabular-nums',

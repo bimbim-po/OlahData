@@ -174,7 +174,7 @@ export function AppShell({ children }: AppShellProps) {
       {/* Desktop Sidebar (Lebar tetap 240px di desktop, bisa diciutkan jadi ikon) */}
       <aside
         className={cn(
-          'hidden lg:flex flex-col border-r border-sidebar-border bg-sidebar-bg shrink-0 h-screen fixed top-0 left-0 bottom-0 transition-all duration-200 z-30 select-none',
+          'hidden lg:flex flex-col border-r border-sidebar-border bg-sidebar-bg shrink-0 h-[100dvh] fixed top-0 left-0 bottom-0 transition-all duration-200 z-30 select-none',
           isCollapsed ? 'w-[72px]' : 'w-[240px]'
         )}
       >
@@ -189,7 +189,7 @@ export function AppShell({ children }: AppShellProps) {
                 <div className="font-bold text-base tracking-tight text-foreground group-hover:text-primary transition-colors truncate">
                   {APP_NAME}
                 </div>
-                <div className="text-[11px] text-muted-foreground font-mono">
+                <div className="text-[13px] text-muted-foreground font-mono">
                   v{APP_VERSION}
                 </div>
               </div>
@@ -266,25 +266,25 @@ export function AppShell({ children }: AppShellProps) {
           {!isCollapsed ? (
             <div className="p-3 rounded-[12px] bg-card border border-border/80 shadow-2xs space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                <span className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wider">
                   Paket Anda
                 </span>
                 <Badge
                   variant={user?.plan === 'monthly' || user?.plan === 'thesis' ? 'success' : 'secondary'}
-                  className="text-[10px] uppercase font-bold tracking-wider py-0"
+                  className="text-[13px] uppercase font-bold tracking-wider py-0.5 px-2"
                 >
                   {getPlanBadgeLabel()}
                 </Badge>
               </div>
-              <p className="text-[11px] text-muted-foreground leading-snug">
+              <p className="text-[13px] text-muted-foreground leading-snug">
                 {user?.plan === 'free' ? 'Batas wajar skripsi' : 'Akses penuh seluruh uji Bab 4'}
               </p>
               <Link
                 href="/harga"
-                className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline font-medium pt-0.5"
+                className="inline-flex items-center gap-1 text-[13px] text-primary hover:underline font-medium pt-0.5"
               >
                 <span>Tingkatkan paket</span>
-                <ExternalLink className="h-3 w-3" />
+                <ExternalLink className="h-3.5 w-3.5" />
               </Link>
             </div>
           ) : (
@@ -306,13 +306,13 @@ export function AppShell({ children }: AppShellProps) {
             {!isCollapsed && (
               <div className="min-w-0 flex-1">
                 <p
-                  className="text-xs font-semibold text-foreground truncate"
+                  className="text-[13px] font-semibold text-foreground truncate"
                   title={user?.name || 'Mahasiswa'}
                 >
                   {user?.name || 'Mahasiswa'}
                 </p>
                 <p
-                  className="text-[11px] text-muted-foreground truncate"
+                  className="text-[13px] text-muted-foreground truncate"
                   title={user?.email || 'mahasiswa@kampus.ac.id'}
                 >
                   {user?.email || 'mahasiswa@kampus.ac.id'}
@@ -331,7 +331,7 @@ export function AppShell({ children }: AppShellProps) {
         )}
       >
         {/* Sticky Header Meja Kerja */}
-        <header className="sticky top-0 z-30 h-14 sm:h-16 border-b border-border bg-card/90 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-2">
+        <header className="sticky top-0 z-30 h-16 border-b border-border bg-card/90 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-2">
           {/* Breadcrumb / Nav Back */}
           <div className="flex items-center gap-2 min-w-0 flex-1">
             {parentRoute && (
@@ -343,7 +343,7 @@ export function AppShell({ children }: AppShellProps) {
                 <ChevronLeft className="h-4 w-4" />
               </Link>
             )}
-            <div className="min-w-0 flex-1 truncate">
+            <div className="min-w-0 flex-1 truncate" title="Navigasi Halaman">
               {renderBreadcrumb()}
             </div>
           </div>
@@ -374,7 +374,7 @@ export function AppShell({ children }: AppShellProps) {
                     <p className="text-xs leading-none text-muted-foreground truncate" title={user?.email || 'mahasiswa@kampus.ac.id'}>
                       {user?.email || 'mahasiswa@kampus.ac.id'}
                     </p>
-                    <p className="text-[11px] text-primary font-medium mt-1 truncate">
+                    <p className="text-[13px] text-primary font-medium mt-1 truncate">
                       {user?.university || 'Perguruan Tinggi'}
                     </p>
                   </div>
@@ -405,8 +405,8 @@ export function AppShell({ children }: AppShellProps) {
           </div>
         </header>
 
-        {/* Page Content: Rata tengah max-w-[1200px] sesuai Bagian 2 */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1200px] w-full mx-auto pb-24 lg:pb-8">
+        {/* Page Content: Lebar penuh max-w-[1440px] dengan padding fluid clamp(16px, 3vw, 40px) */}
+        <main className="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-[clamp(16px,3vw,40px)] py-4 sm:py-6 lg:py-8 pb-24 lg:pb-8 min-w-0">
           {children}
         </main>
       </div>
@@ -425,7 +425,7 @@ export function AppShell({ children }: AppShellProps) {
               key={item.name}
               href={item.href}
               className={cn(
-                'flex flex-col items-center justify-center flex-1 h-full min-h-[44px] py-1 px-1 rounded-lg text-[10px] font-medium transition-all touch-manipulation',
+                'flex flex-col items-center justify-center flex-1 h-full min-h-[44px] py-1 px-1 rounded-lg text-[13px] font-medium transition-all touch-manipulation',
                 active
                   ? 'text-primary font-bold'
                   : 'text-muted-foreground hover:text-foreground'
@@ -453,7 +453,7 @@ export function AppShell({ children }: AppShellProps) {
                   aria-hidden="true"
                 />
               </div>
-              <span className="truncate max-w-[64px]">{item.shortName}</span>
+              <span className="truncate max-w-[72px] text-[13px]">{item.shortName}</span>
             </Link>
           );
         })}

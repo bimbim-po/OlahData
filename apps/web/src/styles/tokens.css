@@ -25,6 +25,11 @@
   --z-modal: 80;
   --z-toast: 90;
 
+  /* Header Height & Scrollbar */
+  --header-h: 64px;
+  --scroll-thumb: #94A3B8;
+  --scroll-thumb-hover: #64748B;
+
   /* Safe Area Inset */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -194,6 +199,9 @@
   --sidebar-border: var(--rule-subtle);
   --sidebar-accent: var(--ink-primary);
   --sidebar-accent-foreground: #FFFFFF;
+
+  --scroll-thumb: #475569;
+  --scroll-thumb-hover: #64748B;
 }
 
 /* Dukungan Aksesibilitas: High Contrast Mode */

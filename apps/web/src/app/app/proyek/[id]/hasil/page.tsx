@@ -34,6 +34,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { ScrollableTabs, type TabItem } from '@/components/scrollable-tabs';
 import { ResultTable, type ColumnDef } from '@/components/result-table';
 import { ExplanationBox } from '@/components/explanation-box';
 import { AssumptionAlert } from '@/components/assumption-alert';
@@ -80,6 +81,15 @@ const TAB_ORDER = [
   'assumptions',
   'regression',
   'correlation',
+];
+
+const TABS_LIST: TabItem[] = [
+  { id: 'descriptive', label: 'Deskriptif', icon: BarChart3 },
+  { id: 'validity', label: 'Validitas', icon: CheckSquare },
+  { id: 'reliability', label: 'Reliabilitas', icon: Layers },
+  { id: 'assumptions', label: 'Asumsi Klasik', icon: ShieldCheck },
+  { id: 'regression', label: 'Regresi Linier', icon: TrendingUp },
+  { id: 'correlation', label: 'Korelasi', icon: GitCompare },
 ];
 
 export default function HasilPage() {
@@ -552,12 +562,12 @@ export default function HasilPage() {
         <AlertOctagon className="h-10 w-10 text-destructive mx-auto" />
         <div className="space-y-1">
           <h2 className="text-lg font-bold text-foreground">Gagal Memuat Hasil Analisis</h2>
-          <p className="text-xs text-muted-foreground max-w-md mx-auto">
+          <p className="text-[13px] text-muted-foreground max-w-md mx-auto">
             {loadError} (Kode Galat: ERR_RESULTS_FETCH)
           </p>
         </div>
-        <Button onClick={loadData} variant="outline" className="gap-2 text-xs">
-          <RotateCcw className="h-3.5 w-3.5" />
+        <Button onClick={loadData} variant="outline" className="gap-2 text-[13px] min-h-[40px]">
+          <RotateCcw className="h-4 w-4" />
           <span>Coba Lagi</span>
         </Button>
       </div>
@@ -571,7 +581,7 @@ export default function HasilPage() {
         <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto" />
         <div className="space-y-1">
           <h2 className="text-lg font-bold text-foreground">Belum Ada Hasil Analisis</h2>
-          <p className="text-xs text-muted-foreground max-w-md mx-auto">
+          <p className="text-[13px] text-muted-foreground max-w-md mx-auto">
             Proyek ini belum menjalankan analisis statistik. Silakan atur variabel dan jalankan analisis untuk memperoleh angka Bab 4.
           </p>
         </div>
@@ -737,7 +747,7 @@ export default function HasilPage() {
       render: (r) => (
         <Badge
           variant={r.valid ? 'pine' : 'destructive'}
-          className="text-xs px-2 py-0.5"
+          className="text-[13px] px-2.5 py-0.5 min-h-[24px]"
         >
           {r.valid ? 'Valid' : 'Gugur'}
         </Badge>
@@ -776,7 +786,7 @@ export default function HasilPage() {
       header: 'Status Reliabilitas',
       align: 'center',
       render: (r) => (
-        <Badge variant={r.reliable ? 'pine' : 'destructive'} className="text-xs px-2 py-0.5">
+        <Badge variant={r.reliable ? 'pine' : 'destructive'} className="text-[13px] px-2.5 py-0.5 min-h-[24px]">
           {r.reliable ? 'Reliabel' : 'Tidak Reliabel'}
         </Badge>
       ),
@@ -814,7 +824,7 @@ export default function HasilPage() {
       header: 'Kesimpulan',
       align: 'center',
       render: (r) => (
-        <Badge variant={r.normal ? 'pine' : 'destructive'} className="text-xs">
+        <Badge variant={r.normal ? 'pine' : 'destructive'} className="text-[13px] min-h-[24px]">
           {r.normal ? 'Normal' : 'Tidak Normal'}
         </Badge>
       ),
@@ -852,7 +862,7 @@ export default function HasilPage() {
       header: 'Kesimpulan',
       align: 'center',
       render: (r) => (
-        <Badge variant={!r.problematic ? 'pine' : 'destructive'} className="text-xs">
+        <Badge variant={!r.problematic ? 'pine' : 'destructive'} className="text-[13px] min-h-[24px]">
           {!r.problematic ? 'Bebas Multikolinearitas' : 'Ada Multikolinearitas'}
         </Badge>
       ),
@@ -889,7 +899,7 @@ export default function HasilPage() {
       header: 'Kesimpulan',
       align: 'center',
       render: (r) => (
-        <Badge variant={!r.significant ? 'pine' : 'destructive'} className="text-xs">
+        <Badge variant={!r.significant ? 'pine' : 'destructive'} className="text-[13px] min-h-[24px]">
           {!r.significant ? 'Homoskedastis (Bebas Gejala)' : 'Terjadi Heteroskedastisitas'}
         </Badge>
       ),
@@ -943,7 +953,7 @@ export default function HasilPage() {
       header: 'Signifikansi (p < 0,05)',
       align: 'center',
       render: (r) => (
-        <Badge variant={r.significant ? 'pine' : 'secondary'} className="text-xs">
+        <Badge variant={r.significant ? 'pine' : 'secondary'} className="text-[13px] min-h-[24px]">
           {r.significant ? 'Signifikan' : 'Tidak Signifikan'}
         </Badge>
       ),
@@ -983,7 +993,7 @@ export default function HasilPage() {
       header: 'Kesimpulan',
       align: 'center',
       render: (r) => (
-        <Badge variant={r.significant ? 'pine' : 'destructive'} className="text-xs">
+        <Badge variant={r.significant ? 'pine' : 'destructive'} className="text-[13px] min-h-[24px]">
           {r.significant ? 'Signifikan Simultan' : 'Tidak Signifikan'}
         </Badge>
       ),
@@ -1054,7 +1064,7 @@ export default function HasilPage() {
       header: 'Signifikansi',
       align: 'center',
       render: (r) => (
-        <Badge variant={r.significant ? 'pine' : 'secondary'} className="text-xs">
+        <Badge variant={r.significant ? 'pine' : 'secondary'} className="text-[13px] min-h-[24px]">
           {r.significant ? 'Signifikan' : 'Tidak Signifikan'}
         </Badge>
       ),
@@ -1063,19 +1073,22 @@ export default function HasilPage() {
   ];
 
   return (
-    <div className="space-y-6 max-w-full">
+    <div className="space-y-6 max-w-full min-w-0">
       {/* Sticky Header Meja Kerja Hasil */}
-      <div className="sticky top-14 sm:top-16 z-20 bg-background/95 backdrop-blur-md pb-4 pt-1 border-b border-border/80 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="space-y-1 min-w-0">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+      <div className="sticky top-16 z-20 bg-background/95 backdrop-blur-md pb-4 pt-3 sm:pt-4 border-b border-border/80 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="space-y-1 min-w-0 flex-1">
+          <div className="flex items-center gap-2 text-[13px] text-muted-foreground flex-wrap">
             <Link href="/app" className="hover:text-foreground transition-colors">
               Proyek
             </Link>
-            <ChevronRight className="h-3 w-3" />
-            <span className="text-foreground font-medium truncate max-w-[200px]">
+            <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+            <span
+              className="text-foreground font-medium truncate max-w-[200px] sm:max-w-[320px]"
+              title={project?.title || 'Skripsi Saya'}
+            >
               {project?.title || 'Skripsi Saya'}
             </span>
-            <ChevronRight className="h-3 w-3" />
+            <ChevronRight className="h-3.5 w-3.5 shrink-0" />
             <span className="text-primary font-semibold">Hasil Bab 4</span>
           </div>
 
@@ -1083,7 +1096,7 @@ export default function HasilPage() {
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground font-serif">
               Hasil Analisis &amp; Pembahasan Bab 4
             </h1>
-            <Badge variant="outline" className="text-xs bg-muted/40 font-mono">
+            <Badge variant="outline" className="text-[13px] bg-muted/40 font-mono min-h-[24px]">
               N = {results.respondentCount}
             </Badge>
           </div>
@@ -1095,17 +1108,17 @@ export default function HasilPage() {
             variant="outline"
             size="sm"
             onClick={handleCopyAllTables}
-            className="text-xs h-9 gap-1.5 touch-manipulation cursor-pointer"
+            className="text-[13px] min-h-[40px] px-3.5 gap-1.5 touch-manipulation cursor-pointer"
             title="Salin seluruh tabel sekaligus dalam format Microsoft Word"
           >
             {copiedAll ? (
               <>
-                <Check className="h-3.5 w-3.5 text-primary" />
+                <Check className="h-4 w-4 text-primary" />
                 <span className="text-primary font-medium">Semua Tabel Tersalin</span>
               </>
             ) : (
               <>
-                <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                <Copy className="h-4 w-4 text-muted-foreground" />
                 <span>Salin Semua Tabel</span>
               </>
             )}
@@ -1116,13 +1129,13 @@ export default function HasilPage() {
             size="sm"
             onClick={handleDirectWordDownload}
             disabled={isExportingWord}
-            className="text-xs h-9 gap-1.5 font-medium touch-manipulation cursor-pointer"
+            className="text-[13px] min-h-[40px] px-3.5 gap-1.5 font-medium touch-manipulation cursor-pointer"
             title="Unduh laporan lengkap format Microsoft Word (.docx)"
           >
             {isExportingWord ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <FileDown className="h-3.5 w-3.5 text-primary" />
+              <FileDown className="h-4 w-4 text-primary" />
             )}
             <span>Unduh Word</span>
           </Button>
@@ -1131,13 +1144,13 @@ export default function HasilPage() {
             size="sm"
             onClick={handleDirectPdfDownload}
             disabled={isExportingPdf}
-            className="text-xs h-9 gap-1.5 font-semibold shadow-xs touch-manipulation cursor-pointer"
+            className="text-[13px] min-h-[40px] px-3.5 gap-1.5 font-semibold shadow-xs touch-manipulation cursor-pointer"
             title="Unduh laporan resmi terverifikasi format PDF (.pdf)"
           >
             {isExportingPdf ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <FileDown className="h-3.5 w-3.5" />
+              <FileDown className="h-4 w-4" />
             )}
             <span>Unduh PDF</span>
           </Button>
@@ -1146,8 +1159,9 @@ export default function HasilPage() {
             variant="ghost"
             size="sm"
             onClick={() => setExportOpen(true)}
-            className="text-xs h-9 px-2 text-muted-foreground hover:text-foreground touch-manipulation cursor-pointer"
+            className="text-[13px] min-h-[40px] w-10 px-0 text-muted-foreground hover:text-foreground touch-manipulation cursor-pointer"
             title="Pilihan ekspor lanjutan &amp; opsi watermark"
+            aria-label="Pilihan ekspor lanjutan"
           >
             <SlidersHorizontal className="h-4 w-4" />
           </Button>
@@ -1157,53 +1171,17 @@ export default function HasilPage() {
       {/* Panel Sumber Data & Integritas Matriks */}
       <DataSourcePanel meta={results.sourceMeta} projectId={projectId} />
 
-      {/* Tata Letak Dua Kolom: Hasil (8/12) + Panel Samping Jejak Hitung (4/12) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      {/* Tata Letak Dua Kolom: Hasil (minmax(0, 1fr)) + Panel Samping Jejak Hitung (360px) pada >= 1200px */}
+      <div className="grid grid-cols-1 min-[1200px]:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start w-full min-w-0">
         {/* Kolom Kiri/Utama: Tab-Tab Uji Statistik */}
-        <main className="lg:col-span-8 space-y-6 min-w-0">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            {/* Scrollable Tabs dengan Shadow Indicator di Mobile */}
-            <div className="relative w-full">
-              <div className="overflow-x-auto scrollbar-none pb-1 -mb-1">
-                <TabsList className="bg-card border border-border p-1 gap-1 min-w-max flex">
-                  <TabsTrigger value="descriptive" className="gap-1.5 touch-manipulation cursor-pointer">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
-                    <BarChart3 className="h-3.5 w-3.5" />
-                    <span>Deskriptif</span>
-                  </TabsTrigger>
-
-                  <TabsTrigger value="validity" className="gap-1.5 touch-manipulation cursor-pointer">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
-                    <CheckSquare className="h-3.5 w-3.5" />
-                    <span>Validitas</span>
-                  </TabsTrigger>
-
-                  <TabsTrigger value="reliability" className="gap-1.5 touch-manipulation cursor-pointer">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
-                    <Layers className="h-3.5 w-3.5" />
-                    <span>Reliabilitas</span>
-                  </TabsTrigger>
-
-                  <TabsTrigger value="assumptions" className="gap-1.5 touch-manipulation cursor-pointer">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
-                    <ShieldCheck className="h-3.5 w-3.5" />
-                    <span>Asumsi Klasik</span>
-                  </TabsTrigger>
-
-                  <TabsTrigger value="regression" className="gap-1.5 touch-manipulation cursor-pointer">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
-                    <TrendingUp className="h-3.5 w-3.5" />
-                    <span>Regresi Linier</span>
-                  </TabsTrigger>
-
-                  <TabsTrigger value="correlation" className="gap-1.5 touch-manipulation cursor-pointer">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
-                    <GitCompare className="h-3.5 w-3.5" />
-                    <span>Korelasi</span>
-                  </TabsTrigger>
-                </TabsList>
-              </div>
-            </div>
+        <main className="w-full min-w-0 space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full min-w-0">
+            {/* Scrollable Tabs dengan Shadow Indicator, Fade Gradient, dan Aksesibilitas Penuh */}
+            <ScrollableTabs
+              tabs={TABS_LIST}
+              activeTab={activeTab}
+              onSelectTab={setActiveTab}
+            />
 
             {/* 1. STATISTIK DESKRIPTIF */}
             <TabsContent value="descriptive" className="space-y-6 mt-4">
@@ -1222,7 +1200,7 @@ export default function HasilPage() {
                 <button
                   type="button"
                   onClick={() => setShowItemDetails(!showItemDetails)}
-                  className="w-full p-4 flex items-center justify-between text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors cursor-pointer"
+                  className="w-full p-4 flex items-center justify-between text-[13px] font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors cursor-pointer min-h-[44px]"
                 >
                   <span className="flex items-center gap-2">
                     <BarChart3 className="h-4 w-4 text-primary" />
@@ -1541,14 +1519,14 @@ export default function HasilPage() {
           </Tabs>
 
           {/* Tombol Navigasi Antar-Uji: Sebelumnya & Berikutnya */}
-          <div className="flex items-center justify-between pt-4 border-t border-border/80">
+          <div className="flex items-center justify-between pt-6 mt-8 border-t border-border/80 gap-3 flex-wrap">
             {prevTabKey ? (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setActiveTab(prevTabKey)}
-                className="gap-1.5 text-xs touch-manipulation cursor-pointer"
+                className="gap-1.5 text-[13px] min-h-[40px] px-3.5 touch-manipulation cursor-pointer"
               >
                 <ChevronLeft className="h-4 w-4" />
                 <span>Sebelumnya: {testNamesMap[prevTabKey]?.split(' ')[0]}</span>
@@ -1562,16 +1540,16 @@ export default function HasilPage() {
               variant="outline"
               size="sm"
               onClick={handleCopyActiveTabForWord}
-              className="text-xs gap-1.5 hidden sm:inline-flex touch-manipulation cursor-pointer"
+              className="text-[13px] min-h-[40px] px-3.5 gap-1.5 hidden sm:inline-flex touch-manipulation cursor-pointer"
             >
               {copiedActiveTab ? (
                 <>
-                  <Check className="h-3.5 w-3.5 text-primary" />
+                  <Check className="h-4 w-4 text-primary" />
                   <span className="text-primary font-medium">Tersalin</span>
                 </>
               ) : (
                 <>
-                  <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                  <Copy className="h-4 w-4 text-muted-foreground" />
                   <span>Salin Tab Ini untuk Word</span>
                 </>
               )}
@@ -1583,7 +1561,7 @@ export default function HasilPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setActiveTab(nextTabKey)}
-                className="gap-1.5 text-xs touch-manipulation cursor-pointer"
+                className="gap-1.5 text-[13px] min-h-[40px] px-3.5 touch-manipulation cursor-pointer"
               >
                 <span>Berikutnya: {testNamesMap[nextTabKey]?.split(' ')[0]}</span>
                 <ChevronRight className="h-4 w-4" />
@@ -1594,24 +1572,24 @@ export default function HasilPage() {
           </div>
 
           {/* Panduan Dosen Pembimbing Skripsi Bab 4 */}
-          <div className="rounded-[16px] border border-border bg-card p-5 sm:p-6 flex items-start gap-3.5 text-xs sm:text-sm text-foreground/90 shadow-xs">
+          <div className="rounded-[16px] border border-border bg-card p-5 sm:p-6 flex items-start gap-3.5 text-[13px] sm:text-sm text-foreground/90 shadow-xs">
             <GraduationCap className="h-5 w-5 text-primary shrink-0 mt-0.5" />
             <div className="space-y-1.5 max-w-[68ch]">
               <h4 className="font-semibold text-foreground text-sm">
                 Panduan Sidang &amp; Penyusunan Bab 4 Skripsi
               </h4>
-              <p className="text-muted-foreground leading-relaxed text-xs">
+              <p className="text-muted-foreground leading-relaxed text-[13px]">
                 Hasil pengolahan data dan narasi di atas disusun secara deterministik mengikuti kaidah penulisan skripsi baku. Jika dosen pembimbing menanyakan keabsahan data, tunjukkan kode verifikasi hash pada panel Jejak Hitung.
               </p>
-              <p className="text-xs font-medium text-primary">
+              <p className="text-[13px] font-medium text-primary">
                 {COPY.reassurance.saved}
               </p>
             </div>
           </div>
         </main>
 
-        {/* Kolom Kanan: Panel Jejak Hitung Audit Trail (4/12 di Desktop) */}
-        <aside className="lg:col-span-4 lg:sticky lg:top-24 space-y-4">
+        {/* Kolom Kanan / Bawah: Panel Jejak Hitung Audit Trail (360px di Desktop >= 1200px) */}
+        <aside className="w-full min-w-0 min-[1200px]:sticky min-[1200px]:top-24 space-y-4">
           <TraceabilityPanel
             currentTestKey={activeTab}
             currentTestName={testNamesMap[activeTab] || 'Statistik Skripsi'}
@@ -1628,21 +1606,21 @@ export default function HasilPage() {
           />
 
           {/* Banner Pernyataan Etika Penggunaan Alat */}
-          <div className="rounded-xl border border-border bg-card p-4 space-y-2 text-xs shadow-2xs">
+          <div className="rounded-xl border border-border bg-card p-4 space-y-2 text-[13px] shadow-2xs">
             <div className="flex items-center gap-1.5 font-semibold text-foreground">
-              <Info className="h-3.5 w-3.5 text-primary shrink-0" />
+              <Info className="h-4 w-4 text-primary shrink-0" />
               <span>Pernyataan Penggunaan Alat</span>
             </div>
-            <p className="text-muted-foreground text-[11px] leading-relaxed">
+            <p className="text-muted-foreground text-[13px] leading-relaxed">
               Lampirkan lembar transparansi {APP_NAME} pada lampiran naskah skripsi Anda untuk memenuhi standar integritas akademik kampus.
             </p>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setExportOpen(true)}
-              className="w-full text-xs h-8 text-primary hover:text-primary mt-1 touch-manipulation cursor-pointer"
+              className="w-full justify-center gap-1.5 text-[13px] min-h-[40px] text-foreground hover:bg-muted font-medium rounded-lg touch-manipulation cursor-pointer"
             >
-              Unduh Lampiran Pernyataan
+              <span>Buka Opsi Ekspor &amp; Etika</span>
             </Button>
           </div>
         </aside>

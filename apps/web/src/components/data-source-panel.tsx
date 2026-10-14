@@ -28,11 +28,12 @@ export interface DataSourcePanelProps {
 
 export function DataSourcePanel({ meta, projectId, className }: DataSourcePanelProps) {
   const [copiedHash, setCopiedHash] = React.useState(false);
+  const [copiedDatasetId, setCopiedDatasetId] = React.useState(false);
   const [isColumnsExpanded, setIsColumnsExpanded] = React.useState(false);
 
   if (!meta) {
     return (
-      <div className={cn('p-4 rounded-xl border border-border bg-card/60 text-xs text-muted-foreground', className)}>
+      <div className={cn('p-4 rounded-xl border border-border bg-card/60 text-[13px] text-muted-foreground', className)}>
         <div className="flex items-center gap-2">
           <Database className="w-4 h-4 text-muted-foreground" />
           <span>Informasi sumber data tidak tersedia atau menggunakan dataset contoh sistem.</span>
@@ -48,6 +49,13 @@ export function DataSourcePanel({ meta, projectId, className }: DataSourcePanelP
     setTimeout(() => setCopiedHash(false), 2000);
   };
 
+  const handleCopyDatasetId = () => {
+    if (!meta.datasetId) return;
+    navigator.clipboard.writeText(meta.datasetId);
+    setCopiedDatasetId(true);
+    setTimeout(() => setCopiedDatasetId(false), 2000);
+  };
+
   const columnsList = meta.columns || [];
   const excludedCount = meta.excludedRows?.length || 0;
 
@@ -56,28 +64,32 @@ export function DataSourcePanel({ meta, projectId, className }: DataSourcePanelP
   const demoCount = columnsList.filter((c) => c.role === 'demographic').length;
   const idCount = columnsList.filter((c) => c.role === 'id').length;
 
+  const shortenedHash = meta.sha256
+    ? `${meta.sha256.slice(0, 8)}...${meta.sha256.slice(-8)}`
+    : '';
+
   return (
     <div className={cn('rounded-2xl border border-border bg-card shadow-xs overflow-hidden', className)}>
       {/* Top Banner */}
       <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
             <Database className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-semibold text-sm text-foreground">
+              <h3 className="font-semibold text-[15px] sm:text-base text-foreground">
                 Sumber Data &amp; Integritas Matriks
               </h3>
-              <Badge variant="outline" className="text-[10px] bg-background">
+              <Badge variant="outline" className="text-[13px] bg-background min-h-[24px]">
                 {meta.kind === 'derived' ? 'Data Turunan (Derived)' : 'Data Asli (Original)'}
               </Badge>
-              <Badge variant="pine" className="text-[10px] flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3" />
+              <Badge variant="pine" className="text-[13px] flex items-center gap-1 min-h-[24px]">
+                <ShieldCheck className="w-3.5 h-3.5" />
                 Integritas Terverifikasi
               </Badge>
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-[13px] text-muted-foreground mt-0.5">
               Jejak digital data responden untuk keperluan audit transparansi Bab 4 metodologi penelitian.
             </p>
           </div>
@@ -89,13 +101,13 @@ export function DataSourcePanel({ meta, projectId, className }: DataSourcePanelP
               asChild
               variant="outline"
               size="sm"
-              className="text-xs h-8 shrink-0 gap-1.5 touch-manipulation cursor-pointer"
+              className="text-[13px] min-h-[40px] px-3 shrink-0 gap-1.5 touch-manipulation cursor-pointer"
             >
               <Link
                 href={`/app/proyek/${projectId}/analisis`}
                 title="Buka kembali pemetaan konstruk untuk menjalankan analisis ulang sebagai run baru"
               >
-                <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
+                <SlidersHorizontal className="w-4 h-4 text-primary" />
                 <span>Ubah Pemetaan</span>
               </Link>
             </Button>
@@ -107,17 +119,18 @@ export function DataSourcePanel({ meta, projectId, className }: DataSourcePanelP
               variant="outline"
               size="sm"
               onClick={handleCopyHash}
-              className="text-xs cursor-pointer h-8 shrink-0"
-              title="Salin sidik jari SHA-256"
+              className="text-[13px] min-h-[40px] px-3 cursor-pointer shrink-0"
+              title="Salin sidik jari SHA-256 lengkap"
+              aria-label="Salin hash SHA-256 lengkap"
             >
               {copiedHash ? (
                 <>
-                  <Check className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />
-                  Tersalin
+                  <Check className="w-4 h-4 mr-1.5 text-emerald-600" />
+                  SHA-256 Tersalin
                 </>
               ) : (
                 <>
-                  <Copy className="w-3.5 h-3.5 mr-1.5" />
+                  <Copy className="w-4 h-4 mr-1.5" />
                   Salin SHA-256
                 </>
               )}
@@ -126,34 +139,61 @@ export function DataSourcePanel({ meta, projectId, className }: DataSourcePanelP
         </div>
       </div>
 
-      {/* Grid of Key Metadata */}
-      <div className="p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+      {/* Grid 4 Kolom di Desktop (minmax(200px, 1fr)), 2 di Tablet, 1 di Ponsel */}
+      <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-[13px]">
+        {/* Kolom 1: Nama Berkas */}
         <div className="space-y-1">
-          <span className="text-muted-foreground block text-[11px]">Nama Berkas</span>
-          <span className="font-semibold text-foreground truncate block font-mono" title={meta.fileName}>
-            {meta.fileName}
-          </span>
+          <span className="text-muted-foreground block text-[13px]">Nama Berkas</span>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span
+              className="font-semibold text-foreground truncate block font-mono text-[13px]"
+              title={`Nama Berkas Lengkap: ${meta.fileName}`}
+            >
+              {meta.fileName}
+            </span>
+          </div>
         </div>
 
+        {/* Kolom 2: Versi Data (v1 asli/turunan) dengan id via tooltip dan tombol salin */}
         <div className="space-y-1">
-          <span className="text-muted-foreground block text-[11px]">Dataset ID / Versi</span>
-          <span className="font-mono text-muted-foreground truncate block text-[11px]" title={`${meta.datasetId} (v${meta.version})`}>
-            {meta.datasetId} (v{meta.version})
-          </span>
+          <span className="text-muted-foreground block text-[13px]">Versi Data</span>
+          <div className="flex items-center gap-1.5">
+            <span
+              className="font-medium text-foreground text-[13px]"
+              title={`ID Dataset Lengkap: ${meta.datasetId}`}
+            >
+              v{meta.version || 1} ({meta.kind === 'derived' ? 'turunan' : 'asli'})
+            </span>
+            <button
+              type="button"
+              onClick={handleCopyDatasetId}
+              className="p-1 text-muted-foreground hover:text-foreground rounded hover:bg-muted/50 cursor-pointer"
+              title={`Salin ID Dataset: ${meta.datasetId}`}
+              aria-label="Salin ID Dataset"
+            >
+              {copiedDatasetId ? (
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+              ) : (
+                <Copy className="w-3.5 h-3.5" />
+              )}
+            </button>
+          </div>
         </div>
 
+        {/* Kolom 3: Responden & Kolom */}
         <div className="space-y-1">
-          <span className="text-muted-foreground block text-[11px]">Responden &amp; Kolom</span>
-          <span className="font-semibold text-foreground block tabular-nums">
+          <span className="text-muted-foreground block text-[13px]">Responden &amp; Kolom</span>
+          <span className="font-semibold text-foreground block tabular-nums text-[13px]">
             {formatNumber(meta.rowCount)} responden • {meta.columnCount} kolom
           </span>
         </div>
 
+        {/* Kolom 4: Baris Dikecualikan */}
         <div className="space-y-1">
-          <span className="text-muted-foreground block text-[11px]">Baris Dikecualikan</span>
-          <span className="font-semibold text-foreground block tabular-nums">
+          <span className="text-muted-foreground block text-[13px]">Baris Dikecualikan</span>
+          <span className="font-semibold text-foreground block tabular-nums text-[13px]">
             {excludedCount > 0 ? (
-              <span className="text-amber-600 dark:text-amber-400 font-mono">
+              <span className="text-amber-600 dark:text-amber-400 font-mono text-[13px]">
                 {excludedCount} baris ({meta.excludedRows?.slice(0, 5).join(', ')}{excludedCount > 5 ? '...' : ''})
               </span>
             ) : (
@@ -163,16 +203,34 @@ export function DataSourcePanel({ meta, projectId, className }: DataSourcePanelP
         </div>
       </div>
 
-      {/* SHA-256 Checksum Full View */}
+      {/* SHA-256 Checksum Dipersingkat (8 depan...8 belakang) dengan tombol salin penuh */}
       {meta.sha256 && (
         <div className="px-4 sm:px-5 pb-4">
-          <div className="p-2.5 rounded-lg bg-muted/40 border border-border/50 flex items-center justify-between gap-3 text-[11px] font-mono">
+          <div className="p-3 rounded-lg bg-muted/40 border border-border/50 flex items-center justify-between gap-3 text-[13px] font-mono">
             <div className="flex items-center gap-2 min-w-0">
-              <Hash className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <Hash className="w-4 h-4 text-muted-foreground shrink-0" />
               <span className="text-muted-foreground shrink-0">SHA-256:</span>
-              <span className="text-foreground truncate select-all">{meta.sha256}</span>
+              <span
+                className="text-foreground font-mono select-all truncate text-[13px]"
+                title={`SHA-256 Lengkap: ${meta.sha256}`}
+              >
+                {shortenedHash}
+              </span>
+              <button
+                type="button"
+                onClick={handleCopyHash}
+                className="p-1 text-muted-foreground hover:text-foreground rounded hover:bg-muted/50 cursor-pointer ml-1"
+                title="Salin SHA-256 lengkap"
+                aria-label="Salin hash SHA-256 lengkap"
+              >
+                {copiedHash ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" />
+                )}
+              </button>
             </div>
-            <span className="text-emerald-600 dark:text-emerald-400 font-sans font-semibold shrink-0 text-[10px] hidden sm:inline">
+            <span className="text-emerald-600 dark:text-emerald-400 font-sans font-semibold shrink-0 text-[13px] hidden sm:inline">
               ✓ Integritas Cocok
             </span>
           </div>
@@ -182,12 +240,12 @@ export function DataSourcePanel({ meta, projectId, className }: DataSourcePanelP
       {/* Warnings / Ignored info if present */}
       {meta.ignoredInfo && meta.ignoredInfo.notes && meta.ignoredInfo.notes.length > 0 && (
         <div className="px-4 sm:px-5 pb-4">
-          <div className="p-3 rounded-lg border border-amber-600/30 bg-amber-500/10 text-amber-900 dark:text-amber-300 text-xs space-y-1">
+          <div className="p-3 rounded-lg border border-amber-600/30 bg-amber-500/10 text-amber-900 dark:text-amber-300 text-[13px] space-y-1">
             <div className="font-semibold flex items-center gap-1.5">
-              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              <AlertCircle className="w-4 h-4 shrink-0" />
               Catatan Pembacaan Struktur Berkas:
             </div>
-            <ul className="list-disc list-inside text-[11px] space-y-0.5 pl-1">
+            <ul className="list-disc list-inside text-[13px] space-y-0.5 pl-1">
               {meta.ignoredInfo.notes.map((info: string, idx: number) => (
                 <li key={idx}>{info}</li>
               ))}
@@ -202,7 +260,7 @@ export function DataSourcePanel({ meta, projectId, className }: DataSourcePanelP
           <button
             type="button"
             onClick={() => setIsColumnsExpanded(!isColumnsExpanded)}
-            className="w-full px-4 sm:px-5 py-3 flex items-center justify-between text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors cursor-pointer"
+            className="w-full px-4 sm:px-5 py-3 flex items-center justify-between text-[13px] font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors cursor-pointer min-h-[44px]"
           >
             <span>
               Daftar Peran Kolom ({columnsList.length} kolom: {itemCount} butir instrumen{demoCount > 0 ? `, ${demoCount} demografi` : ''}{idCount > 0 ? `, ${idCount} ID` : ''})
@@ -216,32 +274,32 @@ export function DataSourcePanel({ meta, projectId, className }: DataSourcePanelP
 
           {isColumnsExpanded && (
             <div className="p-4 sm:p-5 pt-0 overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full text-left text-[13px] border-collapse">
                 <thead>
-                  <tr className="border-b border-border/60 text-muted-foreground text-[11px]">
+                  <tr className="border-b border-border/60 text-muted-foreground text-[13px]">
                     <th className="py-2 pr-3 font-semibold">Nama Kolom</th>
                     <th className="py-2 px-3 font-semibold">Peran Terdeteksi</th>
                     <th className="py-2 px-3 font-semibold">Tipe Data</th>
                     <th className="py-2 pl-3 font-semibold text-right">Nilai Kosong</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/40 font-mono text-[11px]">
+                <tbody className="divide-y divide-border/40 font-mono text-[13px]">
                   {columnsList.map((c) => {
-                    let roleBadge = <Badge variant="secondary" className="text-[10px]">Diabaikan</Badge>;
+                    let roleBadge = <Badge variant="secondary" className="text-[13px] min-h-[24px]">Diabaikan</Badge>;
                     if (c.role === 'item') {
-                      roleBadge = <Badge variant="pine" className="text-[10px]">Butir Instrumen</Badge>;
+                      roleBadge = <Badge variant="pine" className="text-[13px] min-h-[24px]">Butir Instrumen</Badge>;
                     } else if (c.role === 'id') {
-                      roleBadge = <Badge variant="outline" className="text-[10px]">ID Responden</Badge>;
+                      roleBadge = <Badge variant="outline" className="text-[13px] min-h-[24px]">ID Responden</Badge>;
                     } else if (c.role === 'demographic') {
-                      roleBadge = <Badge variant="amber" className="text-[10px]">Demografi</Badge>;
+                      roleBadge = <Badge variant="amber" className="text-[13px] min-h-[24px]">Demografi</Badge>;
                     }
 
                     return (
                       <tr key={c.name} className="hover:bg-muted/20">
-                        <td className="py-1.5 pr-3 font-semibold text-foreground font-sans">{c.name}</td>
-                        <td className="py-1.5 px-3">{roleBadge}</td>
-                        <td className="py-1.5 px-3 text-muted-foreground">{c.dataType}</td>
-                        <td className="py-1.5 pl-3 text-right text-muted-foreground tabular-nums">
+                        <td className="py-2 pr-3 font-semibold text-foreground font-sans text-[13px]">{c.name}</td>
+                        <td className="py-2 px-3">{roleBadge}</td>
+                        <td className="py-2 px-3 text-muted-foreground text-[13px]">{c.dataType}</td>
+                        <td className="py-2 pl-3 text-right text-muted-foreground tabular-nums text-[13px]">
                           {c.missingCount > 0 ? (
                             <span className="text-amber-600 font-semibold">{c.missingCount}</span>
                           ) : (

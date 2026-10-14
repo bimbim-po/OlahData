@@ -159,7 +159,7 @@ export function TraceabilityPanel({
       <div className="flex items-center justify-between pb-3 border-b border-border/70">
         <div className="flex items-center gap-2">
           <FileCheck2 className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-semibold text-foreground tracking-tight">
+          <h3 className="text-[15px] font-semibold text-foreground tracking-tight">
             {COPY.results.traceTitle}
           </h3>
         </div>
@@ -167,7 +167,7 @@ export function TraceabilityPanel({
           {isHashValid ? (
             <Badge
               variant="outline"
-              className="text-[11px] gap-1 py-0.5 px-2 font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 rounded-[6px]"
+              className="text-[13px] gap-1 py-1 px-2.5 font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 rounded-[6px] min-h-[26px]"
             >
               <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
               <span>Audit Trail Valid</span>
@@ -175,7 +175,7 @@ export function TraceabilityPanel({
           ) : (
             <Badge
               variant="outline"
-              className="text-[11px] gap-1 py-0.5 px-2 font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 rounded-[6px]"
+              className="text-[13px] gap-1 py-1 px-2.5 font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 rounded-[6px] min-h-[26px]"
             >
               <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
               <span>Perlu diperiksa</span>
@@ -204,10 +204,10 @@ export function TraceabilityPanel({
         <div className="flex items-start gap-2.5">
           <Sliders className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
           <div className="min-w-0 flex-1">
-            <span className="text-muted-foreground block text-[11px]">
+            <span className="text-muted-foreground block text-[13px]">
               {COPY.results.traceFields.test}
             </span>
-            <span className="font-semibold text-foreground text-xs break-words">
+            <span className="font-semibold text-foreground text-[13px] break-words">
               {currentTestName}
             </span>
           </div>
@@ -217,14 +217,14 @@ export function TraceabilityPanel({
         <div className="flex items-start gap-2.5">
           <Database className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
           <div className="min-w-0 flex-1">
-            <span className="text-muted-foreground block text-[11px]">
+            <span className="text-muted-foreground block text-[13px]">
               {COPY.results.traceFields.dataVersion}
             </span>
-            <span className="font-medium text-foreground text-xs break-words">
+            <span className="font-medium text-foreground text-[13px] break-words">
               {dataVersionLabel || `Dataset aktif (N = ${respondentCount})`}
             </span>
             {hash && (
-              <span className="block font-mono text-[10px] text-muted-foreground/80 truncate mt-0.5">
+              <span className="block font-mono text-[13px] text-muted-foreground/80 truncate mt-0.5">
                 Hash: {hash.slice(0, 16)}...
               </span>
             )}
@@ -235,10 +235,10 @@ export function TraceabilityPanel({
         <div className="flex items-start gap-2.5">
           <Users className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
           <div className="min-w-0 flex-1">
-            <span className="text-muted-foreground block text-[11px]">
+            <span className="text-muted-foreground block text-[13px]">
               {COPY.results.traceFields.respondents}
             </span>
-            <span className="font-semibold text-foreground text-xs tabular-nums">
+            <span className="font-semibold text-foreground text-[13px] tabular-nums">
               N = {respondentCount} responden
             </span>
           </div>
@@ -248,10 +248,10 @@ export function TraceabilityPanel({
         <div className="flex items-start gap-2.5">
           <Sliders className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
           <div className="min-w-0 flex-1 space-y-0.5">
-            <span className="text-muted-foreground block text-[11px]">
+            <span className="text-muted-foreground block text-[13px]">
               {COPY.results.traceFields.parameters}
             </span>
-            <div className="text-foreground font-medium text-xs leading-relaxed space-y-0.5">
+            <div className="text-foreground font-medium text-[13px] leading-relaxed space-y-0.5">
               {renderTestSpecificParams()}
             </div>
           </div>
@@ -261,10 +261,10 @@ export function TraceabilityPanel({
         <div className="flex items-start gap-2.5">
           <Clock className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
           <div className="min-w-0 flex-1">
-            <span className="text-muted-foreground block text-[11px]">
+            <span className="text-muted-foreground block text-[13px]">
               {COPY.results.traceFields.timestamp}
             </span>
-            <span className="font-medium text-foreground text-xs">
+            <span className="font-medium text-foreground text-[13px]">
               {formatDateTime(timestamp)}
             </span>
           </div>
@@ -274,10 +274,10 @@ export function TraceabilityPanel({
         <div className="flex items-start gap-2.5">
           <Cpu className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
           <div className="min-w-0 flex-1">
-            <span className="text-muted-foreground block text-[11px]">
+            <span className="text-muted-foreground block text-[13px]">
               {COPY.results.traceFields.engineVersion}
             </span>
-            <span className="font-mono text-xs font-semibold text-foreground">
+            <span className="font-mono text-[13px] font-semibold text-foreground">
               v{engineVersion}
             </span>
           </div>
@@ -290,17 +290,17 @@ export function TraceabilityPanel({
             variant="outline"
             size="sm"
             onClick={handleCopyVerificationCode}
-            className="w-full justify-center gap-1.5 text-xs h-8 text-foreground hover:bg-muted font-medium rounded-lg touch-manipulation cursor-pointer"
+            className="w-full justify-center gap-1.5 text-[13px] min-h-[40px] text-foreground hover:bg-muted font-medium rounded-lg touch-manipulation cursor-pointer"
             title="Salin kode hash verifikasi keutuhan dataset"
           >
             {copiedHash ? (
               <>
-                <Check className="h-3.5 w-3.5 text-primary" />
+                <Check className="h-4 w-4 text-primary" />
                 <span className="text-primary font-medium">Kode Tersalin</span>
               </>
             ) : (
               <>
-                <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                <Copy className="h-4 w-4 text-muted-foreground" />
                 <span>Salin kode verifikasi</span>
               </>
             )}
@@ -312,17 +312,17 @@ export function TraceabilityPanel({
               variant="outline"
               size="sm"
               onClick={onDownloadStatement}
-              className="w-full justify-center gap-1.5 text-xs h-8 text-primary hover:text-primary hover:bg-primary/5 font-medium rounded-lg touch-manipulation cursor-pointer"
+              className="w-full justify-center gap-1.5 text-[13px] min-h-[40px] text-primary hover:text-primary hover:bg-primary/5 font-medium rounded-lg touch-manipulation cursor-pointer"
               title="Unduh berkas lampiran pernyataan etika penggunaan alat untuk sidang skripsi"
             >
-              <FileDown className="h-3.5 w-3.5" />
+              <FileDown className="h-4 w-4" />
               <span>Unduh lampiran pernyataan</span>
             </Button>
           )}
         </div>
 
         {/* Catatan Integritas Akademik Tanpa Klaim Berlebihan */}
-        <div className="pt-2.5 border-t border-border/50 text-[12px] text-muted-foreground leading-relaxed bg-muted/30 p-2.5 rounded-[10px]">
+        <div className="pt-2.5 border-t border-border/50 text-[13px] text-muted-foreground leading-relaxed bg-muted/30 p-2.5 rounded-[10px]">
           <span className="font-semibold text-foreground">Integritas Akademik: </span>
           Setiap hasil dicatat bersama hash dataset dan parameter sehingga dapat diperiksa keutuhannya.
         </div>

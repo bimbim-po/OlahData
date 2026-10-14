@@ -78,26 +78,26 @@ export function AssumptionAlert({
             </h4>
             <span
               className={cn(
-                'text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-[4px] border inline-block',
+                'text-[13px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-[6px] border inline-block min-h-[24px]',
                 config.badgeBg
               )}
             >
               {config.badgeLabel}
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-foreground/85 leading-relaxed">
+          <p className="text-[13px] sm:text-sm text-foreground/85 leading-relaxed">
             {description}
           </p>
         </div>
       </div>
 
       {recommendation && (
-        <div className="pt-3 border-t border-border/40 text-xs sm:text-sm space-y-1.5">
-          <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-foreground">
-            <ArrowRight className="h-3.5 w-3.5 text-primary" />
+        <div className="pt-3 border-t border-border/40 text-[13px] sm:text-sm space-y-1.5">
+          <div className="flex items-center gap-1.5 text-[13px] font-bold uppercase tracking-wider text-foreground">
+            <ArrowRight className="h-4 w-4 text-primary" />
             <span>{COPY.layers.whatToDo}</span>
           </div>
-          <p className="text-foreground/90 leading-relaxed pl-5 font-normal">
+          <p className="text-foreground/90 leading-relaxed pl-5 font-normal text-[13px] sm:text-sm">
             {recommendation}
           </p>
         </div>

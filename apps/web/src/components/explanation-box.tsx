@@ -158,7 +158,7 @@ export function ExplanationBox({
             1
           </div>
           <div className="space-y-1 min-w-0">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-primary block">
+            <span className="text-[13px] font-bold uppercase tracking-wider text-primary block">
               {COPY.layers.layer1Title}
             </span>
             <p className="text-sm sm:text-base font-semibold leading-relaxed max-w-[68ch]">
@@ -172,7 +172,7 @@ export function ExplanationBox({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-1">
         <div className="flex items-center gap-2">
           <FileText className="h-4 w-4 text-primary shrink-0" />
-          <h4 className="text-sm font-semibold text-foreground tracking-tight">
+          <h4 className="text-[15px] font-semibold text-foreground tracking-tight">
             {title}
           </h4>
         </div>
@@ -180,7 +180,7 @@ export function ExplanationBox({
         <div className="flex items-center gap-2 flex-wrap">
           <Badge
             variant="outline"
-            className="text-[11px] font-normal text-muted-foreground border-border bg-muted/40 px-2 py-0.5 rounded-[6px]"
+            className="text-[13px] font-normal text-muted-foreground border-border bg-muted/40 px-2.5 py-1 rounded-[6px] min-h-[24px]"
           >
             {badgeLabel}
           </Badge>
@@ -191,7 +191,7 @@ export function ExplanationBox({
               <Button
                 variant="ghost"
                 size="sm"
-                className="min-h-[44px] px-3 gap-1.5 text-xs text-primary hover:text-primary hover:bg-primary/10 font-medium rounded-[10px] touch-manipulation cursor-pointer"
+                className="min-h-[44px] px-3 gap-1.5 text-[13px] text-primary hover:text-primary hover:bg-primary/10 font-medium rounded-[10px] touch-manipulation cursor-pointer"
                 title="Buka penjelasan istilah statistik dalam bahasa sederhana"
               >
                 <HelpCircle className="h-4 w-4" />
@@ -246,7 +246,7 @@ export function ExplanationBox({
               type="button"
               onClick={() => setStyleMode('concise')}
               className={cn(
-                'px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer',
+                'px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer text-[13px]',
                 styleMode === 'concise'
                   ? 'bg-card text-foreground shadow-2xs font-semibold'
                   : 'text-muted-foreground hover:text-foreground'
@@ -259,7 +259,7 @@ export function ExplanationBox({
               type="button"
               onClick={() => setStyleMode('formal')}
               className={cn(
-                'px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer',
+                'px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer text-[13px]',
                 styleMode === 'formal'
                   ? 'bg-card text-foreground shadow-2xs font-semibold'
                   : 'text-muted-foreground hover:text-foreground'
@@ -275,7 +275,7 @@ export function ExplanationBox({
             variant="outline"
             size="sm"
             onClick={handleCopy}
-            className="min-h-[44px] px-3.5 gap-1.5 text-xs text-foreground hover:bg-muted font-medium transition-colors rounded-[10px] touch-manipulation cursor-pointer"
+            className="min-h-[44px] px-3.5 gap-1.5 text-[13px] text-foreground hover:bg-muted font-medium transition-colors rounded-[10px] touch-manipulation cursor-pointer"
             title="Salin paragraf interpretasi narasi untuk Bab 4"
             aria-live="polite"
           >
@@ -336,7 +336,7 @@ export function ExplanationBox({
                   }}
                   onClick={() => handleSelectNumber(p.rawNumber)}
                   className={cn(
-                    'inline-flex items-center px-1.5 py-0.5 mx-0.5 text-xs font-semibold rounded-[4px] transition-all duration-150 tabular-nums cursor-pointer select-none touch-manipulation',
+                    'inline-flex items-center px-1.5 py-0.5 mx-0.5 text-[13px] font-semibold rounded-[4px] transition-all duration-150 tabular-nums cursor-pointer select-none touch-manipulation',
                     'bg-muted/70 text-foreground border border-border/80 hover:bg-[#FFE14D]/40 hover:border-[#FFE14D] hover:text-[#243044]',
                     'focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
                     isMatching &&
