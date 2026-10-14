@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Sparkles, Info } from 'lucide-react';
+import { Sparkles, Info, Lock } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,7 @@ interface TestCardProps {
   isSelected: boolean;
   onToggle: (id: TestType) => void;
   className?: string;
+  isLocked?: boolean;
 }
 
 const TEST_NAME_MAP: Record<string, string> = {
@@ -29,7 +30,7 @@ const TEST_NAME_MAP: Record<string, string> = {
   anova: 'ANOVA Satu Arah',
 };
 
-export function TestCard({ test, isSelected, onToggle, className }: TestCardProps) {
+export function TestCard({ test, isSelected, onToggle, className, isLocked }: TestCardProps) {
   return (
     <div
       onClick={() => onToggle(test.id)}
@@ -51,7 +52,7 @@ export function TestCard({ test, isSelected, onToggle, className }: TestCardProp
       }}
     >
       <div className="space-y-2.5">
-        {/* Top Header: Checkbox + Name + Recommended Badge */}
+        {/* Top Header: Checkbox + Name + Badges */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-2.5">
             <div className="mt-0.5" onClick={(e) => e.stopPropagation()}>
@@ -62,21 +63,36 @@ export function TestCard({ test, isSelected, onToggle, className }: TestCardProp
               />
             </div>
             <div>
-              <h4 className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">
-                {test.name}
-              </h4>
+              <div className="flex items-center gap-2">
+                <h4 className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">
+                  {test.name}
+                </h4>
+                {isLocked && (
+                  <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                )}
+              </div>
               <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
                 {test.description}
               </p>
             </div>
           </div>
 
-          {test.recommended && (
-            <Badge variant="pine" className="text-[10px] shrink-0 font-medium py-0.5 px-2">
-              <Sparkles className="w-3 h-3 mr-1" />
-              Direkomendasikan
-            </Badge>
-          )}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {isLocked && (
+              <Badge
+                variant="amber"
+                className="text-[10px] font-semibold py-0.5 px-2 rounded-[6px] border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+              >
+                Pro
+              </Badge>
+            )}
+            {test.recommended && (
+              <Badge variant="pine" className="text-[10px] shrink-0 font-medium py-0.5 px-2">
+                <Sparkles className="w-3 h-3 mr-1" />
+                Direkomendasikan
+              </Badge>
+            )}
+          </div>
         </div>
 
         {/* Recommended Rationale */}

@@ -27,6 +27,7 @@ import { exportResult } from '@/lib/api';
 import type { ExportFormat, TestType, AnalysisResults } from '@/lib/api/types';
 import { useAuthStore } from '@/stores/auth-store';
 import Link from 'next/link';
+import { canExportProject, isSampleProject, useUpgradeModal } from '@/lib/entitlements';
 
 export interface ExportDialogProps {
   projectId: string;
@@ -91,6 +92,9 @@ export function ExportDialog({
   const { toast } = useToast();
   const authUser = useAuthStore((s) => s.user);
   const plan = propPlan || authUser?.plan || 'free';
+  const { openUpgradeModal } = useUpgradeModal();
+  const isSample = isSampleProject(projectId);
+  const canExport = canExportProject(plan, isSample);
   const isFreePlan = plan === 'free';
 
   const [format, setFormat] = useState<ExportFormat>('word');
@@ -122,6 +126,15 @@ export function ExportDialog({
   };
 
   const handleDownload = async (overrideFormat?: ExportFormat) => {
+    if (!canExport) {
+      onOpenChange(false);
+      openUpgradeModal({
+        plan: 'monthly',
+        reason: 'Ekspor Dokumen Word .docx Tanpa Batas & Format APA 7th',
+      });
+      return;
+    }
+
     const targetFormat = overrideFormat || format;
     if (targetFormat !== 'spss-word' && selectedSections.length === 0) {
       toast({
@@ -389,31 +402,35 @@ export function ExportDialog({
             </label>
           </div>
 
-          {/* Free plan watermark notice */}
-          {isFreePlan && (
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 space-y-2.5 text-xs text-amber-950 dark:text-amber-200">
+          {/* Free plan export paywall notice */}
+          {!canExport && (
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 space-y-2.5 text-xs text-foreground">
               <div className="flex items-start gap-2.5">
                 <ShieldAlert className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <span className="font-semibold block">
-                    Pemberitahuan Akun Gratis
+                  <span className="font-semibold block text-amber-900 dark:text-amber-200">
+                    Fitur Ekspor Naskah Word .docx &amp; PDF Memerlukan Paket Aktif
                   </span>
-                  <p className="mt-0.5 leading-relaxed">
-                    Hasil ekspor akan memiliki tanda air OlahData. Upgrade ke paket Berlangganan untuk menghapus tanda air dan mengakses ekspor tanpa batas.
+                  <p className="mt-0.5 leading-relaxed text-muted-foreground">
+                    Dokumen skripsi asli Anda dapat diekspor lengkap tanpa batasan pada Paket Bulanan &amp; Paket Skripsi. Proyek contoh simulasi dapat diuji coba unduh secara gratis.
                   </p>
                 </div>
               </div>
               <div className="flex justify-end pt-1">
                 <Button
-                  asChild
-                  variant="outline"
+                  type="button"
                   size="sm"
-                  className="h-7 text-xs border-amber-600/40 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20"
+                  onClick={() => {
+                    onOpenChange(false);
+                    openUpgradeModal({
+                      plan: 'monthly',
+                      reason: 'Ekspor Dokumen Word .docx Tanpa Batas',
+                    });
+                  }}
+                  className="h-8 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs cursor-pointer"
                 >
-                  <Link href="/app/langganan">
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    Upgrade Sekarang
-                  </Link>
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  Buka Kunci Ekspor (Mulai Rp 39.000)
                 </Button>
               </div>
             </div>

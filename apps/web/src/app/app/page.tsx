@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { useToast } from '@/components/ui/toaster';
+import { usePlanGate, isSampleProject } from '@/lib/entitlements';
 
 export default function ProjectsPage() {
   const router = useRouter();
@@ -57,6 +58,19 @@ export default function ProjectsPage() {
       setLoading(false);
     }
   }, [toast]);
+
+  const { isFree, canCreateProject, openUpgradeModal } = usePlanGate();
+  const customProjectsCount = projects.filter((p) => !isSampleProject(p)).length;
+  const isQuotaFull = isFree && !canCreateProject(customProjectsCount);
+
+  const handleNewProjectClick = (e: React.MouseEvent) => {
+    if (isQuotaFull) {
+      e.preventDefault();
+      openUpgradeModal(
+        'Batas Paket Coba Gratis: Maksimal 1 proyek buatan sendiri. Upgrade paket untuk menambah proyek tanpa batas.'
+      );
+    }
+  };
 
   useEffect(() => {
     fetchProjects();
@@ -168,8 +182,12 @@ export default function ProjectsPage() {
             {isCreatingSample ? 'Menyiapkan...' : 'Pakai data contoh'}
           </Button>
 
-          <Button asChild className="text-xs sm:text-sm min-h-[44px] h-11 sm:h-10 rounded-[10px] font-semibold">
-            <Link href="/app/proyek/baru">
+          <Button
+            asChild
+            className="text-xs sm:text-sm min-h-[44px] h-11 sm:h-10 rounded-[10px] font-semibold cursor-pointer"
+            onClick={handleNewProjectClick}
+          >
+            <Link href={isQuotaFull ? '#' : '/app/proyek/baru'}>
               <Plus className="h-4 w-4 mr-1.5" />
               Proyek baru
             </Link>
@@ -224,8 +242,13 @@ export default function ProjectsPage() {
               </p>
             </div>
             <div className="flex items-center gap-3 pt-2 flex-wrap justify-center">
-              <Button asChild size="default" className="min-h-[44px] h-11 px-5 rounded-[10px] font-semibold">
-                <Link href="/app/proyek/baru">
+              <Button
+                asChild
+                size="default"
+                className="min-h-[44px] h-11 px-5 rounded-[10px] font-semibold cursor-pointer"
+                onClick={handleNewProjectClick}
+              >
+                <Link href={isQuotaFull ? '#' : '/app/proyek/baru'}>
                   <Plus className="h-4 w-4 mr-1.5" />
                   Mulai proyek baru
                 </Link>

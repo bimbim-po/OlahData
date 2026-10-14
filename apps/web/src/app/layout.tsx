@@ -3,6 +3,7 @@ import { Figtree, JetBrains_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { APP_NAME, APP_DESCRIPTION } from '@/lib/constants';
+import { UpgradeCheckoutModal } from '@/components/upgrade-checkout-modal';
 import './globals.css';
 
 const figtree = Figtree({
@@ -57,7 +58,10 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col antialiased">
         <ThemeProvider>
-          <Toaster>{children}</Toaster>
+          <Toaster>
+            {children}
+            <UpgradeCheckoutModal />
+          </Toaster>
         </ThemeProvider>
       </body>
     </html>

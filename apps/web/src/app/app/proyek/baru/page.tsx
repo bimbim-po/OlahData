@@ -1,19 +1,21 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { ArrowLeft, CheckCircle2, Sparkles, HelpCircle } from 'lucide-react';
-import { createProject } from '@/lib/api';
+import { ArrowLeft, CheckCircle2, Sparkles, HelpCircle, Lock } from 'lucide-react';
+import { createProject, getProjects } from '@/lib/api';
+import type { Project } from '@/lib/api/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/toaster';
 import { Badge } from '@/components/ui/badge';
+import { usePlanGate, isSampleProject } from '@/lib/entitlements';
 
 const projectSchema = z.object({
   title: z
@@ -57,6 +59,15 @@ function NewProjectForm() {
   const isDemo = searchParams.get('contoh') === '1';
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [existingProjects, setExistingProjects] = useState<Project[]>([]);
+  const { isFree, openUpgradeModal } = usePlanGate();
+
+  useEffect(() => {
+    getProjects().then(setExistingProjects).catch(() => {});
+  }, []);
+
+  const customProjectsCount = existingProjects.filter((p) => !isSampleProject(p)).length;
+  const isQuotaExceeded = !isDemo && isFree && customProjectsCount >= 1;
 
   const {
     register,
@@ -76,6 +87,14 @@ function NewProjectForm() {
   const selectedResearchType = watch('researchType');
 
   const onSubmit = async (data: ProjectFormData) => {
+    if (isQuotaExceeded) {
+      openUpgradeModal({
+        plan: 'monthly',
+        reason: 'Batas kuota 1 proyek pada paket Coba Gratis telah tercapai',
+      });
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       const newProject = await createProject(
@@ -136,7 +155,44 @@ function NewProjectForm() {
         </Button>
       </div>
 
-      <Card className="border-border shadow-xs rounded-[16px]">
+      {isQuotaExceeded ? (
+        <Card className="border-border shadow-xs rounded-[16px] p-6 sm:p-8 text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center">
+            <Lock className="w-7 h-7" />
+          </div>
+          <div className="space-y-1.5 max-w-md mx-auto">
+            <h3 className="text-xl font-bold text-foreground font-serif">
+              Batas Kuota Paket Coba Gratis Tercapai
+            </h3>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Anda telah memiliki <strong className="text-foreground">{customProjectsCount} proyek penelitian</strong> aktif. Pada paket Coba Gratis, Anda dapat mengelola 1 proyek pribadi. Tingkatkan paket untuk membuat proyek skripsi tanpa batas dan membuka seluruh uji statistik lanjutan.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <Button
+              type="button"
+              onClick={() =>
+                openUpgradeModal({
+                  plan: 'monthly',
+                  reason: 'Tambah Proyek Penelitian Skripsi Tanpa Batas',
+                })
+              }
+              className="w-full sm:w-auto font-semibold rounded-xl min-h-[44px] px-6 text-xs sm:text-sm bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer shadow-xs"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Tingkatkan Paket (Mulai Rp 39.000)
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="w-full sm:w-auto rounded-xl min-h-[44px] px-6 text-xs sm:text-sm cursor-pointer"
+            >
+              <Link href="/app">Kelola Proyek yang Ada</Link>
+            </Button>
+          </div>
+        </Card>
+      ) : (
+        <Card className="border-border shadow-xs rounded-[16px]">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-1">
@@ -296,6 +352,7 @@ function NewProjectForm() {
           </form>
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }

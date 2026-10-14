@@ -33,6 +33,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { useUpgradeModal } from '@/lib/entitlements';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -75,6 +76,7 @@ export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthStore();
+  const { openUpgradeModal } = useUpgradeModal();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const handleLogout = () => {
@@ -291,9 +293,15 @@ export function AppShell({ children }: AppShellProps) {
         <div className="p-3 border-t border-sidebar-border/70 space-y-2">
           {/* Item Paket Minimalis ala Gemini */}
           {!isCollapsed ? (
-            <Link
-              href="/harga"
-              className="flex items-center gap-2.5 p-2 rounded-xl text-xs hover:bg-muted/70 transition-colors text-foreground group border border-border/50 bg-card/40"
+            <button
+              type="button"
+              onClick={() =>
+                openUpgradeModal({
+                  plan: user?.plan === 'monthly' ? 'thesis' : 'monthly',
+                  reason: 'Akses Penuh Seluruh Fitur Skripsi',
+                })
+              }
+              className="w-full text-left flex items-center gap-2.5 p-2 rounded-xl text-xs hover:bg-muted/70 transition-colors text-foreground group border border-border/50 bg-card/40 cursor-pointer"
               title="Kelola & tingkatkan paket langganan"
             >
               <div className="h-7 w-7 rounded-lg bg-amber-500/10 dark:bg-amber-400/15 flex items-center justify-center shrink-0 text-amber-600 dark:text-amber-400">
@@ -313,15 +321,21 @@ export function AppShell({ children }: AppShellProps) {
                 </span>
               </div>
               <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
-            </Link>
+            </button>
           ) : (
-            <Link
-              href="/harga"
-              className="flex justify-center p-2 rounded-lg hover:bg-muted transition-colors"
+            <button
+              type="button"
+              onClick={() =>
+                openUpgradeModal({
+                  plan: user?.plan === 'monthly' ? 'thesis' : 'monthly',
+                  reason: 'Akses Penuh Seluruh Fitur Skripsi',
+                })
+              }
+              className="w-full flex justify-center p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer"
               title={`Paket: ${getPlanBadgeLabel()} - Klik untuk tingkatkan`}
             >
               <Sparkles className="h-4 w-4 text-amber-500" />
-            </Link>
+            </button>
           )}
 
           {/* Profil Akun Pengguna dengan Tooltip Penuh & Truncate Rapi */}

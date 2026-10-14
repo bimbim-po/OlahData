@@ -42,12 +42,14 @@ import { ConfirmDialog } from '@/components/confirm-dialog';
 import { PageActions } from '@/components/page-actions';
 import { useToast } from '@/components/ui/toaster';
 import { PLANS, PlanConfig } from '@/lib/plans';
+import { useUpgradeModal } from '@/lib/entitlements';
 
 export default function SettingsPage() {
   const router = useRouter();
   const { user, updateUser, logout } = useAuthStore();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
+  const { openUpgradeModal } = useUpgradeModal();
 
   // Profile form state
   const [name, setName] = useState(user?.name || 'Budi Santoso');
@@ -383,11 +385,20 @@ export default function SettingsPage() {
                   </CardDescription>
                 </div>
 
-                <Button asChild variant="outline" size="sm" className="gap-1.5 font-semibold">
-                  <Link href="/harga">
-                    <span>Lihat Pilihan Paket</span>
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </Link>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    openUpgradeModal({
+                      plan: currentPlanId === 'monthly' ? 'thesis' : 'monthly',
+                      reason: 'Pilihan Paket OlahData',
+                    })
+                  }
+                  className="gap-1.5 font-semibold cursor-pointer"
+                >
+                  <span>Pilihan Paket &amp; Upgrade</span>
+                  <Sparkles className="h-3.5 w-3.5 text-amber-500" />
                 </Button>
               </div>
             </CardHeader>
@@ -492,11 +503,19 @@ export default function SettingsPage() {
                       Buka akses seluruh uji statistik (Regresi, Reliabilitas, Asumsi Klasik) dan ekspor Word tanpa watermark seharga Rp 99.000 / 3 bulan.
                     </p>
                   </div>
-                  <Button asChild size="sm" className="font-semibold shrink-0">
-                    <Link href="/harga">
-                      Tingkatkan Paket
-                      <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                    </Link>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() =>
+                      openUpgradeModal({
+                        plan: 'thesis',
+                        reason: 'Rekomendasi Paket Skripsi 3 Bulan',
+                      })
+                    }
+                    className="font-semibold shrink-0 cursor-pointer shadow-xs"
+                  >
+                    Tingkatkan Paket
+                    <ArrowRight className="h-3.5 w-3.5 ml-1" />
                   </Button>
                 </div>
               )}

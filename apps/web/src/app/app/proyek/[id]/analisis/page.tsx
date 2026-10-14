@@ -40,6 +40,7 @@ import { getProject } from '@/lib/api';
 import type { Project, TestOption, TestType } from '@/lib/api/types';
 import { detectLikertTextColumns } from '@/lib/google-forms-recode';
 import { useToast } from '@/components/ui/toaster';
+import { usePlanGate, isSampleProject } from '@/lib/entitlements';
 
 interface AnalisisPageProps {
   params: Promise<{ id: string }>;
@@ -75,6 +76,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
     fileName,
     fileSize,
     fileData,
+    setFileData,
     columns,
     usingSampleData,
     issues,
@@ -112,9 +114,19 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
   } = useWizardStore();
 
   const { toast } = useToast();
+  const isSample = isSampleProject(projectId);
+  const { isFree, isTestLocked, openUpgradeModal } = usePlanGate(projectId, isSample);
   const [project, setProject] = React.useState<Project | null>(null);
   const [targetCell, setTargetCell] = React.useState<TargetCell | null>(null);
   const [currentExecutionStep, setCurrentExecutionStep] = React.useState(0);
+
+  const handleStep1Next = () => {
+    if (!usingSampleData && isFree && fileData.length > 50) {
+      openUpgradeModal(`Dataset Anda memiliki ${fileData.length} responden. Batas paket gratis adalah 50 responden.`);
+      return;
+    }
+    nextStep();
+  };
 
   // Auto-detect Google Forms Likert scale textual responses
   const detectedLikertColumns = React.useMemo(() => {
@@ -496,6 +508,62 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
 
             <FileDropzone />
 
+            {/* 50-Respondent Quota Warning for Free Plan on Custom Uploads */}
+            {!usingSampleData && isFree && fileData.length > 50 && (
+              <div className="p-4 sm:p-5 rounded-[16px] border border-amber-500/30 bg-amber-500/10 dark:bg-amber-400/10 text-foreground space-y-3">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <h4 className="font-bold text-sm text-foreground">
+                      Dataset Memiliki {formatNumber(fileData.length)} Responden (Batas Paket Gratis: 50 Responden)
+                    </h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed max-w-[72ch]">
+                      Dataset Anda memiliki <strong className="text-foreground">{formatNumber(fileData.length)}</strong> responden. Pada paket Coba Gratis, analisis dibatasi untuk maksimal 50 baris responden. Upgrade paket untuk menganalisis seluruh {formatNumber(fileData.length)} responden secara penuh, atau lanjutkan dengan mode pratinjau (50 responden pertama).
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() =>
+                      openUpgradeModal(
+                        `Analisis Penuh ${formatNumber(fileData.length)} Responden Skripsi`
+                      )
+                    }
+                    className="font-semibold text-xs rounded-[10px] bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer shadow-xs"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                    Tingkatkan Paket untuk {formatNumber(fileData.length)} Responden
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const slicedRows = fileData.slice(0, 50);
+                      setFileData(
+                        fileName || 'data_kuesioner.xlsx',
+                        slicedRows,
+                        columns,
+                        false,
+                        fileSize ?? undefined,
+                        datasetMeta ?? undefined
+                      );
+                      toast({
+                        title: 'Mode Pratinjau 50 Responden Aktif',
+                        description: 'Dataset telah dipotong menjadi 50 baris responden pertama.',
+                        variant: 'default',
+                      });
+                    }}
+                    className="text-xs rounded-[10px] cursor-pointer"
+                  >
+                    Lanjutkan Pratinjau (50 Responden Pertama)
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
               <Button
                 asChild
@@ -518,7 +586,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                 <Button
                   type="button"
                   size="lg"
-                  onClick={nextStep}
+                  onClick={handleStep1Next}
                   disabled={fileData.length === 0}
                   className="cursor-pointer font-semibold rounded-[10px] min-h-[44px]"
                   title={fileData.length === 0 ? 'Unggah berkas kuesioner Anda terlebih dahulu' : undefined}
@@ -1150,6 +1218,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                   test={test}
                   isSelected={selectedTests.includes(test.id)}
                   onToggle={toggleTest}
+                  isLocked={isFree && isTestLocked(test.id)}
                 />
               ))}
             </div>

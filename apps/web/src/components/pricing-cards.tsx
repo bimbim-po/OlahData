@@ -10,7 +10,7 @@ import { formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { SubscriptionPlan } from '@/lib/api/types';
 import { PLANS, INSTITUTION_PLAN, IS_PRE_RELEASE_SIMULATION, SIMULATION_LABEL } from '@/lib/plans';
-import { useToast } from '@/components/ui/toaster';
+import { useUpgradeModal } from '@/lib/entitlements';
 
 export interface PricingCardsProps {
   currentPlan?: SubscriptionPlan;
@@ -25,7 +25,7 @@ export function PricingCards({
   className,
   showDisclaimer = true,
 }: PricingCardsProps) {
-  const { toast } = useToast();
+  const { openUpgradeModal } = useUpgradeModal();
 
   const handleAction = (planId: SubscriptionPlan) => {
     if (onSelectPlan) {
@@ -38,13 +38,11 @@ export function PricingCards({
       return;
     }
 
-    if (IS_PRE_RELEASE_SIMULATION) {
-      toast({
-        title: 'Pendaftaran Waiting List',
-        description: 'Terima kasih atas ketertarikan Anda. Akses awal akan segera dihubungi melalui email.',
-        variant: 'default',
-      });
-    }
+    // Buka modal aktivasi & pembayaran interaktif
+    openUpgradeModal({
+      plan: planId,
+      reason: `Aktivasi ${planId === 'thesis' ? 'Paket Skripsi' : 'Paket Bulanan'}`,
+    });
   };
 
   return (
