@@ -126,6 +126,30 @@ export const mockTestOptions: TestOption[] = [
     recommended: false,
     recommendReason: 'Alternatif resmi yang sah jika data tidak berdistribusi normal',
   },
+  {
+    id: 'crosstab',
+    name: 'Tabulasi Silang (Crosstab)',
+    description: 'Matriks frekuensi aktual, harapan (expected count), dan persentase baris/total',
+    prerequisites: [],
+    recommended: false,
+    recommendReason: 'Menyajikan sebaran hubungan antar variabel kategorik (nominal/ordinal)',
+  },
+  {
+    id: 'chisquare',
+    name: 'Uji Chi-Square & Fisher Exact',
+    description: 'Pearson Chi-Square, Yates Continuity Correction, & Fisher Exact Test otomatis',
+    prerequisites: ['crosstab'],
+    recommended: false,
+    recommendReason: 'Uji signifikansi hubungan kategorik dengan aturan keputusan Cochran otomatis',
+  },
+  {
+    id: 'odds-ratio',
+    name: 'Estimasi Risiko (Odds Ratio & RR)',
+    description: 'Kalkulasi Odds Ratio (OR), Relative Risk (RR), dan 95% Confidence Interval',
+    prerequisites: ['chisquare'],
+    recommended: false,
+    recommendReason: 'Standar baku penelitian FKM, Kebidanan, & Epidemiologi Klinis',
+  },
 ];
 
 // N = 120, k = 2 prediktor (X1: Kualitas Layanan, X2: Kepuasan Pelanggan, Y: Loyalitas Pelanggan)

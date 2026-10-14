@@ -68,6 +68,16 @@ const AVAILABLE_SECTIONS: { id: TestType; label: string; description: string }[]
     label: 'Korelasi Pearson',
     description: 'Matriks korelasi antar variabel penelitian',
   },
+  {
+    id: 'crosstab',
+    label: 'Tabulasi Silang & Chi-Square',
+    description: 'Matriks kontingensi baris x kolom, count aktual & expected',
+  },
+  {
+    id: 'odds-ratio',
+    label: 'Estimasi Risiko (Odds Ratio)',
+    description: 'Odds Ratio (OR), Relative Risk (RR), dan 95% Confidence Interval',
+  },
 ];
 
 export function ExportDialog({
@@ -84,12 +94,15 @@ export function ExportDialog({
   const isFreePlan = plan === 'free';
 
   const [format, setFormat] = useState<ExportFormat>('word');
+  const [narrativeTone, setNarrativeTone] = useState<'standard' | 'concise' | 'formal'>('standard');
   const [selectedSections, setSelectedSections] = useState<TestType[]>([
     'descriptive',
     'validity',
     'reliability',
     'normality',
     'regression',
+    'crosstab',
+    'odds-ratio',
   ]);
   const [includeStatement, setIncludeStatement] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
@@ -108,8 +121,9 @@ export function ExportDialog({
     }
   };
 
-  const handleDownload = async () => {
-    if (selectedSections.length === 0) {
+  const handleDownload = async (overrideFormat?: ExportFormat) => {
+    const targetFormat = overrideFormat || format;
+    if (targetFormat !== 'spss-word' && selectedSections.length === 0) {
       toast({
         title: 'Pilih minimal satu bagian analisis',
         description: 'Tandai bagian yang ingin dimasukkan ke dalam berkas ekspor.',
@@ -123,17 +137,19 @@ export function ExportDialog({
       const blob = await exportResult(
         projectId,
         {
-          format,
+          format: targetFormat,
           sections: selectedSections,
           includeStatement,
+          narrativeTone,
         },
         results || undefined
       );
 
       // Trigger browser download
-      const ext = format === 'word' ? 'doc' : 'pdf';
+      const ext = targetFormat === 'pdf' ? 'pdf' : 'doc';
       const cleanTitle = projectTitle.replace(/[^a-zA-Z0-9_-]/g, '_');
-      const filename = `Laporan_Hasil_${cleanTitle || 'OlahData'}.${ext}`;
+      const prefix = targetFormat === 'spss-word' ? 'Lampiran_SPSS_' : (targetFormat === 'word' ? 'Naskah_Bab4_APA_' : 'Laporan_Hasil_');
+      const filename = `${prefix}${cleanTitle || 'OlahData'}.${ext}`;
 
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -176,86 +192,139 @@ export function ExportDialog({
           {/* Format selection cards */}
           <div>
             <label className="text-xs font-semibold text-foreground uppercase tracking-wider block mb-2">
-              Pilih Format Dokumen
+              Pilih Paket Berkas Ekspor
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <button
                 type="button"
                 onClick={() => setFormat('word')}
                 className={cn(
-                  'flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all cursor-pointer',
+                  'flex flex-col items-start p-3 rounded-xl border text-left transition-all cursor-pointer',
                   format === 'word'
                     ? 'border-primary bg-primary/5 ring-2 ring-primary/30 shadow-xs'
                     : 'border-border hover:border-muted-foreground/40 bg-card'
                 )}
               >
-                <div
-                  className={cn(
-                    'p-2 rounded-lg shrink-0',
-                    format === 'word'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground'
-                  )}
-                >
-                  <FileText className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-sm text-foreground">
-                      Microsoft Word
-                    </span>
-                    {format === 'word' && (
-                      <Check className="h-4 w-4 text-primary ml-1" />
+                <div className="flex items-center justify-between w-full mb-1.5">
+                  <div
+                    className={cn(
+                      'p-1.5 rounded-lg shrink-0',
+                      format === 'word'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground'
                     )}
+                  >
+                    <FileText className="h-4 w-4" />
                   </div>
-                  <span className="text-xs text-muted-foreground block font-mono mt-0.5">
-                    .docx
-                  </span>
-                  <p className="text-[11px] text-muted-foreground mt-1 leading-snug">
-                    Tabel & narasi siap diedit langsung di MS Word
-                  </p>
+                  {format === 'word' && <Check className="h-4 w-4 text-primary" />}
                 </div>
+                <span className="font-semibold text-xs text-foreground block">
+                  Naskah Bab 4 (APA 7th)
+                </span>
+                <span className="text-[10px] text-muted-foreground block font-mono">
+                  Word (.docx)
+                </span>
+                <p className="text-[10.5px] text-muted-foreground mt-1 leading-snug">
+                  Tabel 3 garis horizontal standar APA + narasi interpretasi.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFormat('spss-word')}
+                className={cn(
+                  'flex flex-col items-start p-3 rounded-xl border text-left transition-all cursor-pointer',
+                  format === 'spss-word'
+                    ? 'border-blue-600 bg-blue-50/40 ring-2 ring-blue-500/30 shadow-xs dark:bg-blue-950/20'
+                    : 'border-border hover:border-muted-foreground/40 bg-card'
+                )}
+              >
+                <div className="flex items-center justify-between w-full mb-1.5">
+                  <span className="px-1.5 py-0.5 bg-blue-700 text-white text-[9px] font-bold rounded-xs font-mono">
+                    SPSS
+                  </span>
+                  {format === 'spss-word' && <Check className="h-4 w-4 text-blue-600 dark:text-blue-400" />}
+                </div>
+                <span className="font-semibold text-xs text-foreground block">
+                  Lampiran (Gaya SPSS)
+                </span>
+                <span className="text-[10px] text-muted-foreground block font-mono">
+                  Word (.docx)
+                </span>
+                <p className="text-[10.5px] text-muted-foreground mt-1 leading-snug">
+                  Tabel kotak klasik khas Output Viewer SPSS + Jejak Hitung Hash.
+                </p>
               </button>
 
               <button
                 type="button"
                 onClick={() => setFormat('pdf')}
                 className={cn(
-                  'flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all cursor-pointer',
+                  'flex flex-col items-start p-3 rounded-xl border text-left transition-all cursor-pointer',
                   format === 'pdf'
                     ? 'border-primary bg-primary/5 ring-2 ring-primary/30 shadow-xs'
                     : 'border-border hover:border-muted-foreground/40 bg-card'
                 )}
               >
-                <div
-                  className={cn(
-                    'p-2 rounded-lg shrink-0',
-                    format === 'pdf'
-                      ? 'bg-destructive text-white'
-                      : 'bg-muted text-muted-foreground'
-                  )}
-                >
-                  <FileType2 className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-sm text-foreground">
-                      Dokumen PDF
-                    </span>
-                    {format === 'pdf' && (
-                      <Check className="h-4 w-4 text-primary ml-1" />
+                <div className="flex items-center justify-between w-full mb-1.5">
+                  <div
+                    className={cn(
+                      'p-1.5 rounded-lg shrink-0',
+                      format === 'pdf'
+                        ? 'bg-destructive text-white'
+                        : 'bg-muted text-muted-foreground'
                     )}
+                  >
+                    <FileType2 className="h-4 w-4" />
                   </div>
-                  <span className="text-xs text-muted-foreground block font-mono mt-0.5">
-                    .pdf
-                  </span>
-                  <p className="text-[11px] text-muted-foreground mt-1 leading-snug">
-                    Format rapi siap cetak untuk lampiran sidang
-                  </p>
+                  {format === 'pdf' && <Check className="h-4 w-4 text-primary" />}
                 </div>
+                <span className="font-semibold text-xs text-foreground block">
+                  Laporan Hasil PDF
+                </span>
+                <span className="text-[10px] text-muted-foreground block font-mono">
+                  PDF (.pdf)
+                </span>
+                <p className="text-[10.5px] text-muted-foreground mt-1 leading-snug">
+                  Format rapi siap cetak untuk lampiran fisik dewan penguji.
+                </p>
               </button>
             </div>
           </div>
+
+          {/* Gaya Bahasa Interpretasi Narasi (Khusus Mode Word Naskah Bab 4) */}
+          {format === 'word' && (
+            <div className="p-3 border border-border rounded-xl bg-card space-y-2">
+              <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                <span>Gaya Bahasa Draf Interpretasi Bab 4</span>
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {(
+                  [
+                    { id: 'standard', label: 'Standar', desc: 'Lengkap & deskriptif' },
+                    { id: 'concise', label: 'Lebih Singkat', desc: 'Ringkas & to-the-point' },
+                    { id: 'formal', label: 'Lebih Formal', desc: 'Baku akademik skripsi' },
+                  ] as const
+                ).map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setNarrativeTone(t.id)}
+                    className={cn(
+                      'px-2.5 py-1.5 rounded-lg border text-left text-xs transition-colors cursor-pointer',
+                      narrativeTone === t.id
+                        ? 'border-primary bg-primary/10 text-primary font-semibold'
+                        : 'border-border hover:bg-muted text-muted-foreground'
+                    )}
+                  >
+                    <div className="font-medium text-foreground">{t.label}</div>
+                    <div className="text-[10px] text-muted-foreground">{t.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Section Selection */}
           <div className="space-y-2">
@@ -351,31 +420,50 @@ export function ExportDialog({
           )}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 border-t border-border/80 pt-3">
           <Button
-            variant="outline"
+            variant="ghost"
+            size="sm"
             onClick={() => onOpenChange(false)}
             disabled={isExporting}
+            className="text-xs text-muted-foreground order-last sm:order-first"
           >
-            Batal
+            Tutup
           </Button>
-          <Button
-            onClick={handleDownload}
-            disabled={isExporting || selectedSections.length === 0}
-            className="gap-2"
-          >
-            {isExporting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Menyiapkan Berkas...</span>
-              </>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            {format === 'pdf' ? (
+              <Button
+                onClick={() => handleDownload('pdf')}
+                disabled={isExporting || selectedSections.length === 0}
+                className="gap-2 text-xs"
+              >
+                {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                <span>Unduh Laporan PDF</span>
+              </Button>
             ) : (
               <>
-                <Download className="h-4 w-4" />
-                <span>Unduh Berkas</span>
+                <Button
+                  onClick={() => handleDownload('word')}
+                  disabled={isExporting || selectedSections.length === 0}
+                  className="gap-2 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs"
+                >
+                  {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                  <span>Unduh Naskah Bab 4 (Format APA 7th)</span>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() => handleDownload('spss-word')}
+                  disabled={isExporting}
+                  className="gap-2 text-xs border-blue-600/40 text-blue-700 hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-950/40 font-semibold"
+                >
+                  {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                  <span>Unduh Lampiran (Gaya SPSS)</span>
+                </Button>
               </>
             )}
-          </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

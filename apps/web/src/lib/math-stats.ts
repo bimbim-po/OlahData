@@ -379,3 +379,92 @@ export function getDurbinWatsonBounds(
   return { dL: 1.63, dU: 1.72 };
 }
 
+/**
+ * Regularized lower incomplete gamma function P(a, x) = gamma(a, x) / Gamma(a)
+ */
+export function regularizedGammaLower(a: number, x: number): number {
+  if (x <= 0) return 0;
+  if (a <= 0) return 1;
+
+  if (x < a + 1) {
+    let sum = 1 / a;
+    let term = 1 / a;
+    for (let n = 1; n < 200; n++) {
+      term *= x / (a + n);
+      sum += term;
+      if (Math.abs(term) < Math.abs(sum) * 1e-15) break;
+    }
+    return Math.exp(-x + a * Math.log(x) - logGamma(a)) * sum;
+  } else {
+    return 1 - regularizedGammaUpper(a, x);
+  }
+}
+
+/**
+ * Regularized upper incomplete gamma function Q(a, x) = Gamma(a, x) / Gamma(a)
+ */
+export function regularizedGammaUpper(a: number, x: number): number {
+  if (x <= 0) return 1;
+  if (a <= 0) return 0;
+
+  if (x < a + 1) {
+    return 1 - regularizedGammaLower(a, x);
+  }
+
+  const eps = 1e-15;
+  let b = x + 1 - a;
+  let c = 1 / 1e-30;
+  let d = 1 / b;
+  let h = d;
+
+  for (let i = 1; i <= 200; i++) {
+    const an = -i * (i - a);
+    b += 2;
+    d = an * d + b;
+    if (Math.abs(d) < 1e-30) d = 1e-30;
+    c = b + an / c;
+    if (Math.abs(c) < 1e-30) c = 1e-30;
+    d = 1 / d;
+    const del = d * c;
+    h *= del;
+    if (Math.abs(del - 1) < eps) break;
+  }
+
+  return Math.exp(-x + a * Math.log(x) - logGamma(a)) * h;
+}
+
+/**
+ * Chi-Square CDF: P(Chi2 <= x, df) = P(df/2, x/2)
+ */
+export function chiSquareCdf(x: number, df: number): number {
+  if (x <= 0 || df <= 0) return 0;
+  return Math.max(0, Math.min(1, regularizedGammaLower(df / 2, x / 2)));
+}
+
+/**
+ * Chi-Square upper tail p-value: P(Chi2 >= x, df) = Q(df/2, x/2)
+ */
+export function chiSquarePValue(x: number, df: number): number {
+  if (x <= 0 || df <= 0) return 1;
+  return Math.max(0, Math.min(1, regularizedGammaUpper(df / 2, x / 2)));
+}
+
+/**
+ * Nilai Kritis Chi-Square Tabel pada taraf signifikansi alpha
+ */
+export function getChiSquareCritical(df: number, alpha: number = 0.05): number {
+  if (df <= 0) return 0;
+  let low = 0.0001;
+  let high = Math.max(100, df * 5);
+  for (let i = 0; i < 70; i++) {
+    const mid = (low + high) / 2;
+    const p = chiSquarePValue(mid, df);
+    if (p > alpha) {
+      low = mid;
+    } else {
+      high = mid;
+    }
+  }
+  return Number(((low + high) / 2).toFixed(4));
+}
+

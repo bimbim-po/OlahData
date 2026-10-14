@@ -1237,6 +1237,376 @@ export function SpssOutputViewer({
           </div>
         </div>
       )}
+
+      {/* 12. CROSSTABULATION & CHI-SQUARE (SPSS CROSSTABS FORMAT) */}
+      {results.crosstab && results.chiSquare && (
+        <div id="spss-crosstabs" className="space-y-6">
+          <div className="flex items-center justify-between border-b border-zinc-400 pb-1">
+            <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">
+              Crosstabs ({results.crosstab.rowVar} * {results.crosstab.colVar})
+            </h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleCopyTable('spss-crosstabs', 'Crosstabs & Chi-Square')}
+              className="h-7 text-[11px] px-2 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 cursor-pointer"
+            >
+              {copiedSection === 'spss-crosstabs' ? (
+                <Check className="h-3.5 w-3.5 mr-1 text-emerald-600" />
+              ) : (
+                <Copy className="h-3.5 w-3.5 mr-1" />
+              )}
+              Salin Output
+            </Button>
+          </div>
+
+          {/* Case Processing Summary */}
+          <div className="space-y-1">
+            <span className="font-bold text-zinc-700 dark:text-zinc-300 block text-[11px]">
+              Case Processing Summary
+            </span>
+            <div className="overflow-x-auto">
+              <table className="border-collapse border border-zinc-900 dark:border-zinc-400 bg-white dark:bg-zinc-950 text-left w-full min-w-[500px]">
+                <thead>
+                  <tr className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-900 dark:border-zinc-400">
+                    <th rowSpan={3} className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-bold"></th>
+                    <th colSpan={6} className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-center font-bold">Cases</th>
+                  </tr>
+                  <tr className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-900 dark:border-zinc-400">
+                    <th colSpan={2} className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-center font-bold">Valid</th>
+                    <th colSpan={2} className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-center font-bold">Missing</th>
+                    <th colSpan={2} className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-center font-bold">Total</th>
+                  </tr>
+                  <tr className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-900 dark:border-zinc-400">
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1 text-right font-semibold">N</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1 text-right font-semibold">Percent</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1 text-right font-semibold">N</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1 text-right font-semibold">Percent</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1 text-right font-semibold">N</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1 text-right font-semibold">Percent</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-semibold">
+                      {results.crosstab.rowVar} * {results.crosstab.colVar}
+                    </td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{results.crosstab.totalN}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">100.0%</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">0</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">0.0%</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{results.crosstab.totalN}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">100.0%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Crosstabulation Table */}
+          <div className="space-y-1">
+            <span className="font-bold text-zinc-700 dark:text-zinc-300 block text-[11px]">
+              {results.crosstab.rowVar} * {results.crosstab.colVar} Crosstabulation
+            </span>
+            <div className="overflow-x-auto">
+              <table className="border-collapse border border-zinc-900 dark:border-zinc-400 bg-white dark:bg-zinc-950 text-left w-full min-w-[650px]">
+                <thead>
+                  <tr className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-900 dark:border-zinc-400">
+                    <th colSpan={2} rowSpan={2} className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-bold"></th>
+                    <th colSpan={results.crosstab.colCategories.length} className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-center font-bold">
+                      {results.crosstab.colVar}
+                    </th>
+                    <th rowSpan={2} className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">Total</th>
+                  </tr>
+                  <tr className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-900 dark:border-zinc-400">
+                    {results.crosstab.colCategories.map((col) => (
+                      <th key={col} className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">
+                        {col}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {results.crosstab.rowCategories.map((rowCat, rIdx) => {
+                    const rowTotalCount = results.crosstab!.rowTotals[rIdx];
+                    return (
+                      <React.Fragment key={rowCat}>
+                        <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                          <td rowSpan={4} className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-bold align-top">
+                            {rowCat}
+                          </td>
+                          <td className="border border-zinc-900 dark:border-zinc-400 p-1 text-zinc-700 dark:text-zinc-300">Count</td>
+                          {results.crosstab!.colCategories.map((_, cIdx) => (
+                            <td key={cIdx} className="border border-zinc-900 dark:border-zinc-400 p-1 text-right font-semibold">
+                              {results.crosstab!.matrix[rIdx][cIdx]}
+                            </td>
+                          ))}
+                          <td className="border border-zinc-900 dark:border-zinc-400 p-1 text-right font-bold">
+                            {rowTotalCount}
+                          </td>
+                        </tr>
+                        <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                          <td className="border border-zinc-900 dark:border-zinc-400 p-1 text-zinc-700 dark:text-zinc-300">Expected Count</td>
+                          {results.crosstab!.colCategories.map((_, cIdx) => (
+                            <td key={cIdx} className="border border-zinc-900 dark:border-zinc-400 p-1 text-right text-zinc-600 dark:text-zinc-400">
+                              {formatNumber(results.crosstab!.expectedMatrix[rIdx][cIdx], 1)}
+                            </td>
+                          ))}
+                          <td className="border border-zinc-900 dark:border-zinc-400 p-1 text-right text-zinc-600 dark:text-zinc-400 font-semibold">
+                            {formatNumber(rowTotalCount, 1)}
+                          </td>
+                        </tr>
+                        <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                          <td className="border border-zinc-900 dark:border-zinc-400 p-1 text-zinc-700 dark:text-zinc-300">% within {results.crosstab!.rowVar}</td>
+                          {results.crosstab!.colCategories.map((_, cIdx) => (
+                            <td key={cIdx} className="border border-zinc-900 dark:border-zinc-400 p-1 text-right">
+                              {formatNumber(results.crosstab!.rowPercentages[rIdx][cIdx], 1)}%
+                            </td>
+                          ))}
+                          <td className="border border-zinc-900 dark:border-zinc-400 p-1 text-right">100.0%</td>
+                        </tr>
+                        <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                          <td className="border border-zinc-900 dark:border-zinc-400 p-1 text-zinc-700 dark:text-zinc-300">% of Total</td>
+                          {results.crosstab!.colCategories.map((_, cIdx) => (
+                            <td key={cIdx} className="border border-zinc-900 dark:border-zinc-400 p-1 text-right text-zinc-500">
+                              {formatNumber(results.crosstab!.totalPercentages[rIdx][cIdx], 1)}%
+                            </td>
+                          ))}
+                          <td className="border border-zinc-900 dark:border-zinc-400 p-1 text-right text-zinc-500">
+                            {formatNumber((rowTotalCount / results.crosstab!.totalN) * 100, 1)}%
+                          </td>
+                        </tr>
+                      </React.Fragment>
+                    );
+                  })}
+                  {/* Total Summary Row */}
+                  <tr className="bg-zinc-50 dark:bg-zinc-900/60 font-bold">
+                    <td rowSpan={4} className="border border-zinc-900 dark:border-zinc-400 p-1.5 align-top">
+                      Total
+                    </td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1 font-semibold">Count</td>
+                    {results.crosstab.colCategories.map((_, cIdx) => (
+                      <td key={cIdx} className="border border-zinc-900 dark:border-zinc-400 p-1 text-right">
+                        {results.crosstab!.colTotals[cIdx]}
+                      </td>
+                    ))}
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1 text-right">
+                      {results.crosstab.totalN}
+                    </td>
+                  </tr>
+                  <tr className="bg-zinc-50 dark:bg-zinc-900/60">
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1 text-zinc-700 dark:text-zinc-300">Expected Count</td>
+                    {results.crosstab.colCategories.map((_, cIdx) => (
+                      <td key={cIdx} className="border border-zinc-900 dark:border-zinc-400 p-1 text-right text-zinc-600 dark:text-zinc-400">
+                        {formatNumber(results.crosstab!.colTotals[cIdx], 1)}
+                      </td>
+                    ))}
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1 text-right text-zinc-600 dark:text-zinc-400 font-bold">
+                      {formatNumber(results.crosstab.totalN, 1)}
+                    </td>
+                  </tr>
+                  <tr className="bg-zinc-50 dark:bg-zinc-900/60">
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1 text-zinc-700 dark:text-zinc-300">% within {results.crosstab.rowVar}</td>
+                    {results.crosstab.colCategories.map((_, cIdx) => (
+                      <td key={cIdx} className="border border-zinc-900 dark:border-zinc-400 p-1 text-right">
+                        {formatNumber((results.crosstab!.colTotals[cIdx] / results.crosstab!.totalN) * 100, 1)}%
+                      </td>
+                    ))}
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1 text-right">100.0%</td>
+                  </tr>
+                  <tr className="bg-zinc-50 dark:bg-zinc-900/60">
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1 text-zinc-700 dark:text-zinc-300">% of Total</td>
+                    {results.crosstab.colCategories.map((_, cIdx) => (
+                      <td key={cIdx} className="border border-zinc-900 dark:border-zinc-400 p-1 text-right text-zinc-500">
+                        {formatNumber((results.crosstab!.colTotals[cIdx] / results.crosstab!.totalN) * 100, 1)}%
+                      </td>
+                    ))}
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1 text-right text-zinc-500">100.0%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Chi-Square Tests Table */}
+          <div className="space-y-1">
+            <span className="font-bold text-zinc-700 dark:text-zinc-300 block text-[11px]">
+              Chi-Square Tests
+            </span>
+            <div className="overflow-x-auto">
+              <table className="border-collapse border border-zinc-900 dark:border-zinc-400 bg-white dark:bg-zinc-950 text-left w-full min-w-[650px]">
+                <thead>
+                  <tr className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-900 dark:border-zinc-400">
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-bold"></th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">Value</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">df</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">Asymptotic Significance (2-sided)</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">Exact Sig. (2-sided)</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">Exact Sig. (1-sided)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-semibold">Pearson Chi-Square</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(results.chiSquare.pearsonChiSquare, 3)}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{results.chiSquare.df}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(results.chiSquare.pearsonSig, 4)}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right text-zinc-400">-</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right text-zinc-400">-</td>
+                  </tr>
+                  {results.chiSquare.continuityCorrection !== undefined && (
+                    <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5">Continuity Correction (b)</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(results.chiSquare.continuityCorrection, 3)}</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">1</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(results.chiSquare.continuityCorrectionSig || 0, 4)}</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right text-zinc-400">-</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right text-zinc-400">-</td>
+                    </tr>
+                  )}
+                  {results.chiSquare.likelihoodRatio !== undefined && (
+                    <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5">Likelihood Ratio</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(results.chiSquare.likelihoodRatio, 3)}</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{results.chiSquare.df}</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(results.chiSquare.likelihoodRatioSig || 0, 4)}</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right text-zinc-400">-</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right text-zinc-400">-</td>
+                    </tr>
+                  )}
+                  {results.chiSquare.fisherExact !== undefined && (
+                    <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5">Fisher&apos;s Exact Test</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right text-zinc-400">-</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right text-zinc-400">-</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right text-zinc-400">-</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(results.chiSquare.fisherExact, 4)}</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(results.chiSquare.fisherExact1Sided || results.chiSquare.fisherExact / 2, 4)}</td>
+                    </tr>
+                  )}
+                  <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5">N of Valid Cases</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-semibold">{results.chiSquare.totalN}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right text-zinc-400">-</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right text-zinc-400">-</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right text-zinc-400">-</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right text-zinc-400">-</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div className="text-[10px] text-zinc-600 dark:text-zinc-400 mt-1 space-y-0.5">
+                <p>{results.chiSquare.cochranFootnote}</p>
+                {results.chiSquare.continuityCorrection !== undefined && (
+                  <p>b. Computed only for a 2x2 table</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Risk Estimate Table (if 2x2) */}
+          {results.riskEstimate && (
+            <div className="space-y-1">
+              <span className="font-bold text-zinc-700 dark:text-zinc-300 block text-[11px]">
+                Risk Estimate
+              </span>
+              <div className="overflow-x-auto">
+                <table className="border-collapse border border-zinc-900 dark:border-zinc-400 bg-white dark:bg-zinc-950 text-left w-full min-w-[550px]">
+                  <thead>
+                    <tr className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-900 dark:border-zinc-400">
+                      <th rowSpan={2} className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-bold"></th>
+                      <th rowSpan={2} className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">Value</th>
+                      <th colSpan={2} className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-center font-bold">95% Confidence Interval</th>
+                    </tr>
+                    <tr className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-900 dark:border-zinc-400">
+                      <th className="border border-zinc-900 dark:border-zinc-400 p-1 text-right font-semibold">Lower</th>
+                      <th className="border border-zinc-900 dark:border-zinc-400 p-1 text-right font-semibold">Upper</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-semibold">
+                        Odds Ratio for {results.riskEstimate.exposureVar} ({results.crosstab.rowCategories[0]} / {results.crosstab.rowCategories[1]})
+                      </td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(results.riskEstimate.oddsRatio, 3)}</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.riskEstimate.ciLower, 3)}</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.riskEstimate.ciUpper, 3)}</td>
+                    </tr>
+                    <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5">
+                        For cohort {results.riskEstimate.outcomeVar} = {results.crosstab.colCategories[0]}
+                      </td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(results.riskEstimate.forCohortRisk1, 3)}</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.riskEstimate.forCohortRisk1CiLower, 3)}</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.riskEstimate.forCohortRisk1CiUpper, 3)}</td>
+                    </tr>
+                    <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5">
+                        For cohort {results.riskEstimate.outcomeVar} = {results.crosstab.colCategories[1]}
+                      </td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(results.riskEstimate.forCohortRisk2, 3)}</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.riskEstimate.forCohortRisk2CiLower, 3)}</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.riskEstimate.forCohortRisk2CiUpper, 3)}</td>
+                    </tr>
+                    <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5">N of Valid Cases</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-semibold">{results.riskEstimate.totalN}</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right text-zinc-400">-</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right text-zinc-400">-</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Symmetric Measures Table */}
+          {results.symmetricMeasures && (
+            <div className="space-y-1">
+              <span className="font-bold text-zinc-700 dark:text-zinc-300 block text-[11px]">
+                Symmetric Measures
+              </span>
+              <div className="overflow-x-auto">
+                <table className="border-collapse border border-zinc-900 dark:border-zinc-400 bg-white dark:bg-zinc-950 text-left w-full min-w-[450px]">
+                  <thead>
+                    <tr className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-900 dark:border-zinc-400">
+                      <th colSpan={2} className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-bold"></th>
+                      <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">Value</th>
+                      <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">Approximate Significance</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                      <td rowSpan={3} className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-semibold align-top">
+                        Nominal by Nominal
+                      </td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5">Phi</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{results.symmetricMeasures.phi !== undefined ? formatNumber(results.symmetricMeasures.phi, 3) : '.'}</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(results.symmetricMeasures.pValue, 4)}</td>
+                    </tr>
+                    <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5">Cramer&apos;s V</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(results.symmetricMeasures.cramersV, 3)}</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(results.symmetricMeasures.pValue, 4)}</td>
+                    </tr>
+                    <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5">Contingency Coefficient</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(results.symmetricMeasures.contingencyCoeff, 3)}</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(results.symmetricMeasures.pValue, 4)}</td>
+                    </tr>
+                    <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                      <td colSpan={2} className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-semibold">
+                        N of Valid Cases
+                      </td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-semibold">{results.symmetricMeasures.totalN}</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right text-zinc-400">-</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

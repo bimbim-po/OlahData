@@ -26,12 +26,14 @@ interface WizardState {
   columnRoles: Record<string, 'id' | 'demographic' | 'item' | 'ignored'>;
 
   // Research Design
-  researchDesign: 'survey' | 'comparative';
+  researchDesign: 'survey' | 'comparative' | 'categorical';
   preCol: string | null;
   postCol: string | null;
   groupCol: string | null;
   scoreCol: string | null;
   idealMaxScore: number;
+  rowCol: string | null;
+  colCol: string | null;
 
   // Step 3: Variable mapping
   constructs: Construct[];
@@ -67,13 +69,17 @@ interface WizardState {
   setReverseItems: (items: string[]) => void;
   toggleReverseItem: (item: string) => void;
   setColumnRole: (col: string, role: 'id' | 'demographic' | 'item' | 'ignored') => void;
-  setResearchDesign: (design: 'survey' | 'comparative') => void;
+  setResearchDesign: (design: 'survey' | 'comparative' | 'categorical') => void;
   setComparativeMapping: (mapping: {
     preCol?: string | null;
     postCol?: string | null;
     groupCol?: string | null;
     scoreCol?: string | null;
     idealMaxScore?: number;
+  }) => void;
+  setCategoricalMapping: (mapping: {
+    rowCol?: string | null;
+    colCol?: string | null;
   }) => void;
   eliminateInvalidItems: (invalidItemNames: string[]) => void;
   eliminateOutliers: (rowNumbers: number[]) => void;
@@ -110,6 +116,8 @@ const initialState = {
   groupCol: null,
   scoreCol: null,
   idealMaxScore: 100,
+  rowCol: null,
+  colCol: null,
   constructs: [],
   calculationMethod: 'mean' as const,
   selectedTests: [] as TestType[],
@@ -265,6 +273,12 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       scoreCol: mapping.scoreCol !== undefined ? mapping.scoreCol : state.scoreCol,
       idealMaxScore:
         mapping.idealMaxScore !== undefined ? mapping.idealMaxScore : state.idealMaxScore,
+    })),
+
+  setCategoricalMapping: (mapping) =>
+    set((state) => ({
+      rowCol: mapping.rowCol !== undefined ? mapping.rowCol : state.rowCol,
+      colCol: mapping.colCol !== undefined ? mapping.colCol : state.colCol,
     })),
 
   eliminateInvalidItems: (invalidItemNames: string[]) => {

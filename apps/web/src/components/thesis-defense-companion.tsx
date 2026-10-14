@@ -28,7 +28,9 @@ export type DefenseTestKey =
   | 'ngain'
   | 'independent-ttest'
   | 'oneway-anova'
-  | 'nonparametric';
+  | 'nonparametric'
+  | 'chisquare'
+  | 'odds-ratio';
 
 interface QuestionItem {
   id: string;
@@ -64,6 +66,16 @@ interface ThesisDefenseCompanionProps {
     hakeCategory?: string;
     meltzerCategory?: string;
     chosenVar?: string;
+    chiSquareValue?: number;
+    chiSquareDf?: number;
+    chiSquareSig?: number;
+    fisherSig?: number;
+    oddsRatio?: number;
+    orCiLower?: number;
+    orCiUpper?: number;
+    minExpectedCount?: number;
+    cellsLessThan5Count?: number;
+    cellsLessThan5Percent?: number;
   };
   className?: string;
 }
@@ -98,6 +110,16 @@ export function ThesisDefenseCompanion({
     hakeCategory = 'Sedang',
     meltzerCategory = 'Cukup Efektif',
     chosenVar = 'Variabel Terkait',
+    chiSquareValue = 18.42,
+    chiSquareDf = 1,
+    chiSquareSig = 0.0001,
+    fisherSig = 0.0001,
+    oddsRatio = 7.39,
+    orCiLower = 2.85,
+    orCiUpper = 19.15,
+    minExpectedCount = 23.5,
+    cellsLessThan5Count = 0,
+    cellsLessThan5Percent = 0,
   } = dataMetrics;
 
   const getQuestions = (): QuestionItem[] => {
@@ -274,6 +296,58 @@ export function ThesisDefenseCompanion({
               title: 'Practical Nonparametric Statistics & Statistika Nonparametris untuk Penelitian',
               year: '1999 / 2019',
               note: 'John Wiley & Sons / Alfabeta, Bab Uji Dua Sampel Independen & Berpasangan Non-parametrik.',
+            },
+          },
+        ];
+
+      case 'chisquare':
+        return [
+          {
+            id: 'cs-1',
+            question: 'Kapan membaca nilai Pearson Chi-Square, Continuity Correction, atau Fisher\'s Exact Test?',
+            answer: `Izin menjawab Bapak/Ibu Penguji, berdasarkan kaidah uji Cochran dan panduan Prof. Sopiyudin Dahlan, pemilihan baris uji pada tabel 2x2 didasarkan pada nilai frekuensi harapan (Expected Count). Pada data kami, nilai Expected Count terendah adalah ${minExpectedCount.toFixed(2)}${cellsLessThan5Count > 0 ? ` (ditemukan ${cellsLessThan5Count} sel atau ${cellsLessThan5Percent.toFixed(1)}% dengan E < 5)` : ' (tidak ada sel dengan E < 5)'}. Karena ${cellsLessThan5Count > 0 ? 'terdapat sel dengan E < 5, maka uji yang sahih dan wajib digunakan adalah Fisher\'s Exact Test' : 'semua sel memiliki E >= 5, maka baris Continuity Correction (Yates) atau Pearson Chi-Square dapat digunakan'}. Nilai Asymp. Sig. yang diperoleh adalah ${chiSquareSig < 0.001 ? '< 0,001' : chiSquareSig.toFixed(3)}, yang membuktikan ${chiSquareSig < 0.05 ? 'adanya hubungan yang signifikan secara statistik antara kedua variabel (p < 0,05)' : 'tidak ada hubungan signifikan antara kedua variabel (p > 0,05)'}.`,
+            citation: {
+              author: 'Dr. M. Sopiyudin Dahlan, M.Epid',
+              title: 'Statistik untuk Kedokteran dan Kesehatan: Deskriptif, Bivariat, dan Multivariat',
+              year: '2014',
+              note: 'Penerbit Epidemiologi Indonesia Jakarta, Bab Analisis Komparatif Kategorik Tidak Berpasangan (Chi-Square & Fisher).',
+            },
+          },
+          {
+            id: 'cs-2',
+            question: 'Mengapa uji Chi-Square memiliki syarat frekuensi harapan (Expected Count) tidak boleh kurang dari 5?',
+            answer: `Distribusi Chi-Square merupakan distribusi kontinu teoritis yang dipakai untuk mengaproksimasi probabilitas multinomial diskret dari sel-sel tabel silang. Apabila frekuensi harapan (E) terlalu kecil (< 5), aproksimasi tersebut menjadi bias dan menghasilkan galat tipe I (nilai Chi-Square tampak terlalu besar). Oleh sebab itu, William G. Cochran (1954) menetapkan kaidah bahwa untuk tabel 2x2 tidak boleh ada nilai harapan < 5, dan jika dilanggar, pengujian harus beralih ke uji peluang hipergeometrik eksak (Fisher's Exact Test).`,
+            citation: {
+              author: 'William G. Cochran',
+              title: 'Some Methods for Strengthening the Common Chi-Square Tests',
+              year: '1954',
+              note: 'Biometrics, Vol. 10 No. 4, Halaman 417-451.',
+            },
+          },
+        ];
+
+      case 'odds-ratio':
+        return [
+          {
+            id: 'or-1',
+            question: 'Bagaimana cara membaca nilai Odds Ratio (OR) dan Confidence Interval 95%?',
+            answer: `Nilai Odds Ratio (OR) yang diperoleh adalah ${oddsRatio.toFixed(2)} dengan rentang 95% Confidence Interval antara ${orCiLower.toFixed(2)} hingga ${orCiUpper.toFixed(2)}. Artinya, kelompok terpapar memiliki kemungkinan (odds) sebesar ${oddsRatio.toFixed(2)} kali lebih besar untuk mengalami outcome dibandingkan kelompok yang tidak terpapar. Karena rentang interval keyakinan 95% ${orCiLower > 1.0 ? 'seluruhnya berada di atas angka 1 (tidak melintasi nilai nol efek OR=1)' : (orCiUpper < 1.0 ? 'seluruhnya berada di bawah angka 1' : 'mencakup angka 1')}, maka dapat disimpulkan bahwa variabel paparan ini secara statistik ${orCiLower > 1.0 ? 'terbukti merupakan faktor risiko yang bermakna' : (orCiUpper < 1.0 ? 'merupakan faktor protektif' : 'bukan merupakan faktor risiko yang signifikan')}.`,
+            citation: {
+              author: 'Prof. Dr. Bhisma Murti, dr., M.P.H., M.Sc., Ph.D.',
+              title: 'Prinsip dan Metode Riset Epidemiologi (Edisi ke-5)',
+              year: '2018',
+              note: 'Program Pascasarjana Universitas Sebelas Maret Surakarta, Bab Ukuran Hubungan Epidemiologi (Odds Ratio & Relative Risk).',
+            },
+          },
+          {
+            id: 'or-2',
+            question: 'Kapan mahasiswa harus menggunakan Odds Ratio (OR) dan kapan Relative Risk (RR)?',
+            answer: `Izin menjelaskan Bapak/Ibu, Relative Risk (Risk Ratio / RR) hanya dapat diinterpretasikan secara sahih pada desain penelitian prospektif (Kohort atau Eksperimen Murni) karena peneliti mengetahui angka insidensi kumulatif populasi risiko secara riil. Sementara pada penelitian Retrospektif (Case-Control) maupun Potong Lintang (Cross-Sectional), ukuran asosiasi epidemiologi standar yang sah digunakan adalah Odds Ratio (OR).`,
+            citation: {
+              author: 'Kenneth J. Rothman, Sander Greenland, Timothy L. Lash',
+              title: 'Modern Epidemiology (3rd Edition)',
+              year: '2008',
+              note: 'Lippincott Williams & Wilkins, Bab Measures of Effect and Association, Halaman 51-68.',
             },
           },
         ];

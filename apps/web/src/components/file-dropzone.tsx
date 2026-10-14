@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { UploadCloud, FileSpreadsheet, Sparkles, RefreshCw, AlertCircle, CheckCircle2, Hash } from 'lucide-react';
 import { useWizardStore } from '@/stores/wizard-store';
-import { mockDataset, mockExperimentalDataset, mockIssues } from '@/lib/mock/dataset-contoh';
+import { mockDataset, mockExperimentalDataset, mockHealthDataset, mockIssues } from '@/lib/mock/dataset-contoh';
 import { analyzeDatasetQuality } from '@/lib/validation';
 import { FILE_LIMITS } from '@/lib/constants';
 import { COPY } from '@/lib/copy';
@@ -141,6 +141,14 @@ export function FileDropzone({ onFileLoaded, className }: FileDropzoneProps) {
     onFileLoaded?.();
   };
 
+  const handleLoadHealthData = () => {
+    setErrorMessage(null);
+    const cols = Object.keys(mockHealthDataset[0] || {});
+    setFileData('data_kesehatan_chi_square.xlsx', [...mockHealthDataset], cols, true, 36 * 1024);
+    setIssues([]);
+    onFileLoaded?.();
+  };
+
   const handleReplaceFile = () => {
     resetWizard();
     if (fileInputRef.current) {
@@ -164,7 +172,7 @@ export function FileDropzone({ onFileLoaded, className }: FileDropzoneProps) {
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground">
-            Pilih dataset riset kuesioner regresi (N=120) atau dataset eksperimen pre-test & post-test (N=60).
+            Pilih dataset riset kuesioner regresi (N=120), eksperimen pre-post (N=60), atau data kesehatan Chi-Square (N=100).
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 shrink-0">
@@ -185,6 +193,15 @@ export function FileDropzone({ onFileLoaded, className }: FileDropzoneProps) {
           >
             <Sparkles className="w-3.5 h-3.5 mr-1.5" />
             Eksperimen (N=60)
+          </Button>
+          <Button
+            type="button"
+            onClick={handleLoadHealthData}
+            variant="outline"
+            className="border-emerald-500/80 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-600 hover:text-white shrink-0 font-medium cursor-pointer shadow-sm rounded-[10px] min-h-[40px] text-xs"
+          >
+            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+            Chi-Square (N=100)
           </Button>
         </div>
       </div>

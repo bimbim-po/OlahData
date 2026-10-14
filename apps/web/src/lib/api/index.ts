@@ -18,7 +18,11 @@ import { getSupabaseBrowserClient } from '../supabase/client';
 import { mockProjects } from '../mock/projects';
 import { mockDataset, mockIssues } from '../mock/dataset-contoh';
 import { mockResults, mockTestOptions } from '../mock/results';
-import { buildWordTableHtml, buildWordDocumentContent } from '../word-table';
+import {
+  buildWordTableHtml,
+  buildWordDocumentContent,
+  buildSpssAppendixWordDocumentContent,
+} from '../word-table';
 import { formatNumber } from '../format';
 import { generateAcademicPdfReport } from '../pdf-generator';
 
@@ -705,7 +709,29 @@ export async function exportResult(
     return new Blob([pdfBytes as unknown as BlobPart], { type: 'application/pdf' });
   }
 
+  if (options.format === 'spss-word') {
+    const docHtml = buildSpssAppendixWordDocumentContent(projectTitle, results);
+    return new Blob([docHtml], { type: 'application/msword;charset=utf-8' });
+  }
+
   if (options.format === 'word') {
+    const tone = options.narrativeTone || 'standard';
+    const formatNarrative = (text: string) => {
+      if (!text) return '';
+      if (tone === 'concise') {
+        return text
+          .replace(/Berdasarkan analisis statistik deskriptif terhadap \d+ responden, diperoleh bahwa/i, 'Secara deskriptif,')
+          .replace(/Hasil pengujian validitas butir instrumen menggunakan korelasi Pearson Product Moment menunjukkan bahwa/i, 'Uji validitas butir instrumen menunjukkan')
+          .replace(/Pengujian reliabilitas instrumen dengan koefisien Cronbach's Alpha menghasilkan nilai sebagai berikut:/i, 'Hasil uji reliabilitas Cronbach\'s Alpha:')
+          .replace(/Analisis regresi linier berganda menunjukkan model persamaan regresi dengan/i, 'Model regresi linier berganda menghasilkan')
+          .replace(/Uji simultan ANOVA menghasilkan/i, 'Hasil ANOVA (Uji F):');
+      }
+      if (tone === 'formal') {
+        return `Berdasarkan hasil kalkulasi empiris pada Bab 4, ${text.charAt(0).toLowerCase() + text.slice(1)}`;
+      }
+      return text;
+    };
+
     const sections: { title: string; contentHtml: string }[] = [];
 
     if (options.sections.includes('descriptive')) {
@@ -1065,10 +1091,170 @@ export async function exportResult(
           r.significant ? 'Signifikan' : 'Tidak Signifikan',
         ]),
       });
-      const narrativeHtml = `<p>${results.explanations.correlation}</p>`;
+      const narrativeHtml = `<p>${formatNarrative(results.explanations.correlation)}</p>`;
       sections.push({
         title: '6. Analisis Korelasi Pearson',
         contentHtml: corrTable + narrativeHtml,
+      });
+    }
+
+    if (
+      results.crosstab &&
+      results.chiSquare &&
+      (options.sections.includes('crosstab') ||
+        options.sections.includes('chisquare') ||
+        options.sections.includes('odds-ratio') ||
+        results.researchDesign === 'categorical')
+    ) {
+      const ct = results.crosstab;
+      const cs = results.chiSquare;
+      const re = results.riskEstimate;
+      const sm = results.symmetricMeasures;
+
+      const crosstabRows: (string | number)[][] = [];
+      ct.rowCategories.forEach((rowCat, rIdx) => {
+        const counts = ct.colCategories.map((_, cIdx) => ct.matrix[rIdx][cIdx]);
+        crosstabRows.push([rowCat, 'Count', ...counts, ct.rowTotals[rIdx]]);
+        const expecteds = ct.colCategories.map((_, cIdx) => formatNumber(ct.expectedMatrix[rIdx][cIdx], 1));
+        crosstabRows.push(['', 'Expected Count', ...expecteds, formatNumber(ct.rowTotals[rIdx], 1)]);
+        const rowPercents = ct.colCategories.map((_, cIdx) => `${formatNumber(ct.rowPercentages[rIdx][cIdx], 1)}%`);
+        crosstabRows.push(['', `% within ${ct.rowVar}`, ...rowPercents, '100,0%']);
+      });
+
+      const ctTable = buildWordTableHtml({
+        tableNumber: 'Tabel 4.11',
+        title: `Hasil Tabulasi Silang ${ct.rowVar} dan ${ct.colVar}`,
+        note: `* N = ${ct.totalN} responden.`,
+        columns: [
+          { header: ct.rowVar, align: 'left' },
+          { header: 'Keterangan', align: 'left' },
+          ...ct.colCategories.map((col) => ({ header: col, align: 'right' as const })),
+          { header: 'Total', align: 'right' },
+        ],
+        rows: crosstabRows,
+      });
+
+      const csRows: (string | number)[][] = [
+        [
+          'Pearson Chi-Square',
+          formatNumber(cs.pearsonChiSquare, 3),
+          cs.df,
+          formatNumber(cs.pearsonSig, 4),
+          cs.pearsonSig < 0.05 ? 'Signifikan' : 'Tidak Signifikan',
+        ],
+      ];
+      if (cs.continuityCorrection !== undefined) {
+        csRows.push([
+          'Continuity Correction (Yates)',
+          formatNumber(cs.continuityCorrection, 3),
+          1,
+          formatNumber(cs.continuityCorrectionSig || 0, 4),
+          (cs.continuityCorrectionSig || 0) < 0.05 ? 'Signifikan' : 'Tidak Signifikan',
+        ]);
+      }
+      if (cs.likelihoodRatio !== undefined) {
+        csRows.push([
+          'Likelihood Ratio',
+          formatNumber(cs.likelihoodRatio, 3),
+          cs.df,
+          formatNumber(cs.likelihoodRatioSig || 0, 4),
+          (cs.likelihoodRatioSig || 0) < 0.05 ? 'Signifikan' : 'Tidak Signifikan',
+        ]);
+      }
+      if (cs.fisherExact !== undefined) {
+        csRows.push([
+          "Fisher's Exact Test",
+          '-',
+          '-',
+          formatNumber(cs.fisherExact, 4),
+          cs.fisherExact < 0.05 ? 'Signifikan' : 'Tidak Signifikan',
+        ]);
+      }
+
+      const csTable = buildWordTableHtml({
+        tableNumber: 'Tabel 4.12',
+        title: "Hasil Uji Independensi Chi-Square dan Fisher's Exact Test",
+        note: `* ${cs.cochranFootnote}`,
+        columns: [
+          { header: 'Uji Statistik', align: 'left' },
+          { header: 'Nilai Hitung', align: 'right' },
+          { header: 'df', align: 'right' },
+          { header: 'Sig. (p-value)', align: 'right' },
+          { header: 'Keputusan (α=0,05)', align: 'center' },
+        ],
+        rows: csRows,
+      });
+
+      let reTable = '';
+      if (re) {
+        reTable = buildWordTableHtml({
+          tableNumber: 'Tabel 4.13',
+          title: 'Estimasi Risiko Epidemiologi (Odds Ratio & Relative Risk)',
+          note: '* Dihitung dengan tingkat kepercayaan 95% Confidence Interval.',
+          columns: [
+            { header: 'Ukuran Asosiasi', align: 'left' },
+            { header: 'Estimasi Nilai', align: 'right' },
+            { header: '95% CI Lower', align: 'right' },
+            { header: '95% CI Upper', align: 'right' },
+            { header: 'Interpretasi Risiko', align: 'center' },
+          ],
+          rows: [
+            [
+              `Odds Ratio (OR) untuk ${re.exposureVar}`,
+              formatNumber(re.oddsRatio, 3),
+              formatNumber(re.ciLower, 3),
+              formatNumber(re.ciUpper, 3),
+              re.ciLower > 1.0 ? 'Faktor Risiko Signifikan' : (re.ciUpper < 1.0 ? 'Faktor Protektif Signifikan' : 'Bukan Risiko Bermakna'),
+            ],
+            [
+              'Relative Risk (RR) Cohort 1',
+              formatNumber(re.forCohortRisk1, 3),
+              formatNumber(re.forCohortRisk1CiLower, 3),
+              formatNumber(re.forCohortRisk1CiUpper, 3),
+              'Kelompok Kasus',
+            ],
+            [
+              'Relative Risk (RR) Cohort 2',
+              formatNumber(re.forCohortRisk2, 3),
+              formatNumber(re.forCohortRisk2CiLower, 3),
+              formatNumber(re.forCohortRisk2CiUpper, 3),
+              'Kelompok Kontrol',
+            ],
+          ],
+        });
+      }
+
+      let smTable = '';
+      if (sm) {
+        smTable = buildWordTableHtml({
+          tableNumber: 'Tabel 4.14',
+          title: 'Kekuatan Hubungan (Symmetric Measures)',
+          note: '* Uji signifikansi korelasi nominal.',
+          columns: [
+            { header: 'Ukuran Kekuatan', align: 'left' },
+            { header: 'Koefisien', align: 'right' },
+            { header: 'Approx. Sig.', align: 'right' },
+            { header: 'Kesimpulan', align: 'center' },
+          ],
+          rows: [
+            ['Phi', sm.phi !== undefined ? formatNumber(sm.phi, 3) : '-', formatNumber(sm.pValue, 4), sm.pValue < 0.05 ? 'Signifikan' : 'Tidak Signifikan'],
+            ["Cramer's V", formatNumber(sm.cramersV, 3), formatNumber(sm.pValue, 4), sm.pValue < 0.05 ? 'Signifikan' : 'Tidak Signifikan'],
+            ['Contingency Coefficient', formatNumber(sm.contingencyCoeff, 3), formatNumber(sm.pValue, 4), sm.pValue < 0.05 ? 'Signifikan' : 'Tidak Signifikan'],
+          ],
+        });
+      }
+
+      const ctNarrative = [
+        results.explanations.crosstab,
+        results.explanations.chiSquare,
+        results.explanations.oddsRatio,
+      ].filter(Boolean).join('\n\n');
+
+      const narrativeHtml = `<p>${formatNarrative(ctNarrative)}</p>`;
+
+      sections.push({
+        title: '7. Analisis Hubungan Kategori (Tabulasi Silang & Chi-Square)',
+        contentHtml: ctTable + '<br/>' + csTable + (reTable ? '<br/>' + reTable : '') + (smTable ? '<br/>' + smTable : '') + narrativeHtml,
       });
     }
 

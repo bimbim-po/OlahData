@@ -45,6 +45,7 @@ import {
   detectResidualOutliers,
   computeSpearmanHeteroscedasticity,
 } from './comparative-stats';
+import { computeCrosstabAndChiSquare } from './categorical-stats';
 import { ENGINE_VERSION } from './constants';
 import { formatNumber } from './format';
 
@@ -100,12 +101,14 @@ export interface ComputeStatsOptions {
   reverseItems?: string[];
   calculationMethod?: 'mean' | 'sum';
   datasetMeta?: DatasetSourceMeta;
-  researchDesign?: 'survey' | 'comparative';
+  researchDesign?: 'survey' | 'comparative' | 'categorical';
   preCol?: string | null;
   postCol?: string | null;
   groupCol?: string | null;
   scoreCol?: string | null;
   idealMaxScore?: number;
+  rowCol?: string | null;
+  colCol?: string | null;
 }
 
 // Sample variance with ddof=1
@@ -271,6 +274,14 @@ export function computeDeterministicStats(
     reverseItems = [],
     calculationMethod = 'mean',
     datasetMeta,
+    researchDesign,
+    preCol,
+    postCol,
+    groupCol,
+    scoreCol,
+    idealMaxScore,
+    rowCol,
+    colCol,
   } = opts;
 
   const n = rows.length;
@@ -1192,7 +1203,27 @@ export function computeDeterministicStats(
     }
   }
 
-  // 9. GENERASI NARASI DRAF DENGAN STRICT NUMBER GUARD (NILAI TERHITUNG)
+  // 9. MODUL HUBUNGAN KATEGORI: CROSSTAB, CHI-SQUARE, & ESTIMASI RISIKO (ODDS RATIO)
+  if (
+    researchDesign === 'categorical' ||
+    selectedTests.includes('crosstab') ||
+    selectedTests.includes('chisquare') ||
+    selectedTests.includes('odds-ratio')
+  ) {
+    if (rowCol && colCol) {
+      try {
+        const catRes = computeCrosstabAndChiSquare(rows, rowCol, colCol, significanceLevel);
+        results.crosstab = catRes.crosstab;
+        results.chiSquare = catRes.chiSquare;
+        results.riskEstimate = catRes.riskEstimate;
+        results.symmetricMeasures = catRes.symmetricMeasures;
+      } catch (err) {
+        console.warn('Gagal menghitung Crosstab / Chi-Square:', err);
+      }
+    }
+  }
+
+  // 10. GENERASI NARASI DRAF DENGAN STRICT NUMBER GUARD (NILAI TERHITUNG)
   results.explanations = generateDeterministicExplanations(results);
 
   return results;
@@ -1310,6 +1341,18 @@ function generateDeterministicExplanations(res: AnalysisResults): Record<string,
   if (res.nonParametric) {
     const np = res.nonParametric;
     exp.nonParametric = `Uji non-parametrik ${np.testName} pada variabel ${np.dependentVar} menghasilkan nilai statistik uji = ${formatNumber(np.statistic, 3)}${np.zValue !== undefined ? ` (Z = ${formatNumber(np.zValue, 3)})` : ''} dengan Asymp. Sig. (2-tailed) p = ${formatNumber(np.pValue, 4)}. ${np.conclusion}`;
+  }
+
+  if (res.crosstab && res.chiSquare) {
+    const ct = res.crosstab;
+    const cs = res.chiSquare;
+    exp.crosstab = `Tabulasi silang antara ${ct.rowVar} dan ${ct.colVar} melibatkan ${res.respondentCount} responden valid. Analisis sebaran frekuensi menunjukkan distribusi kategori yang komprehensif lengkap dengan nilai frekuensi harapan (expected count) dan persentase baris.`;
+    exp.chisquare = `Pengujian hipotesis hubungan kategorik menggunakan uji Chi-Square menghasilkan uji rekomendasi '${cs.recommendedTest}'. ${cs.cochran.explanation} ${cs.conclusion}`;
+  }
+
+  if (res.riskEstimate) {
+    const re = res.riskEstimate;
+    exp.oddsRatio = `Analisis estimasi risiko epidemiologi menghasilkan nilai Odds Ratio (OR) sebesar ${formatNumber(re.oddsRatio, 3)} (95% CI: ${formatNumber(re.ciLower, 3)} - ${formatNumber(re.ciUpper, 3)}). ${re.interpretation}`;
   }
 
   return exp;

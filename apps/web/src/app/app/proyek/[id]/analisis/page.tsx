@@ -93,6 +93,9 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
     scoreCol,
     idealMaxScore,
     setComparativeMapping,
+    rowCol,
+    colCol,
+    setCategoricalMapping,
     constructs,
     setConstructs,
     selectedTests,
@@ -153,13 +156,16 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
   const independentConstructs = constructs.filter((c) => c.role === 'independent');
   const dependentConstructs = constructs.filter((c) => c.role === 'dependent');
   const isMappingValid =
-    researchDesign === 'comparative'
+    researchDesign === 'categorical'
+      ? Boolean(rowCol && colCol)
+      : researchDesign === 'comparative'
       ? Boolean((preCol && postCol) || (groupCol && scoreCol))
       : independentConstructs.length >= 1 && dependentConstructs.length >= 1;
 
-  // Auto-detect experimental columns when columns change
+  // Auto-detect columns when columns change
   React.useEffect(() => {
     if (columns.length > 0) {
+      // Auto-detect experimental columns
       const detectedPre =
         columns.find((c) => /^(pre[_-\s]?test|sebelum|pre)$/i.test(c.trim())) ||
         columns.find((c) => /pre/i.test(c.trim()));
@@ -176,12 +182,66 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
       if (detectedGroup && !groupCol) {
         setComparativeMapping({ groupCol: detectedGroup });
       }
+
+      // Auto-detect categorical columns (Health / Social)
+      const detectedRow = columns.find((c) =>
+        /^(kebiasaan[\s_]?merokok|status[\s_]?merokok|merokok|paparan|faktor[\s_]?risiko|perlakuan|pekerjaan)$/i.test(c.trim())
+      );
+      const detectedCol = columns.find((c) =>
+        /^(kejadian[\s_]?hipertensi|hipertensi|status[\s_]?gizi|penyakit|outcome|sembuh|status[\s_]?imunisasi)$/i.test(c.trim())
+      );
+      if (detectedRow && !rowCol) {
+        setCategoricalMapping({ rowCol: detectedRow });
+      }
+      if (detectedCol && !colCol) {
+        setCategoricalMapping({ colCol: detectedCol });
+      }
     }
-  }, [columns, preCol, postCol, groupCol, setComparativeMapping]);
+  }, [columns, preCol, postCol, groupCol, rowCol, colCol, setComparativeMapping, setCategoricalMapping]);
 
   // Compute test options with dynamic reasons based on constructs
   const dynamicTestOptions = React.useMemo<TestOption[]>(() => {
-    return mockTestOptions.map((opt) => {
+    let pool = mockTestOptions;
+    if (researchDesign === 'survey') {
+      pool = mockTestOptions.filter((t) =>
+        ['descriptive', 'validity', 'reliability', 'normality', 'multicollinearity', 'heteroscedasticity', 'regression', 'correlation'].includes(t.id)
+      );
+    } else if (researchDesign === 'comparative') {
+      pool = mockTestOptions.filter((t) =>
+        ['descriptive', 'paired-ttest', 'ngain', 'independent-ttest', 'oneway-anova', 'nonparametric'].includes(t.id)
+      );
+    } else if (researchDesign === 'categorical') {
+      pool = mockTestOptions.filter((t) =>
+        ['descriptive', 'crosstab', 'chisquare', 'odds-ratio'].includes(t.id)
+      );
+    }
+
+    return pool.map((opt) => {
+      if (researchDesign === 'categorical') {
+        if (opt.id === 'crosstab' || opt.id === 'chisquare') {
+          return {
+            ...opt,
+            recommended: true,
+            recommendReason: 'Analisis baku hubungan variabel kategorik (Crosstab & Chi-Square).',
+          };
+        }
+        if (opt.id === 'odds-ratio') {
+          return {
+            ...opt,
+            recommended: true,
+            recommendReason: 'Estimasi risiko Odds Ratio & 95% CI (standar FKM/Kedokteran).',
+          };
+        }
+        if (opt.id === 'descriptive') {
+          return {
+            ...opt,
+            recommended: true,
+            recommendReason: 'Sebaran frekuensi dasar sampel responden.',
+          };
+        }
+        return opt;
+      }
+
       if (researchDesign === 'comparative') {
         if (opt.id === 'paired-ttest' || opt.id === 'ngain') {
           return {
@@ -317,6 +377,8 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
         groupCol,
         scoreCol,
         idealMaxScore,
+        rowCol,
+        colCol,
         projectId,
         dataVersionId: `dv-${dataVersion}`,
       });
@@ -599,7 +661,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
             </div>
 
             {/* Template Selector */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <button
                 type="button"
                 onClick={() => {
@@ -664,6 +726,37 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Khusus FKIP, Psikologi, & Keperawatan: Paired Sample t-Test, Efektivitas N-Gain (Hake 1998), Independent t-Test (Levene), & Non-Parametrik.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setResearchDesign('categorical');
+                  setSelectedTests([
+                    'crosstab',
+                    'chisquare',
+                    'odds-ratio',
+                    'descriptive',
+                  ]);
+                }}
+                className={cn(
+                  'p-4 rounded-xl border text-left transition-all cursor-pointer',
+                  researchDesign === 'categorical'
+                    ? 'border-primary bg-primary/10 shadow-sm ring-1 ring-primary'
+                    : 'border-border bg-card hover:border-border/80'
+                )}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-semibold text-sm text-foreground">
+                    Hubungan Kategori (Chi-Square)
+                  </span>
+                  <Badge variant={researchDesign === 'categorical' ? 'brand' : 'outline'} className="text-[10px]">
+                    Crosstab &amp; OR
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Khusus FKM, Kebidanan, Keperawatan, &amp; Sosiologi: Tabulasi Silang (B × K), Chi-Square, Fisher Exact, &amp; Odds Ratio (95% CI).
                 </p>
               </button>
             </div>
@@ -803,6 +896,87 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                     className="text-[11px]"
                   >
                     {isMappingValid ? 'Parameter Lengkap' : 'Pilih Parameter'}
+                  </Badge>
+                </div>
+              </div>
+            )}
+
+            {/* CATEGORICAL TEMPLATE MAPPING */}
+            {researchDesign === 'categorical' && (
+              <div className="p-5 rounded-[16px] border border-border bg-card shadow-xs space-y-5">
+                <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                  <div>
+                    <h3 className="font-semibold text-sm text-foreground flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-emerald-500" />
+                      Pemetaan Variabel Kategorik (Tabulasi Silang &amp; Chi-Square)
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Pilih variabel baris (faktor paparan/risiko/independen) dan variabel kolom (kejadian penyakit/luaran/dependen) berskala data nominal atau ordinal.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Row variable */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground">
+                      Variabel Baris (Faktor Paparan / Independen):
+                    </label>
+                    <select
+                      value={rowCol || ''}
+                      onChange={(e) => setCategoricalMapping({ rowCol: e.target.value || null })}
+                      className="w-full text-xs rounded-lg border border-border bg-background p-2.5 font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                    >
+                      <option value="">-- Pilih Variabel Baris --</option>
+                      {columns.map((col) => (
+                        <option key={col} value={col}>
+                          {col}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-muted-foreground">
+                      Contoh: Kebiasaan Merokok, Status Gizi, Tingkat Stres, Kelompok Intervensi.
+                    </p>
+                  </div>
+
+                  {/* Column variable */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground">
+                      Variabel Kolom (Kejadian / Luaran / Dependen):
+                    </label>
+                    <select
+                      value={colCol || ''}
+                      onChange={(e) => setCategoricalMapping({ colCol: e.target.value || null })}
+                      className="w-full text-xs rounded-lg border border-border bg-background p-2.5 font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                    >
+                      <option value="">-- Pilih Variabel Kolom --</option>
+                      {columns.map((col) => (
+                        <option key={col} value={col}>
+                          {col}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-muted-foreground">
+                      Contoh: Kejadian Hipertensi, Status Kesembuhan, Tingkat Kepatuhan.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Status Box */}
+                <div className="p-3.5 rounded-lg bg-muted/40 border border-border/50 text-xs flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <span className="font-semibold text-foreground">Kesiapan Analisis Chi-Square:</span>
+                    <p className="text-[11px] text-muted-foreground">
+                      {rowCol && colCol
+                        ? `✓ Variabel siap: ${rowCol} (Baris) × ${colCol} (Kolom) untuk Tabulasi Silang, Chi-Square, Fisher Exact, & Odds Ratio.`
+                        : '• Silakan tentukan Variabel Baris dan Variabel Kolom di atas.'}
+                    </p>
+                  </div>
+                  <Badge
+                    variant={rowCol && colCol ? 'success' : 'amber'}
+                    className="text-[11px]"
+                  >
+                    {rowCol && colCol ? 'Parameter Lengkap' : 'Pilih Parameter'}
                   </Badge>
                 </div>
               </div>

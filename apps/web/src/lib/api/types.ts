@@ -7,6 +7,13 @@ import type {
   OutlierTroubleshooterResult,
 } from '../comparative-stats';
 
+import type {
+  CrosstabMatrix,
+  ChiSquareResult,
+  RiskEstimateResult,
+  SymmetricMeasuresResult,
+} from '../categorical-stats';
+
 export type {
   PairedTTestResult,
   NGainSummary,
@@ -14,12 +21,16 @@ export type {
   OneWayAnovaResult,
   NonParametricResult,
   OutlierTroubleshooterResult,
+  CrosstabMatrix,
+  ChiSquareResult,
+  RiskEstimateResult,
+  SymmetricMeasuresResult,
 };
 
 export type ProjectStatus = 'draft' | 'analyzing' | 'completed';
 export type IssueSeverity = 'error' | 'warning' | 'info';
 export type VariableRole = 'independent' | 'dependent';
-export type ResearchDesign = 'survey' | 'comparative';
+export type ResearchDesign = 'survey' | 'comparative' | 'categorical';
 export type TestType =
   | 'descriptive'
   | 'validity'
@@ -37,10 +48,13 @@ export type TestType =
   | 'independent-ttest'
   | 'oneway-anova'
   | 'ngain'
-  | 'nonparametric';
+  | 'nonparametric'
+  | 'crosstab'
+  | 'chisquare'
+  | 'odds-ratio';
 
 export type SubscriptionPlan = 'free' | 'monthly' | 'thesis';
-export type ExportFormat = 'word' | 'pdf';
+export type ExportFormat = 'word' | 'pdf' | 'spss-word';
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 export interface User {
@@ -313,6 +327,10 @@ export interface AnalysisResults {
   nonParametric?: NonParametricResult;
   residualOutliers?: OutlierTroubleshooterResult;
   spearmanHetero?: HeteroscedasticityResult[];
+  crosstab?: CrosstabMatrix;
+  chiSquare?: ChiSquareResult;
+  riskEstimate?: RiskEstimateResult;
+  symmetricMeasures?: SymmetricMeasuresResult;
   explanations: Record<string, string>;
   sourceMeta?: DatasetSourceMeta;
 }
@@ -356,6 +374,7 @@ export interface ExportOptions {
   format: ExportFormat;
   sections: TestType[];
   includeStatement: boolean;
+  narrativeTone?: 'standard' | 'concise' | 'formal';
 }
 
 export interface BillingRecord {

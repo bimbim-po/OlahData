@@ -115,6 +115,69 @@ function generateExperimentalRows(): DatasetRow[] {
 
 export const mockExperimentalDataset: DatasetRow[] = generateExperimentalRows();
 
+// --- Dataset Contoh Kesehatan / Epidemiologi (Crosstab & Chi-Square) ---
+// N = 100 Responden: Kebiasaan Merokok vs Kejadian Hipertensi
+function generateHealthRows(): DatasetRow[] {
+  const rows: DatasetRow[] = [];
+  let no = 1;
+
+  // 1. Merokok & Hipertensi (a = 38)
+  for (let i = 0; i < 38; i++) {
+    rows.push({
+      No: no++,
+      Nama: `Pasien ${no - 1}`,
+      Jenis_Kelamin: i % 2 === 0 ? 'Laki-laki' : 'Perempuan',
+      Kebiasaan_Merokok: 'Merokok',
+      Kejadian_Hipertensi: 'Hipertensi',
+      Aktivitas_Fisik: i % 3 === 0 ? 'Kurang' : 'Cukup',
+      Status_Gizi: i % 2 === 0 ? 'Obesitas' : 'Normal',
+    });
+  }
+
+  // 2. Merokok & Normal (b = 12)
+  for (let i = 0; i < 12; i++) {
+    rows.push({
+      No: no++,
+      Nama: `Pasien ${no - 1}`,
+      Jenis_Kelamin: 'Laki-laki',
+      Kebiasaan_Merokok: 'Merokok',
+      Kejadian_Hipertensi: 'Normal',
+      Aktivitas_Fisik: 'Cukup',
+      Status_Gizi: 'Normal',
+    });
+  }
+
+  // 3. Tidak Merokok & Hipertensi (c = 15)
+  for (let i = 0; i < 15; i++) {
+    rows.push({
+      No: no++,
+      Nama: `Pasien ${no - 1}`,
+      Jenis_Kelamin: i % 2 === 0 ? 'Perempuan' : 'Laki-laki',
+      Kebiasaan_Merokok: 'Tidak Merokok',
+      Kejadian_Hipertensi: 'Hipertensi',
+      Aktivitas_Fisik: 'Kurang',
+      Status_Gizi: 'Obesitas',
+    });
+  }
+
+  // 4. Tidak Merokok & Normal (d = 35)
+  for (let i = 0; i < 35; i++) {
+    rows.push({
+      No: no++,
+      Nama: `Pasien ${no - 1}`,
+      Jenis_Kelamin: i % 3 === 0 ? 'Laki-laki' : 'Perempuan',
+      Kebiasaan_Merokok: 'Tidak Merokok',
+      Kejadian_Hipertensi: 'Normal',
+      Aktivitas_Fisik: 'Baik',
+      Status_Gizi: 'Normal',
+    });
+  }
+
+  return rows;
+}
+
+export const mockHealthDataset: DatasetRow[] = generateHealthRows();
+
 export const mockIssues: DataIssue[] = [
   { id: 'issue-1', severity: 'error', message: 'Sel kosong', row: 45, column: 'KL3', value: null },
   { id: 'issue-2', severity: 'error', message: 'Sel kosong', row: 78, column: 'KP2', value: null },

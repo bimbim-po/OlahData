@@ -32,6 +32,7 @@ import {
   SlidersHorizontal,
   HelpCircle,
   Sparkles,
+  Table as TableIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -218,6 +219,16 @@ export default function HasilPage() {
   const computedTabs = useMemo<TabItem[]>(() => {
     if (!results) return TABS_LIST;
 
+    if (results.researchDesign === 'categorical') {
+      const tabs: TabItem[] = [
+        { id: 'crosstab', label: 'Tabulasi Silang & Chi-Square', icon: TableIcon },
+      ];
+      if (results.descriptive && results.descriptive.length > 0) {
+        tabs.unshift({ id: 'descriptive', label: 'Deskriptif', icon: BarChart3 });
+      }
+      return tabs;
+    }
+
     if (results.researchDesign === 'comparative') {
       const tabs: TabItem[] = [
         { id: 'descriptive', label: 'Deskriptif', icon: BarChart3 },
@@ -238,6 +249,9 @@ export default function HasilPage() {
     }
 
     const tabs: TabItem[] = [...TABS_LIST];
+    if (results.crosstab || results.chiSquare) {
+      tabs.push({ id: 'crosstab', label: 'Tabulasi Silang & Chi-Square', icon: TableIcon });
+    }
     if (results.pairedTTest || results.nGain) {
       tabs.push({ id: 'paired-ttest', label: 'Paired t-Test & N-Gain', icon: GitCompare });
     }
@@ -298,8 +312,12 @@ export default function HasilPage() {
         activeResults ? Promise.resolve(activeResults) : getResult(projectId),
       ]);
 
+      const finalRes = activeResults || apiRes;
       setProject(projData || null);
-      setResults(activeResults || apiRes);
+      setResults(finalRes);
+      if (finalRes?.researchDesign === 'categorical') {
+        setActiveTab('crosstab');
+      }
     } catch (err: unknown) {
       console.error('Failed to load project results', err);
       const msg = err instanceof Error ? err.message : 'Gagal memuat hasil analisis';
@@ -374,6 +392,7 @@ export default function HasilPage() {
     'independent-ttest': 'Independent Sample t-Test & Levene',
     'oneway-anova': 'One-Way ANOVA & Post-Hoc Tukey',
     nonparametric: 'Uji Non-Parametrik Alternatif',
+    crosstab: 'Tabulasi Silang, Chi-Square, & Odds Ratio',
   };
 
   // Navigasi Sebelumnya & Berikutnya antar-tab dinamis
@@ -667,6 +686,77 @@ export default function HasilPage() {
         }
       }
 
+      // 6. Tabulasi Silang & Chi-Square (Categorical)
+      if (results.crosstab && results.chiSquare) {
+        const ct = results.crosstab;
+        const cs = results.chiSquare;
+        const crosstabRows: (string | number)[][] = [];
+        ct.rowCategories.forEach((rowCat, rIdx) => {
+          const counts = ct.colCategories.map((_, cIdx) => ct.matrix[rIdx][cIdx]);
+          crosstabRows.push([rowCat, 'Count', ...counts, ct.rowTotals[rIdx]]);
+          const expecteds = ct.colCategories.map((_, cIdx) => formatNumber(ct.expectedMatrix[rIdx][cIdx], 1));
+          crosstabRows.push(['', 'Expected Count', ...expecteds, formatNumber(ct.rowTotals[rIdx], 1)]);
+          const rowPercents = ct.colCategories.map((_, cIdx) => `${formatNumber(ct.rowPercentages[rIdx][cIdx], 1)}%`);
+          crosstabRows.push(['', `% within ${ct.rowVar}`, ...rowPercents, '100,0%']);
+        });
+
+        allHtmlSections.push(buildWordTableHtml({
+          tableNumber: 'Tabel 4.16',
+          title: `Hasil Tabulasi Silang ${ct.rowVar} dan ${ct.colVar}`,
+          note: `Total N = ${ct.totalN} responden.`,
+          columns: [
+            { header: ct.rowVar, align: 'left' },
+            { header: 'Keterangan', align: 'left' },
+            ...ct.colCategories.map((c) => ({ header: c, align: 'right' as const })),
+            { header: 'Total', align: 'right' },
+          ],
+          rows: crosstabRows,
+        }));
+
+        const csRows: (string | number)[][] = [
+          ['Pearson Chi-Square', formatNumber(cs.pearsonChiSquare, 3), cs.df, formatNumber(cs.pearsonSig, 4), cs.pearsonSig < 0.05 ? 'Signifikan' : 'Tidak'],
+        ];
+        if (cs.continuityCorrection !== undefined) {
+          csRows.push(['Continuity Correction (Yates)', formatNumber(cs.continuityCorrection, 3), 1, formatNumber(cs.continuityCorrectionSig || 0, 4), (cs.continuityCorrectionSig || 0) < 0.05 ? 'Signifikan' : 'Tidak']);
+        }
+        if (cs.fisherExact !== undefined) {
+          csRows.push(["Fisher's Exact Test", '-', '-', formatNumber(cs.fisherExact, 4), cs.fisherExact < 0.05 ? 'Signifikan' : 'Tidak']);
+        }
+        allHtmlSections.push(buildWordTableHtml({
+          tableNumber: 'Tabel 4.17',
+          title: "Hasil Uji Chi-Square & Fisher's Exact Test",
+          note: cs.cochranFootnote,
+          columns: [
+            { header: 'Uji Statistik', align: 'left' },
+            { header: 'Nilai Hitung', align: 'right' },
+            { header: 'df', align: 'right' },
+            { header: 'Sig. (2-sided)', align: 'right' },
+            { header: 'Keputusan', align: 'center' },
+          ],
+          rows: csRows,
+        }));
+
+        if (results.riskEstimate) {
+          const re = results.riskEstimate;
+          allHtmlSections.push(buildWordTableHtml({
+            tableNumber: 'Tabel 4.18',
+            title: `Estimasi Risiko Epidemiologi (${re.exposureVar})`,
+            columns: [
+              { header: 'Ukuran Asosiasi', align: 'left' },
+              { header: 'Estimasi Nilai', align: 'right' },
+              { header: '95% CI Lower', align: 'right' },
+              { header: '95% CI Upper', align: 'right' },
+              { header: 'Interpretasi Risiko', align: 'center' },
+            ],
+            rows: [
+              [`Odds Ratio (OR) untuk ${re.exposureVar}`, formatNumber(re.oddsRatio, 3), formatNumber(re.ciLower, 3), formatNumber(re.ciUpper, 3), re.ciLower > 1.0 ? 'Faktor Risiko Signifikan' : (re.ciUpper < 1.0 ? 'Faktor Protektif Signifikan' : 'Bukan Risiko')],
+              ['Relative Risk (RR) Kohort 1', formatNumber(re.forCohortRisk1, 3), formatNumber(re.forCohortRisk1CiLower, 3), formatNumber(re.forCohortRisk1CiUpper, 3), 'Kelompok Kasus'],
+              ['Relative Risk (RR) Kohort 2', formatNumber(re.forCohortRisk2, 3), formatNumber(re.forCohortRisk2CiLower, 3), formatNumber(re.forCohortRisk2CiUpper, 3), 'Kelompok Kontrol'],
+            ],
+          }));
+        }
+      }
+
       const combinedHtml = allHtmlSections.join('<br/><br/>');
       const plainText = 'Tabel-tabel hasil analisis statistik Bab 4 OlahData berhasil disalin.';
       await copyHtmlAndText(combinedHtml, plainText);
@@ -861,6 +951,82 @@ export default function HasilPage() {
             r.significant ? 'Signifikan' : 'Tidak',
           ]),
         });
+      } else if (activeTab === 'crosstab' && results.crosstab && results.chiSquare) {
+        const ct = results.crosstab;
+        const cs = results.chiSquare;
+        const parts: string[] = [];
+
+        const crosstabRows: (string | number)[][] = [];
+        ct.rowCategories.forEach((rowCat, rIdx) => {
+          const counts = ct.colCategories.map((_, cIdx) => ct.matrix[rIdx][cIdx]);
+          crosstabRows.push([rowCat, 'Count', ...counts, ct.rowTotals[rIdx]]);
+          const expecteds = ct.colCategories.map((_, cIdx) => formatNumber(ct.expectedMatrix[rIdx][cIdx], 1));
+          crosstabRows.push(['', 'Expected Count', ...expecteds, formatNumber(ct.rowTotals[rIdx], 1)]);
+          const rowPercents = ct.colCategories.map((_, cIdx) => `${formatNumber(ct.rowPercentages[rIdx][cIdx], 1)}%`);
+          crosstabRows.push(['', `% within ${ct.rowVar}`, ...rowPercents, '100,0%']);
+        });
+
+        parts.push(buildWordTableHtml({
+          tableNumber: 'Tabel 4.16',
+          title: `Hasil Tabulasi Silang ${ct.rowVar} dan ${ct.colVar}`,
+          note: `Total N = ${ct.totalN} responden.`,
+          columns: [
+            { header: ct.rowVar, align: 'left' },
+            { header: 'Keterangan', align: 'left' },
+            ...ct.colCategories.map((c) => ({ header: c, align: 'right' as const })),
+            { header: 'Total', align: 'right' },
+          ],
+          rows: crosstabRows,
+        }));
+
+        const csRows: (string | number)[][] = [
+          ['Pearson Chi-Square', formatNumber(cs.pearsonChiSquare, 3), cs.df, formatNumber(cs.pearsonSig, 4), cs.pearsonSig < 0.05 ? 'Signifikan' : 'Tidak'],
+        ];
+        if (cs.continuityCorrection !== undefined) {
+          csRows.push(['Continuity Correction (Yates)', formatNumber(cs.continuityCorrection, 3), 1, formatNumber(cs.continuityCorrectionSig || 0, 4), (cs.continuityCorrectionSig || 0) < 0.05 ? 'Signifikan' : 'Tidak']);
+        }
+        if (cs.likelihoodRatio !== undefined) {
+          csRows.push(['Likelihood Ratio', formatNumber(cs.likelihoodRatio, 3), cs.df, formatNumber(cs.likelihoodRatioSig || 0, 4), (cs.likelihoodRatioSig || 0) < 0.05 ? 'Signifikan' : 'Tidak']);
+        }
+        if (cs.fisherExact !== undefined) {
+          csRows.push(["Fisher's Exact Test", '-', '-', formatNumber(cs.fisherExact, 4), cs.fisherExact < 0.05 ? 'Signifikan' : 'Tidak']);
+        }
+
+        parts.push(buildWordTableHtml({
+          tableNumber: 'Tabel 4.17',
+          title: "Hasil Uji Chi-Square & Fisher's Exact Test",
+          note: cs.cochranFootnote,
+          columns: [
+            { header: 'Uji Statistik', align: 'left' },
+            { header: 'Nilai Hitung', align: 'right' },
+            { header: 'df', align: 'right' },
+            { header: 'Sig. (2-sided)', align: 'right' },
+            { header: 'Keputusan', align: 'center' },
+          ],
+          rows: csRows,
+        }));
+
+        if (results.riskEstimate) {
+          const re = results.riskEstimate;
+          parts.push(buildWordTableHtml({
+            tableNumber: 'Tabel 4.18',
+            title: `Estimasi Risiko Epidemiologi (${re.exposureVar})`,
+            columns: [
+              { header: 'Ukuran Asosiasi', align: 'left' },
+              { header: 'Estimasi Nilai', align: 'right' },
+              { header: '95% CI Lower', align: 'right' },
+              { header: '95% CI Upper', align: 'right' },
+              { header: 'Interpretasi Risiko', align: 'center' },
+            ],
+            rows: [
+              [`Odds Ratio (OR) untuk ${re.exposureVar}`, formatNumber(re.oddsRatio, 3), formatNumber(re.ciLower, 3), formatNumber(re.ciUpper, 3), re.ciLower > 1.0 ? 'Faktor Risiko Signifikan' : (re.ciUpper < 1.0 ? 'Faktor Protektif Signifikan' : 'Bukan Risiko')],
+              ['Relative Risk (RR) Kohort 1', formatNumber(re.forCohortRisk1, 3), formatNumber(re.forCohortRisk1CiLower, 3), formatNumber(re.forCohortRisk1CiUpper, 3), 'Kelompok Kasus'],
+              ['Relative Risk (RR) Kohort 2', formatNumber(re.forCohortRisk2, 3), formatNumber(re.forCohortRisk2CiLower, 3), formatNumber(re.forCohortRisk2CiUpper, 3), 'Kelompok Kontrol'],
+            ],
+          }));
+        }
+
+        tableHtml = parts.join('<br/><br/>');
       }
 
       if (tableHtml) {
@@ -2015,6 +2181,160 @@ export default function HasilPage() {
         </Badge>
       ),
       getValue: (r) => (!r.significant ? 'Bebas' : 'Terindikasi'),
+    },
+  ];
+
+  // 13. Chi-Square Tests
+  const chiSquareTableCols: ColumnDef<{
+    test: string;
+    value: number | string;
+    df: number | string;
+    sig: number;
+    exactSig?: number;
+    isRecommended?: boolean;
+    significant: boolean;
+  }>[] = [
+    {
+      key: 'test',
+      header: 'Uji Statistik Asosiasi',
+      render: (r) => (
+        <div className="flex items-center gap-1.5 font-medium">
+          <span>{r.test}</span>
+          {r.isRecommended && (
+            <Badge variant="amber" className="text-[10px] px-1.5 py-0">
+              ★ Rekomendasi Kaidah Cochran
+            </Badge>
+          )}
+        </div>
+      ),
+      getValue: (r) => r.test,
+    },
+    {
+      key: 'value',
+      header: 'Nilai Hitung (χ²)',
+      align: 'right',
+      render: (r) => <span className="font-semibold">{typeof r.value === 'number' ? formatNumber(r.value, 3) : r.value}</span>,
+      getValue: (r) => (typeof r.value === 'number' ? formatNumber(r.value, 3) : r.value),
+    },
+    {
+      key: 'df',
+      header: 'df',
+      align: 'right',
+      getValue: (r) => String(r.df),
+    },
+    {
+      key: 'sig',
+      header: 'Asymp. Sig. (2-sided)',
+      align: 'right',
+      render: (r) => <span className="font-semibold">{formatNumber(r.sig, 4)}</span>,
+      getValue: (r) => formatNumber(r.sig, 4),
+    },
+    {
+      key: 'exactSig',
+      header: 'Exact Sig. (2-sided)',
+      align: 'right',
+      getValue: (r) => (r.exactSig !== undefined ? formatNumber(r.exactSig, 4) : '-'),
+    },
+    {
+      key: 'significant',
+      header: 'Kesimpulan (α=0,05)',
+      align: 'center',
+      render: (r) => (
+        <Badge variant={r.significant ? 'pine' : 'secondary'} className="text-[12px]">
+          {r.significant ? 'Berhubungan Signifikan' : 'Tidak Signifikan'}
+        </Badge>
+      ),
+      getValue: (r) => (r.significant ? 'Signifikan' : 'Tidak Signifikan'),
+    },
+  ];
+
+  // 14. Risk Estimate (Odds Ratio)
+  const riskEstimateTableCols: ColumnDef<{
+    measure: string;
+    value: number;
+    ciLower: number;
+    ciUpper: number;
+    isSignificantRisk: boolean;
+    isProtective: boolean;
+  }>[] = [
+    {
+      key: 'measure',
+      header: 'Ukuran Asosiasi Risiko',
+      render: (r) => <span className="font-semibold text-foreground">{r.measure}</span>,
+      getValue: (r) => r.measure,
+    },
+    {
+      key: 'value',
+      header: 'Nilai Estimasi (OR / RR)',
+      align: 'right',
+      render: (r) => <span className="font-bold text-primary">{formatNumber(r.value, 3)}</span>,
+      getValue: (r) => formatNumber(r.value, 3),
+    },
+    {
+      key: 'ciLower',
+      header: '95% CI Lower',
+      align: 'right',
+      getValue: (r) => formatNumber(r.ciLower, 3),
+    },
+    {
+      key: 'ciUpper',
+      header: '95% CI Upper',
+      align: 'right',
+      getValue: (r) => formatNumber(r.ciUpper, 3),
+    },
+    {
+      key: 'decision',
+      header: 'Interpretasi Epidemiologi',
+      align: 'center',
+      render: (r) => (
+        <Badge
+          variant={r.isSignificantRisk ? 'coral' : (r.isProtective ? 'pine' : 'secondary')}
+          className="text-[12px]"
+        >
+          {r.isSignificantRisk ? 'Faktor Risiko Signifikan' : (r.isProtective ? 'Faktor Protektif' : 'Bukan Risiko Signifikan')}
+        </Badge>
+      ),
+      getValue: (r) => (r.isSignificantRisk ? 'Faktor Risiko Signifikan' : (r.isProtective ? 'Faktor Protektif' : 'Bukan Risiko')),
+    },
+  ];
+
+  // 15. Symmetric Measures (Phi, Cramer's V, Contingency Coefficient)
+  const symmetricMeasuresTableCols: ColumnDef<{
+    measure: string;
+    value: number | string;
+    pValue: number;
+    category: string;
+  }>[] = [
+    {
+      key: 'measure',
+      header: 'Ukuran Korelasi Nominal',
+      render: (r) => <span className="font-semibold text-foreground">{r.measure}</span>,
+      getValue: (r) => r.measure,
+    },
+    {
+      key: 'value',
+      header: 'Nilai Koefisien',
+      align: 'right',
+      render: (r) => <span className="font-semibold">{typeof r.value === 'number' ? formatNumber(r.value, 3) : r.value}</span>,
+      getValue: (r) => (typeof r.value === 'number' ? formatNumber(r.value, 3) : r.value),
+    },
+    {
+      key: 'pValue',
+      header: 'Approximate Significance',
+      align: 'right',
+      render: (r) => <span className="font-semibold">{formatNumber(r.pValue, 4)}</span>,
+      getValue: (r) => formatNumber(r.pValue, 4),
+    },
+    {
+      key: 'category',
+      header: 'Tingkat Keeratan Hubungan',
+      align: 'center',
+      render: (r) => (
+        <Badge variant={r.pValue < 0.05 ? 'pine' : 'secondary'} className="text-[12px]">
+          {r.category}
+        </Badge>
+      ),
+      getValue: (r) => r.category,
     },
   ];
 
@@ -3189,6 +3509,310 @@ export default function HasilPage() {
                         ksSig: 0.02,
                       }}
                     />
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* 11. TABULASI SILANG, CHI-SQUARE, & ESTIMASI RISIKO */}
+              <TabsContent value="crosstab" className="space-y-6 mt-4">
+                {results.crosstab && results.chiSquare && (
+                  <div className="space-y-6">
+                    {/* APA 7th Matriks Tabulasi Silang */}
+                    <div className="rounded-2xl border border-border bg-card p-5 shadow-xs space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/80 pb-3">
+                        <div>
+                          <span className="text-xs font-bold text-primary font-mono uppercase tracking-wider block">
+                            Tabel 4.16 (Format Baku APA 7th Edition)
+                          </span>
+                          <h3 className="text-base font-bold text-foreground font-serif">
+                            Hasil Tabulasi Silang {results.crosstab.rowVar} dan {results.crosstab.colVar}
+                          </h3>
+                        </div>
+                        <Badge variant="outline" className="font-mono text-xs">
+                          Total N = {results.crosstab.totalN}
+                        </Badge>
+                      </div>
+
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs border-collapse">
+                          <thead>
+                            <tr className="border-t-[1.5pt] border-b border-foreground/90 font-bold">
+                              <th className="py-2.5 px-3 text-left">{results.crosstab.rowVar}</th>
+                              <th className="py-2.5 px-3 text-left">Keterangan</th>
+                              {results.crosstab.colCategories.map((col) => (
+                                <th key={col} className="py-2.5 px-3 text-right">{col}</th>
+                              ))}
+                              <th className="py-2.5 px-3 text-right">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {results.crosstab.rowCategories.map((rowCat, rIdx) => {
+                              const rowTotal = results.crosstab!.rowTotals[rIdx];
+                              return (
+                                <React.Fragment key={rowCat}>
+                                  <tr className="border-t border-border/60 hover:bg-muted/30">
+                                    <td rowSpan={3} className="py-2.5 px-3 font-semibold text-foreground align-top">
+                                      {rowCat}
+                                    </td>
+                                    <td className="py-1 px-3 text-muted-foreground">Count (Frekuensi Aktual)</td>
+                                    {results.crosstab!.colCategories.map((_, cIdx) => (
+                                      <td key={cIdx} className="py-1 px-3 text-right font-bold text-foreground">
+                                        {results.crosstab!.matrix[rIdx][cIdx]}
+                                      </td>
+                                    ))}
+                                    <td className="py-1 px-3 text-right font-bold text-foreground">{rowTotal}</td>
+                                  </tr>
+                                  <tr className="hover:bg-muted/30">
+                                    <td className="py-1 px-3 text-muted-foreground">Expected Count (Frekuensi Harapan)</td>
+                                    {results.crosstab!.colCategories.map((_, cIdx) => (
+                                      <td key={cIdx} className="py-1 px-3 text-right text-muted-foreground">
+                                        {formatNumber(results.crosstab!.expectedMatrix[rIdx][cIdx], 1)}
+                                      </td>
+                                    ))}
+                                    <td className="py-1 px-3 text-right text-muted-foreground font-semibold">
+                                      {formatNumber(rowTotal, 1)}
+                                    </td>
+                                  </tr>
+                                  <tr className="hover:bg-muted/30">
+                                    <td className="py-1 px-3 text-muted-foreground">% dalam {results.crosstab!.rowVar}</td>
+                                    {results.crosstab!.colCategories.map((_, cIdx) => (
+                                      <td key={cIdx} className="py-1 px-3 text-right text-foreground">
+                                        {formatNumber(results.crosstab!.rowPercentages[rIdx][cIdx], 1)}%
+                                      </td>
+                                    ))}
+                                    <td className="py-1 px-3 text-right text-foreground">100,0%</td>
+                                  </tr>
+                                </React.Fragment>
+                              );
+                            })}
+                            <tr className="border-t border-b-[1.5pt] border-foreground/90 font-bold bg-muted/20">
+                              <td rowSpan={2} className="py-2.5 px-3 align-top">Total</td>
+                              <td className="py-1 px-3">Count</td>
+                              {results.crosstab.colCategories.map((_, cIdx) => (
+                                <td key={cIdx} className="py-1 px-3 text-right">
+                                  {results.crosstab!.colTotals[cIdx]}
+                                </td>
+                              ))}
+                              <td className="py-1 px-3 text-right">{results.crosstab.totalN}</td>
+                            </tr>
+                            <tr className="border-b-[1.5pt] border-foreground/90 font-semibold bg-muted/20 text-muted-foreground">
+                              <td className="py-1 px-3">Expected Count</td>
+                              {results.crosstab.colCategories.map((_, cIdx) => (
+                                <td key={cIdx} className="py-1 px-3 text-right">
+                                  {formatNumber(results.crosstab!.colTotals[cIdx], 1)}
+                                </td>
+                              ))}
+                              <td className="py-1 px-3 text-right text-foreground font-bold">
+                                {formatNumber(results.crosstab.totalN, 1)}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground italic">
+                        Catatan: Tabel berstandar APA 7th Edition tanpa garis vertikal. N = {results.crosstab.totalN} responden.
+                      </p>
+                    </div>
+
+                    {/* Chi-Square Tests Table */}
+                    {(() => {
+                      const cs = results.chiSquare;
+                      const is2x2 = results.crosstab.rowCategories.length === 2 && results.crosstab.colCategories.length === 2;
+                      const hasCellLt5 = cs.minExpectedCount < 5;
+
+                      const csData: Array<{
+                        test: string;
+                        value: number | string;
+                        df: number | string;
+                        sig: number;
+                        exactSig?: number;
+                        significant: boolean;
+                        isRecommended: boolean;
+                      }> = [
+                        {
+                          test: 'Pearson Chi-Square',
+                          value: cs.pearsonChiSquare,
+                          df: cs.df,
+                          sig: cs.pearsonSig,
+                          significant: cs.pearsonSig < 0.05,
+                          isRecommended: !is2x2 || !hasCellLt5,
+                        },
+                      ];
+                      if (cs.continuityCorrection !== undefined) {
+                        csData.push({
+                          test: "Continuity Correction (Yates' Correction)",
+                          value: cs.continuityCorrection,
+                          df: 1,
+                          sig: cs.continuityCorrectionSig || 0,
+                          significant: (cs.continuityCorrectionSig || 0) < 0.05,
+                          isRecommended: is2x2 && !hasCellLt5,
+                        });
+                      }
+                      if (cs.likelihoodRatio !== undefined) {
+                        csData.push({
+                          test: 'Likelihood Ratio',
+                          value: cs.likelihoodRatio,
+                          df: cs.df,
+                          sig: cs.likelihoodRatioSig || 0,
+                          significant: (cs.likelihoodRatioSig || 0) < 0.05,
+                          isRecommended: false,
+                        });
+                      }
+                      if (cs.fisherExact !== undefined) {
+                        csData.push({
+                          test: "Fisher's Exact Test",
+                          value: '-',
+                          df: '-',
+                          sig: cs.fisherExact,
+                          exactSig: cs.fisherExact,
+                          significant: cs.fisherExact < 0.05,
+                          isRecommended: is2x2 && hasCellLt5,
+                        });
+                      }
+
+                      return (
+                        <ResultTable
+                          tableNumber="Tabel 4.17"
+                          title="Hasil Pengujian Asosiasi Independensi Chi-Square dan Fisher's Exact Test"
+                          note={cs.cochranFootnote}
+                          columns={chiSquareTableCols}
+                          data={csData}
+                          rowKey={(r) => r.test}
+                          highlightedValue={highlightedNumber}
+                        />
+                      );
+                    })()}
+
+                    {/* Risk Estimate (Odds Ratio) if 2x2 */}
+                    {results.riskEstimate && (
+                      <ResultTable
+                        tableNumber="Tabel 4.18"
+                        title={`Estimasi Risiko Epidemiologi (Odds Ratio & Relative Risk) untuk ${results.riskEstimate.exposureVar}`}
+                        note="Tingkat kepercayaan 95% Confidence Interval (metode Woolf/Logit)."
+                        columns={riskEstimateTableCols}
+                        data={[
+                          {
+                            measure: `Odds Ratio (OR) untuk ${results.riskEstimate.exposureVar}`,
+                            value: results.riskEstimate.oddsRatio,
+                            ciLower: results.riskEstimate.ciLower,
+                            ciUpper: results.riskEstimate.ciUpper,
+                            isSignificantRisk: results.riskEstimate.isSignificantRisk,
+                            isProtective: results.riskEstimate.isProtective,
+                          },
+                          {
+                            measure: `Relative Risk (RR) untuk Kohort ${results.crosstab.colCategories[0]}`,
+                            value: results.riskEstimate.forCohortRisk1,
+                            ciLower: results.riskEstimate.forCohortRisk1CiLower,
+                            ciUpper: results.riskEstimate.forCohortRisk1CiUpper,
+                            isSignificantRisk: results.riskEstimate.forCohortRisk1CiLower > 1.0,
+                            isProtective: results.riskEstimate.forCohortRisk1CiUpper < 1.0,
+                          },
+                          {
+                            measure: `Relative Risk (RR) untuk Kohort ${results.crosstab.colCategories[1]}`,
+                            value: results.riskEstimate.forCohortRisk2,
+                            ciLower: results.riskEstimate.forCohortRisk2CiLower,
+                            ciUpper: results.riskEstimate.forCohortRisk2CiUpper,
+                            isSignificantRisk: results.riskEstimate.forCohortRisk2CiLower > 1.0,
+                            isProtective: results.riskEstimate.forCohortRisk2CiUpper < 1.0,
+                          },
+                        ]}
+                        rowKey={(r) => r.measure}
+                        highlightedValue={highlightedNumber}
+                      />
+                    )}
+
+                    {/* Symmetric Measures Table */}
+                    {results.symmetricMeasures && (() => {
+                      const sm = results.symmetricMeasures;
+                      const smRows: Array<{
+                        measure: string;
+                        value: number | string;
+                        pValue: number;
+                        category: string;
+                      }> = [];
+
+                      if (sm.phi !== undefined) {
+                        smRows.push({
+                          measure: 'Phi (φ)',
+                          value: sm.phi,
+                          pValue: sm.pValue,
+                          category: sm.phiStrength || '-',
+                        });
+                      }
+                      smRows.push(
+                        {
+                          measure: "Cramer's V",
+                          value: sm.cramersV,
+                          pValue: sm.pValue,
+                          category: sm.cramersVStrength,
+                        },
+                        {
+                          measure: 'Contingency Coefficient (C)',
+                          value: sm.contingencyCoeff,
+                          pValue: sm.pValue,
+                          category: sm.contingencyCoeffStrength,
+                        }
+                      );
+
+                      return (
+                        <ResultTable
+                          tableNumber="Tabel 4.19"
+                          title="Koefisien Kekuatan Hubungan (Symmetric Measures)"
+                          note="Ukuran keeratan asosiasi variabel nominal."
+                          columns={symmetricMeasuresTableCols}
+                          data={smRows}
+                          rowKey={(r) => r.measure}
+                          highlightedValue={highlightedNumber}
+                        />
+                      );
+                    })()}
+
+                    {/* Interpretasi Naratif Akademik */}
+                    {results.explanations.chiSquare && (
+                      <ExplanationBox
+                        title="Interpretasi Uji Independensi Chi-Square & Kaidah Cochran"
+                        summarySentence={results.chiSquare.conclusion}
+                        explanation={results.explanations.chiSquare}
+                        onHoverNumber={setHighlightedNumber}
+                        activeNumber={highlightedNumber}
+                      />
+                    )}
+
+                    {results.explanations.oddsRatio && (
+                      <ExplanationBox
+                        title="Interpretasi Ukuran Risiko Epidemiologi (Odds Ratio & 95% CI)"
+                        summarySentence={results.riskEstimate?.conclusion || 'Estimasi risiko paparan terhadap outcome kesehatan.'}
+                        explanation={results.explanations.oddsRatio}
+                        onHoverNumber={setHighlightedNumber}
+                        activeNumber={highlightedNumber}
+                      />
+                    )}
+
+                    {/* Bekal Sidang Skripsi */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <ThesisDefenseCompanion
+                        testType="chisquare"
+                        dataMetrics={{
+                          n: results.respondentCount,
+                          df: results.chiSquare.df,
+                          chiSquareValue: results.chiSquare.pearsonChiSquare,
+                          chiSquareSig: results.chiSquare.pearsonSig,
+                          fisherSig: results.chiSquare.fisherExact,
+                          minExpectedCount: results.chiSquare.minExpectedCount,
+                          cellsLessThan5Count: results.chiSquare.cellsLessThan5Count,
+                          cellsLessThan5Percent: results.chiSquare.cellsLessThan5Percent,
+                        }}
+                      />
+                      <ThesisDefenseCompanion
+                        testType="odds-ratio"
+                        dataMetrics={{
+                          n: results.respondentCount,
+                          oddsRatio: results.riskEstimate?.oddsRatio,
+                          orCiLower: results.riskEstimate?.ciLower,
+                          orCiUpper: results.riskEstimate?.ciUpper,
+                        }}
+                      />
+                    </div>
                   </div>
                 )}
               </TabsContent>
