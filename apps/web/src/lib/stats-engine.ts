@@ -231,6 +231,38 @@ export function computeDeterministicStats(
       });
     });
     results.descriptive = descResults;
+
+    // Per-item descriptive statistics for thesis Bab 4 breakdown
+    const itemDescResults: DescriptiveResult[] = [];
+    constructs.forEach((c) => {
+      c.items.forEach((itemCol) => {
+        const vals: number[] = [];
+        for (let i = 0; i < n; i++) {
+          const row = processedRows[i];
+          const raw = row[itemCol];
+          const num = typeof raw === 'number' ? raw : parseFloat(String(raw).replace(',', '.'));
+          if (!isNaN(num)) vals.push(num);
+        }
+        if (vals.length > 0) {
+          const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+          const sorted = [...vals].sort((a, b) => a - b);
+          const mid = Math.floor(sorted.length / 2);
+          const median = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+          const variance = sampleVariance(vals);
+          const stdDev = Math.sqrt(variance);
+          itemDescResults.push({
+            variable: `${itemCol} (${c.name})`,
+            n: vals.length,
+            mean: Number(mean.toFixed(4)),
+            median: Number(median.toFixed(4)),
+            stdDev: Number(stdDev.toFixed(4)),
+            min: Number(sorted[0].toFixed(4)),
+            max: Number(sorted[sorted.length - 1].toFixed(4)),
+          });
+        }
+      });
+    });
+    results.itemDescriptive = itemDescResults;
   }
 
   // 2. UJI VALIDITAS (Pearson Product Moment)

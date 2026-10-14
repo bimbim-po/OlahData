@@ -1,17 +1,18 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import {
   Database,
   ShieldCheck,
   Hash,
-  FileSpreadsheet,
   CheckCircle2,
   AlertCircle,
   Copy,
   Check,
   ChevronDown,
   ChevronUp,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -50,6 +51,11 @@ export function DataSourcePanel({ meta, projectId, className }: DataSourcePanelP
   const columnsList = meta.columns || [];
   const excludedCount = meta.excludedRows?.length || 0;
 
+  // Hitung jumlah butir, konstruk, dan demografi
+  const itemCount = columnsList.filter((c) => c.role === 'item').length;
+  const demoCount = columnsList.filter((c) => c.role === 'demographic').length;
+  const idCount = columnsList.filter((c) => c.role === 'id').length;
+
   return (
     <div className={cn('rounded-2xl border border-border bg-card shadow-xs overflow-hidden', className)}>
       {/* Top Banner */}
@@ -61,7 +67,7 @@ export function DataSourcePanel({ meta, projectId, className }: DataSourcePanelP
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-semibold text-sm text-foreground">
-                Sumber Data & Integritas Matriks
+                Sumber Data &amp; Integritas Matriks
               </h3>
               <Badge variant="outline" className="text-[10px] bg-background">
                 {meta.kind === 'derived' ? 'Data Turunan (Derived)' : 'Data Asli (Original)'}
@@ -77,28 +83,47 @@ export function DataSourcePanel({ meta, projectId, className }: DataSourcePanelP
           </div>
         </div>
 
-        {meta.sha256 && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleCopyHash}
-            className="text-xs cursor-pointer h-8 shrink-0"
-            title="Salin sidik jari SHA-256"
-          >
-            {copiedHash ? (
-              <>
-                <Check className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />
-                Tersalin
-              </>
-            ) : (
-              <>
-                <Copy className="w-3.5 h-3.5 mr-1.5" />
-                Salin SHA-256
-              </>
-            )}
-          </Button>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          {projectId && (
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="text-xs h-8 shrink-0 gap-1.5 touch-manipulation cursor-pointer"
+            >
+              <Link
+                href={`/app/proyek/${projectId}/analisis`}
+                title="Buka kembali pemetaan konstruk untuk menjalankan analisis ulang sebagai run baru"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
+                <span>Ubah Pemetaan</span>
+              </Link>
+            </Button>
+          )}
+
+          {meta.sha256 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleCopyHash}
+              className="text-xs cursor-pointer h-8 shrink-0"
+              title="Salin sidik jari SHA-256"
+            >
+              {copiedHash ? (
+                <>
+                  <Check className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />
+                  Tersalin
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5 mr-1.5" />
+                  Salin SHA-256
+                </>
+              )}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Grid of Key Metadata */}
@@ -111,14 +136,14 @@ export function DataSourcePanel({ meta, projectId, className }: DataSourcePanelP
         </div>
 
         <div className="space-y-1">
-          <span className="text-muted-foreground block text-[11px]">Dataset ID / Run ID</span>
-          <span className="font-mono text-muted-foreground truncate block text-[11px]" title={`${meta.datasetId} / ${meta.runId || '-'}`}>
-            {meta.datasetId}
+          <span className="text-muted-foreground block text-[11px]">Dataset ID / Versi</span>
+          <span className="font-mono text-muted-foreground truncate block text-[11px]" title={`${meta.datasetId} (v${meta.version})`}>
+            {meta.datasetId} (v{meta.version})
           </span>
         </div>
 
         <div className="space-y-1">
-          <span className="text-muted-foreground block text-[11px]">Responden & Kolom</span>
+          <span className="text-muted-foreground block text-[11px]">Responden &amp; Kolom</span>
           <span className="font-semibold text-foreground block tabular-nums">
             {formatNumber(meta.rowCount)} responden • {meta.columnCount} kolom
           </span>
@@ -148,7 +173,7 @@ export function DataSourcePanel({ meta, projectId, className }: DataSourcePanelP
               <span className="text-foreground truncate select-all">{meta.sha256}</span>
             </div>
             <span className="text-emerald-600 dark:text-emerald-400 font-sans font-semibold shrink-0 text-[10px] hidden sm:inline">
-              ✓ Cocok
+              ✓ Integritas Cocok
             </span>
           </div>
         </div>
@@ -171,7 +196,7 @@ export function DataSourcePanel({ meta, projectId, className }: DataSourcePanelP
         </div>
       )}
 
-      {/* Collapsible Column Roles Section */}
+      {/* Collapsible Column Roles Section: Ringkasan jelas ("X kolom: Y butir, Z demografi") */}
       {columnsList.length > 0 && (
         <div className="border-t border-border/80">
           <button
@@ -179,7 +204,9 @@ export function DataSourcePanel({ meta, projectId, className }: DataSourcePanelP
             onClick={() => setIsColumnsExpanded(!isColumnsExpanded)}
             className="w-full px-4 sm:px-5 py-3 flex items-center justify-between text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors cursor-pointer"
           >
-            <span>Daftar Peran Kolom ({columnsList.length} kolom terdeteksi)</span>
+            <span>
+              Daftar Peran Kolom ({columnsList.length} kolom: {itemCount} butir instrumen{demoCount > 0 ? `, ${demoCount} demografi` : ''}{idCount > 0 ? `, ${idCount} ID` : ''})
+            </span>
             {isColumnsExpanded ? (
               <ChevronUp className="w-4 h-4" />
             ) : (

@@ -1,8 +1,17 @@
 'use client';
 
 import * as React from 'react';
-import { useState } from 'react';
-import { Copy, Check, Maximize2, Minimize2, ChevronRight } from 'lucide-react';
+import { useState, useRef } from 'react';
+import {
+  Copy,
+  Check,
+  Maximize2,
+  Minimize2,
+  ChevronRight,
+  Download,
+  Edit2,
+  CheckCheck,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,7 +43,7 @@ export interface ResultTableProps<T> {
 }
 
 export function ResultTable<T>({
-  tableNumber,
+  tableNumber: initialTableNumber = 'Tabel 4.1',
   title,
   note,
   columns,
@@ -49,6 +58,11 @@ export function ResultTable<T>({
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [tableNumber, setTableNumber] = useState(initialTableNumber);
+  const [isEditingNumber, setIsEditingNumber] = useState(false);
+  const [editNumberVal, setEditNumberVal] = useState(tableNumber);
+  const [isDownloadingImage, setIsDownloadingImage] = useState(false);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
 
   // Generate formatted APA 7th HTML table for Microsoft Word + plain text fallback
   const handleCopyTable = async () => {
@@ -88,11 +102,12 @@ export function ResultTable<T>({
       }
 
       setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+      setTimeout(() => setCopied(false), 2000);
 
       toast({
         title: COPY.layers.copied,
-        description: 'Tabel berformat APA Word berhasil disalin. Tempelkan (Ctrl+V) langsung ke lembar Microsoft Word.',
+        description:
+          'Tabel berformat APA Word berhasil disalin. Tempelkan (Ctrl+V) langsung ke lembar Microsoft Word.',
         variant: 'success',
       });
     } catch {
@@ -102,6 +117,133 @@ export function ResultTable<T>({
         variant: 'error',
       });
     }
+  };
+
+  // Unduh gambar tabel sebagai berkas PNG langsung di peramban
+  const handleDownloadImage = () => {
+    setIsDownloadingImage(true);
+    try {
+      // Buat SVG snapshot dari data tabel berstandar akademik tiga garis
+      const colHeaders = columns.map((c) => c.header);
+      const colWidth = 140;
+      const width = Math.max(700, colHeaders.length * colWidth + 60);
+      const rowHeight = 32;
+      const headerHeight = 90;
+      const height = headerHeight + (data.length + 1) * rowHeight + (note ? 50 : 30);
+
+      let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="background-color: #ffffff; font-family: 'Times New Roman', Times, serif;">`;
+      svgContent += `<style>
+        .tbl-num { font-size: 13px; font-weight: bold; fill: #111827; }
+        .tbl-title { font-size: 14px; font-style: italic; fill: #111827; }
+        .th-text { font-size: 12px; font-weight: bold; fill: #111827; }
+        .td-text { font-size: 12px; fill: #1f2937; }
+        .td-num { font-size: 12px; fill: #1f2937; font-feature-settings: 'tnum'; }
+        .tbl-note { font-size: 11px; fill: #4b5563; font-style: italic; }
+      </style>`;
+
+      // Header judul
+      svgContent += `<text x="25" y="30" class="tbl-num">${tableNumber}</text>`;
+      svgContent += `<text x="25" y="52" class="tbl-title">${title}</text>`;
+
+      // Garis atas tabel (tebal 1.5px)
+      const tableTopY = 70;
+      svgContent += `<line x1="25" y1="${tableTopY}" x2="${width - 25}" y2="${tableTopY}" stroke="#111827" stroke-width="1.5" />`;
+
+      // Header kolom
+      colHeaders.forEach((h, idx) => {
+        const xPos = 35 + idx * colWidth;
+        const align = columns[idx]?.align;
+        const textX = align === 'right' ? xPos + colWidth - 20 : align === 'center' ? xPos + colWidth / 2 : xPos;
+        const textAnchor = align === 'right' ? 'end' : align === 'center' ? 'middle' : 'start';
+        svgContent += `<text x="${textX}" y="${tableTopY + 22}" class="th-text" text-anchor="${textAnchor}">${h}</text>`;
+      });
+
+      // Garis bawah header (tebal 1px)
+      const headerBottomY = tableTopY + 32;
+      svgContent += `<line x1="25" y1="${headerBottomY}" x2="${width - 25}" y2="${headerBottomY}" stroke="#111827" stroke-width="1" />`;
+
+      // Baris data
+      data.forEach((row, rIdx) => {
+        const yPos = headerBottomY + 22 + rIdx * rowHeight;
+        columns.forEach((col, cIdx) => {
+          const xPos = 35 + cIdx * colWidth;
+          const align = col.align;
+          const textX = align === 'right' ? xPos + colWidth - 20 : align === 'center' ? xPos + colWidth / 2 : xPos;
+          const textAnchor = align === 'right' ? 'end' : align === 'center' ? 'middle' : 'start';
+
+          const rawVal = col.getValue
+            ? col.getValue(row)
+            : (row as Record<string, unknown>)[col.key];
+          const valStr =
+            typeof rawVal === 'number'
+              ? new Intl.NumberFormat('id-ID', { maximumFractionDigits: 4 }).format(rawVal)
+              : String(rawVal ?? '');
+
+          svgContent += `<text x="${textX}" y="${yPos}" class="${align === 'right' ? 'td-num' : 'td-text'}" text-anchor="${textAnchor}">${valStr}</text>`;
+        });
+      });
+
+      // Garis bawah tabel (tebal 1.5px)
+      const tableBottomY = headerBottomY + data.length * rowHeight + 8;
+      svgContent += `<line x1="25" y1="${tableBottomY}" x2="${width - 25}" y2="${tableBottomY}" stroke="#111827" stroke-width="1.5" />`;
+
+      // Catatan kaki tabel
+      if (note) {
+        svgContent += `<text x="25" y="${tableBottomY + 20}" class="tbl-note">Catatan: ${note}</text>`;
+      }
+
+      svgContent += '</svg>';
+
+      // Konversi SVG ke PNG via canvas
+      const img = new Image();
+      const svgBlob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = width * 2; // retina 2x
+        canvas.height = height * 2;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.scale(2, 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0);
+          const pngUrl = canvas.toDataURL('image/png');
+          const downloadLink = document.createElement('a');
+          downloadLink.href = pngUrl;
+          downloadLink.download = `${tableNumber.replace(/\s+/g, '_')}_OlahData.png`;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+          URL.revokeObjectURL(url);
+          toast({
+            title: 'Gambar Tabel Diunduh',
+            description: `${tableNumber} berhasil disimpan sebagai gambar PNG berkualitas tinggi.`,
+            variant: 'success',
+          });
+        }
+        setIsDownloadingImage(false);
+      };
+      img.onerror = () => {
+        setIsDownloadingImage(false);
+        toast({
+          title: 'Gagal mengunduh gambar',
+          description: 'Terjadi kesalahan saat memproses gambar tabel.',
+          variant: 'error',
+        });
+      };
+      img.src = url;
+    } catch {
+      setIsDownloadingImage(false);
+    }
+  };
+
+  const handleSaveNumber = () => {
+    if (editNumberVal.trim()) {
+      setTableNumber(editNumberVal.trim());
+    }
+    setIsEditingNumber(false);
   };
 
   const isCellHighlighted = (rKey: string, colKey: string, valStr: string) => {
@@ -130,20 +272,57 @@ export function ResultTable<T>({
 
   return (
     <div
+      ref={tableContainerRef}
       className={cn(
         'rounded-[16px] border border-border bg-card p-4 sm:p-6 shadow-xs space-y-3.5 transition-colors font-sans relative',
-        isFullscreen && 'fixed inset-0 z-50 rounded-none border-none p-6 overflow-y-auto bg-card',
+        isFullscreen &&
+          'fixed inset-0 z-50 rounded-none border-none p-6 overflow-y-auto bg-card',
         className
       )}
     >
       {/* Table Top Header Bar (Di luar area gulir horizontal) */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="min-w-0 flex-1">
-          {tableNumber && (
-            <span className="text-[11px] font-bold text-primary uppercase tracking-wider block mb-0.5">
-              {tableNumber}
-            </span>
-          )}
+          {/* Editable Table Number */}
+          <div className="flex items-center gap-2 mb-0.5">
+            {isEditingNumber ? (
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  value={editNumberVal}
+                  onChange={(e) => setEditNumberVal(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveNumber();
+                    if (e.key === 'Escape') setIsEditingNumber(false);
+                  }}
+                  className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded border border-primary bg-background text-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveNumber}
+                  className="p-1 text-primary hover:bg-primary/10 rounded"
+                  title="Simpan nomor tabel"
+                >
+                  <CheckCheck className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditNumberVal(tableNumber);
+                  setIsEditingNumber(true);
+                }}
+                className="group inline-flex items-center gap-1 text-[12px] font-bold text-primary uppercase tracking-wider hover:underline cursor-pointer"
+                title="Klik untuk mengubah nomor tabel (mis. Tabel 4.1)"
+              >
+                <span>{tableNumber}</span>
+                <Edit2 className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </button>
+            )}
+          </div>
+
           <h3 className="text-sm sm:text-base font-semibold text-foreground tracking-tight leading-snug">
             {title}
           </h3>
@@ -157,7 +336,20 @@ export function ResultTable<T>({
             {badgeLabel}
           </Badge>
 
-          {/* Tombol Lihat Layar Penuh pada Ponsel */}
+          {/* Tombol Unduh Gambar Tabel */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownloadImage}
+            disabled={isDownloadingImage}
+            className="min-h-[44px] px-3 gap-1.5 text-xs text-foreground hover:bg-muted font-medium rounded-[10px] touch-manipulation cursor-pointer"
+            title="Unduh tabel sebagai gambar PNG untuk dimasukkan ke PowerPoint seminar atau naskah"
+          >
+            <Download className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="hidden sm:inline">Unduh Gambar</span>
+          </Button>
+
+          {/* Tombol Lihat Layar Penuh */}
           <Button
             variant="ghost"
             size="sm"
@@ -178,6 +370,7 @@ export function ResultTable<T>({
             )}
           </Button>
 
+          {/* Tombol Salin untuk Word */}
           <Button
             variant="outline"
             size="sm"
@@ -200,23 +393,25 @@ export function ResultTable<T>({
         </div>
       </div>
 
-      {/* Petunjuk Gulir Ponsel */}
-      <div className="sm:hidden flex items-center justify-between text-[11px] text-muted-foreground bg-muted/30 px-3 py-1.5 rounded-[6px] border border-border/60">
+      {/* Petunjuk Gulir Ponsel dengan Penanda Bayangan */}
+      <div className="sm:hidden flex items-center justify-between text-[13px] text-muted-foreground bg-muted/30 px-3 py-1.5 rounded-[6px] border border-border/60">
         <span>Geser tabel ke samping untuk melihat kolom lengkap</span>
         <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
       </div>
 
-      {/* Journal Table Body (Wadah gulir horizontal dengan kolom pertama menempel) */}
+      {/* Journal Table Body (Gaya Tiga Garis Akademik APA 7th, Kolom Pertama Menempel) */}
       <div className="relative overflow-x-auto rounded-[6px] border border-border/80 shadow-inner">
         <table className="table-journal w-full text-left text-sm font-sans border-collapse">
           <thead>
+            {/* Garis atas tebal (2px) dan garis bawah header (1px) */}
             <tr className="border-t-2 border-b border-foreground bg-muted/20">
               {columns.map((col, cIdx) => (
                 <th
                   key={col.key}
                   className={cn(
                     'py-2.5 px-3 font-semibold text-foreground text-xs tracking-normal whitespace-nowrap',
-                    cIdx === 0 && 'sticky left-0 bg-card z-10 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.1)]',
+                    cIdx === 0 &&
+                      'sticky left-0 bg-card z-10 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.1)]',
                     col.align === 'right' && 'text-right',
                     col.align === 'center' && 'text-center',
                     col.className
@@ -234,7 +429,8 @@ export function ResultTable<T>({
                 <tr
                   key={rKey}
                   className={cn(
-                    'border-b border-border transition-colors hover:bg-muted/30',
+                    'border-b border-border/70 transition-colors hover:bg-muted/30',
+                    // Garis bawah tabel tebal (2px) pada baris terakhir
                     index === data.length - 1 && 'border-b-2 border-foreground'
                   )}
                 >
@@ -269,8 +465,9 @@ export function ResultTable<T>({
                           onHoverCell?.(rKey, col.key, rawVal as string | number)
                         }
                         className={cn(
-                          'py-2 px-3 text-xs transition-all outline-none whitespace-nowrap',
-                          cIdx === 0 && 'sticky left-0 bg-card z-10 font-medium text-foreground shadow-[2px_0_6px_-2px_rgba(0,0,0,0.1)]',
+                          'py-2.5 px-3 text-xs transition-all outline-none whitespace-nowrap focus-visible:ring-2 focus-visible:ring-primary',
+                          cIdx === 0 &&
+                            'sticky left-0 bg-card z-10 font-medium text-foreground shadow-[2px_0_6px_-2px_rgba(0,0,0,0.1)]',
                           col.align === 'right' && 'text-right tabular-nums',
                           col.align === 'center' && 'text-center',
                           highlighted &&
@@ -288,9 +485,9 @@ export function ResultTable<T>({
         </table>
       </div>
 
-      {/* Table Footer Note */}
+      {/* Table Footer Note: Kontras WCAG AA, Minimal 13px */}
       {note && (
-        <p className="text-xs text-muted-foreground pt-1 border-t border-border/50">
+        <p className="text-[13px] text-muted-foreground pt-1 border-t border-border/50 leading-relaxed">
           Catatan: {note}
         </p>
       )}

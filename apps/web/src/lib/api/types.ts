@@ -193,6 +193,7 @@ export interface AnalysisResults {
   engineVersion: string;
   significanceLevel: number;
   descriptive?: DescriptiveResult[];
+  itemDescriptive?: DescriptiveResult[];
   validity?: ValidityResult[];
   reliability?: ReliabilityResult[];
   normality?: NormalityResult[];

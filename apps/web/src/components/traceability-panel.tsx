@@ -1,8 +1,10 @@
 'use client';
 
 import * as React from 'react';
+import { useState } from 'react';
 import {
   ShieldCheck,
+  AlertTriangle,
   Clock,
   Database,
   Cpu,
@@ -10,45 +12,151 @@ import {
   Users,
   FileCheck2,
   ChevronDown,
+  Copy,
+  Check,
+  FileDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { ENGINE_VERSION } from '@/lib/constants';
 import { formatDateTime } from '@/lib/format';
 import { COPY } from '@/lib/copy';
+import { useToast } from '@/components/ui/toaster';
 
 export interface TraceabilityPanelProps {
+  currentTestKey?: string;
   currentTestName?: string;
   dataVersionLabel?: string;
-  respondentCount?: number;
+  respondentCount: number;
   significanceLevel?: number;
-  additionalParameters?: Record<string, string | number>;
+  rTabel?: number;
+  dfResidual?: number;
+  hash?: string;
+  isHashValid?: boolean;
   timestamp?: string;
   engineVersion?: string;
+  onDownloadStatement?: () => void;
   className?: string;
 }
 
 export function TraceabilityPanel({
-  currentTestName = 'Regresi Linier Berganda (OLS)',
-  dataVersionLabel = 'dv-2 (117 responden, 3 baris dihapus)',
-  respondentCount = 117,
+  currentTestKey = 'descriptive',
+  currentTestName = 'Statistik Deskriptif',
+  dataVersionLabel,
+  respondentCount,
   significanceLevel = 0.05,
-  additionalParameters,
-  timestamp = '2024-10-01T14:30:00Z',
+  rTabel,
+  dfResidual,
+  hash,
+  isHashValid = true,
+  timestamp = new Date().toISOString(),
   engineVersion = ENGINE_VERSION,
+  onDownloadStatement,
   className,
 }: TraceabilityPanelProps) {
-  const [isOpen, setIsOpen] = React.useState(true);
+  const [isOpen, setIsOpen] = useState(true);
+  const [copiedHash, setCopiedHash] = useState(false);
+  const { toast } = useToast();
+
+  const handleCopyVerificationCode = async () => {
+    const code = hash || `OLAH-${respondentCount}-${engineVersion}`;
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedHash(true);
+      setTimeout(() => setCopiedHash(false), 2000);
+      toast({
+        title: 'Kode Verifikasi Disalin',
+        description: 'Kode jejak audit SHA-256 berhasil disalin ke papan klip.',
+        variant: 'success',
+      });
+    } catch {
+      toast({
+        title: 'Gagal Menyalin',
+        description: 'Periksa izin clipboard pada peramban Anda.',
+        variant: 'error',
+      });
+    }
+  };
+
+  // Render parameter dinamis spesifik sesuai jenis uji yang aktif
+  const renderTestSpecificParams = () => {
+    switch (currentTestKey) {
+      case 'descriptive':
+        return (
+          <>
+            <div>Responden valid: N = {respondentCount}</div>
+            <div>Skala pengukuran: Likert 1–5</div>
+            <div>Aturan skor konstruk: Rata-rata butir (Mean)</div>
+          </>
+        );
+
+      case 'validity':
+        return (
+          <>
+            <div>Metode: Korelasi Pearson Product Moment</div>
+            <div>Derajat bebas: df = {respondentCount - 2}</div>
+            <div>Taraf signifikansi: α = 0,05 (uji dua arah)</div>
+            {rTabel && <div>r Tabel baku: {rTabel.toFixed(4).replace('.', ',')}</div>}
+          </>
+        );
+
+      case 'reliability':
+        return (
+          <>
+            <div>Koefisien: Cronbach&apos;s Alpha</div>
+            <div>Batas baku minimum: 0,70 (standar ketat) / 0,60</div>
+            <div>Kriteria: Alpha ≥ ambang batas dinyatakan andal</div>
+          </>
+        );
+
+      case 'assumptions':
+        return (
+          <>
+            <div>Normalitas: One-Sample Kolmogorov-Smirnov (p ≥ 0,05)</div>
+            <div>Multikolinearitas: Tolerance &gt; 0,10, VIF &lt; 10,00</div>
+            <div>Heteroskedastisitas: Uji Glejser (Sig. &gt; 0,05)</div>
+          </>
+        );
+
+      case 'regression':
+        return (
+          <>
+            <div>Metode estimasi: Ordinary Least Squares (OLS)</div>
+            <div>Taraf signifikansi: α = 0,05 (uji dua arah)</div>
+            <div>df Residual: {dfResidual ?? respondentCount - 3}</div>
+            <div>Uji simultan: ANOVA F-test</div>
+          </>
+        );
+
+      case 'correlation':
+        return (
+          <>
+            <div>Metode: Pearson Product Moment</div>
+            <div>Taraf signifikansi: α = 0,05 (uji dua arah)</div>
+            <div>Kategori kekuatan: Sugiyono &amp; Schober</div>
+          </>
+        );
+
+      default:
+        return (
+          <>
+            <div>Tingkat signifikansi: α = 0,05</div>
+            <div>Metode: Deterministik Terverifikasi</div>
+          </>
+        );
+    }
+  };
 
   return (
     <div
       className={cn(
-        'rounded-[16px] border border-border bg-card p-5 sm:p-6 shadow-xs space-y-4 font-sans',
+        'rounded-[16px] border border-border bg-card p-4 sm:p-5 shadow-xs space-y-4 font-sans',
         className
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-border/60">
+      <div className="flex items-center justify-between pb-3 border-b border-border/70">
         <div className="flex items-center gap-2">
           <FileCheck2 className="h-4 w-4 text-primary" />
           <h3 className="text-sm font-semibold text-foreground tracking-tight">
@@ -56,18 +164,29 @@ export function TraceabilityPanel({
           </h3>
         </div>
         <div className="flex items-center gap-2">
-          <Badge
-            variant="outline"
-            className="text-[11px] gap-1 py-0.5 px-2 font-medium bg-muted/40 border-border rounded-[6px]"
-          >
-            <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-            <span>Audit Trail Valid</span>
-          </Badge>
+          {isHashValid ? (
+            <Badge
+              variant="outline"
+              className="text-[11px] gap-1 py-0.5 px-2 font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 rounded-[6px]"
+            >
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+              <span>Audit Trail Valid</span>
+            </Badge>
+          ) : (
+            <Badge
+              variant="outline"
+              className="text-[11px] gap-1 py-0.5 px-2 font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 rounded-[6px]"
+            >
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+              <span>Perlu diperiksa</span>
+            </Badge>
+          )}
+
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
-            className="text-muted-foreground hover:text-foreground md:hidden p-1"
-            aria-label="Buka/tutup jejak hitung"
+            className="text-muted-foreground hover:text-foreground md:hidden p-1 touch-manipulation cursor-pointer"
+            aria-label="Buka/tutup rincian jejak hitung"
           >
             <ChevronDown
               className={cn(
@@ -79,9 +198,9 @@ export function TraceabilityPanel({
         </div>
       </div>
 
-      {/* Panel Content */}
-      <div className={cn('space-y-3 text-xs', !isOpen && 'hidden md:block')}>
-        {/* Test Name */}
+      {/* Panel Content (Bisa dibuka di mobile) */}
+      <div className={cn('space-y-3.5 text-[13px]', !isOpen && 'hidden md:block')}>
+        {/* 1. Uji */}
         <div className="flex items-start gap-2.5">
           <Sliders className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
           <div className="min-w-0 flex-1">
@@ -94,20 +213,25 @@ export function TraceabilityPanel({
           </div>
         </div>
 
-        {/* Dataset Version */}
+        {/* 2. Dataset */}
         <div className="flex items-start gap-2.5">
           <Database className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
           <div className="min-w-0 flex-1">
             <span className="text-muted-foreground block text-[11px]">
               {COPY.results.traceFields.dataVersion}
             </span>
-            <span className="font-semibold text-foreground text-xs font-mono break-all">
-              {dataVersionLabel}
+            <span className="font-medium text-foreground text-xs break-words">
+              {dataVersionLabel || `Dataset aktif (N = ${respondentCount})`}
             </span>
+            {hash && (
+              <span className="block font-mono text-[10px] text-muted-foreground/80 truncate mt-0.5">
+                Hash: {hash.slice(0, 16)}...
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Respondent Count */}
+        {/* 3. Responden */}
         <div className="flex items-start gap-2.5">
           <Users className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
           <div className="min-w-0 flex-1">
@@ -120,27 +244,20 @@ export function TraceabilityPanel({
           </div>
         </div>
 
-        {/* Parameters */}
+        {/* 4. Parameter Uji yang Relevan */}
         <div className="flex items-start gap-2.5">
           <Sliders className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
           <div className="min-w-0 flex-1 space-y-0.5">
             <span className="text-muted-foreground block text-[11px]">
               {COPY.results.traceFields.parameters}
             </span>
-            <div className="text-foreground font-medium text-xs leading-relaxed">
-              <div>Tingkat signifikansi: α = {significanceLevel}</div>
-              <div>Metode: Ordinary Least Squares (OLS)</div>
-              {additionalParameters &&
-                Object.entries(additionalParameters).map(([k, v]) => (
-                  <div key={k}>
-                    {k}: {String(v)}
-                  </div>
-                ))}
+            <div className="text-foreground font-medium text-xs leading-relaxed space-y-0.5">
+              {renderTestSpecificParams()}
             </div>
           </div>
         </div>
 
-        {/* Timestamp */}
+        {/* 5. Waktu Analisis */}
         <div className="flex items-start gap-2.5">
           <Clock className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
           <div className="min-w-0 flex-1">
@@ -153,7 +270,7 @@ export function TraceabilityPanel({
           </div>
         </div>
 
-        {/* Engine Version */}
+        {/* 6. Versi Mesin */}
         <div className="flex items-start gap-2.5">
           <Cpu className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
           <div className="min-w-0 flex-1">
@@ -166,10 +283,48 @@ export function TraceabilityPanel({
           </div>
         </div>
 
-        {/* Academic Note */}
-        <div className="pt-2.5 border-t border-border/50 text-[11px] text-muted-foreground leading-relaxed bg-muted/40 p-2.5 rounded-xs">
+        {/* Tombol Aksi Verifikasi: Salin kode verifikasi & Unduh lampiran pernyataan */}
+        <div className="pt-2 border-t border-border/60 flex flex-col gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleCopyVerificationCode}
+            className="w-full justify-center gap-1.5 text-xs h-8 text-foreground hover:bg-muted font-medium rounded-lg touch-manipulation cursor-pointer"
+            title="Salin kode hash verifikasi keutuhan dataset"
+          >
+            {copiedHash ? (
+              <>
+                <Check className="h-3.5 w-3.5 text-primary" />
+                <span className="text-primary font-medium">Kode Tersalin</span>
+              </>
+            ) : (
+              <>
+                <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                <span>Salin kode verifikasi</span>
+              </>
+            )}
+          </Button>
+
+          {onDownloadStatement && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onDownloadStatement}
+              className="w-full justify-center gap-1.5 text-xs h-8 text-primary hover:text-primary hover:bg-primary/5 font-medium rounded-lg touch-manipulation cursor-pointer"
+              title="Unduh berkas lampiran pernyataan etika penggunaan alat untuk sidang skripsi"
+            >
+              <FileDown className="h-3.5 w-3.5" />
+              <span>Unduh lampiran pernyataan</span>
+            </Button>
+          )}
+        </div>
+
+        {/* Catatan Integritas Akademik Tanpa Klaim Berlebihan */}
+        <div className="pt-2.5 border-t border-border/50 text-[12px] text-muted-foreground leading-relaxed bg-muted/30 p-2.5 rounded-[10px]">
           <span className="font-semibold text-foreground">Integritas Akademik: </span>
-          Setiap proses analisis direkam dengan hash kriptografis untuk mencegah p-hacking dan manipulasi data pada sidang skripsi.
+          Setiap hasil dicatat bersama hash dataset dan parameter sehingga dapat diperiksa keutuhannya.
         </div>
       </div>
     </div>

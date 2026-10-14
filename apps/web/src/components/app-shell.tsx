@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -13,6 +13,9 @@ import {
   ChevronRight,
   ChevronLeft,
   Sparkles,
+  ChevronLeftSquare,
+  ChevronRightSquare,
+  ExternalLink,
 } from 'lucide-react';
 import { APP_NAME, APP_VERSION } from '@/lib/constants';
 import { useAuthStore } from '@/stores/auth-store';
@@ -29,6 +32,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -52,7 +56,7 @@ const NAV_ITEMS = [
     isActive: (pathname: string) => pathname === '/app/proyek/baru',
   },
   {
-    name: 'Riwayat',
+    name: 'Riwayat analisis',
     shortName: 'Riwayat',
     href: '/app/langganan',
     icon: CreditCard,
@@ -68,7 +72,7 @@ const NAV_ITEMS = [
   {
     name: 'Bantuan',
     shortName: 'Bantuan',
-    href: '/pernyataan-penggunaan',
+    href: '/panduan',
     icon: BookOpen,
     isActive: (pathname: string) =>
       pathname.startsWith('/pernyataan-penggunaan') ||
@@ -80,6 +84,7 @@ export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthStore();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -102,7 +107,6 @@ export function AppShell({ children }: AppShellProps) {
     return user.name.substring(0, 2).toUpperCase();
   };
 
-  // Logika tombol kembali konsisten pada halaman bertingkat
   const getParentRoute = () => {
     if (pathname === '/app/proyek/baru' || pathname.startsWith('/app/proyek/')) {
       return '/app';
@@ -117,7 +121,11 @@ export function AppShell({ children }: AppShellProps) {
 
   const renderBreadcrumb = () => {
     if (pathname === '/app') {
-      return <h1 className="text-base sm:text-lg font-bold text-foreground tracking-tight">Meja Kerja Skripsi</h1>;
+      return (
+        <h1 className="text-sm sm:text-base font-bold text-foreground tracking-tight">
+          Meja Kerja Skripsi
+        </h1>
+      );
     }
     if (pathname === '/app/proyek/baru') {
       return (
@@ -126,7 +134,7 @@ export function AppShell({ children }: AppShellProps) {
             Proyek
           </Link>
           <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          <span className="font-semibold text-foreground truncate">Unggah & Validasi Baru</span>
+          <span className="font-semibold text-foreground truncate">Unggah &amp; Validasi Baru</span>
         </div>
       );
     }
@@ -137,7 +145,7 @@ export function AppShell({ children }: AppShellProps) {
             Proyek
           </Link>
           <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          <span className="font-semibold text-foreground truncate">Pemetaan & Analisis</span>
+          <span className="font-semibold text-foreground truncate">Pemetaan &amp; Analisis</span>
         </div>
       );
     }
@@ -153,50 +161,74 @@ export function AppShell({ children }: AppShellProps) {
       );
     }
     if (pathname.startsWith('/app/langganan')) {
-      return <h1 className="text-base sm:text-lg font-bold text-foreground">Langganan & Kuota</h1>;
+      return <h1 className="text-sm sm:text-base font-bold text-foreground">Riwayat Analisis &amp; Kuota</h1>;
     }
     if (pathname.startsWith('/app/pengaturan')) {
-      return <h1 className="text-base sm:text-lg font-bold text-foreground">Pengaturan Akun</h1>;
+      return <h1 className="text-sm sm:text-base font-bold text-foreground">Pengaturan Akun</h1>;
     }
     return <span className="font-semibold text-foreground">OlahData</span>;
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col md:flex-row antialiased w-full max-w-full overflow-x-hidden">
-      {/* Desktop Sidebar (lg:w-64) & Tablet Rail (md:w-20 lg:hidden) */}
-      <aside className="hidden md:flex flex-col border-r border-sidebar-border bg-sidebar-bg shrink-0 h-screen sticky top-0 transition-all duration-200 md:w-20 lg:w-64">
-        {/* Top Logo & App Title */}
-        <div className="p-4 lg:p-6 border-b border-sidebar-border/70 flex items-center justify-between">
-          <Link href="/app" className="flex items-center gap-2.5 group w-full justify-center lg:justify-start">
-            <div className="relative flex items-center justify-center p-1 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shrink-0">
-              <LogoIcon size={32} />
+    <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row antialiased w-full max-w-full overflow-x-hidden">
+      {/* Desktop Sidebar (Lebar tetap 240px di desktop, bisa diciutkan jadi ikon) */}
+      <aside
+        className={cn(
+          'hidden lg:flex flex-col border-r border-sidebar-border bg-sidebar-bg shrink-0 h-screen sticky top-0 transition-all duration-200 z-30 select-none',
+          isCollapsed ? 'w-[72px]' : 'w-[240px]'
+        )}
+      >
+        {/* Top Header: Logo OlahData & Collapse Toggle */}
+        <div className="p-4 border-b border-sidebar-border/70 flex items-center justify-between gap-2">
+          <Link href="/app" className="flex items-center gap-2.5 group min-w-0 overflow-hidden">
+            <div className="p-1 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shrink-0">
+              <LogoIcon size={30} />
             </div>
-            <div className="hidden lg:block min-w-0">
-              <div className="font-bold text-lg tracking-tight text-foreground group-hover:text-primary transition-colors truncate">
-                {APP_NAME}
+            {!isCollapsed && (
+              <div className="min-w-0 flex-1">
+                <div className="font-bold text-base tracking-tight text-foreground group-hover:text-primary transition-colors truncate">
+                  {APP_NAME}
+                </div>
+                <div className="text-[11px] text-muted-foreground font-mono">
+                  v{APP_VERSION}
+                </div>
               </div>
-              <div className="text-[11px] text-muted-foreground font-mono">
-                v{APP_VERSION}
-              </div>
-            </div>
+            )}
           </Link>
+
+          <button
+            type="button"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="text-muted-foreground hover:text-foreground p-1 rounded-md transition-colors cursor-pointer"
+            title={isCollapsed ? 'Perlebar bilah samping' : 'Ciutkan bilah samping'}
+            aria-label="Ciutkan atau perlebar sidebar"
+          >
+            {isCollapsed ? (
+              <ChevronRightSquare className="h-4 w-4" />
+            ) : (
+              <ChevronLeftSquare className="h-4 w-4" />
+            )}
+          </button>
         </div>
 
-        {/* Tombol Proyek Baru Selalu Terlihat */}
-        <div className="p-3 lg:px-3 lg:pt-3 lg:pb-1">
+        {/* Tombol Proyek Baru */}
+        <div className="p-3">
           <Button
             asChild
-            className="w-full justify-center lg:justify-start gap-2.5 font-bold shadow-xs min-h-[44px] h-11 rounded-lg"
+            className={cn(
+              'w-full justify-center gap-2 font-bold shadow-xs min-h-[44px] h-10 rounded-lg',
+              !isCollapsed && 'justify-start px-3'
+            )}
           >
             <Link href="/app/proyek/baru" title="Mulai Proyek Baru">
-              <PlusCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
-              <span className="hidden lg:inline">Proyek Baru</span>
+              <PlusCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+              {!isCollapsed && <span>Proyek Baru</span>}
             </Link>
           </Button>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="flex-1 px-2 lg:px-3 py-2 space-y-1 overflow-y-auto">
+        {/* Menu Navigasi Utama */}
+        <nav className="flex-1 px-3 py-1 space-y-1 overflow-y-auto">
           {NAV_ITEMS.map((item) => {
             const active = item.isActive(pathname);
             const Icon = item.icon;
@@ -205,59 +237,105 @@ export function AppShell({ children }: AppShellProps) {
                 key={item.name}
                 href={item.href}
                 title={item.name}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors justify-center lg:justify-start ${
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all cursor-pointer relative',
+                  isCollapsed ? 'justify-center px-0' : 'justify-start',
                   active
                     ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
                     : 'text-sidebar-foreground/80 hover:bg-muted hover:text-sidebar-foreground'
-                }`}
+                )}
               >
-                <Icon className={`h-5 w-5 shrink-0 ${active ? 'text-primary-foreground' : 'text-muted-foreground'}`} />
-                <span className="hidden lg:inline truncate">{item.name}</span>
+                {active && !isCollapsed && (
+                  <span className="absolute left-1 top-2 bottom-2 w-1 bg-primary-foreground rounded-full" />
+                )}
+                <Icon
+                  className={cn(
+                    'h-4 w-4 shrink-0',
+                    active ? 'text-primary-foreground' : 'text-muted-foreground'
+                  )}
+                />
+                {!isCollapsed && <span className="truncate">{item.name}</span>}
               </Link>
             );
           })}
         </nav>
 
-        {/* Bottom Sidebar User Summary */}
-        <div className="p-3 lg:p-4 border-t border-sidebar-border/70 bg-secondary/30">
-          <div className="hidden lg:flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-muted-foreground">Paket Anda</span>
-            <Badge
-              variant={user?.plan === 'monthly' || user?.plan === 'thesis' ? 'success' : 'secondary'}
-              className="text-[10px] uppercase font-bold tracking-wider"
-            >
-              {getPlanBadgeLabel()}
-            </Badge>
-          </div>
-          <div className="flex items-center gap-3 justify-center lg:justify-start">
+        {/* Bagian Bawah: Kartu Paket & Akun Pengguna (Tanpa Area Gelap Kosong) */}
+        <div className="p-3 border-t border-sidebar-border/70 bg-muted/20 space-y-3">
+          {/* Kartu Paket */}
+          {!isCollapsed ? (
+            <div className="p-3 rounded-[12px] bg-card border border-border/80 shadow-2xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  Paket Anda
+                </span>
+                <Badge
+                  variant={user?.plan === 'monthly' || user?.plan === 'thesis' ? 'success' : 'secondary'}
+                  className="text-[10px] uppercase font-bold tracking-wider py-0"
+                >
+                  {getPlanBadgeLabel()}
+                </Badge>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                {user?.plan === 'free' ? 'Batas wajar skripsi' : 'Akses penuh seluruh uji Bab 4'}
+              </p>
+              <Link
+                href="/harga"
+                className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline font-medium pt-0.5"
+              >
+                <span>Tingkatkan paket</span>
+                <ExternalLink className="h-3 w-3" />
+              </Link>
+            </div>
+          ) : (
+            <div className="flex justify-center" title={`Paket: ${getPlanBadgeLabel()}`}>
+              <Sparkles className="h-4 w-4 text-amber-500" />
+            </div>
+          )}
+
+          {/* Profil Akun Pengguna dengan Tooltip Penuh & Truncate Rapi */}
+          <div
+            className={cn(
+              'flex items-center gap-2.5 p-2 rounded-[10px] bg-card border border-border/60',
+              isCollapsed && 'justify-center p-1.5'
+            )}
+          >
             <Avatar className="h-8 w-8 shrink-0">
               <AvatarFallback>{getUserInitials()}</AvatarFallback>
             </Avatar>
-            <div className="hidden lg:block min-w-0 flex-1">
-              <p className="text-xs font-semibold text-foreground truncate">
-                {user?.name || 'Mahasiswa'}
-              </p>
-              <p className="text-[11px] text-muted-foreground truncate">
-                {user?.university || 'Perguruan Tinggi'}
-              </p>
-            </div>
+            {!isCollapsed && (
+              <div className="min-w-0 flex-1">
+                <p
+                  className="text-xs font-semibold text-foreground truncate"
+                  title={user?.name || 'Mahasiswa'}
+                >
+                  {user?.name || 'Mahasiswa'}
+                </p>
+                <p
+                  className="text-[11px] text-muted-foreground truncate"
+                  title={user?.email || 'mahasiswa@kampus.ac.id'}
+                >
+                  {user?.email || 'mahasiswa@kampus.ac.id'}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </aside>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 w-full max-w-full overflow-x-hidden">
-        {/* Top Header */}
+        {/* Sticky Header Meja Kerja */}
         <header className="sticky top-0 z-30 h-14 sm:h-16 border-b border-border bg-card/90 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-2">
-          {/* Back Button (Mobile & Tablet) + Breadcrumbs / Title */}
+          {/* Breadcrumb / Nav Back */}
           <div className="flex items-center gap-2 min-w-0 flex-1">
             {parentRoute && (
               <Link
                 href={parentRoute}
-                className="inline-flex items-center justify-center h-10 w-10 sm:h-9 sm:w-9 rounded-md border border-border bg-card text-foreground hover:bg-muted transition-colors shrink-0 touch-manipulation cursor-pointer"
+                className="inline-flex items-center justify-center h-9 w-9 rounded-md border border-border bg-card text-foreground hover:bg-muted transition-colors shrink-0 touch-manipulation cursor-pointer"
                 aria-label="Kembali ke halaman sebelumnya"
               >
-                <ChevronLeft className="h-5 w-5" />
+                <ChevronLeft className="h-4 w-4" />
               </Link>
             )}
             <div className="min-w-0 flex-1 truncate">
@@ -265,7 +343,7 @@ export function AppShell({ children }: AppShellProps) {
             </div>
           </div>
 
-          {/* Header Actions: Theme Toggle & User Menu */}
+          {/* Header Controls: Theme & User Menu */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <ThemeToggle />
 
@@ -274,7 +352,7 @@ export function AppShell({ children }: AppShellProps) {
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="flex items-center justify-center rounded-full p-1 min-h-[44px] min-w-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer touch-manipulation"
+                  className="flex items-center justify-center rounded-full p-1 min-h-[44px] min-w-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer touch-manipulation"
                   aria-label="Menu akun pengguna"
                 >
                   <Avatar className="h-8 w-8">
@@ -282,17 +360,17 @@ export function AppShell({ children }: AppShellProps) {
                   </Avatar>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 p-2">
+              <DropdownMenuContent align="end" className="w-60 p-2">
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-semibold leading-none text-foreground truncate">
+                    <p className="text-sm font-semibold leading-none text-foreground truncate" title={user?.name || 'Mahasiswa'}>
                       {user?.name || 'Mahasiswa Demo'}
                     </p>
-                    <p className="text-xs leading-none text-muted-foreground truncate">
+                    <p className="text-xs leading-none text-muted-foreground truncate" title={user?.email || 'mahasiswa@kampus.ac.id'}>
                       {user?.email || 'mahasiswa@kampus.ac.id'}
                     </p>
                     <p className="text-[11px] text-primary font-medium mt-1 truncate">
-                      {user?.university || 'Universitas'}
+                      {user?.university || 'Perguruan Tinggi'}
                     </p>
                   </div>
                 </DropdownMenuLabel>
@@ -300,7 +378,7 @@ export function AppShell({ children }: AppShellProps) {
                 <DropdownMenuItem asChild>
                   <Link href="/app/langganan" className="flex items-center gap-2 w-full">
                     <Sparkles className="h-4 w-4 text-amber-500" />
-                    <span>Langganan ({getPlanBadgeLabel()})</span>
+                    <span>Riwayat &amp; Langganan ({getPlanBadgeLabel()})</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -322,16 +400,16 @@ export function AppShell({ children }: AppShellProps) {
           </div>
         </header>
 
-        {/* Page Content with bottom padding compensation for mobile bottom nav */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 md:pb-8">
+        {/* Page Content: Rata tengah max-w-[1200px] sesuai Bagian 2 */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1200px] w-full mx-auto pb-24 lg:pb-8">
           {children}
         </main>
       </div>
 
-      {/* Mobile Bottom Navigation Bar (Fixed Bottom 56-64px with Safe Area) */}
+      {/* Mobile Bottom Navigation Bar (Di bawah 1024px / lg) */}
       <nav
         aria-label="Navigasi bawah mobile"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 backdrop-blur-md px-1 flex items-center justify-around h-16 pb-[env(safe-area-inset-bottom,0px)] shadow-lg"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 backdrop-blur-md px-1 flex items-center justify-around h-16 pb-[env(safe-area-inset-bottom,0px)] shadow-lg"
       >
         {NAV_ITEMS.map((item) => {
           const active = item.isActive(pathname);
@@ -341,29 +419,32 @@ export function AppShell({ children }: AppShellProps) {
             <Link
               key={item.name}
               href={item.href}
-              className={`flex flex-col items-center justify-center flex-1 h-full min-h-[44px] py-1 px-1 rounded-lg text-[10px] font-medium transition-all touch-manipulation ${
+              className={cn(
+                'flex flex-col items-center justify-center flex-1 h-full min-h-[44px] py-1 px-1 rounded-lg text-[10px] font-medium transition-all touch-manipulation',
                 active
                   ? 'text-primary font-bold'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+              )}
             >
               <div
-                className={`p-1.5 rounded-full transition-colors ${
+                className={cn(
+                  'p-1.5 rounded-full transition-colors',
                   isCreate
                     ? 'bg-primary text-primary-foreground shadow-xs'
                     : active
                     ? 'bg-primary/10 text-primary'
                     : ''
-                }`}
+                )}
               >
                 <Icon
-                  className={`h-5 w-5 ${
+                  className={cn(
+                    'h-4 w-4',
                     isCreate
                       ? 'text-primary-foreground'
                       : active
                       ? 'text-primary'
                       : 'text-muted-foreground'
-                  }`}
+                  )}
                   aria-hidden="true"
                 />
               </div>
