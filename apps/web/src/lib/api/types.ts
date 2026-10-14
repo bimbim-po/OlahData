@@ -204,6 +204,32 @@ export interface AnalysisResults {
   correlation?: CorrelationResult[];
   anova?: AnovaResult[];
   explanations: Record<string, string>;
+  sourceMeta?: DatasetSourceMeta;
+}
+
+export interface ColumnRoleInfo {
+  name: string;
+  role: 'id' | 'demographic' | 'item' | 'ignored';
+  dataType: string;
+  missingCount: number;
+}
+
+export interface DatasetSourceMeta {
+  fileName: string;
+  datasetId: string;
+  runId: string;
+  version: number;
+  kind: 'original' | 'derived';
+  sha256: string;
+  rowCount: number;
+  columnCount: number;
+  excludedRows: number[];
+  columns: ColumnRoleInfo[];
+  ignoredInfo?: {
+    emptyRowsSkipped: number;
+    mergedCellsDetected: number;
+    notes: string[];
+  };
 }
 
 export interface TraceInfo {

@@ -30,8 +30,10 @@ import { ExplanationBox } from '@/components/explanation-box';
 import { AssumptionAlert } from '@/components/assumption-alert';
 import { TraceabilityPanel } from '@/components/traceability-panel';
 import { ExportDialog } from '@/components/export-dialog';
+import { DataSourcePanel } from '@/components/data-source-panel';
 import { PageActions } from '@/components/page-actions';
 import { useToast } from '@/components/ui/toaster';
+import { useWizardStore } from '@/stores/wizard-store';
 import { formatNumber, formatDateTime } from '@/lib/format';
 import { getProject, getResult } from '@/lib/api';
 import { buildWordTableHtml, copyHtmlAndText } from '@/lib/word-table';
@@ -86,13 +88,50 @@ export default function HasilPage() {
     async function loadData() {
       setIsLoading(true);
       try {
-        const [projData, resData] = await Promise.all([
+        let runId: string | null = null;
+        if (typeof window !== 'undefined') {
+          const urlParams = new URLSearchParams(window.location.search);
+          runId = urlParams.get('runId');
+        }
+
+        // 1. Check in wizardStore first
+        const storeResults = useWizardStore.getState().currentResults;
+        let activeResults: AnalysisResults | null = null;
+
+        if (runId && typeof window !== 'undefined') {
+          const savedRun = localStorage.getItem(`olahdata_run_${runId}`);
+          if (savedRun) {
+            try {
+              activeResults = JSON.parse(savedRun);
+            } catch {
+              // ignore
+            }
+          }
+        }
+
+        if (!activeResults && storeResults && (storeResults.projectId === projectId || projectId === 'sample')) {
+          activeResults = storeResults;
+        }
+
+        if (!activeResults && typeof window !== 'undefined') {
+          const savedProjectResults = localStorage.getItem(`olahdata_results_${projectId}`);
+          if (savedProjectResults) {
+            try {
+              activeResults = JSON.parse(savedProjectResults);
+            } catch {
+              // ignore
+            }
+          }
+        }
+
+        const [projData, apiRes] = await Promise.all([
           getProject(projectId),
-          getResult(projectId),
+          activeResults ? Promise.resolve(activeResults) : getResult(projectId),
         ]);
+
         if (isMounted) {
           setProject(projData || null);
-          setResults(resData);
+          setResults(activeResults || apiRes);
         }
       } catch (err) {
         console.error('Failed to load project results', err);
@@ -882,6 +921,9 @@ export default function HasilPage() {
           </div>
         </div>
 
+        {/* Panel Sumber Data & Integritas Matriks */}
+        <DataSourcePanel meta={results.sourceMeta} projectId={projectId} />
+
         {/* Main Content Layout (Tabs + Traceability Sidebar) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left/Center Main Column: Statistical Tests Tabs */}
@@ -1266,6 +1308,7 @@ export default function HasilPage() {
         projectTitle={project?.title}
         open={exportOpen}
         onOpenChange={setExportOpen}
+        results={results}
       />
     </div>
   );

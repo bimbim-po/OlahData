@@ -25,6 +25,7 @@ import { IssueList } from '@/components/issue-list';
 import { VariableMapper } from '@/components/variable-mapper';
 import { TestCard } from '@/components/test-card';
 import { StepIndicator } from '@/components/step-indicator';
+import { computeDeterministicStats } from '@/lib/stats-engine';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -76,6 +77,11 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
     issues,
     removedRows,
     dataVersion,
+    reverseItems,
+    toggleReverseItem,
+    calculationMethod,
+    setCalculationMethod,
+    datasetMeta,
     constructs,
     setConstructs,
     selectedTests,
@@ -84,6 +90,9 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
     removeRowByNumber,
     isRunning,
     setRunning,
+    setRunId,
+    setDatasetId,
+    setCurrentResults,
   } = useWizardStore();
 
   const [project, setProject] = React.useState<Project | null>(null);
@@ -137,31 +146,103 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
     });
   }, [independentConstructs.length, dependentConstructs.length]);
 
-  // Trigger simulated progressive analysis execution
-  const handleRunAnalysis = () => {
+  // Trigger deterministic progressive statistical analysis execution
+  const handleRunAnalysis = async () => {
     setRunning(true);
     setCurrentExecutionStep(0);
 
-    const stepInterval = 500; // 500ms * 5 steps = 2500ms total
-    let step = 0;
+    try {
+      // Step 1: Validasi matriks
+      await new Promise((r) => setTimeout(r, 200));
+      setCurrentExecutionStep(1);
 
-    const intervalId = setInterval(() => {
-      step += 1;
-      if (step < ANALYSIS_EXECUTION_STEPS.length) {
-        setCurrentExecutionStep(step);
-      } else {
-        clearInterval(intervalId);
-        setTimeout(() => {
-          setRunning(false);
-          const targetUrl = `/app/proyek/${projectId}/hasil`;
-          if (typeof window !== 'undefined') {
-            window.location.href = targetUrl;
-          } else {
-            router.push(targetUrl);
+      // Step 2: Pearson & Cronbach
+      await new Promise((r) => setTimeout(r, 200));
+      setCurrentExecutionStep(2);
+
+      // Step 3: Asumsi klasik
+      await new Promise((r) => setTimeout(r, 200));
+      setCurrentExecutionStep(3);
+
+      // Generate unique IDs for this run
+      const generatedRunId = `run-${Date.now()}`;
+      const generatedDatasetId = datasetMeta?.datasetId || `ds-${Date.now()}`;
+      setRunId(generatedRunId);
+      setDatasetId(generatedDatasetId);
+
+      // Build effective source metadata
+      const effectiveMeta = datasetMeta
+        ? {
+            ...datasetMeta,
+            runId: generatedRunId,
+            datasetId: generatedDatasetId,
+            version: dataVersion,
+            excludedRows: removedRows,
           }
-        }, 400);
+        : {
+            fileName: fileName || 'data_kuesioner.csv',
+            datasetId: generatedDatasetId,
+            runId: generatedRunId,
+            version: dataVersion,
+            kind: 'original' as const,
+            sha256: '',
+            rowCount: fileData.length,
+            columnCount: columns.length,
+            excludedRows: removedRows,
+            columns: columns.map((col) => ({
+              name: col,
+              role: (constructs.some((con) => con.items.includes(col))
+                ? 'item'
+                : col.toLowerCase().includes('id') || col.toLowerCase() === 'no'
+                ? 'id'
+                : 'ignored') as 'id' | 'demographic' | 'item' | 'ignored',
+              dataType: 'number',
+              missingCount: 0,
+            })),
+          };
+
+      // Step 4: Deterministic computation using mathematical pipeline
+      const computed = computeDeterministicStats(
+        fileData,
+        constructs,
+        selectedTests,
+        reverseItems,
+        calculationMethod,
+        effectiveMeta
+      );
+
+      computed.projectId = projectId;
+      computed.dataVersionId = `dv-${dataVersion}`;
+
+      // Step 5: Narasi akademik terstandar
+      await new Promise((r) => setTimeout(r, 200));
+      setCurrentExecutionStep(4);
+
+      // Store in memory and persistent storage
+      setCurrentResults(computed);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem(`olahdata_results_${projectId}`, JSON.stringify(computed));
+          localStorage.setItem(`olahdata_run_${generatedRunId}`, JSON.stringify(computed));
+        } catch {
+          // localStorage might be constrained
+        }
       }
-    }, stepInterval);
+
+      await new Promise((r) => setTimeout(r, 300));
+      setRunning(false);
+
+      const targetUrl = `/app/proyek/${projectId}/hasil?runId=${generatedRunId}`;
+      if (typeof window !== 'undefined') {
+        window.location.href = targetUrl;
+      } else {
+        router.push(targetUrl);
+      }
+    } catch (err: unknown) {
+      console.error('Computation error:', err);
+      setRunning(false);
+      alert('Terjadi kesalahan saat komputasi statistik: ' + (err instanceof Error ? err.message : String(err)));
+    }
   };
 
   return (
@@ -381,6 +462,90 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
               onChange={setConstructs}
             />
 
+            {/* Pengaturan Lanjutan Skor Konstruk */}
+            <div className="p-4 sm:p-5 rounded-[16px] border border-border bg-card shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
+                <div>
+                  <h4 className="font-semibold text-sm text-foreground flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-primary" />
+                    Pengaturan Lanjutan Skor & Butir Negatif
+                  </h4>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Tentukan metode agregasi skor variabel dan balik nilai butir yang menggunakan kalimat negatif.
+                  </p>
+                </div>
+
+                {/* Calculation method selector */}
+                <div className="flex items-center gap-1.5 p-1 rounded-lg bg-muted/50 border border-border/50 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setCalculationMethod('mean')}
+                    className={cn(
+                      'px-3 py-1.5 rounded-md font-medium transition-colors cursor-pointer',
+                      calculationMethod === 'mean'
+                        ? 'bg-background text-foreground shadow-xs font-semibold'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    Rata-rata (Mean)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCalculationMethod('sum')}
+                    className={cn(
+                      'px-3 py-1.5 rounded-md font-medium transition-colors cursor-pointer',
+                      calculationMethod === 'sum'
+                        ? 'bg-background text-foreground shadow-xs font-semibold'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    Penjumlahan (Sum)
+                  </button>
+                </div>
+              </div>
+
+              {/* Reverse scored items selection */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-foreground">
+                    Butir Berkebalikan / Negatif (Reverse-Scored):
+                  </label>
+                  <span className="text-[11px] text-muted-foreground">
+                    {reverseItems.length > 0
+                      ? `${reverseItems.length} butir dibalik nilainya (skala 1-5 diinversi)`
+                      : 'Belum ada butir yang dibalik'}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Klik butir instrumen di bawah jika butir tersebut memuat pernyataan negatif sehingga nilainya dibalik otomatis (misal skor 5 menjadi 1, skor 4 menjadi 2) sesuai kaidah metodologi penelitian kuantitatif.
+                </p>
+
+                <div className="flex flex-wrap gap-1.5 pt-1 max-h-32 overflow-y-auto">
+                  {columns
+                    .filter((c) => c !== 'No' && c !== 'id' && c !== 'ID')
+                    .map((col) => {
+                      const isReverse = reverseItems.includes(col);
+                      return (
+                        <button
+                          key={col}
+                          type="button"
+                          onClick={() => toggleReverseItem(col)}
+                          className={cn(
+                            'text-xs px-2.5 py-1 rounded-md border font-mono transition-all cursor-pointer',
+                            isReverse
+                              ? 'bg-amber-600 text-white border-amber-600 font-semibold shadow-xs'
+                              : 'bg-muted/30 text-foreground border-border hover:border-amber-600/50'
+                          )}
+                          title={isReverse ? 'Klik untuk membatalkan reverse scoring' : 'Klik untuk mengaktifkan reverse scoring'}
+                        >
+                          {col} {isReverse && '🔄'}
+                        </button>
+                      );
+                    })}
+                </div>
+              </div>
+            </div>
+
             {/* Navigation Buttons */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
               <Button
@@ -549,10 +714,22 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                       {formatNumber(fileData.length)} responden
                     </span>
                   </div>
-                  <div className="flex items-center justify-between py-1">
+                  <div className="flex items-center justify-between py-1 border-b border-border/60">
                     <span className="text-muted-foreground">Baris Dieliminasi:</span>
                     <span className="font-mono tabular-nums text-muted-foreground">
                       {removedRows.length} baris
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between py-1 border-b border-border/60">
+                    <span className="text-muted-foreground">Metode Komposit:</span>
+                    <span className="font-semibold text-foreground uppercase text-[11px]">
+                      {calculationMethod === 'mean' ? 'Rata-rata (Mean)' : 'Penjumlahan (Sum)'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between py-1">
+                    <span className="text-muted-foreground">Butir Negatif Dibalik:</span>
+                    <span className="font-mono text-foreground text-[11px]">
+                      {reverseItems.length > 0 ? `${reverseItems.length} butir (${reverseItems.join(', ')})` : 'Tidak ada'}
                     </span>
                   </div>
                 </CardContent>

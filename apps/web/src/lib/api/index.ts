@@ -20,6 +20,7 @@ import { mockDataset, mockIssues } from '../mock/dataset-contoh';
 import { mockResults, mockTestOptions } from '../mock/results';
 import { buildWordTableHtml, buildWordDocumentContent } from '../word-table';
 import { formatNumber } from '../format';
+import { generateAcademicPdfReport } from '../pdf-generator';
 
 // =============================================================================
 // 1. AUTENTIKASI (SUPABASE AUTH + PROFILES)
@@ -667,9 +668,18 @@ export async function runAnalysis(config: AnalysisConfig): Promise<AnalysisResul
   };
 }
 
-// TODO(backend-statistik): Ambil hasil analisis riil dari tabel analysis_results Supabase
-// setelah microservice statistik selesai memproses.
 export async function getResult(projectId: string): Promise<AnalysisResults> {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem(`olahdata_results_${projectId}`);
+      if (stored) {
+        return JSON.parse(stored) as AnalysisResults;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   return {
     ...mockResults,
     projectId,
@@ -678,11 +688,22 @@ export async function getResult(projectId: string): Promise<AnalysisResults> {
 
 export async function exportResult(
   projectId: string,
-  options: ExportOptions
+  options: ExportOptions,
+  customResults?: AnalysisResults
 ): Promise<Blob> {
   const project = await getProject(projectId).catch(() => null);
   const projectTitle = project?.title || 'Analisis Data Skripsi';
-  const results = await getResult(projectId);
+  const results = customResults || (await getResult(projectId));
+
+  if (options.format === 'pdf') {
+    const pdfBytes = generateAcademicPdfReport(results, {
+      projectTitle,
+      sections: options.sections,
+      includeStatement: options.includeStatement,
+      watermark: false,
+    });
+    return new Blob([pdfBytes as unknown as BlobPart], { type: 'application/pdf' });
+  }
 
   if (options.format === 'word') {
     const sections: { title: string; contentHtml: string }[] = [];
@@ -965,10 +986,14 @@ export async function exportResult(
     return new Blob([docHtml], { type: 'application/msword;charset=utf-8' });
   }
 
-  // Fallback untuk format lain
-  return new Blob(['DRAF HASIL PENGOLAHAN DATA OLAHDATA'], {
-    type: 'application/octet-stream',
+  // Fallback / default: generate valid PDF
+  const pdfBytes = generateAcademicPdfReport(results, {
+    projectTitle,
+    sections: options.sections,
+    includeStatement: options.includeStatement,
+    watermark: false,
   });
+  return new Blob([pdfBytes as unknown as BlobPart], { type: 'application/pdf' });
 }
 
 export async function getBillingHistory(): Promise<BillingRecord[]> {

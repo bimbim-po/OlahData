@@ -24,7 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/toaster';
 import { exportResult } from '@/lib/api';
-import type { ExportFormat, TestType } from '@/lib/api/types';
+import type { ExportFormat, TestType, AnalysisResults } from '@/lib/api/types';
 import { useAuthStore } from '@/stores/auth-store';
 import Link from 'next/link';
 
@@ -34,6 +34,7 @@ export interface ExportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   userPlan?: 'free' | 'monthly' | 'thesis';
+  results?: AnalysisResults | null;
 }
 
 const AVAILABLE_SECTIONS: { id: TestType; label: string; description: string }[] = [
@@ -75,6 +76,7 @@ export function ExportDialog({
   open,
   onOpenChange,
   userPlan: propPlan,
+  results,
 }: ExportDialogProps) {
   const { toast } = useToast();
   const authUser = useAuthStore((s) => s.user);
@@ -118,11 +120,15 @@ export function ExportDialog({
 
     setIsExporting(true);
     try {
-      const blob = await exportResult(projectId, {
-        format,
-        sections: selectedSections,
-        includeStatement,
-      });
+      const blob = await exportResult(
+        projectId,
+        {
+          format,
+          sections: selectedSections,
+          includeStatement,
+        },
+        results || undefined
+      );
 
       // Trigger browser download
       const ext = format === 'word' ? 'doc' : 'pdf';

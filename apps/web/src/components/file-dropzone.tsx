@@ -1,9 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
-import { UploadCloud, FileSpreadsheet, Sparkles, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { UploadCloud, FileSpreadsheet, Sparkles, RefreshCw, AlertCircle, CheckCircle2, Hash } from 'lucide-react';
 import { useWizardStore } from '@/stores/wizard-store';
 import { mockDataset, mockIssues } from '@/lib/mock/dataset-contoh';
 import { analyzeDatasetQuality } from '@/lib/validation';
@@ -13,7 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { formatNumber } from '@/lib/format';
-import type { DatasetRow } from '@/lib/api/types';
+import { parseSpreadsheetFile } from '@/lib/dataset-parser';
+import type { DatasetRow, DatasetSourceMeta } from '@/lib/api/types';
 
 interface FileDropzoneProps {
   onFileLoaded?: () => void;
@@ -35,6 +34,7 @@ export function FileDropzone({ onFileLoaded, className }: FileDropzoneProps) {
     fileData,
     columns,
     usingSampleData,
+    datasetMeta,
     setFileData,
     setIssues,
     resetWizard,
@@ -45,7 +45,7 @@ export function FileDropzone({ onFileLoaded, className }: FileDropzoneProps) {
   const [isParsing, setIsParsing] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  const processFile = (file: File) => {
+  const processFile = async (file: File) => {
     setErrorMessage(null);
 
     // Validate size
@@ -67,118 +67,32 @@ export function FileDropzone({ onFileLoaded, className }: FileDropzoneProps) {
 
     setIsParsing(true);
 
-    if (extension === '.csv') {
-      Papa.parse(file, {
-        header: true,
-        dynamicTyping: true,
-        skipEmptyLines: 'greedy',
-        complete: (results) => {
-          setIsParsing(false);
-          const rawData = results.data as Record<string, unknown>[];
-          if (!rawData || rawData.length === 0) {
-            setErrorMessage('File CSV tidak memiliki data yang dapat dibaca.');
-            return;
-          }
+    try {
+      const parseRes = await parseSpreadsheetFile(file);
+      const detectedIssues = analyzeDatasetQuality(parseRes.rows, parseRes.columns);
 
-          const parsedColumns = results.meta.fields?.filter((f) => f && f.trim() !== '') || Object.keys(rawData[0]);
-          const parsedRows: DatasetRow[] = rawData.map((r, idx) => {
-            const row: DatasetRow = {};
-            parsedColumns.forEach((col) => {
-              const val = r[col];
-              if (val === undefined || val === null || val === '') {
-                row[col] = null;
-              } else if (typeof val === 'number') {
-                row[col] = val;
-              } else {
-                const num = Number(val);
-                row[col] = !isNaN(num) && typeof val === 'string' && val.trim() !== '' ? num : String(val);
-              }
-            });
-            if (row.No === undefined) {
-              row.No = idx + 1;
-            }
-            return row;
-          });
-
-          const finalColumns = parsedColumns.includes('No') ? parsedColumns : ['No', ...parsedColumns];
-          const detectedIssues = analyzeDatasetQuality(parsedRows, finalColumns);
-
-          setFileData(file.name, parsedRows, finalColumns, false, file.size);
-          setIssues(detectedIssues);
-          onFileLoaded?.();
-        },
-        error: (err) => {
-          setIsParsing(false);
-          setErrorMessage(`Gagal membaca file CSV: ${err.message}`);
-        },
-      });
-    } else {
-      // Excel files (.xlsx, .xls)
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const buffer = e.target?.result as ArrayBuffer;
-          const workbook = XLSX.read(buffer, { type: 'array' });
-          const firstSheetName = workbook.SheetNames[0];
-
-          if (!firstSheetName) {
-            setIsParsing(false);
-            setErrorMessage('Tidak ada lembar kerja (sheet) yang ditemukan di file Excel.');
-            return;
-          }
-
-          const sheet = workbook.Sheets[firstSheetName];
-          const rawData = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
-            defval: null,
-            raw: true,
-          });
-
-          if (!rawData || rawData.length === 0) {
-            setIsParsing(false);
-            setErrorMessage('Lembar kerja kosong atau tidak ada data yang ditemukan.');
-            return;
-          }
-
-          const rawHeaders = Object.keys(rawData[0]).filter((k) => k && k.trim() !== '');
-          const parsedRows: DatasetRow[] = rawData.map((r, idx) => {
-            const row: DatasetRow = {};
-            rawHeaders.forEach((col) => {
-              const val = r[col];
-              if (val === undefined || val === null || val === '') {
-                row[col] = null;
-              } else if (typeof val === 'number') {
-                row[col] = val;
-              } else {
-                const num = Number(val);
-                row[col] = !isNaN(num) && typeof val === 'string' && val.trim() !== '' ? num : String(val);
-              }
-            });
-            if (row.No === undefined) {
-              row.No = idx + 1;
-            }
-            return row;
-          });
-
-          const finalColumns = rawHeaders.includes('No') ? rawHeaders : ['No', ...rawHeaders];
-          const detectedIssues = analyzeDatasetQuality(parsedRows, finalColumns);
-
-          setIsParsing(false);
-          setFileData(file.name, parsedRows, finalColumns, false, file.size);
-          setIssues(detectedIssues);
-          onFileLoaded?.();
-        } catch (err: unknown) {
-          setIsParsing(false);
-          const msg = err instanceof Error ? err.message : 'Terjadi kesalahan tidak dikenal';
-          setErrorMessage(`Gagal membaca file Excel: ${msg}`);
-        }
+      const meta: DatasetSourceMeta = {
+        fileName: parseRes.fileName,
+        datasetId: `ds-${Date.now()}`,
+        runId: `run-${Date.now()}`,
+        version: 1,
+        kind: 'original',
+        sha256: parseRes.sha256,
+        rowCount: parseRes.rows.length,
+        columnCount: parseRes.columns.length,
+        excludedRows: [],
+        columns: parseRes.columnMeta,
+        ignoredInfo: parseRes.ignoredInfo,
       };
 
-      reader.onerror = () => {
-        setIsParsing(false);
-        setErrorMessage('Gagal membuka file dari perangkat.');
-      };
-
-      reader.readAsArrayBuffer(file);
+      setFileData(parseRes.fileName, parseRes.rows, parseRes.columns, false, parseRes.fileSize, meta);
+      setIssues(detectedIssues);
+      onFileLoaded?.();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Terjadi kesalahan saat memproses berkas';
+      setErrorMessage(`Gagal membaca berkas: ${msg}`);
+    } finally {
+      setIsParsing(false);
     }
   };
 
@@ -286,9 +200,20 @@ export function FileDropzone({ onFileLoaded, className }: FileDropzoneProps) {
                     </Badge>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {fileSize ? formatBytes(fileSize) : 'Ukuran internal'} • Format tabel terverifikasi
-                </p>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-0.5">
+                  <span>{fileSize ? formatBytes(fileSize) : 'Ukuran internal'}</span>
+                  <span>•</span>
+                  <span>Format tabel terverifikasi</span>
+                  {datasetMeta?.sha256 && (
+                    <>
+                      <span>•</span>
+                      <span className="font-mono text-[11px] text-muted-foreground/80 flex items-center gap-1">
+                        <Hash className="w-3 h-3" />
+                        SHA-256: {datasetMeta.sha256.substring(0, 8)}...{datasetMeta.sha256.substring(56)}
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 

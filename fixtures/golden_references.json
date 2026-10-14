@@ -1,0 +1,542 @@
+{
+  "dataset_30": {
+    "n": 30,
+    "descriptive": {
+      "KL": {
+        "n": 30,
+        "mean": 3.822222,
+        "median": 3.666667,
+        "stdDev": 0.65351,
+        "min": 2.666667,
+        "max": 5.0
+      },
+      "KP": {
+        "n": 30,
+        "mean": 3.433333,
+        "median": 3.5,
+        "stdDev": 0.717328,
+        "min": 2.0,
+        "max": 4.666667
+      },
+      "LO": {
+        "n": 30,
+        "mean": 4.066667,
+        "median": 4.0,
+        "stdDev": 0.490523,
+        "min": 3.0,
+        "max": 5.0
+      }
+    },
+    "validity": {
+      "KL1": {
+        "construct": "KL",
+        "rHitung": 0.829634,
+        "rTabel": 0.361007,
+        "valid": true
+      },
+      "KL2": {
+        "construct": "KL",
+        "rHitung": 0.879456,
+        "rTabel": 0.361007,
+        "valid": true
+      },
+      "KL3": {
+        "construct": "KL",
+        "rHitung": 0.80389,
+        "rTabel": 0.361007,
+        "valid": true
+      },
+      "KP1": {
+        "construct": "KP",
+        "rHitung": 0.863045,
+        "rTabel": 0.361007,
+        "valid": true
+      },
+      "KP2": {
+        "construct": "KP",
+        "rHitung": 0.885503,
+        "rTabel": 0.361007,
+        "valid": true
+      },
+      "KP3": {
+        "construct": "KP",
+        "rHitung": 0.902838,
+        "rTabel": 0.361007,
+        "valid": true
+      },
+      "LO1": {
+        "construct": "LO",
+        "rHitung": 0.67124,
+        "rTabel": 0.361007,
+        "valid": true
+      },
+      "LO2": {
+        "construct": "LO",
+        "rHitung": 0.815987,
+        "rTabel": 0.361007,
+        "valid": true
+      },
+      "LO3": {
+        "construct": "LO",
+        "rHitung": 0.710653,
+        "rTabel": 0.361007,
+        "valid": true
+      }
+    },
+    "reliability": {
+      "KL": {
+        "cronbachAlpha": 0.784988,
+        "itemCount": 3,
+        "reliable": true
+      },
+      "KP": {
+        "cronbachAlpha": 0.853313,
+        "itemCount": 3,
+        "reliable": true
+      },
+      "LO": {
+        "cronbachAlpha": 0.574841,
+        "itemCount": 3,
+        "reliable": false
+      }
+    },
+    "regression": [
+      {
+        "variable": "(Konstanta)",
+        "coefficient": 2.527984,
+        "stdError": 0.786743,
+        "tHitung": 3.213227,
+        "pValue": 0.003385
+      },
+      {
+        "variable": "KL",
+        "coefficient": 0.138445,
+        "stdError": 0.138579,
+        "tHitung": 0.999039,
+        "pValue": 0.326646
+      },
+      {
+        "variable": "KP",
+        "coefficient": 0.294033,
+        "stdError": 0.12625,
+        "tHitung": 2.328977,
+        "pValue": 0.02759
+      }
+    ],
+    "fTest": {
+      "fHitung": 2.753023,
+      "fTabel": 3.354131,
+      "pValue": 0.081638,
+      "significant": false
+    },
+    "determination": {
+      "rSquare": 0.169385,
+      "adjustedRSquare": 0.107858,
+      "stdError": 0.463315
+    },
+    "multicollinearity": {
+      "KL": {
+        "tolerance": 0.902522,
+        "vif": 1.108006,
+        "problematic": false
+      },
+      "KP": {
+        "tolerance": 0.902522,
+        "vif": 1.108006,
+        "problematic": false
+      }
+    },
+    "heteroscedasticity": {
+      "KL": {
+        "tHitung": -0.549569,
+        "pValue": 0.587132,
+        "significant": false
+      },
+      "KP": {
+        "tHitung": -2.435496,
+        "pValue": 0.021753,
+        "significant": true
+      }
+    },
+    "correlation": [
+      {
+        "var1": "KL",
+        "var2": "KP",
+        "coefficient": -0.312214,
+        "pValue": 0.093018
+      },
+      {
+        "var1": "KL",
+        "var2": "LO",
+        "coefficient": 0.050199,
+        "pValue": 0.792215
+      },
+      {
+        "var1": "KP",
+        "var2": "LO",
+        "coefficient": 0.372399,
+        "pValue": 0.042704
+      }
+    ]
+  },
+  "dataset_120": {
+    "n": 120,
+    "descriptive": {
+      "KL": {
+        "n": 120,
+        "mean": 3.733333,
+        "median": 3.666667,
+        "stdDev": 0.613572,
+        "min": 2.0,
+        "max": 5.0
+      },
+      "KP": {
+        "n": 120,
+        "mean": 3.561111,
+        "median": 3.666667,
+        "stdDev": 0.777824,
+        "min": 2.0,
+        "max": 5.0
+      },
+      "LO": {
+        "n": 120,
+        "mean": 4.086111,
+        "median": 4.0,
+        "stdDev": 0.5626,
+        "min": 2.666667,
+        "max": 5.0
+      }
+    },
+    "validity": {
+      "KL1": {
+        "construct": "KL",
+        "rHitung": 0.813289,
+        "rTabel": 0.179343,
+        "valid": true
+      },
+      "KL2": {
+        "construct": "KL",
+        "rHitung": 0.834621,
+        "rTabel": 0.179343,
+        "valid": true
+      },
+      "KL3": {
+        "construct": "KL",
+        "rHitung": 0.812328,
+        "rTabel": 0.179343,
+        "valid": true
+      },
+      "KP1": {
+        "construct": "KP",
+        "rHitung": 0.894242,
+        "rTabel": 0.179343,
+        "valid": true
+      },
+      "KP2": {
+        "construct": "KP",
+        "rHitung": 0.889397,
+        "rTabel": 0.179343,
+        "valid": true
+      },
+      "KP3": {
+        "construct": "KP",
+        "rHitung": 0.901929,
+        "rTabel": 0.179343,
+        "valid": true
+      },
+      "LO1": {
+        "construct": "LO",
+        "rHitung": 0.751372,
+        "rTabel": 0.179343,
+        "valid": true
+      },
+      "LO2": {
+        "construct": "LO",
+        "rHitung": 0.828914,
+        "rTabel": 0.179343,
+        "valid": true
+      },
+      "LO3": {
+        "construct": "LO",
+        "rHitung": 0.736934,
+        "rTabel": 0.179343,
+        "valid": true
+      }
+    },
+    "reliability": {
+      "KL": {
+        "cronbachAlpha": 0.7562,
+        "itemCount": 3,
+        "reliable": true
+      },
+      "KP": {
+        "cronbachAlpha": 0.873463,
+        "itemCount": 3,
+        "reliable": true
+      },
+      "LO": {
+        "cronbachAlpha": 0.662258,
+        "itemCount": 3,
+        "reliable": true
+      }
+    },
+    "regression": [
+      {
+        "variable": "(Konstanta)",
+        "coefficient": 1.879782,
+        "stdError": 0.321968,
+        "tHitung": 5.838419,
+        "pValue": 0.0
+      },
+      {
+        "variable": "KL",
+        "coefficient": 0.252597,
+        "stdError": 0.069604,
+        "tHitung": 3.629071,
+        "pValue": 0.000423
+      },
+      {
+        "variable": "KP",
+        "coefficient": 0.354749,
+        "stdError": 0.054905,
+        "tHitung": 6.461091,
+        "pValue": 0.0
+      }
+    ],
+    "fTest": {
+      "fHitung": 28.398811,
+      "fTabel": 3.073763,
+      "pValue": 0.0,
+      "significant": true
+    },
+    "determination": {
+      "rSquare": 0.326803,
+      "adjustedRSquare": 0.315296,
+      "stdError": 0.465534
+    },
+    "multicollinearity": {
+      "KL": {
+        "tolerance": 0.99853,
+        "vif": 1.001473,
+        "problematic": false
+      },
+      "KP": {
+        "tolerance": 0.99853,
+        "vif": 1.001473,
+        "problematic": false
+      }
+    },
+    "heteroscedasticity": {
+      "KL": {
+        "tHitung": 0.561607,
+        "pValue": 0.575458,
+        "significant": false
+      },
+      "KP": {
+        "tHitung": -1.881944,
+        "pValue": 0.062328,
+        "significant": false
+      }
+    },
+    "correlation": [
+      {
+        "var1": "KL",
+        "var2": "KP",
+        "coefficient": 0.038346,
+        "pValue": 0.677545
+      },
+      {
+        "var1": "KL",
+        "var2": "LO",
+        "coefficient": 0.294289,
+        "pValue": 0.001104
+      },
+      {
+        "var1": "KP",
+        "var2": "LO",
+        "coefficient": 0.501023,
+        "pValue": 0.0
+      }
+    ]
+  },
+  "dataset_text_comma": {
+    "n": 40,
+    "descriptive": {
+      "KL": {
+        "n": 40,
+        "mean": 3.633333,
+        "median": 3.666667,
+        "stdDev": 0.644061,
+        "min": 2.0,
+        "max": 5.0
+      },
+      "KP": {
+        "n": 40,
+        "mean": 3.3,
+        "median": 3.166667,
+        "stdDev": 0.62155,
+        "min": 2.0,
+        "max": 5.0
+      },
+      "LO": {
+        "n": 40,
+        "mean": 3.75,
+        "median": 3.666667,
+        "stdDev": 0.568649,
+        "min": 3.0,
+        "max": 5.0
+      }
+    },
+    "validity": {
+      "KL1": {
+        "construct": "KL",
+        "rHitung": 0.865635,
+        "rTabel": 0.312006,
+        "valid": true
+      },
+      "KL2": {
+        "construct": "KL",
+        "rHitung": 0.82834,
+        "rTabel": 0.312006,
+        "valid": true
+      },
+      "KL3": {
+        "construct": "KL",
+        "rHitung": 0.808615,
+        "rTabel": 0.312006,
+        "valid": true
+      },
+      "KP1": {
+        "construct": "KP",
+        "rHitung": 0.813765,
+        "rTabel": 0.312006,
+        "valid": true
+      },
+      "KP2": {
+        "construct": "KP",
+        "rHitung": 0.840453,
+        "rTabel": 0.312006,
+        "valid": true
+      },
+      "KP3": {
+        "construct": "KP",
+        "rHitung": 0.87046,
+        "rTabel": 0.312006,
+        "valid": true
+      },
+      "LO1": {
+        "construct": "LO",
+        "rHitung": 0.796547,
+        "rTabel": 0.312006,
+        "valid": true
+      },
+      "LO2": {
+        "construct": "LO",
+        "rHitung": 0.845425,
+        "rTabel": 0.312006,
+        "valid": true
+      },
+      "LO3": {
+        "construct": "LO",
+        "rHitung": 0.77182,
+        "rTabel": 0.312006,
+        "valid": true
+      }
+    },
+    "reliability": {
+      "KL": {
+        "cronbachAlpha": 0.781422,
+        "itemCount": 3,
+        "reliable": true
+      },
+      "KP": {
+        "cronbachAlpha": 0.794248,
+        "itemCount": 3,
+        "reliable": true
+      },
+      "LO": {
+        "cronbachAlpha": 0.727533,
+        "itemCount": 3,
+        "reliable": true
+      }
+    },
+    "regression": [
+      {
+        "variable": "(Konstanta)",
+        "coefficient": 1.889082,
+        "stdError": 0.596808,
+        "tHitung": 3.16531,
+        "pValue": 0.003096
+      },
+      {
+        "variable": "KL",
+        "coefficient": 0.302892,
+        "stdError": 0.130991,
+        "tHitung": 2.31231,
+        "pValue": 0.026428
+      },
+      {
+        "variable": "KP",
+        "coefficient": 0.230427,
+        "stdError": 0.135735,
+        "tHitung": 1.697625,
+        "pValue": 0.097976
+      }
+    ],
+    "fTest": {
+      "fHitung": 4.995353,
+      "fTabel": 3.251924,
+      "pValue": 0.012009,
+      "significant": true
+    },
+    "determination": {
+      "rSquare": 0.21261,
+      "adjustedRSquare": 0.170049,
+      "stdError": 0.518049
+    },
+    "multicollinearity": {
+      "KL": {
+        "tolerance": 0.966806,
+        "vif": 1.034334,
+        "problematic": false
+      },
+      "KP": {
+        "tolerance": 0.966806,
+        "vif": 1.034334,
+        "problematic": false
+      }
+    },
+    "heteroscedasticity": {
+      "KL": {
+        "tHitung": 0.420158,
+        "pValue": 0.6768,
+        "significant": false
+      },
+      "KP": {
+        "tHitung": 0.413804,
+        "pValue": 0.681406,
+        "significant": false
+      }
+    },
+    "correlation": [
+      {
+        "var1": "KL",
+        "var2": "KP",
+        "coefficient": 0.182192,
+        "pValue": 0.260507
+      },
+      {
+        "var1": "KL",
+        "var2": "LO",
+        "coefficient": 0.388948,
+        "pValue": 0.013121
+      },
+      {
+        "var1": "KP",
+        "var2": "LO",
+        "coefficient": 0.314367,
+        "pValue": 0.048201
+      }
+    ]
+  }
+}

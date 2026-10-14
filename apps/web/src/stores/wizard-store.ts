@@ -1,108 +1,174 @@
 import { create } from 'zustand';
-import type { Construct, TestType, DatasetRow, DataIssue } from '@/lib/api/types';
+import type { Construct, TestType, DatasetRow, DataIssue, AnalysisResults, DatasetSourceMeta } from '@/lib/api/types';
 
 export type WizardStep = 0 | 1 | 2 | 3 | 4;
 
 interface WizardState {
   currentStep: WizardStep;
   projectId: string | null;
-  
+  datasetId: string | null;
+  runId: string | null;
+
   // Step 1: Upload
   fileName: string | null;
   fileSize: number | null;
   fileData: DatasetRow[];
   columns: string[];
   usingSampleData: boolean;
-  
+  datasetMeta: DatasetSourceMeta | null;
+
   // Step 2: Validation
   issues: DataIssue[];
   removedRows: number[];
   dataVersion: number;
-  
+  reverseItems: string[];
+  columnRoles: Record<string, 'id' | 'demographic' | 'item' | 'ignored'>;
+
   // Step 3: Variable mapping
   constructs: Construct[];
-  
+  calculationMethod: 'mean' | 'sum';
+
   // Step 4: Test selection
   selectedTests: TestType[];
-  
-  // Step 5: Running
+
+  // Step 5: Running & Results
   isRunning: boolean;
   runProgress: { step: string; completed: boolean }[];
+  currentResults: AnalysisResults | null;
 
   // Actions
   setStep: (step: WizardStep) => void;
   nextStep: () => void;
   prevStep: () => void;
   setProjectId: (id: string) => void;
-  setFileData: (fileName: string, data: DatasetRow[], columns: string[], isSample: boolean, fileSize?: number) => void;
+  setDatasetId: (id: string | null) => void;
+  setRunId: (id: string | null) => void;
+  setFileData: (
+    fileName: string,
+    data: DatasetRow[],
+    columns: string[],
+    isSample: boolean,
+    fileSize?: number,
+    meta?: DatasetSourceMeta
+  ) => void;
+  setDatasetMeta: (meta: DatasetSourceMeta) => void;
   setIssues: (issues: DataIssue[]) => void;
   removeRow: (rowIndex: number) => void;
   removeRowByNumber: (rowNumber: number) => void;
+  setReverseItems: (items: string[]) => void;
+  toggleReverseItem: (item: string) => void;
+  setColumnRole: (col: string, role: 'id' | 'demographic' | 'item' | 'ignored') => void;
   setConstructs: (constructs: Construct[]) => void;
+  setCalculationMethod: (method: 'mean' | 'sum') => void;
   setSelectedTests: (tests: TestType[]) => void;
   toggleTest: (test: TestType) => void;
   setRunning: (running: boolean) => void;
   setRunProgress: (progress: { step: string; completed: boolean }[]) => void;
+  setCurrentResults: (results: AnalysisResults) => void;
   resetWizard: () => void;
 }
 
 const initialState = {
   currentStep: 0 as WizardStep,
   projectId: null,
+  datasetId: null,
+  runId: null,
   fileName: null,
   fileSize: null,
   fileData: [],
   columns: [],
   usingSampleData: false,
+  datasetMeta: null,
   issues: [],
   removedRows: [],
   dataVersion: 1,
+  reverseItems: [] as string[],
+  columnRoles: {} as Record<string, 'id' | 'demographic' | 'item' | 'ignored'>,
   constructs: [],
+  calculationMethod: 'mean' as const,
   selectedTests: [] as TestType[],
   isRunning: false,
   runProgress: [],
+  currentResults: null,
 };
 
-export const useWizardStore = create<WizardState>((set) => ({
+export const useWizardStore = create<WizardState>((set, get) => ({
   ...initialState,
 
   setStep: (step) => set({ currentStep: step }),
-  
+
   nextStep: () =>
     set((state) => ({
       currentStep: Math.min(4, state.currentStep + 1) as WizardStep,
     })),
-  
+
   prevStep: () =>
     set((state) => ({
       currentStep: Math.max(0, state.currentStep - 1) as WizardStep,
     })),
-  
+
   setProjectId: (id) => set({ projectId: id }),
-  
-  setFileData: (fileName, data, columns, isSample, fileSize) =>
+  setDatasetId: (id) => set({ datasetId: id }),
+  setRunId: (id) => set({ runId: id }),
+
+  setFileData: (fileName, data, columns, isSample, fileSize, meta) => {
+    const dsId = `ds-${Date.now()}`;
+    const runId = `run-${Date.now()}`;
+
+    const defaultRoles: Record<string, 'id' | 'demographic' | 'item' | 'ignored'> = {};
+    if (meta?.columns) {
+      meta.columns.forEach((c) => {
+        defaultRoles[c.name] = c.role;
+      });
+    } else {
+      columns.forEach((c) => {
+        defaultRoles[c] = c.toLowerCase() === 'no' || c.toLowerCase() === 'id' ? 'id' : 'item';
+      });
+    }
+
     set({
       fileName,
       fileSize: fileSize ?? null,
       fileData: data,
       columns,
       usingSampleData: isSample,
+      datasetId: dsId,
+      runId,
+      datasetMeta: meta || null,
+      columnRoles: defaultRoles,
       issues: [],
       removedRows: [],
       dataVersion: 1,
-    }),
-  
+      reverseItems: [],
+      currentResults: null,
+    });
+  },
+
+  setDatasetMeta: (meta) => set({ datasetMeta: meta }),
+
   setIssues: (issues) => set({ issues }),
-  
+
   removeRow: (rowIndex) =>
     set((state) => {
       const targetRow = state.fileData[rowIndex];
       const rowNo = targetRow && typeof targetRow.No === 'number' ? targetRow.No : rowIndex + 1;
+      const updatedRemoved = [...state.removedRows, rowNo];
+      const updatedMeta = state.datasetMeta
+        ? {
+            ...state.datasetMeta,
+            kind: 'derived' as const,
+            version: state.dataVersion + 1,
+            rowCount: state.fileData.length - 1,
+            excludedRows: updatedRemoved,
+          }
+        : null;
+
       return {
-        removedRows: [...state.removedRows, rowNo],
+        removedRows: updatedRemoved,
         dataVersion: state.dataVersion + 1,
         fileData: state.fileData.filter((_, i) => i !== rowIndex),
-        issues: state.issues.filter((issue) => issue.row !== rowNo && issue.row !== (rowIndex + 1)),
+        issues: state.issues.filter((issue) => issue.row !== rowNo && issue.row !== rowIndex + 1),
+        datasetMeta: updatedMeta,
       };
     }),
 
@@ -116,28 +182,72 @@ export const useWizardStore = create<WizardState>((set) => ({
           issues: state.issues.filter((issue) => issue.row !== rowNumber),
         };
       }
+      const updatedRemoved = [...state.removedRows, rowNumber];
+      const updatedMeta = state.datasetMeta
+        ? {
+            ...state.datasetMeta,
+            kind: 'derived' as const,
+            version: state.dataVersion + 1,
+            rowCount: state.fileData.length - 1,
+            excludedRows: updatedRemoved,
+          }
+        : null;
+
       return {
-        removedRows: [...state.removedRows, rowNumber],
+        removedRows: updatedRemoved,
         dataVersion: state.dataVersion + 1,
         fileData: state.fileData.filter((_, i) => i !== index),
         issues: state.issues.filter((issue) => issue.row !== rowNumber),
+        datasetMeta: updatedMeta,
       };
     }),
-  
+
+  setReverseItems: (items) => set({ reverseItems: items }),
+
+  toggleReverseItem: (item) =>
+    set((state) => ({
+      reverseItems: state.reverseItems.includes(item)
+        ? state.reverseItems.filter((i) => i !== item)
+        : [...state.reverseItems, item],
+    })),
+
+  setColumnRole: (col, role) =>
+    set((state) => ({
+      columnRoles: { ...state.columnRoles, [col]: role },
+    })),
+
   setConstructs: (constructs) => set({ constructs }),
-  
+
+  setCalculationMethod: (method) => set({ calculationMethod: method }),
+
   setSelectedTests: (tests) => set({ selectedTests: tests }),
-  
+
   toggleTest: (test) =>
     set((state) => ({
       selectedTests: state.selectedTests.includes(test)
         ? state.selectedTests.filter((t) => t !== test)
         : [...state.selectedTests, test],
     })),
-  
+
   setRunning: (running) => set({ isRunning: running }),
-  
+
   setRunProgress: (progress) => set({ runProgress: progress }),
-  
+
+  setCurrentResults: (results) => {
+    set({ currentResults: results });
+    // Also save to localStorage keyed by projectId
+    if (typeof window !== 'undefined' && results.projectId) {
+      try {
+        localStorage.setItem(`olahdata_results_${results.projectId}`, JSON.stringify(results));
+        // Also keep a record by runId
+        if (results.id) {
+          localStorage.setItem(`olahdata_run_${results.id}`, JSON.stringify(results));
+        }
+      } catch {
+        // ignore localStorage quota
+      }
+    }
+  },
+
   resetWizard: () => set(initialState),
 }));
