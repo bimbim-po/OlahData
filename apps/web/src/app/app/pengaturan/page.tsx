@@ -445,7 +445,7 @@ export default function SettingsPage() {
                   <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">
                     Batas Responden
                   </span>
-                  <div className="text-base font-bold text-foreground truncate">
+                  <div className="text-sm sm:text-base font-bold text-foreground leading-snug">
                     {currentPlan.quotaRespondentsLabel}
                   </div>
                   <p className="text-[11px] text-muted-foreground mt-1">
@@ -458,7 +458,7 @@ export default function SettingsPage() {
                   <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">
                     Butir Indikator
                   </span>
-                  <div className="text-base font-bold text-foreground truncate">
+                  <div className="text-sm sm:text-base font-bold text-foreground leading-snug">
                     {currentPlan.quotaQuestionsLabel}
                   </div>
                   <p className="text-[11px] text-muted-foreground mt-1">
@@ -471,7 +471,7 @@ export default function SettingsPage() {
                   <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">
                     Ekspor Dokumen
                   </span>
-                  <div className="text-base font-bold text-foreground truncate">
+                  <div className="text-sm sm:text-base font-bold text-foreground leading-snug">
                     {currentPlan.exportLabel}
                   </div>
                   <p className="text-[11px] text-muted-foreground mt-1">

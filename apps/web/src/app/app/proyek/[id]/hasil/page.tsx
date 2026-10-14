@@ -507,9 +507,11 @@ export default function HasilPage() {
 
       // 1b. Demografi
       if (results.demographics && results.demographics.length > 0) {
-        for (const demo of results.demographics) {
+        const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+        results.demographics.forEach((demo, dIdx) => {
+          const letter = letters[dIdx] || `${dIdx + 1}`;
           const demoHtml = buildWordTableHtml({
-            tableNumber: 'Tabel 4.1c',
+            tableNumber: `Tabel 4.1${letter}`,
             title: `Distribusi Frekuensi Karakteristik Responden Berdasarkan ${demo.variable.replace(/_/g, ' ')}`,
             note: `Total responden N = ${results.respondentCount}. Kategori mayoritas: ${demo.majorityCategory || '-'}.`,
             columns: demographicCategoryCols.map((c) => ({ header: c.header, align: c.align })),
@@ -521,7 +523,7 @@ export default function HasilPage() {
             ]),
           });
           allHtmlSections.push(demoHtml);
-        }
+        });
       }
 
       // 2. Validitas
@@ -2517,17 +2519,19 @@ export default function HasilPage() {
         </div>
       </div>
 
-      {/* Tata Letak Dua Kolom: Hasil (minmax(0, 1fr)) + Panel Samping Jejak Hitung (360px) pada >= 1200px */}
-      <div className="grid grid-cols-1 min-[1200px]:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start w-full min-w-0">
-        {/* Kolom Kiri/Utama: Tab-Tab Uji Statistik atau SPSS Viewer */}
-        <div data-results-column="true" className="w-full min-w-0 space-y-6">
-          {outputMode === 'spss' ? (
-            <SpssOutputViewer
-              results={results}
-              onHoverNumber={setHighlightedNumber}
-              highlightedValue={highlightedNumber}
-            />
-          ) : (
+      {/* Output Mode Switch: SPSS Full-Width vs APA 7th + Jejak Hitung */}
+      {outputMode === 'spss' ? (
+        <div className="w-full min-w-0 space-y-6">
+          <SpssOutputViewer
+            results={results}
+            onHoverNumber={setHighlightedNumber}
+            highlightedValue={highlightedNumber}
+          />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 min-[1200px]:grid-cols-[minmax(0,1fr)_340px] gap-6 items-start w-full min-w-0">
+          {/* Kolom Kiri/Utama: Tab-Tab Uji Statistik */}
+          <div data-results-column="true" className="w-full min-w-0 space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full min-w-0">
               {/* Scrollable Tabs dengan Shadow Indicator, Fade Gradient, dan Aksesibilitas Penuh */}
               <ScrollableTabs
@@ -2561,18 +2565,22 @@ export default function HasilPage() {
                     </div>
 
                     <div className="grid grid-cols-1 gap-6">
-                      {results.demographics.map((demo) => (
-                        <ResultTable
-                          key={demo.variable}
-                          tableNumber="Tabel 4.1c"
-                          title={`Distribusi Frekuensi Karakteristik Responden Berdasarkan ${demo.variable.replace(/_/g, ' ')}`}
-                          note={`Total responden N = ${results.respondentCount}. Kategori terbanyak: ${demo.majorityCategory || '-'}.`}
-                          columns={demographicCategoryCols}
-                          data={demo.categories}
-                          rowKey={(c) => `${demo.variable}-${c.category}`}
-                          highlightedValue={highlightedNumber}
-                        />
-                      ))}
+                      {results.demographics.map((demo, dIdx) => {
+                        const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+                        const letter = letters[dIdx] || `${dIdx + 1}`;
+                        return (
+                          <ResultTable
+                            key={demo.variable}
+                            tableNumber={`Tabel 4.1${letter}`}
+                            title={`Distribusi Frekuensi Karakteristik Responden Berdasarkan ${demo.variable.replace(/_/g, ' ')}`}
+                            note={`Total responden N = ${results.respondentCount}. Kategori terbanyak: ${demo.majorityCategory || '-'}.`}
+                            columns={demographicCategoryCols}
+                            data={demo.categories}
+                            rowKey={(c) => `${demo.variable}-${c.category}`}
+                            highlightedValue={highlightedNumber}
+                          />
+                        );
+                      })}
                     </div>
 
                     {results.explanations.demographics && (
@@ -2948,7 +2956,7 @@ export default function HasilPage() {
                   {showSpearmanHetero && results.spearmanHetero && (
                     <div className="space-y-2 pt-2">
                       <ResultTable
-                        tableNumber="Tabel 4.6c"
+                        tableNumber="Tabel 4.6a"
                         title="Hasil Uji Heteroskedastisitas Alternatif (Korelasi Rank Spearman)"
                         note="* Rujukan: Prof. Dr. Imam Ghozali (2018). Uji korelasi Rank Spearman antara variabel independen dengan absolute residual. Kriteria: Sig. > 0,05 bebas heteroskedastisitas."
                         columns={spearmanHeteroCols}
@@ -3534,7 +3542,7 @@ export default function HasilPage() {
                       </div>
 
                       <div className="overflow-x-auto">
-                        <table className="w-full text-xs border-collapse">
+                        <table className="w-full text-xs border-collapse tabular-nums">
                           <thead>
                             <tr className="border-t-[1.5pt] border-b border-foreground/90 font-bold">
                               <th className="py-2.5 px-3 text-left">{results.crosstab.rowVar}</th>
@@ -3817,7 +3825,6 @@ export default function HasilPage() {
                 )}
               </TabsContent>
             </Tabs>
-          )}
 
           {/* Tombol Navigasi Antar-Uji: Sebelumnya & Berikutnya */}
           <div className="flex items-center justify-between pt-6 mt-8 border-t border-border/80 gap-3 flex-wrap">
@@ -3926,6 +3933,7 @@ export default function HasilPage() {
           </div>
         </aside>
       </div>
+      )}
 
       {/* PageActions Navigasi Halaman */}
       <PageActions

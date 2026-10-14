@@ -17,7 +17,7 @@ import {
   ChevronRightSquare,
   History,
 } from 'lucide-react';
-import { APP_NAME, APP_VERSION } from '@/lib/constants';
+import { APP_NAME } from '@/lib/constants';
 import { useAuthStore } from '@/stores/auth-store';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { LogoIcon } from '@/components/logo';
@@ -47,13 +47,6 @@ const NAV_ITEMS = [
     isActive: (pathname: string) =>
       pathname === '/app' ||
       (pathname.startsWith('/app/proyek') && pathname !== '/app/proyek/baru'),
-  },
-  {
-    name: 'Proyek baru',
-    shortName: 'Proyek baru',
-    href: '/app/proyek/baru',
-    icon: PlusCircle,
-    isActive: (pathname: string) => pathname === '/app/proyek/baru',
   },
   {
     name: 'Riwayat analisis',
@@ -125,7 +118,7 @@ export function AppShell({ children }: AppShellProps) {
     if (pathname === '/app') {
       return (
         <h1 className="text-sm sm:text-base font-bold text-foreground tracking-tight">
-          Meja Kerja Skripsi
+          Proyek
         </h1>
       );
     }
@@ -136,7 +129,7 @@ export function AppShell({ children }: AppShellProps) {
             Proyek
           </Link>
           <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          <span className="font-semibold text-foreground truncate">Unggah &amp; Validasi Baru</span>
+          <span className="font-semibold text-foreground truncate">Proyek Baru</span>
         </div>
       );
     }
@@ -229,9 +222,6 @@ export function AppShell({ children }: AppShellProps) {
                 <div className="font-bold text-base tracking-tight text-foreground group-hover:text-primary transition-colors truncate">
                   {APP_NAME}
                 </div>
-                <div className="text-[13px] text-muted-foreground font-mono">
-                  v{APP_VERSION}
-                </div>
               </div>
             )}
           </Link>
@@ -311,8 +301,8 @@ export function AppShell({ children }: AppShellProps) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-1">
-                  <span className="text-[13px] font-semibold text-foreground truncate">
-                    {user?.plan === 'monthly' || user?.plan === 'thesis' ? 'Paket Skripsi' : 'Tingkatkan Paket'}
+                  <span className="text-xs font-semibold text-foreground whitespace-nowrap">
+                    {user?.plan === 'monthly' || user?.plan === 'thesis' ? 'Paket Skripsi' : 'Upgrade Paket'}
                   </span>
                   <span className="text-[10px] font-medium text-muted-foreground px-1.5 py-0.5 rounded bg-muted border border-border/60 shrink-0">
                     {getPlanBadgeLabel()}

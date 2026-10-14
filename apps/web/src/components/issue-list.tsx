@@ -94,7 +94,7 @@ export function IssueList({
           )}
         >
           <AlertOctagon className="w-3.5 h-3.5" />
-          Galat Kritis ({errorCount})
+          Data Perlu Dicek ({errorCount})
         </button>
 
         <button
@@ -144,7 +144,7 @@ export function IssueList({
           </p>
         </div>
       ) : (
-        <div className="space-y-2.5 max-h-[480px] overflow-y-auto pr-1 scrollbar-thin">
+        <div className="space-y-2.5 max-h-[480px] overflow-y-auto overflow-x-hidden pr-1 scrollbar-thin">
           {filteredIssues.map((issue) => {
             const isError = issue.severity === 'error';
             const isWarning = issue.severity === 'warning';
@@ -191,7 +191,7 @@ export function IssueList({
                           variant={isError ? 'destructive' : isWarning ? 'amber' : 'secondary'}
                           className="text-[10px] uppercase font-semibold py-0 px-2"
                         >
-                          {isError ? 'Galat Kritis' : isWarning ? 'Peringatan' : 'Informasi'}
+                          {isError ? 'Perlu Dicek' : isWarning ? 'Peringatan' : 'Informasi'}
                         </Badge>
 
                         {issue.row && (
@@ -230,11 +230,11 @@ export function IssueList({
                         variant="destructive"
                         size="sm"
                         onClick={() => onRemoveRow(issue.row!)}
-                        className="h-7 text-[11px] px-2.5 shadow-none cursor-pointer"
+                        className="whitespace-normal text-left h-auto py-1.5 px-2.5 text-[11px] shadow-none cursor-pointer leading-snug"
                         title={`Hapus baris #${issue.row} dari analisis`}
                       >
-                        <Trash2 className="w-3 h-3 mr-1" />
-                        Hapus baris ini dari analisis
+                        <Trash2 className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+                        <span>Hapus baris ini dari analisis</span>
                       </Button>
                     )}
 
@@ -260,7 +260,7 @@ export function IssueList({
       {/* Methodological Guidance Note */}
       <div className="p-3 rounded-lg border border-border/60 bg-muted/30 text-[11px] text-muted-foreground leading-relaxed">
         <strong className="text-foreground font-medium">Integritas Metodologi Penelitian:</strong>{' '}
-        OlahData tidak menyediakan fitur &quot;Isi otomatis&quot; atau &quot;Perbaiki dengan AI&quot; guna menjaga kejujuran akademik. Baris yang memiliki galat kritis harus dieliminasi dari pengolahan sampel atau diperbaiki pada file sumber kuesioner asli Anda.
+        OlahData tidak menyediakan fitur &quot;Isi otomatis&quot; atau &quot;Perbaiki dengan AI&quot; guna menjaga kejujuran akademik. Baris yang bermasalah harus dieliminasi dari pengolahan sampel atau diperbaiki pada file sumber kuesioner asli Anda.
       </div>
     </div>
   );

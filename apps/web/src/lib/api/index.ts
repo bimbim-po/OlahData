@@ -765,10 +765,13 @@ export async function exportResult(
 
       let demoHtml = '';
       if (results.demographics && results.demographics.length > 0) {
-        demoHtml = results.demographics.map((demo) => buildWordTableHtml({
-          tableNumber: 'Tabel 4.1c',
-          title: `Distribusi Frekuensi Karakteristik Responden Berdasarkan ${demo.variable.replace(/_/g, ' ')}`,
-          note: `* Total responden N = ${results.respondentCount}.`,
+        const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+        demoHtml = results.demographics.map((demo, idx) => {
+          const letter = letters[idx] || `${idx + 1}`;
+          return buildWordTableHtml({
+            tableNumber: `Tabel 4.1${letter}`,
+            title: `Distribusi Frekuensi Karakteristik Responden Berdasarkan ${demo.variable.replace(/_/g, ' ')}`,
+            note: `* Total responden N = ${results.respondentCount}.`,
           columns: [
             { header: 'Kategori / Kelompok', align: 'left' },
             { header: 'Frekuensi (n)', align: 'right' },
@@ -781,7 +784,8 @@ export async function exportResult(
             `${formatNumber(c.percentage, 1)}%`,
             `${formatNumber(c.cumulativePercentage, 1)}%`,
           ]),
-        })).join('<br/>');
+          });
+        }).join('<br/>');
       }
 
       const narrativeHtml = `<p>${results.explanations.descriptive}</p>`;

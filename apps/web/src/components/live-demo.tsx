@@ -331,31 +331,31 @@ export function LiveDemo({ className, autoPlay = true }: LiveDemoProps) {
                     Kualitas Layanan (X1)
                   </td>
                   <td className="py-2 px-2 text-right text-muted-foreground">
-                    3
+                    8
                   </td>
                   <td
                     onClick={() => {
                       if (isInteractive) {
-                        setHoveredNumber(hoveredNumber === '0,872' ? null : '0,872');
+                        setHoveredNumber(hoveredNumber === '0,874' ? null : '0,874');
                       }
                     }}
-                    onMouseEnter={() => isInteractive && setHoveredNumber('0,872')}
+                    onMouseEnter={() => isInteractive && setHoveredNumber('0,874')}
                     onMouseLeave={() => isInteractive && setHoveredNumber(null)}
                     className={cn(
                       'py-2 px-2.5 text-right font-semibold transition-all duration-150 cursor-pointer',
-                      (stage === 2 || stage === 3 || isHighlighted('0,872')) &&
+                      (stage === 2 || stage === 3 || isHighlighted('0,874')) &&
                         'bg-[#FFE14D] text-[#243044] ring-2 ring-[#FFE14D] rounded-[4px]'
                     )}
                     role="button"
                     tabIndex={0}
-                    aria-label="Nilai Cronbach Alpha 0,872. Klik untuk menelusuri penjelasannya"
+                    aria-label="Nilai Cronbach Alpha 0,874. Klik untuk menelusuri penjelasannya"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
-                        setHoveredNumber(hoveredNumber === '0,872' ? null : '0,872');
+                        setHoveredNumber(hoveredNumber === '0,874' ? null : '0,874');
                       }
                     }}
                   >
-                    0,872
+                    0,874
                   </td>
                   <td className="py-2 px-2.5 text-center">
                     <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0E4331] bg-[#BFEBD9] px-2 py-0.5 rounded-[4px]">
@@ -376,7 +376,7 @@ export function LiveDemo({ className, autoPlay = true }: LiveDemoProps) {
                     Kepuasan Pelanggan (Y)
                   </td>
                   <td className="py-2 px-2 text-right text-muted-foreground">
-                    4
+                    7
                   </td>
                   <td
                     onClick={() => {
@@ -425,31 +425,31 @@ export function LiveDemo({ className, autoPlay = true }: LiveDemoProps) {
         >
           <div className="flex items-center justify-between text-[11px] text-muted-foreground border-b border-border/50 pb-1">
             <span className="font-semibold text-foreground">
-              3. Draf interpretasi (dibantu AI, dari angka terhitung):
+              3. Draf interpretasi hasil (kaidah Bab 4):
             </span>
             <span className="text-[10px] tabular-nums">Ambang batas: α &gt; 0,70</span>
           </div>
 
-          <p className="text-xs text-foreground/90 leading-relaxed font-sans">
+          <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans">
             Berdasarkan Tabel 4.8 di atas, variabel Kualitas Layanan (X1) memiliki nilai Cronbach&apos;s Alpha sebesar{' '}
             <button
               type="button"
               onClick={() => {
                 if (isInteractive) {
-                  setHoveredNumber(hoveredNumber === '0,872' ? null : '0,872');
+                  setHoveredNumber(hoveredNumber === '0,874' ? null : '0,874');
                 }
               }}
-              onMouseEnter={() => isInteractive && setHoveredNumber('0,872')}
+              onMouseEnter={() => isInteractive && setHoveredNumber('0,874')}
               onMouseLeave={() => isInteractive && setHoveredNumber(null)}
               className={cn(
                 'inline-block px-1.5 py-0.5 rounded-[4px] font-bold tabular-nums border cursor-pointer transition-all duration-150',
-                (stage >= 3 || isHighlighted('0,872'))
+                (stage >= 3 || isHighlighted('0,874'))
                   ? 'bg-[#FFE14D] text-[#243044] border-[#FFE14D] ring-2 ring-[#FFE14D]'
                   : 'bg-card text-foreground border-border/80'
               )}
-              aria-label="Angka 0,872 tersambung ke sel tabel Cronbach Alpha Kualitas Layanan"
+              aria-label="Angka 0,874 tersambung ke sel tabel Cronbach Alpha Kualitas Layanan"
             >
-              0,872
+              0,874
             </button>
             {' '}dan variabel Kepuasan Pelanggan (Y) sebesar{' '}
             <button
@@ -471,7 +471,7 @@ export function LiveDemo({ className, autoPlay = true }: LiveDemoProps) {
             >
               0,845
             </button>
-            . Karena kedua nilai lebih besar dari 0,70, instrumen penelitian dinyatakan memenuhi kriteria reliabilitas (alfa Cronbach &gt; 0,70).
+            {' '}(total 15 butir instrumen). Karena kedua nilai lebih besar dari ambang batas 0,70, seluruh instrumen penelitian dinyatakan memenuhi kriteria reliabilitas.
           </p>
         </div>
 

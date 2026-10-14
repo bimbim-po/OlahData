@@ -69,7 +69,7 @@ function AppAuthGuard({ children }: { children: React.ReactNode }) {
     if (isDemoMode && !user && !isLoading) {
       login({
         id: 'user-demo-1',
-        name: 'Peneliti Demo',
+        name: 'Mode Tamu (Demo)',
         email: 'demo@olahdata.id',
         university: 'Universitas Indonesia',
         department: 'Manajemen',

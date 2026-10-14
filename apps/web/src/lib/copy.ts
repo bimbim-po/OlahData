@@ -270,7 +270,7 @@ export const COPY = {
     layer1Title: 'Intinya',
     layer2Title: 'Tabel Baku Bab 4',
     layer3Title: 'Teks Penjelasan Bab 4',
-    aiNote: 'Draf interpretasi (dibantu AI, dari angka terhitung)',
+    aiNote: 'Draf Narasi Bab 4 (Format Baku Skripsi)',
     whatDoesItMean: 'Apa artinya?',
     whatToDo: 'Perlu dilakukan apa?',
     showTrace: 'Lihat cara menghitungnya',

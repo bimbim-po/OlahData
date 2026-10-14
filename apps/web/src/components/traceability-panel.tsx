@@ -198,8 +198,8 @@ export function TraceabilityPanel({
         </div>
       </div>
 
-      {/* Panel Content (Bisa dibuka di mobile) */}
-      <div className={cn('space-y-3.5 text-[13px]', !isOpen && 'hidden md:block')}>
+      {/* Panel Content (Bisa dibuka-tutup) */}
+      <div className={cn('space-y-3.5 text-[13px] pt-1', !isOpen && 'hidden')}>
         {/* 1. Uji */}
         <div className="flex items-start gap-2.5">
           <Sliders className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />

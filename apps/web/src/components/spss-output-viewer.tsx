@@ -59,26 +59,29 @@ export function SpssOutputViewer({
     : 0;
 
   return (
-    <div className="space-y-8 w-full max-w-full font-mono text-xs">
+    <div
+      className="spss-paper-container space-y-8 w-full max-w-full font-mono text-xs p-6 sm:p-8 rounded-2xl bg-white text-slate-950 shadow-md border border-slate-200 dark:bg-white dark:text-slate-950 dark:border-slate-200 [&_th]:text-slate-900 [&_th]:border-zinc-800 [&_td]:text-slate-900 [&_td]:border-zinc-800 [&_h3]:text-slate-900 [&_h4]:text-slate-900 [&_p]:text-slate-600 [&_span]:text-slate-800 [&_table]:bg-white [&_table]:border-zinc-900 [&_tr]:hover:bg-zinc-100/60"
+      style={{ colorScheme: 'light' }}
+    >
       {/* Banner Identitas SPSS Lampiran */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-zinc-100 dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 rounded-lg">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-zinc-100 border-2 border-zinc-300 rounded-lg text-slate-900">
         <div>
-          <span className="font-bold text-zinc-900 dark:text-zinc-100 text-sm tracking-wide flex items-center gap-2">
+          <span className="font-bold text-zinc-900 text-sm tracking-wide flex items-center gap-2">
             <span className="px-1.5 py-0.5 bg-blue-700 text-white text-[10px] font-bold rounded-xs">
               SPSS
             </span>
             IBM SPSS Statistics - Output Viewer (.spv)
           </span>
-          <p className="text-[11px] text-zinc-600 dark:text-zinc-400 mt-0.5">
+          <p className="text-[11px] text-zinc-600 mt-0.5">
             Format tabel lampiran resmi skripsi dengan garis kotak tegas, font tabular-nums, dan catatan kaki standar SPSS.
           </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <Badge variant="outline" className="bg-background text-[11px] font-mono">
+          <Badge variant="outline" className="bg-white text-zinc-800 border-zinc-300 text-[11px] font-mono">
             N = {results.respondentCount}
           </Badge>
-          <Badge variant="outline" className="bg-background text-[11px] font-mono">
+          <Badge variant="outline" className="bg-white text-zinc-800 border-zinc-300 text-[11px] font-mono">
             df = {results.respondentCount - indepList.length - 1}
           </Badge>
         </div>
@@ -87,8 +90,8 @@ export function SpssOutputViewer({
       {/* 1. RELIABILITY: Case Processing Summary & Reliability Statistics */}
       {results.reliability && results.reliability.length > 0 && (
         <div id="spss-reliability" className="space-y-6">
-          <div className="flex items-center justify-between border-b border-zinc-300 dark:border-zinc-700 pb-1">
-            <h3 className="font-bold text-sm text-zinc-800 dark:text-zinc-200 uppercase tracking-wider">
+          <div className="flex items-center justify-between border-b border-zinc-300 pb-1">
+            <h3 className="font-bold text-sm text-slate-900 uppercase tracking-wider">
               Scale: Reliability (Uji Reliabilitas &amp; Item-Total)
             </h3>
             <Button

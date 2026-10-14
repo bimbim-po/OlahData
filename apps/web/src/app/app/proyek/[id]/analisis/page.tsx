@@ -162,6 +162,14 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
       ? Boolean((preCol && postCol) || (groupCol && scoreCol))
       : independentConstructs.length >= 1 && dependentConstructs.length >= 1;
 
+  // Filter columns for Likert reverse scoring: prioritize construct items, or exclude demographic & ID columns
+  const availableLikertItems = React.useMemo(() => {
+    const mappedItems = Array.from(new Set(constructs.flatMap((c) => c.items))).filter(Boolean);
+    if (mappedItems.length > 0) return mappedItems;
+    const demographicRegex = /^(no|id|responden|subjek|sample|nama|jenis[\s_]?kelamin|gender|jk|usia|umur|pendidikan|pekerjaan|penghasilan|gaji|jurusan|semester|angkatan|status|kategori|alamat|tanggal|tgl)$/i;
+    return columns.filter((col) => !demographicRegex.test(col.trim()));
+  }, [constructs, columns]);
+
   // Auto-detect columns when columns change
   React.useEffect(() => {
     if (columns.length > 0) {
@@ -458,9 +466,6 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                 <span className="hidden sm:inline">Bantuan</span>
               </Link>
             </Button>
-            <Badge variant="outline" className="text-[11px] font-mono tabular-nums">
-              dv-{dataVersion}
-            </Badge>
           </div>
         </div>
       </div>
@@ -538,12 +543,6 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                   Pemeriksaan integritas skala Likert, baris kosong, dan jawaban terduplikasi.
                 </p>
               </div>
-
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-xs font-mono rounded-[6px]">
-                  Versi Data Aktif: dv-{dataVersion}
-                </Badge>
-              </div>
             </div>
 
             {/* Smart Google Forms Auto-Recode Banner */}
@@ -578,10 +577,10 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                 <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
                 <div className="space-y-1 text-sm">
                   <span className="font-bold block">
-                    Ditemukan {criticalErrorCount} Catatan Kritis pada Data
+                    {criticalErrorCount} baris data perlu dicek
                   </span>
                   <p className="text-destructive/90 text-xs leading-relaxed max-w-[68ch]">
-                    Perbaiki atau keluarkan baris yang bermasalah sebelum melanjutkan. Data penelitian Anda dijaga tetap murni tanpa manipulasi jawaban.
+                    Perbaiki atau keluarkan baris bermasalah sebelum melanjutkan ke tahap analisis.
                   </p>
                 </div>
               </div>
@@ -629,7 +628,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                 {criticalErrorCount > 0 && (
                   <span className="text-xs text-destructive text-center sm:text-right font-medium">
-                    Selesaikan semua galat kritis ({criticalErrorCount}) untuk lanjut
+                    Perbaiki {criticalErrorCount} baris bermasalah untuk lanjut
                   </span>
                 )}
                 <Button
@@ -638,7 +637,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                   onClick={nextStep}
                   disabled={criticalErrorCount > 0}
                   className="cursor-pointer font-semibold rounded-[10px] min-h-[44px]"
-                  title={criticalErrorCount > 0 ? `Terdapat ${criticalErrorCount} galat kritis yang perlu diselesaikan` : undefined}
+                  title={criticalErrorCount > 0 ? `Terdapat ${criticalErrorCount} baris bermasalah yang perlu diperbaiki` : undefined}
                 >
                   Lanjut ke Petakan Variabel
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -1029,7 +1028,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-foreground">
-                    Butir Berkebalikan / Negatif (Reverse-Scored):
+                    Item Pertanyaan Negatif (Reverse Score):
                   </label>
                   <span className="text-[11px] text-muted-foreground">
                     {reverseItems.length > 0
@@ -1042,27 +1041,25 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                 </p>
 
                 <div className="flex flex-wrap gap-1.5 pt-1 max-h-32 overflow-y-auto">
-                  {columns
-                    .filter((c) => c !== 'No' && c !== 'id' && c !== 'ID')
-                    .map((col) => {
-                      const isReverse = reverseItems.includes(col);
-                      return (
-                        <button
-                          key={col}
-                          type="button"
-                          onClick={() => toggleReverseItem(col)}
-                          className={cn(
-                            'text-xs px-2.5 py-1 rounded-md border font-mono transition-all cursor-pointer',
-                            isReverse
-                              ? 'bg-amber-600 text-white border-amber-600 font-semibold shadow-xs'
-                              : 'bg-muted/30 text-foreground border-border hover:border-amber-600/50'
-                          )}
-                          title={isReverse ? 'Klik untuk membatalkan reverse scoring' : 'Klik untuk mengaktifkan reverse scoring'}
-                        >
-                          {col} {isReverse && '🔄'}
-                        </button>
-                      );
-                    })}
+                  {availableLikertItems.map((col) => {
+                    const isReverse = reverseItems.includes(col);
+                    return (
+                      <button
+                        key={col}
+                        type="button"
+                        onClick={() => toggleReverseItem(col)}
+                        className={cn(
+                          'text-xs px-2.5 py-1 rounded-md border font-mono transition-all cursor-pointer',
+                          isReverse
+                            ? 'bg-amber-500 text-slate-950 font-bold border-amber-600 dark:bg-amber-400 dark:text-slate-950 shadow-xs ring-1 ring-amber-500/50'
+                            : 'bg-muted/30 text-foreground border-border hover:border-amber-600/50'
+                        )}
+                        title={isReverse ? 'Klik untuk membatalkan reverse scoring' : 'Klik untuk mengaktifkan reverse scoring'}
+                      >
+                        {col} {isReverse && '🔄'}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -1227,9 +1224,9 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                     </span>
                   </div>
                   <div className="flex items-center justify-between py-1 border-b border-border/60">
-                    <span className="text-muted-foreground">Versi Dataset:</span>
-                    <span className="font-mono font-semibold text-foreground">
-                      dv-{dataVersion}
+                    <span className="text-muted-foreground">Status Data:</span>
+                    <span className="font-semibold text-foreground">
+                      {dataVersion > 1 ? `Revisi ${dataVersion}` : 'Data Asli Terverifikasi'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between py-1 border-b border-border/60">

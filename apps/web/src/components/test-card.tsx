@@ -79,15 +79,14 @@ export function TestCard({ test, isSelected, onToggle, className }: TestCardProp
           )}
         </div>
 
-        {/* Recommended Rationale box */}
+        {/* Recommended Rationale */}
         {test.recommended && test.recommendReason && (
-          <div className="p-2.5 rounded-lg bg-primary/5 dark:bg-primary/10 border border-primary/15 text-[11px] text-foreground/90 flex items-start gap-1.5">
-            <Info className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
-            <span className="leading-snug">
-              <strong className="text-primary font-medium">Alasan rekomendasi:</strong>{' '}
-              {test.recommendReason}
+          <p className="text-[11px] text-muted-foreground flex items-start gap-1.5 pt-0.5 leading-relaxed">
+            <Info className="w-3 h-3 text-primary/70 shrink-0 mt-0.5" />
+            <span>
+              <span className="font-medium text-foreground/80">Rekomendasi:</span> {test.recommendReason}
             </span>
-          </div>
+          </p>
         )}
       </div>
 

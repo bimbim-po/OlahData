@@ -15,9 +15,7 @@ import {
   Users,
   FileSpreadsheet,
   ArrowRight,
-  CheckCircle2,
   Clock,
-  Check,
 } from 'lucide-react';
 import { getProjects, deleteProject, createSampleProject } from '@/lib/api';
 import type { Project } from '@/lib/api/types';
@@ -35,52 +33,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { useToast } from '@/components/ui/toaster';
-import { useAuthStore } from '@/stores/auth-store';
-import { COPY } from '@/lib/copy';
-import { cn } from '@/lib/utils';
 
 export default function ProjectsPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useAuthStore();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [isCreatingSample, setIsCreatingSample] = useState(false);
-  const [greetingVisible, setGreetingVisible] = useState(true);
-  const [greetingText, setGreetingText] = useState('Selamat datang, Mahasiswa');
-  const [highlighterSwept, setHighlighterSwept] = useState(false);
-
-  // Time-of-day greeting (can be disabled via localStorage)
-  useEffect(() => {
-    try {
-      const hideGreeting = localStorage.getItem('olahdata_hide_greeting') === 'true';
-      if (hideGreeting) {
-        setGreetingVisible(false);
-        return;
-      }
-    } catch {
-      // Ignore
-    }
-
-    const hour = new Date().getHours();
-    let salam = 'Selamat datang';
-    if (hour >= 4 && hour < 11) salam = 'Selamat pagi';
-    else if (hour >= 11 && hour < 15) salam = 'Selamat siang';
-    else if (hour >= 15 && hour < 18) salam = 'Selamat sore';
-    else salam = 'Selamat malam';
-
-    const displayName = user?.name ? user.name.split(' ')[0] : 'Bim';
-    setGreetingText(`${salam}, ${displayName}`);
-
-    // Trigger one-time highlighter sweep after mount
-    const timer = setTimeout(() => {
-      setHighlighterSwept(true);
-    }, 400);
-
-    return () => clearTimeout(timer);
-  }, [user]);
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -184,19 +145,14 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-6 sm:space-y-8 font-sans pb-16">
-      {/* 1. Header with Time-of-Day Greeting & Quick Actions */}
+      {/* 1. Header & Quick Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3.5 border-b border-border/60 pb-5">
         <div>
-          {greetingVisible && (
-            <div className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">
-              {greetingText}
-            </div>
-          )}
           <h1 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            Meja Kerja Skripsi Anda
+            Proyek Analisis
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 max-w-[68ch]">
-            Kelola data dan analisis statistik kuesioner Anda. {COPY.reassurance.saved}
+            Kelola proyek analisis data kuesioner Anda
           </p>
         </div>
 
@@ -314,25 +270,11 @@ export default function ProjectsPage() {
                     {mostRecentProject.status === 'completed' ? (
                       <p>
                         Hasil analisis statistik lengkap. Variabel utama memiliki nilai Cronbach&apos;s Alpha{' '}
-                        <span
-                          className={cn(
-                            'inline-block px-1.5 py-0.2 rounded font-bold text-[#243044] transition-all duration-700',
-                            highlighterSwept
-                              ? 'bg-[#FFE14D] ring-2 ring-[#FFE14D]'
-                              : 'bg-[#FFE14D]/20'
-                          )}
-                        >
+                        <span className="font-semibold tabular-nums">
                           0,872
                         </span>
                         {' '}(Reliabel) dan koefisien R²{' '}
-                        <span
-                          className={cn(
-                            'inline-block px-1.5 py-0.2 rounded font-bold text-[#243044] transition-all duration-700 delay-150',
-                            highlighterSwept
-                              ? 'bg-[#FFE14D] ring-2 ring-[#FFE14D]'
-                              : 'bg-[#FFE14D]/20'
-                          )}
-                        >
+                        <span className="font-semibold tabular-nums">
                           0,582
                         </span>
                         . Siap disalin ke naskah skripsi.
@@ -340,14 +282,7 @@ export default function ProjectsPage() {
                     ) : (
                       <p>
                         Tabulasi kuesioner{' '}
-                        <span
-                          className={cn(
-                            'inline-block px-1.5 py-0.2 rounded font-bold text-[#243044] transition-all duration-700',
-                            highlighterSwept
-                              ? 'bg-[#FFE14D] ring-2 ring-[#FFE14D]'
-                              : 'bg-[#FFE14D]/20'
-                          )}
-                        >
+                        <span className="font-semibold tabular-nums">
                           {mostRecentProject.respondentCount > 0
                             ? `${formatNumber(mostRecentProject.respondentCount)} responden`
                             : '120 responden'}
@@ -382,7 +317,7 @@ export default function ProjectsPage() {
                   {searchQuery ? 'Hasil Pencarian Proyek' : 'Semua Proyek Penelitian'}
                 </h3>
                 <span className="text-xs text-muted-foreground">
-                  {filteredProjects.length} proyek tersimpan di meja kerja Anda
+                  {filteredProjects.length} proyek
                 </span>
               </div>
 
@@ -417,7 +352,7 @@ export default function ProjectsPage() {
                       {/* Header row: Prodi & Status badge */}
                       <div>
                         <div className="flex items-start justify-between gap-2 mb-2">
-                          <span className="text-xs font-semibold text-primary uppercase tracking-wider truncate">
+                          <span className="text-xs font-semibold text-primary uppercase tracking-wider">
                             {project.department || 'Umum'}
                           </span>
                           <div className="flex items-center gap-2 shrink-0">

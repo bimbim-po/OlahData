@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/toaster';
 import { copyWordTable, copyWordNarrative } from '@/lib/word-table';
 
-type ActiveTab = 'regression' | 'validity';
+type ActiveTab = 'regression' | 'reliability' | 'validity';
 
 export function Bab4Preview() {
   const [activeTab, setActiveTab] = React.useState<ActiveTab>('regression');
@@ -56,6 +56,25 @@ export function Bab4Preview() {
         columns,
         rows,
       });
+    } else if (activeTab === 'reliability') {
+      const columns = [
+        { header: 'Konstruk Variabel', align: 'left' as const },
+        { header: 'Jumlah Butir', align: 'right' as const },
+        { header: "Cronbach's Alpha", align: 'right' as const },
+        { header: 'Batas Kritis (α)', align: 'right' as const },
+        { header: 'Status', align: 'center' as const },
+      ];
+      const rows = [
+        ['Kualitas Layanan (X1)', '8', '0,874', '0,700', 'Reliabel'],
+        ['Kepuasan Pelanggan (Y)', '7', '0,852', '0,700', 'Reliabel'],
+      ];
+      success = await copyWordTable({
+        tableNumber: 'Tabel 4.9',
+        title: "Hasil Uji Reliabilitas Cronbach's Alpha",
+        note: "N = 120 responden, Total Butir Instrumen = 15 butir, Kriteria: Cronbach's Alpha > 0,700",
+        columns,
+        rows,
+      });
     } else {
       const columns = [
         { header: 'Item Pernyataan', align: 'left' as const },
@@ -87,10 +106,14 @@ export function Bab4Preview() {
     }
   };
 
+  const reliabilityNarrative = "Berdasarkan Tabel 4.9, pengujian reliabilitas instrumen dengan koefisien Cronbach's Alpha menghasilkan nilai sebesar 0,874 pada variabel Kualitas Layanan (X1) dengan 8 butir pernyataan dan 0,852 pada variabel Kepuasan Pelanggan (Y) dengan 7 butir pernyataan (total 15 butir instrumen). Mengingat nilai Cronbach's Alpha seluruh konstruk berada di atas batas kritis 0,700, instrumen penelitian dinyatakan reliabel dan memiliki konsistensi internal yang tinggi untuk analisis hipotesis.";
+
   // Render tokens with connected number highlighting
   const narrativeText =
     activeTab === 'regression'
       ? (mockResults.explanations?.regression ?? '')
+      : activeTab === 'reliability'
+      ? reliabilityNarrative
       : (mockResults.explanations?.validity ?? '');
 
   const narrativeTokens = React.useMemo(() => {
@@ -154,6 +177,21 @@ export function Bab4Preview() {
           <button
             type="button"
             onClick={() => {
+              setActiveTab('reliability');
+              setActiveNumber(null);
+            }}
+            className={cn(
+              'px-3 py-1.5 text-xs font-semibold rounded-[6px] transition-colors cursor-pointer',
+              activeTab === 'reliability'
+                ? 'bg-primary text-primary-foreground shadow-xs'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            Uji Reliabilitas
+          </button>
+          <button
+            type="button"
+            onClick={() => {
               setActiveTab('validity');
               setActiveNumber(null);
             }}
@@ -192,6 +230,8 @@ export function Bab4Preview() {
             <h3 className="font-semibold text-foreground text-xs sm:text-sm">
               {activeTab === 'regression'
                 ? 'Tabel 4.15 Hasil Analisis Regresi Linier Berganda'
+                : activeTab === 'reliability'
+                ? "Tabel 4.9 Hasil Uji Reliabilitas Cronbach's Alpha"
                 : 'Tabel 4.8 Hasil Uji Validitas Item Variabel Kualitas Layanan (X1)'}
             </h3>
             <span className="text-[11px] whitespace-normal sm:whitespace-nowrap">Format Baku APA 7th Edition</span>
@@ -268,6 +308,65 @@ export function Bab4Preview() {
                         <span className="whitespace-nowrap">R² = <strong>0,548</strong></span>
                         <span className="whitespace-nowrap">Adjusted R² = <strong>0,540</strong></span>
                         <span className="whitespace-nowrap">F Tabel = <strong>3,074</strong></span>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            ) : activeTab === 'reliability' ? (
+              <table className="table-journal min-w-full text-left text-xs font-sans">
+                <thead>
+                  <tr className="border-t-2 border-b border-foreground text-foreground font-semibold">
+                    <th className="py-2 px-3">Konstruk Variabel</th>
+                    <th className="py-2 px-3 text-right whitespace-nowrap">Jumlah Butir</th>
+                    <th className="py-2 px-3 text-right whitespace-nowrap">Cronbach&apos;s Alpha</th>
+                    <th className="py-2 px-3 text-right whitespace-nowrap">Batas Kritis (α)</th>
+                    <th className="py-2 px-3 text-center whitespace-nowrap">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="tabular-nums">
+                  {[
+                    { construct: 'Kualitas Layanan (X1)', items: 8, alpha: '0,874', cut: '0,700', status: 'Reliabel' },
+                    { construct: 'Kepuasan Pelanggan (Y)', items: 7, alpha: '0,852', cut: '0,700', status: 'Reliabel' },
+                  ].map((row, i) => {
+                    const matched = isMatched(row.alpha);
+                    return (
+                      <tr key={i} className="border-b border-border hover:bg-muted/30 transition-colors">
+                        <td className="py-2 px-3 font-medium text-foreground whitespace-nowrap">
+                          {row.construct}
+                        </td>
+                        <td className="py-2 px-3 text-right text-muted-foreground whitespace-nowrap">
+                          {row.items}
+                        </td>
+                        <td
+                          className={cn(
+                            'py-2 px-3 text-right font-semibold transition-colors cursor-pointer whitespace-nowrap',
+                            matched && 'bg-[#FFE14D] text-[#243044] font-bold ring-2 ring-[#FFE14D] rounded-[4px]'
+                          )}
+                          onMouseEnter={() => setActiveNumber(row.alpha)}
+                          onMouseLeave={() => setActiveNumber(null)}
+                          onClick={() => setActiveNumber(activeNumber === row.alpha ? null : row.alpha)}
+                        >
+                          {row.alpha}
+                        </td>
+                        <td className="py-2 px-3 text-right text-muted-foreground whitespace-nowrap">
+                          {row.cut}
+                        </td>
+                        <td className="py-2 px-3 text-center whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0E4331] bg-[#BFEBD9] px-2 py-0.5 rounded-[4px]">
+                            <Check className="h-3 w-3" />
+                            {row.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  <tr className="border-b-2 border-foreground bg-muted/20 text-xs text-muted-foreground">
+                    <td colSpan={5} className="py-2.5 px-3">
+                      <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs tabular-nums text-foreground/90">
+                        <span className="whitespace-nowrap">N = <strong>120</strong> responden</span>
+                        <span className="whitespace-nowrap">Total Butir Instrumen = <strong>15</strong> butir</span>
+                        <span className="whitespace-nowrap">Kriteria Reliabilitas: <strong>Cronbach&apos;s Alpha &gt; 0,700</strong></span>
                       </div>
                     </td>
                   </tr>
@@ -351,7 +450,7 @@ export function Bab4Preview() {
             </Button>
           </div>
 
-          <div className="text-sm leading-relaxed text-foreground font-sans max-w-[68ch]">
+          <div className="text-sm leading-relaxed text-slate-800 dark:text-slate-200 font-sans max-w-[68ch]">
             {narrativeTokens.map((token, idx) => {
               if (!token.isNumber || !token.raw) {
                 return <span key={idx}>{token.text}</span>;
