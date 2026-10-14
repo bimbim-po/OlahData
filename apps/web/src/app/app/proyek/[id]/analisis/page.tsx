@@ -85,6 +85,14 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
     calculationMethod,
     setCalculationMethod,
     datasetMeta,
+    researchDesign,
+    setResearchDesign,
+    preCol,
+    postCol,
+    groupCol,
+    scoreCol,
+    idealMaxScore,
+    setComparativeMapping,
     constructs,
     setConstructs,
     selectedTests,
@@ -144,11 +152,78 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
 
   const independentConstructs = constructs.filter((c) => c.role === 'independent');
   const dependentConstructs = constructs.filter((c) => c.role === 'dependent');
-  const isMappingValid = independentConstructs.length >= 1 && dependentConstructs.length >= 1;
+  const isMappingValid =
+    researchDesign === 'comparative'
+      ? Boolean((preCol && postCol) || (groupCol && scoreCol))
+      : independentConstructs.length >= 1 && dependentConstructs.length >= 1;
+
+  // Auto-detect experimental columns when columns change
+  React.useEffect(() => {
+    if (columns.length > 0) {
+      const detectedPre =
+        columns.find((c) => /^(pre[_-\s]?test|sebelum|pre)$/i.test(c.trim())) ||
+        columns.find((c) => /pre/i.test(c.trim()));
+      const detectedPost =
+        columns.find((c) => /^(post[_-\s]?test|sesudah|post)$/i.test(c.trim())) ||
+        columns.find((c) => /post/i.test(c.trim()));
+      const detectedGroup = columns.find((c) =>
+        /^(kelas|kelompok|group|metode|perlakuan)$/i.test(c.trim())
+      );
+      if (detectedPre && detectedPost) {
+        if (!preCol) setComparativeMapping({ preCol: detectedPre });
+        if (!postCol) setComparativeMapping({ postCol: detectedPost, scoreCol: detectedPost });
+      }
+      if (detectedGroup && !groupCol) {
+        setComparativeMapping({ groupCol: detectedGroup });
+      }
+    }
+  }, [columns, preCol, postCol, groupCol, setComparativeMapping]);
 
   // Compute test options with dynamic reasons based on constructs
   const dynamicTestOptions = React.useMemo<TestOption[]>(() => {
     return mockTestOptions.map((opt) => {
+      if (researchDesign === 'comparative') {
+        if (opt.id === 'paired-ttest' || opt.id === 'ngain') {
+          return {
+            ...opt,
+            recommended: Boolean(preCol && postCol),
+            recommendReason: 'Direkomendasikan untuk desain pra-pasca perlakuan.',
+          };
+        }
+        if (opt.id === 'independent-ttest') {
+          return {
+            ...opt,
+            recommended: Boolean(groupCol && scoreCol),
+            recommendReason: 'Direkomendasikan untuk uji beda kelompok independen (Uji Levene & t-test).',
+          };
+        }
+        if (opt.id === 'oneway-anova') {
+          return {
+            ...opt,
+            recommended: false,
+            recommendReason: 'Gunakan jika terdapat 3 kelompok atau lebih.',
+          };
+        }
+        if (opt.id === 'nonparametric') {
+          return {
+            ...opt,
+            recommended: true,
+            recommendReason: 'Alternatif resmi bebas asumsi distribusi normal.',
+          };
+        }
+        if (opt.id === 'descriptive') {
+          return {
+            ...opt,
+            recommended: true,
+            recommendReason: 'Ringkasan statistik dasar sampel penelitian.',
+          };
+        }
+        return {
+          ...opt,
+          recommended: false,
+        };
+      }
+
       if (opt.id === 'regression') {
         return {
           ...opt,
@@ -167,7 +242,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
       }
       return opt;
     });
-  }, [independentConstructs.length, dependentConstructs.length]);
+  }, [researchDesign, preCol, postCol, groupCol, scoreCol, independentConstructs.length, dependentConstructs.length]);
 
   // Trigger deterministic progressive statistical analysis execution
   const handleRunAnalysis = async () => {
@@ -229,14 +304,22 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
           };
 
       // Step 4: Deterministic computation using mathematical pipeline
-      const computed = computeDeterministicStats(
-        fileData,
+      const computed = computeDeterministicStats({
+        rows: fileData,
         constructs,
         selectedTests,
         reverseItems,
         calculationMethod,
-        effectiveMeta
-      );
+        datasetMeta: effectiveMeta,
+        researchDesign,
+        preCol,
+        postCol,
+        groupCol,
+        scoreCol,
+        idealMaxScore,
+        projectId,
+        dataVersionId: `dv-${dataVersion}`,
+      });
 
       computed.projectId = projectId;
       computed.dataVersionId = `dv-${dataVersion}`;
@@ -508,22 +591,227 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
           <div className="space-y-6">
             <div>
               <h2 className="font-sans text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                Langkah 3: Petakan Variabel Penelitian
+                Langkah 3: Tentukan Desain & Petakan Variabel
               </h2>
               <p className="text-sm text-muted-foreground mt-1 max-w-[68ch]">
-                Kelompokkan butir pernyataan kuesioner ke dalam konstruk variabel bebas (X) dan variabel terikat (Y).
+                Pilih desain penelitian skripsi Anda (Model Regresi Kuesioner atau Uji Beda Eksperimen / Pra-Pasca) lalu tentukan variabelnya.
               </p>
             </div>
 
-            <VariableMapper
-              columns={columns}
-              constructs={constructs}
-              onChange={setConstructs}
-            />
+            {/* Template Selector */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setResearchDesign('survey');
+                  setSelectedTests([
+                    'descriptive',
+                    'validity',
+                    'reliability',
+                    'normality',
+                    'multicollinearity',
+                    'heteroscedasticity',
+                    'regression',
+                    'correlation',
+                  ]);
+                }}
+                className={cn(
+                  'p-4 rounded-xl border text-left transition-all cursor-pointer',
+                  researchDesign === 'survey'
+                    ? 'border-primary bg-primary/10 shadow-sm ring-1 ring-primary'
+                    : 'border-border bg-card hover:border-border/80'
+                )}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-semibold text-sm text-foreground">
+                    Kuesioner / Regresi Skripsi
+                  </span>
+                  <Badge variant={researchDesign === 'survey' ? 'brand' : 'outline'} className="text-[10px]">
+                    Model X → Y
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Untuk penelitian survei kuesioner skala Likert: Uji Validitas, Reliabilitas, Asumsi Klasik, dan Regresi Linier Berganda.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setResearchDesign('comparative');
+                  setSelectedTests([
+                    'paired-ttest',
+                    'ngain',
+                    'independent-ttest',
+                    'nonparametric',
+                    'descriptive',
+                  ]);
+                }}
+                className={cn(
+                  'p-4 rounded-xl border text-left transition-all cursor-pointer',
+                  researchDesign === 'comparative'
+                    ? 'border-primary bg-primary/10 shadow-sm ring-1 ring-primary'
+                    : 'border-border bg-card hover:border-border/80'
+                )}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-semibold text-sm text-foreground">
+                    Uji Perbandingan & Eksperimen
+                  </span>
+                  <Badge variant={researchDesign === 'comparative' ? 'brand' : 'outline'} className="text-[10px]">
+                    t-Test, N-Gain, ANOVA
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Khusus FKIP, Psikologi, & Keperawatan: Paired Sample t-Test, Efektivitas N-Gain (Hake 1998), Independent t-Test (Levene), & Non-Parametrik.
+                </p>
+              </button>
+            </div>
+
+            {/* SURVEY TEMPLATE MAPPING */}
+            {researchDesign === 'survey' && (
+              <>
+                <VariableMapper
+                  columns={columns}
+                  constructs={constructs}
+                  onChange={setConstructs}
+                />
+              </>
+            )}
+
+            {/* COMPARATIVE TEMPLATE MAPPING */}
+            {researchDesign === 'comparative' && (
+              <div className="p-5 rounded-[16px] border border-border bg-card shadow-xs space-y-5">
+                <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                  <div>
+                    <h3 className="font-semibold text-sm text-foreground flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-primary" />
+                      Pemetaan Kolom Variabel Eksperimen & Beda Rata-rata
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Pilih kolom data yang sesuai untuk uji sampel berpasangan (Pre-test vs Post-test) atau perbandingan kelompok (Kelas Eksperimen vs Kontrol).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Pre-test column */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground">
+                      Kolom Nilai Pra-Perlakuan (Pre-test):
+                    </label>
+                    <select
+                      value={preCol || ''}
+                      onChange={(e) => setComparativeMapping({ preCol: e.target.value || null })}
+                      className="w-full text-xs rounded-lg border border-border bg-background p-2.5 font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      <option value="">-- Pilih Kolom Pre-test --</option>
+                      {columns.map((col) => (
+                        <option key={col} value={col}>
+                          {col}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-muted-foreground">
+                      Data skor awal responden sebelum diberikan intervensi pembelajaran/perlakuan.
+                    </p>
+                  </div>
+
+                  {/* Post-test column */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground">
+                      Kolom Nilai Pasca-Perlakuan (Post-test):
+                    </label>
+                    <select
+                      value={postCol || ''}
+                      onChange={(e) =>
+                        setComparativeMapping({
+                          postCol: e.target.value || null,
+                          scoreCol: e.target.value || scoreCol,
+                        })
+                      }
+                      className="w-full text-xs rounded-lg border border-border bg-background p-2.5 font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      <option value="">-- Pilih Kolom Post-test --</option>
+                      {columns.map((col) => (
+                        <option key={col} value={col}>
+                          {col}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-muted-foreground">
+                      Data skor akhir responden setelah perlakuan selesai diberikan.
+                    </p>
+                  </div>
+
+                  {/* Group column */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground">
+                      Kolom Kelompok / Kelas (Faktor Independen):
+                    </label>
+                    <select
+                      value={groupCol || ''}
+                      onChange={(e) => setComparativeMapping({ groupCol: e.target.value || null })}
+                      className="w-full text-xs rounded-lg border border-border bg-background p-2.5 font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      <option value="">-- Pilih Kolom Kelas / Kelompok --</option>
+                      {columns.map((col) => (
+                        <option key={col} value={col}>
+                          {col}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-muted-foreground">
+                      Digunakan untuk Independent Sample t-Test & ANOVA (misal: &quot;Kelas Eksperimen&quot; vs &quot;Kelas Kontrol&quot;).
+                    </p>
+                  </div>
+
+                  {/* Ideal Max Score */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground">
+                      Skor Maksimal Ideal Instrumen Tes:
+                    </label>
+                    <input
+                      type="number"
+                      value={idealMaxScore}
+                      onChange={(e) =>
+                        setComparativeMapping({ idealMaxScore: Number(e.target.value) || 100 })
+                      }
+                      min={10}
+                      max={1000}
+                      className="w-full text-xs rounded-lg border border-border bg-background p-2.5 font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      Diperlukan untuk rumus Richard R. Hake: (Post - Pre) / (Skor Maksimal - Pre). Standar umumnya 100.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Status Box */}
+                <div className="p-3.5 rounded-lg bg-muted/40 border border-border/50 text-xs flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <span className="font-semibold text-foreground">Kesiapan Analisis Komparatif:</span>
+                    <p className="text-[11px] text-muted-foreground">
+                      {preCol && postCol
+                        ? `✓ Pasangan Pre-Post siap (${preCol} → ${postCol}) untuk Paired t-Test & N-Gain.`
+                        : '• Belum memilih pasangan Pre-test & Post-test.'}
+                      {groupCol ? ` ✓ Kolom kelompok siap (${groupCol}) untuk Independent t-Test & Levene.` : ''}
+                    </p>
+                  </div>
+                  <Badge
+                    variant={isMappingValid ? 'success' : 'amber'}
+                    className="text-[11px]"
+                  >
+                    {isMappingValid ? 'Parameter Lengkap' : 'Pilih Parameter'}
+                  </Badge>
+                </div>
+              </div>
+            )}
 
             {/* Pengaturan Lanjutan Skor Konstruk */}
-            <div className="p-4 sm:p-5 rounded-[16px] border border-border bg-card shadow-xs space-y-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
+            {researchDesign === 'survey' && (
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
                 <div>
                   <h4 className="font-semibold text-sm text-foreground flex items-center gap-2">
                     <Layers className="w-4 h-4 text-primary" />
@@ -604,6 +892,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                 </div>
               </div>
             </div>
+            )}
 
             {/* Navigation Buttons */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
@@ -621,7 +910,9 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                 {!isMappingValid && (
                   <span className="text-xs text-amber-600 dark:text-amber-400 text-center sm:text-right font-medium">
-                    Diperlukan min. 1 variabel bebas (X) dan 1 variabel terikat (Y)
+                    {researchDesign === 'comparative'
+                      ? 'Pilih kolom Pre-test & Post-test atau Kelas & Skor untuk lanjut'
+                      : 'Diperlukan min. 1 variabel bebas (X) dan 1 variabel terikat (Y)'}
                   </span>
                 )}
                 <Button

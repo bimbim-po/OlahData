@@ -25,6 +25,14 @@ interface WizardState {
   reverseItems: string[];
   columnRoles: Record<string, 'id' | 'demographic' | 'item' | 'ignored'>;
 
+  // Research Design
+  researchDesign: 'survey' | 'comparative';
+  preCol: string | null;
+  postCol: string | null;
+  groupCol: string | null;
+  scoreCol: string | null;
+  idealMaxScore: number;
+
   // Step 3: Variable mapping
   constructs: Construct[];
   calculationMethod: 'mean' | 'sum';
@@ -59,6 +67,16 @@ interface WizardState {
   setReverseItems: (items: string[]) => void;
   toggleReverseItem: (item: string) => void;
   setColumnRole: (col: string, role: 'id' | 'demographic' | 'item' | 'ignored') => void;
+  setResearchDesign: (design: 'survey' | 'comparative') => void;
+  setComparativeMapping: (mapping: {
+    preCol?: string | null;
+    postCol?: string | null;
+    groupCol?: string | null;
+    scoreCol?: string | null;
+    idealMaxScore?: number;
+  }) => void;
+  eliminateInvalidItems: (invalidItemNames: string[]) => void;
+  eliminateOutliers: (rowNumbers: number[]) => void;
   setConstructs: (constructs: Construct[]) => void;
   setCalculationMethod: (method: 'mean' | 'sum') => void;
   setSelectedTests: (tests: TestType[]) => void;
@@ -86,6 +104,12 @@ const initialState = {
   dataVersion: 1,
   reverseItems: [] as string[],
   columnRoles: {} as Record<string, 'id' | 'demographic' | 'item' | 'ignored'>,
+  researchDesign: 'survey' as const,
+  preCol: null,
+  postCol: null,
+  groupCol: null,
+  scoreCol: null,
+  idealMaxScore: 100,
   constructs: [],
   calculationMethod: 'mean' as const,
   selectedTests: [] as TestType[],
@@ -230,6 +254,89 @@ export const useWizardStore = create<WizardState>((set, get) => ({
     set((state) => ({
       columnRoles: { ...state.columnRoles, [col]: role },
     })),
+
+  setResearchDesign: (design) => set({ researchDesign: design }),
+
+  setComparativeMapping: (mapping) =>
+    set((state) => ({
+      preCol: mapping.preCol !== undefined ? mapping.preCol : state.preCol,
+      postCol: mapping.postCol !== undefined ? mapping.postCol : state.postCol,
+      groupCol: mapping.groupCol !== undefined ? mapping.groupCol : state.groupCol,
+      scoreCol: mapping.scoreCol !== undefined ? mapping.scoreCol : state.scoreCol,
+      idealMaxScore:
+        mapping.idealMaxScore !== undefined ? mapping.idealMaxScore : state.idealMaxScore,
+    })),
+
+  eliminateInvalidItems: (invalidItemNames: string[]) => {
+    const invalidSet = new Set(invalidItemNames);
+    set((state) => {
+      const updatedConstructs = state.constructs
+        .map((c) => ({
+          ...c,
+          items: c.items.filter((item) => !invalidSet.has(item)),
+        }))
+        .filter((c) => c.items.length > 0);
+
+      const existingNotes = state.datasetMeta?.ignoredInfo?.notes || [];
+      const updatedMeta = state.datasetMeta
+        ? {
+            ...state.datasetMeta,
+            kind: 'derived' as const,
+            version: state.dataVersion + 1,
+            ignoredInfo: {
+              emptyRowsSkipped: state.datasetMeta.ignoredInfo?.emptyRowsSkipped ?? 0,
+              mergedCellsDetected: state.datasetMeta.ignoredInfo?.mergedCellsDetected ?? 0,
+              notes: [
+                ...existingNotes,
+                `Eliminasi ${invalidItemNames.length} butir gugur: ${invalidItemNames.join(', ')}`,
+              ],
+            },
+          }
+        : null;
+
+      return {
+        constructs: updatedConstructs,
+        dataVersion: state.dataVersion + 1,
+        datasetMeta: updatedMeta,
+      };
+    });
+  },
+
+  eliminateOutliers: (rowNumbers: number[]) => {
+    const rowSet = new Set(rowNumbers);
+    set((state) => {
+      const updatedRemoved = [...new Set([...state.removedRows, ...rowNumbers])];
+      const updatedFileData = state.fileData.filter((r, idx) => {
+        const no = typeof r.No === 'number' ? r.No : idx + 1;
+        return !rowSet.has(no);
+      });
+      const existingNotes = state.datasetMeta?.ignoredInfo?.notes || [];
+      const updatedMeta = state.datasetMeta
+        ? {
+            ...state.datasetMeta,
+            kind: 'derived' as const,
+            version: state.dataVersion + 1,
+            rowCount: updatedFileData.length,
+            excludedRows: updatedRemoved,
+            ignoredInfo: {
+              emptyRowsSkipped: state.datasetMeta.ignoredInfo?.emptyRowsSkipped ?? 0,
+              mergedCellsDetected: state.datasetMeta.ignoredInfo?.mergedCellsDetected ?? 0,
+              notes: [
+                ...existingNotes,
+                `Eksklusi ${rowNumbers.length} responden outlier residual (|Z| > 2.5): ${rowNumbers.join(', ')}`,
+              ],
+            },
+          }
+        : null;
+
+      return {
+        removedRows: updatedRemoved,
+        fileData: updatedFileData,
+        dataVersion: state.dataVersion + 1,
+        datasetMeta: updatedMeta,
+      };
+    });
+  },
 
   setConstructs: (constructs) => set({ constructs }),
 

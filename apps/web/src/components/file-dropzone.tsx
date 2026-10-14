@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { UploadCloud, FileSpreadsheet, Sparkles, RefreshCw, AlertCircle, CheckCircle2, Hash } from 'lucide-react';
 import { useWizardStore } from '@/stores/wizard-store';
-import { mockDataset, mockIssues } from '@/lib/mock/dataset-contoh';
+import { mockDataset, mockExperimentalDataset, mockIssues } from '@/lib/mock/dataset-contoh';
 import { analyzeDatasetQuality } from '@/lib/validation';
 import { FILE_LIMITS } from '@/lib/constants';
 import { COPY } from '@/lib/copy';
@@ -133,6 +133,14 @@ export function FileDropzone({ onFileLoaded, className }: FileDropzoneProps) {
     onFileLoaded?.();
   };
 
+  const handleLoadExperimentalData = () => {
+    setErrorMessage(null);
+    const cols = Object.keys(mockExperimentalDataset[0] || {});
+    setFileData('data_eksperimen_pre_post.xlsx', [...mockExperimentalDataset], cols, true, 32 * 1024);
+    setIssues([]);
+    onFileLoaded?.();
+  };
+
   const handleReplaceFile = () => {
     resetWizard();
     if (fileInputRef.current) {
@@ -156,27 +164,27 @@ export function FileDropzone({ onFileLoaded, className }: FileDropzoneProps) {
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground">
-            Muat dataset riset standar (120 responden × 18 butir kuesioner + 3 demografi, 3 konstruk: Kualitas Layanan, Kepuasan, Loyalitas).
+            Pilih dataset riset kuesioner regresi (N=120) atau dataset eksperimen pre-test & post-test (N=60).
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-          <a
-            href="/data-contoh/data_kuesioner_pemasaran_100_responden.xlsx"
-            download
-            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors border border-border bg-background px-3 py-2 rounded-[10px] font-medium"
-            title="Unduh berkas contoh Excel 100 responden"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-primary" />
-            <span>Unduh Contoh Excel</span>
-          </a>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <Button
             type="button"
             onClick={handleLoadSampleData}
             variant="outline"
-            className="border-primary text-primary hover:bg-primary hover:text-white shrink-0 font-medium cursor-pointer shadow-sm rounded-[10px] min-h-[44px] h-11 sm:h-9"
+            className="border-primary text-primary hover:bg-primary hover:text-white shrink-0 font-medium cursor-pointer shadow-sm rounded-[10px] min-h-[40px] text-xs"
           >
-            <Sparkles className="w-4 h-4 mr-2" />
-            Pakai data contoh
+            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+            Kuesioner (N=120)
+          </Button>
+          <Button
+            type="button"
+            onClick={handleLoadExperimentalData}
+            variant="outline"
+            className="border-primary/80 bg-primary/10 text-primary hover:bg-primary hover:text-white shrink-0 font-medium cursor-pointer shadow-sm rounded-[10px] min-h-[40px] text-xs"
+          >
+            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+            Eksperimen (N=60)
           </Button>
         </div>
       </div>

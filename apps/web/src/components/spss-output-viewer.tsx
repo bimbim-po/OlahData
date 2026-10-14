@@ -802,6 +802,441 @@ export function SpssOutputViewer({
           </div>
         </div>
       )}
+
+      {/* 8. PAIRED SAMPLES T-TEST & N-GAIN (SPSS FORMAT) */}
+      {results.pairedTTest && (
+        <div id="spss-paired-ttest" className="space-y-4">
+          <div className="flex items-center justify-between border-b border-zinc-400 pb-1">
+            <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">
+              T-Test (Paired Samples)
+            </h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleCopyTable('spss-paired-ttest', 'Paired Samples Test')}
+              className="h-7 text-[11px] px-2 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 cursor-pointer"
+            >
+              {copiedSection === 'spss-paired-ttest' ? (
+                <Check className="h-3.5 w-3.5 mr-1 text-emerald-600" />
+              ) : (
+                <Copy className="h-3.5 w-3.5 mr-1" />
+              )}
+              Salin Output
+            </Button>
+          </div>
+
+          {/* Paired Samples Statistics */}
+          <div className="space-y-1">
+            <span className="font-bold text-zinc-700 dark:text-zinc-300 block text-[11px]">
+              Paired Samples Statistics
+            </span>
+            <div className="overflow-x-auto">
+              <table className="border-collapse border border-zinc-900 dark:border-zinc-400 bg-white dark:bg-zinc-950 text-left w-full min-w-[500px]">
+                <thead>
+                  <tr className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-900 dark:border-zinc-400">
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-bold" colSpan={2}>Variable</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">Mean</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">N</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">Std. Deviation</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">Std. Error Mean</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-semibold" rowSpan={2}>Pair 1</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5">{results.pairedTTest.preVar}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.pairedTTest.meanPre, 3)}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{results.pairedTTest.n}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.pairedTTest.stdDevPre, 3)}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.pairedTTest.stdDevPre / Math.sqrt(results.pairedTTest.n), 3)}</td>
+                  </tr>
+                  <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5">{results.pairedTTest.postVar}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.pairedTTest.meanPost, 3)}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{results.pairedTTest.n}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.pairedTTest.stdDevPost, 3)}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.pairedTTest.stdDevPost / Math.sqrt(results.pairedTTest.n), 3)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Paired Samples Correlations */}
+          <div className="space-y-1">
+            <span className="font-bold text-zinc-700 dark:text-zinc-300 block text-[11px]">
+              Paired Samples Correlations
+            </span>
+            <div className="overflow-x-auto">
+              <table className="border-collapse border border-zinc-900 dark:border-zinc-400 bg-white dark:bg-zinc-950 text-left w-full min-w-[400px]">
+                <thead>
+                  <tr className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-900 dark:border-zinc-400">
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-bold">Pair</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">N</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">Correlation</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">Sig.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5">{results.pairedTTest.preVar} &amp; {results.pairedTTest.postVar}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{results.pairedTTest.n}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.pairedTTest.correlation, 3)}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.pairedTTest.sigCorrelation, 3)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Paired Samples Test */}
+          <div className="space-y-1">
+            <span className="font-bold text-zinc-700 dark:text-zinc-300 block text-[11px]">
+              Paired Samples Test
+            </span>
+            <div className="overflow-x-auto">
+              <table className="border-collapse border border-zinc-900 dark:border-zinc-400 bg-white dark:bg-zinc-950 text-left w-full min-w-[700px]">
+                <thead>
+                  <tr className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-900 dark:border-zinc-400">
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-bold" rowSpan={2}>Pair 1</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-center font-bold" colSpan={5}>Paired Differences</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold" rowSpan={2}>t</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold" rowSpan={2}>df</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold" rowSpan={2}>Sig. (2-tailed)</th>
+                  </tr>
+                  <tr className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-900 dark:border-zinc-400 text-[10px]">
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1 text-right">Mean</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1 text-right">Std. Deviation</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1 text-right">Std. Error Mean</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1 text-right">95% CI Lower</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1 text-right">95% CI Upper</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5">{results.pairedTTest.postVar} - {results.pairedTTest.preVar}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.pairedTTest.meanDiff, 3)}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.pairedTTest.stdDevDiff, 3)}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.pairedTTest.stdErrorDiff, 3)}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.pairedTTest.ciLower, 3)}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.pairedTTest.ciUpper, 3)}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(results.pairedTTest.tHitung, 3)}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{results.pairedTTest.df}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(results.pairedTTest.pValue, 4)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 9. INDEPENDENT SAMPLES T-TEST (SPSS FORMAT) */}
+      {results.independentTTest && (
+        <div id="spss-independent-ttest" className="space-y-4">
+          <div className="flex items-center justify-between border-b border-zinc-400 pb-1">
+            <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">
+              T-Test (Independent Samples)
+            </h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleCopyTable('spss-independent-ttest', 'Independent Samples Test')}
+              className="h-7 text-[11px] px-2 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 cursor-pointer"
+            >
+              {copiedSection === 'spss-independent-ttest' ? (
+                <Check className="h-3.5 w-3.5 mr-1 text-emerald-600" />
+              ) : (
+                <Copy className="h-3.5 w-3.5 mr-1" />
+              )}
+              Salin Output
+            </Button>
+          </div>
+
+          {/* Group Statistics */}
+          <div className="space-y-1">
+            <span className="font-bold text-zinc-700 dark:text-zinc-300 block text-[11px]">
+              Group Statistics
+            </span>
+            <div className="overflow-x-auto">
+              <table className="border-collapse border border-zinc-900 dark:border-zinc-400 bg-white dark:bg-zinc-950 text-left w-full min-w-[500px]">
+                <thead>
+                  <tr className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-900 dark:border-zinc-400">
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-bold">Variable</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-bold">{results.independentTTest.groupVar}</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">N</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">Mean</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">Std. Deviation</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">Std. Error Mean</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {results.independentTTest.groups.map((grp) => (
+                    <tr key={grp.groupName} className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5">{results.independentTTest!.testVar}</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-semibold">{grp.groupName}</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{grp.n}</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(grp.mean, 3)}</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(grp.stdDev, 3)}</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(grp.stdError, 3)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Independent Samples Test */}
+          <div className="space-y-1">
+            <span className="font-bold text-zinc-700 dark:text-zinc-300 block text-[11px]">
+              Independent Samples Test
+            </span>
+            <div className="overflow-x-auto">
+              <table className="border-collapse border border-zinc-900 dark:border-zinc-400 bg-white dark:bg-zinc-950 text-left w-full min-w-[760px]">
+                <thead>
+                  <tr className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-900 dark:border-zinc-400">
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-bold" colSpan={2} rowSpan={2}>
+                      {results.independentTTest.testVar}
+                    </th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-center font-bold" colSpan={2}>
+                      Levene&apos;s Test for Equality of Variances
+                    </th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-center font-bold" colSpan={7}>
+                      t-test for Equality of Means
+                    </th>
+                  </tr>
+                  <tr className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-900 dark:border-zinc-400 text-[10px]">
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1 text-right">F</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1 text-right">Sig.</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1 text-right">t</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1 text-right">df</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1 text-right">Sig. (2-tailed)</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1 text-right">Mean Diff</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1 text-right">Std. Error</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1 text-right">95% CI Lower</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1 text-right">95% CI Upper</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {results.independentTTest.rows.map((row) => (
+                    <tr
+                      key={row.assumption}
+                      className={cn(
+                        'hover:bg-zinc-50 dark:hover:bg-zinc-900',
+                        row.isRecommended && 'bg-amber-50/50 dark:bg-amber-950/20 font-semibold'
+                      )}
+                    >
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5" colSpan={2}>
+                        {row.assumption} {row.isRecommended && '★'}
+                      </td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">
+                        {row.assumption === 'Equal variances assumed'
+                          ? formatNumber(results.independentTTest!.levene.fStatistic, 3)
+                          : ''}
+                      </td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">
+                        {row.assumption === 'Equal variances assumed'
+                          ? formatNumber(results.independentTTest!.levene.pValue, 3)
+                          : ''}
+                      </td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">
+                        {formatNumber(row.tHitung, 3)}
+                      </td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">
+                        {formatNumber(row.df, 2)}
+                      </td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">
+                        {formatNumber(row.pValue, 4)}
+                      </td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">
+                        {formatNumber(row.meanDiff, 3)}
+                      </td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">
+                        {formatNumber(row.stdErrorDiff, 3)}
+                      </td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">
+                        {formatNumber(row.ciLower, 3)}
+                      </td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">
+                        {formatNumber(row.ciUpper, 3)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="text-[10px] text-zinc-500 mt-1">
+                ★ Menunjukkan baris pengujian yang valid dibaca berdasarkan signifikansi Uji Levene ({results.independentTTest.levene.equalVariancesAssumed ? 'Sig. > 0,05: Equal variances assumed' : 'Sig. ≤ 0,05: Equal variances not assumed'}).
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 10. ONE-WAY ANOVA (SPSS FORMAT) */}
+      {results.oneWayAnova && (
+        <div id="spss-oneway-anova" className="space-y-4">
+          <div className="flex items-center justify-between border-b border-zinc-400 pb-1">
+            <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">
+              Oneway (Analysis of Variance)
+            </h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleCopyTable('spss-oneway-anova', 'ANOVA')}
+              className="h-7 text-[11px] px-2 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 cursor-pointer"
+            >
+              {copiedSection === 'spss-oneway-anova' ? (
+                <Check className="h-3.5 w-3.5 mr-1 text-emerald-600" />
+              ) : (
+                <Copy className="h-3.5 w-3.5 mr-1" />
+              )}
+              Salin Output
+            </Button>
+          </div>
+
+          <div className="space-y-1">
+            <span className="font-bold text-zinc-700 dark:text-zinc-300 block text-[11px]">
+              ANOVA ({results.oneWayAnova.dependentVar})
+            </span>
+            <div className="overflow-x-auto">
+              <table className="border-collapse border border-zinc-900 dark:border-zinc-400 bg-white dark:bg-zinc-950 text-left w-full min-w-[500px]">
+                <thead>
+                  <tr className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-900 dark:border-zinc-400">
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-bold">Source</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">Sum of Squares</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">df</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">Mean Square</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">F</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">Sig.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5">Between Groups</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.oneWayAnova.ssBetween, 3)}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{results.oneWayAnova.dfBetween}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.oneWayAnova.msBetween, 3)}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(results.oneWayAnova.fHitung, 3)}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(results.oneWayAnova.pValue, 4)}</td>
+                  </tr>
+                  <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5">Within Groups</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.oneWayAnova.ssWithin, 3)}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{results.oneWayAnova.dfWithin}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.oneWayAnova.msWithin, 3)}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">-</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">-</td>
+                  </tr>
+                  <tr className="border-t-2 border-zinc-900 dark:border-zinc-400 font-bold">
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5">Total</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(results.oneWayAnova.ssTotal, 3)}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{results.oneWayAnova.dfTotal}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">-</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">-</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">-</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Post-Hoc Tukey HSD */}
+          {results.oneWayAnova.postHocTukey && results.oneWayAnova.postHocTukey.length > 0 && (
+            <div className="space-y-1 pt-2">
+              <span className="font-bold text-zinc-700 dark:text-zinc-300 block text-[11px]">
+                Post Hoc Tests - Multiple Comparisons (Tukey HSD)
+              </span>
+              <div className="overflow-x-auto">
+                <table className="border-collapse border border-zinc-900 dark:border-zinc-400 bg-white dark:bg-zinc-950 text-left w-full min-w-[550px]">
+                  <thead>
+                    <tr className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-900 dark:border-zinc-400">
+                      <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-bold">(I) Group</th>
+                      <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-bold">(J) Group</th>
+                      <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">Mean Difference (I-J)</th>
+                      <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">Std. Error</th>
+                      <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">Sig.</th>
+                      <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">95% CI Lower</th>
+                      <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">95% CI Upper</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {results.oneWayAnova.postHocTukey.map((th) => (
+                      <tr key={`${th.groupI}-${th.groupJ}`} className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                        <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-semibold">{th.groupI}</td>
+                        <td className="border border-zinc-900 dark:border-zinc-400 p-1.5">{th.groupJ}</td>
+                        <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(th.meanDiff, 3)}</td>
+                        <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(th.stdError, 3)}</td>
+                        <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(th.pValue, 4)}</td>
+                        <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(th.ciLower, 3)}</td>
+                        <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right">{formatNumber(th.ciUpper, 3)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 11. NON-PARAMETRIC TESTS (SPSS NPAR TESTS FORMAT) */}
+      {results.nonParametric && (
+        <div id="spss-npar-tests" className="space-y-4">
+          <div className="flex items-center justify-between border-b border-zinc-400 pb-1">
+            <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">
+              NPar Tests ({results.nonParametric.testName})
+            </h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleCopyTable('spss-npar-tests', results.nonParametric!.testName)}
+              className="h-7 text-[11px] px-2 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 cursor-pointer"
+            >
+              {copiedSection === 'spss-npar-tests' ? (
+                <Check className="h-3.5 w-3.5 mr-1 text-emerald-600" />
+              ) : (
+                <Copy className="h-3.5 w-3.5 mr-1" />
+              )}
+              Salin Output
+            </Button>
+          </div>
+
+          <div className="space-y-1">
+            <span className="font-bold text-zinc-700 dark:text-zinc-300 block text-[11px]">
+              Test Statistics (a)
+            </span>
+            <div className="overflow-x-auto">
+              <table className="border-collapse border border-zinc-900 dark:border-zinc-400 bg-white dark:bg-zinc-950 text-left w-full min-w-[350px]">
+                <thead>
+                  <tr className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-900 dark:border-zinc-400">
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 font-bold">Statistic</th>
+                    <th className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{results.nonParametric.dependentVar}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5">{results.nonParametric.testName}</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(results.nonParametric.statistic, 3)}</td>
+                  </tr>
+                  {results.nonParametric.zValue !== undefined && (
+                    <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5">Z</td>
+                      <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(results.nonParametric.zValue, 3)}</td>
+                    </tr>
+                  )}
+                  <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5">Asymp. Sig. (2-tailed)</td>
+                    <td className="border border-zinc-900 dark:border-zinc-400 p-1.5 text-right font-bold">{formatNumber(results.nonParametric.pValue, 4)}</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p className="text-[10px] text-zinc-500 mt-1">
+                a. Grouping Variable: {results.nonParametric.groupVar || 'Sample Pair'}. {results.nonParametric.reason}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

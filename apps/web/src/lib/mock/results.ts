@@ -86,6 +86,46 @@ export const mockTestOptions: TestOption[] = [
     prerequisites: [],
     recommended: false,
   },
+  {
+    id: 'paired-ttest',
+    name: 'Paired Sample t-Test',
+    description: 'Uji beda rata-rata dua sampel berpasangan (Pre-test vs Post-test)',
+    prerequisites: [],
+    recommended: false,
+    recommendReason: 'Cocok untuk desain eksperimen pra-pasca perlakuan',
+  },
+  {
+    id: 'ngain',
+    name: 'N-Gain Score Ternormalisasi',
+    description: 'Efektivitas peningkatan hasil belajar (Hake 1998 & Meltzer 2002)',
+    prerequisites: ['paired-ttest'],
+    recommended: false,
+    recommendReason: 'Standar baku skripsi FKIP dan Pendidikan untuk mengukur efektivitas model ajar',
+  },
+  {
+    id: 'independent-ttest',
+    name: 'Independent Sample t-Test',
+    description: 'Uji beda rata-rata 2 kelompok bebas (Kelas Eksperimen vs Kontrol) & Uji Levene',
+    prerequisites: [],
+    recommended: false,
+    recommendReason: 'Membandingkan efektivitas antar dua kelompok subjek berbeda',
+  },
+  {
+    id: 'oneway-anova',
+    name: 'One-Way ANOVA & Post-Hoc Tukey',
+    description: 'Uji beda rata-rata 3 kelompok atau lebih & perbandingan berpasangan Tukey HSD',
+    prerequisites: [],
+    recommended: false,
+    recommendReason: 'Untuk desain penelitian dengan 3 atau lebih variasi perlakuan',
+  },
+  {
+    id: 'nonparametric',
+    name: 'Uji Non-Parametrik Alternatif',
+    description: 'Mann-Whitney U, Wilcoxon Signed-Rank, & Kruskal-Wallis H (Bebas Asumsi Normal)',
+    prerequisites: [],
+    recommended: false,
+    recommendReason: 'Alternatif resmi yang sah jika data tidak berdistribusi normal',
+  },
 ];
 
 // N = 120, k = 2 prediktor (X1: Kualitas Layanan, X2: Kepuasan Pelanggan, Y: Loyalitas Pelanggan)

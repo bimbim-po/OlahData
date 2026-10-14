@@ -75,6 +75,46 @@ function generateInitialRows(): DatasetRow[] {
 
 export const mockDataset: DatasetRow[] = generateInitialRows();
 
+function generateExperimentalRows(): DatasetRow[] {
+  const expRng = createSeededRandom(12345);
+  const rows: DatasetRow[] = [];
+
+  // 30 Siswa Kelas Eksperimen
+  for (let i = 1; i <= 30; i++) {
+    const pre = expRng(48, 62);
+    // Eksperimen meningkat signifikan (post 78-96)
+    const post = Math.min(100, pre + expRng(25, 40));
+    rows.push({
+      No: i,
+      Nama: `Siswa Eksperimen ${i}`,
+      Kelas: 'Kelas Eksperimen',
+      Metode_Ajar: 'Model Inovatif (Problem-Based Learning)',
+      Pre_Test: pre,
+      Post_Test: post,
+    });
+  }
+
+  // 30 Siswa Kelas Kontrol
+  for (let i = 31; i <= 60; i++) {
+    const idx = i - 30;
+    const pre = expRng(48, 62);
+    // Kontrol meningkat sedikit (post 58-72)
+    const post = Math.min(100, pre + expRng(8, 18));
+    rows.push({
+      No: i,
+      Nama: `Siswa Kontrol ${idx}`,
+      Kelas: 'Kelas Kontrol',
+      Metode_Ajar: 'Model Konvensional (Ceramah)',
+      Pre_Test: pre,
+      Post_Test: post,
+    });
+  }
+
+  return rows;
+}
+
+export const mockExperimentalDataset: DatasetRow[] = generateExperimentalRows();
+
 export const mockIssues: DataIssue[] = [
   { id: 'issue-1', severity: 'error', message: 'Sel kosong', row: 45, column: 'KL3', value: null },
   { id: 'issue-2', severity: 'error', message: 'Sel kosong', row: 78, column: 'KP2', value: null },

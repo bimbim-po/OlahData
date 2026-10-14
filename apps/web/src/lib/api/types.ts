@@ -1,6 +1,25 @@
+import type {
+  PairedTTestResult,
+  NGainSummary,
+  IndependentTTestResult,
+  OneWayAnovaResult,
+  NonParametricResult,
+  OutlierTroubleshooterResult,
+} from '../comparative-stats';
+
+export type {
+  PairedTTestResult,
+  NGainSummary,
+  IndependentTTestResult,
+  OneWayAnovaResult,
+  NonParametricResult,
+  OutlierTroubleshooterResult,
+};
+
 export type ProjectStatus = 'draft' | 'analyzing' | 'completed';
 export type IssueSeverity = 'error' | 'warning' | 'info';
 export type VariableRole = 'independent' | 'dependent';
+export type ResearchDesign = 'survey' | 'comparative';
 export type TestType =
   | 'descriptive'
   | 'validity'
@@ -13,7 +32,12 @@ export type TestType =
   | 'f-test'
   | 'determination'
   | 'correlation'
-  | 'anova';
+  | 'anova'
+  | 'paired-ttest'
+  | 'independent-ttest'
+  | 'oneway-anova'
+  | 'ngain'
+  | 'nonparametric';
 
 export type SubscriptionPlan = 'free' | 'monthly' | 'thesis';
 export type ExportFormat = 'word' | 'pdf';
@@ -281,6 +305,14 @@ export interface AnalysisResults {
   demographics?: DemographicVariableResult[];
   tTabel?: number;
   fTabel?: number;
+  researchDesign?: ResearchDesign;
+  pairedTTest?: PairedTTestResult;
+  nGain?: NGainSummary;
+  independentTTest?: IndependentTTestResult;
+  oneWayAnova?: OneWayAnovaResult;
+  nonParametric?: NonParametricResult;
+  residualOutliers?: OutlierTroubleshooterResult;
+  spearmanHetero?: HeteroscedasticityResult[];
   explanations: Record<string, string>;
   sourceMeta?: DatasetSourceMeta;
 }

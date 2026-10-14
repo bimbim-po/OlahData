@@ -35,6 +35,16 @@ import {
   getFCritical,
   getDurbinWatsonBounds,
 } from './math-stats';
+import {
+  computePairedTTest,
+  computeIndependentTTest,
+  computeOneWayAnova,
+  computeMannWhitneyU,
+  computeWilcoxonSignedRank,
+  computeKruskalWallis,
+  detectResidualOutliers,
+  computeSpearmanHeteroscedasticity,
+} from './comparative-stats';
 import { ENGINE_VERSION } from './constants';
 import { formatNumber } from './format';
 
@@ -90,6 +100,12 @@ export interface ComputeStatsOptions {
   reverseItems?: string[];
   calculationMethod?: 'mean' | 'sum';
   datasetMeta?: DatasetSourceMeta;
+  researchDesign?: 'survey' | 'comparative';
+  preCol?: string | null;
+  postCol?: string | null;
+  groupCol?: string | null;
+  scoreCol?: string | null;
+  idealMaxScore?: number;
 }
 
 // Sample variance with ddof=1
@@ -948,6 +964,35 @@ export function computeDeterministicStats(
         }
         results.heteroscedasticity = heteroResults;
       }
+
+      // TROUBLESHOOTER 1: Deteksi Outlier Residual (|Z| > 2.5)
+      try {
+        const outlierInfo = detectResidualOutliers(residuals, rows, 2.5);
+        if (results.normality && results.normality.length > 0) {
+          outlierInfo.originalNormalSig = results.normality[0].pValue;
+        }
+        results.residualOutliers = outlierInfo;
+      } catch {
+        // Safe fallback if calculation fails
+      }
+
+      // TROUBLESHOOTER 2: Uji Heteroskedastisitas Alternatif (Korelasi Rank Spearman)
+      try {
+        const indepMap: Record<string, number[]> = {};
+        indepNames.forEach((name) => {
+          indepMap[name] = constructScores[name];
+        });
+        const spearmanRes = computeSpearmanHeteroscedasticity(indepMap, residuals);
+        results.spearmanHetero = spearmanRes.map((s) => ({
+          test: 'Rank Spearman',
+          variable: s.variable,
+          tHitung: s.tHitung,
+          pValue: s.pValue,
+          significant: s.significant,
+        }));
+      } catch {
+        // Safe fallback
+      }
     }
   }
 
@@ -984,7 +1029,170 @@ export function computeDeterministicStats(
     results.correlation = corrResults;
   }
 
-  // 8. GENERASI NARASI DRAF DENGAN STRICT NUMBER GUARD (NILAI TERHITUNG)
+  // 8. ANALISIS KOMPARATIF & EKSPERIMEN (Paired t-Test, N-Gain, Independent t-Test, ANOVA, Non-Parametrik)
+  const isComparative =
+    opts.researchDesign === 'comparative' ||
+    selectedTests.some((t) =>
+      ['paired-ttest', 'independent-ttest', 'oneway-anova', 'ngain', 'nonparametric'].includes(t)
+    );
+
+  if (isComparative) {
+    results.researchDesign = 'comparative';
+
+    // Auto-detect or use user-specified columns
+    const allCols = rows.length > 0 ? Object.keys(rows[0]) : [];
+    const preCol =
+      opts.preCol ||
+      allCols.find((c) => /^(pre[_-\s]?test|sebelum|pre)$/i.test(c.trim())) ||
+      allCols.find((c) => /pre/i.test(c.trim()));
+    const postCol =
+      opts.postCol ||
+      allCols.find((c) => /^(post[_-\s]?test|sesudah|post)$/i.test(c.trim())) ||
+      allCols.find((c) => /post/i.test(c.trim()));
+    const groupCol =
+      opts.groupCol ||
+      allCols.find((c) => /^(kelas|kelompok|group|metode|perlakuan)$/i.test(c.trim()));
+    const scoreCol =
+      opts.scoreCol ||
+      postCol ||
+      allCols.find((c) => /^(skor|nilai|hasil|score)$/i.test(c.trim()));
+    const idealMax = opts.idealMaxScore || 100;
+
+    // Paired Sample t-Test & N-Gain Score
+    if (
+      (selectedTests.includes('paired-ttest') || selectedTests.includes('ngain')) &&
+      preCol &&
+      postCol
+    ) {
+      const preVals: number[] = [];
+      const postVals: number[] = [];
+      for (const row of rows) {
+        const vPre = Number(row[preCol]);
+        const vPost = Number(row[postCol]);
+        if (!isNaN(vPre) && !isNaN(vPost)) {
+          preVals.push(vPre);
+          postVals.push(vPost);
+        }
+      }
+
+      if (preVals.length >= 3) {
+        const { tTest, nGain } = computePairedTTest(
+          preVals,
+          postVals,
+          preCol,
+          postCol,
+          idealMax,
+          significanceLevel
+        );
+        results.pairedTTest = tTest;
+        results.nGain = nGain;
+      }
+    }
+
+    // Independent Sample t-Test
+    if (selectedTests.includes('independent-ttest') && groupCol && scoreCol) {
+      const groupMap = new Map<string, number[]>();
+      for (const row of rows) {
+        const grp = String(row[groupCol] || '').trim();
+        const sc = Number(row[scoreCol]);
+        if (grp && !isNaN(sc)) {
+          if (!groupMap.has(grp)) groupMap.set(grp, []);
+          groupMap.get(grp)!.push(sc);
+        }
+      }
+
+      const groupKeys = Array.from(groupMap.keys());
+      if (groupKeys.length >= 2) {
+        const groupA = groupMap.get(groupKeys[0])!;
+        const groupB = groupMap.get(groupKeys[1])!;
+        if (groupA.length >= 2 && groupB.length >= 2) {
+          results.independentTTest = computeIndependentTTest(
+            groupA,
+            groupB,
+            groupKeys[0],
+            groupKeys[1],
+            scoreCol,
+            significanceLevel
+          );
+        }
+      }
+    }
+
+    // One-Way ANOVA
+    if (selectedTests.includes('oneway-anova') && groupCol && scoreCol) {
+      const groupsObj: Record<string, number[]> = {};
+      for (const row of rows) {
+        const grp = String(row[groupCol] || '').trim();
+        const sc = Number(row[scoreCol]);
+        if (grp && !isNaN(sc)) {
+          if (!groupsObj[grp]) groupsObj[grp] = [];
+          groupsObj[grp].push(sc);
+        }
+      }
+
+      const groupsList = Object.entries(groupsObj).map(([name, scores]) => ({ name, scores }));
+      if (groupsList.length >= 2) {
+        results.oneWayAnova = computeOneWayAnova(
+          groupsList,
+          scoreCol,
+          groupCol,
+          significanceLevel
+        );
+      }
+    }
+
+    // Non-Parametric Tests (Manual or Auto-fallback)
+    if (
+      selectedTests.includes('nonparametric') ||
+      (results.normality && !results.normality[0]?.normal)
+    ) {
+      if (groupCol && scoreCol) {
+        const groupMap = new Map<string, number[]>();
+        for (const row of rows) {
+          const grp = String(row[groupCol] || '').trim();
+          const sc = Number(row[scoreCol]);
+          if (grp && !isNaN(sc)) {
+            if (!groupMap.has(grp)) groupMap.set(grp, []);
+            groupMap.get(grp)!.push(sc);
+          }
+        }
+        const groupKeys = Array.from(groupMap.keys());
+        if (groupKeys.length === 2) {
+          results.nonParametric = computeMannWhitneyU(
+            groupMap.get(groupKeys[0])!,
+            groupMap.get(groupKeys[1])!,
+            groupKeys[0],
+            groupKeys[1],
+            scoreCol
+          );
+        } else if (groupKeys.length >= 3) {
+          const groupsList = groupKeys.map((k) => ({ name: k, scores: groupMap.get(k)! }));
+          results.nonParametric = computeKruskalWallis(groupsList, scoreCol, groupCol);
+        }
+      } else if (preCol && postCol) {
+        const preVals: number[] = [];
+        const postVals: number[] = [];
+        for (const row of rows) {
+          const vPre = Number(row[preCol]);
+          const vPost = Number(row[postCol]);
+          if (!isNaN(vPre) && !isNaN(vPost)) {
+            preVals.push(vPre);
+            postVals.push(vPost);
+          }
+        }
+        if (preVals.length >= 3) {
+          results.nonParametric = computeWilcoxonSignedRank(
+            preVals,
+            postVals,
+            `${preCol} vs ${postCol}`,
+            scoreCol || 'Skor'
+          );
+        }
+      }
+    }
+  }
+
+  // 9. GENERASI NARASI DRAF DENGAN STRICT NUMBER GUARD (NILAI TERHITUNG)
   results.explanations = generateDeterministicExplanations(results);
 
   return results;
@@ -1076,6 +1284,32 @@ function generateDeterministicExplanations(res: AnalysisResults): Record<string,
   if (res.correlation && res.correlation.length > 0) {
     const summary = res.correlation.map((c) => `${c.variable1} dan ${c.variable2} (r = ${formatNumber(c.coefficient, 3)}, ${c.strength})`).join('; ');
     exp.correlation = `Hasil analisis korelasi Pearson antar variabel menunjukkan tingkat hubungan sebagai berikut: ${summary}.`;
+  }
+
+  if (res.pairedTTest) {
+    const pt = res.pairedTTest;
+    exp.pairedTTest = `Pengujian Paired Sample t-Test menunjukkan rata-rata nilai pra-perlakuan (${pt.preVar}) sebesar ${formatNumber(pt.meanPre, 2)} meningkat menjadi ${formatNumber(pt.meanPost, 2)} pada pasca-perlakuan (${pt.postVar}), dengan selisih rata-rata (mean difference) sebesar ${formatNumber(pt.meanDiff, 2)}. Nilai t hitung tercatat sebesar ${formatNumber(pt.tHitung, 3)} dibandingkan t tabel ${formatNumber(pt.tTabel, 3)} (df = ${pt.df}) dengan nilai signifikansi p = ${formatNumber(pt.pValue, 4)}. Karena p < 0,05 dan t hitung > t tabel, terdapat perbedaan peningkatan yang signifikan secara statistik setelah pemberian intervensi.`;
+  }
+
+  if (res.nGain) {
+    const ng = res.nGain;
+    exp.nGain = `Analisis efektivitas peningkatan hasil belajar menggunakan formula N-Gain Score ternormalisasi (Hake 1998) menghasilkan rata-rata skor g sebesar ${formatNumber(ng.meanNGainScore, 3)} atau ${formatNumber(ng.meanNGainPercent, 1)}%. Berdasarkan kriteria interpretasi Hake, peningkatan ini berada pada kategori '${ng.hakeCategory}'. Menurut kriteria efektivitas Meltzer (2002), perlakuan pembelajaran ini dinyatakan berkualifikasi '${ng.meltzerCategory}'.`;
+  }
+
+  if (res.independentTTest) {
+    const it = res.independentTTest;
+    const rec = it.recommendedRow;
+    exp.independentTTest = `Uji Independent Sample t-Test pada variabel ${it.testVar} membandingkan kelompok ${it.groups[0].groupName} (Mean = ${formatNumber(it.groups[0].mean, 2)}) dan ${it.groups[1].groupName} (Mean = ${formatNumber(it.groups[1].mean, 2)}). Uji homogenitas varians Levene menghasilkan F = ${formatNumber(it.levene.fStatistic, 3)} (Sig. = ${formatNumber(it.levene.pValue, 3)}). Berdasarkan hasil tersebut, baris yang dibaca adalah '${rec.assumption}' dengan nilai t hitung = ${formatNumber(rec.tHitung, 3)} (df = ${formatNumber(rec.df, 1)}, Sig. 2-tailed = ${formatNumber(rec.pValue, 4)}). ${it.conclusion}`;
+  }
+
+  if (res.oneWayAnova) {
+    const an = res.oneWayAnova;
+    exp.oneWayAnova = `Uji One-Way ANOVA pada variabel terikat ${an.dependentVar} berdasarkan faktor kelompok ${an.factorVar} menghasilkan nilai F hitung sebesar ${formatNumber(an.fHitung, 3)} dibandingkan F tabel ${formatNumber(an.fTabel, 3)} dengan nilai signifikansi p = ${formatNumber(an.pValue, 4)}. ${an.conclusion}`;
+  }
+
+  if (res.nonParametric) {
+    const np = res.nonParametric;
+    exp.nonParametric = `Uji non-parametrik ${np.testName} pada variabel ${np.dependentVar} menghasilkan nilai statistik uji = ${formatNumber(np.statistic, 3)}${np.zValue !== undefined ? ` (Z = ${formatNumber(np.zValue, 3)})` : ''} dengan Asymp. Sig. (2-tailed) p = ${formatNumber(np.pValue, 4)}. ${np.conclusion}`;
   }
 
   return exp;

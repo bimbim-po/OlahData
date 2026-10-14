@@ -31,6 +31,7 @@ import {
   Loader2,
   SlidersHorizontal,
   HelpCircle,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -50,6 +51,17 @@ import { formatNumber, formatDateTime } from '@/lib/format';
 import { getProject, getResult, exportResult } from '@/lib/api';
 import { buildWordTableHtml, copyHtmlAndText, copyWordTable } from '@/lib/word-table';
 import { SpssOutputViewer } from '@/components/spss-output-viewer';
+import { ThesisDefenseCompanion } from '@/components/thesis-defense-companion';
+import { computeDeterministicStats } from '@/lib/stats-engine';
+import type {
+  PairedTTestResult,
+  NGainSummary,
+  IndividualNGain,
+  IndependentTTestResult,
+  OneWayAnovaResult,
+  TukeyHsdComparison,
+  NonParametricResult,
+} from '@/lib/comparative-stats';
 import {
   generateDescriptiveIntinya,
   generateValidityIntinya,
@@ -132,7 +144,114 @@ export default function HasilPage() {
   const [isExportingWord, setIsExportingWord] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [showItemDetails, setShowItemDetails] = useState(false);
+  const [showSpearmanHetero, setShowSpearmanHetero] = useState(false);
   const { toast } = useToast();
+
+  const handleEliminateInvalidItems = () => {
+    if (!results || !results.validity) return;
+    const invalidItems = results.validity.filter((v) => !v.valid).map((v) => v.item);
+    if (invalidItems.length === 0) return;
+
+    const store = useWizardStore.getState();
+    store.eliminateInvalidItems(invalidItems);
+    const updatedState = useWizardStore.getState();
+
+    const newResults = computeDeterministicStats({
+      rows: updatedState.fileData,
+      constructs: updatedState.constructs,
+      selectedTests: updatedState.selectedTests,
+      reverseItems: updatedState.reverseItems,
+      calculationMethod: updatedState.calculationMethod,
+      datasetMeta: updatedState.datasetMeta || undefined,
+      researchDesign: updatedState.researchDesign,
+      preCol: updatedState.preCol,
+      postCol: updatedState.postCol,
+      groupCol: updatedState.groupCol,
+      scoreCol: updatedState.scoreCol,
+      idealMaxScore: updatedState.idealMaxScore,
+      projectId,
+      dataVersionId: `dv-${updatedState.dataVersion}`,
+    });
+
+    store.setCurrentResults(newResults);
+    setResults(newResults);
+    toast({
+      title: 'Versi Revisi Berhasil Dibuat!',
+      description: `${invalidItems.length} butir gugur (${invalidItems.join(', ')}) berhasil dieliminasi dan seluruh analisis dihitung ulang secara otomatis.`,
+      variant: 'success',
+    });
+  };
+
+  const handleEliminateOutliers = (rowNumbers: number[]) => {
+    if (rowNumbers.length === 0) return;
+
+    const store = useWizardStore.getState();
+    store.eliminateOutliers(rowNumbers);
+    const updatedState = useWizardStore.getState();
+
+    const newResults = computeDeterministicStats({
+      rows: updatedState.fileData,
+      constructs: updatedState.constructs,
+      selectedTests: updatedState.selectedTests,
+      reverseItems: updatedState.reverseItems,
+      calculationMethod: updatedState.calculationMethod,
+      datasetMeta: updatedState.datasetMeta || undefined,
+      researchDesign: updatedState.researchDesign,
+      preCol: updatedState.preCol,
+      postCol: updatedState.postCol,
+      groupCol: updatedState.groupCol,
+      scoreCol: updatedState.scoreCol,
+      idealMaxScore: updatedState.idealMaxScore,
+      projectId,
+      dataVersionId: `dv-${updatedState.dataVersion}`,
+    });
+
+    store.setCurrentResults(newResults);
+    setResults(newResults);
+    toast({
+      title: 'Responden Outlier Berhasil Dikecualikan!',
+      description: `${rowNumbers.length} responden outlier residual (|Z| > 2,5) dieksklusi dan model analisis dihitung ulang (versi baru dibuat).`,
+      variant: 'success',
+    });
+  };
+
+  const computedTabs = useMemo<TabItem[]>(() => {
+    if (!results) return TABS_LIST;
+
+    if (results.researchDesign === 'comparative') {
+      const tabs: TabItem[] = [
+        { id: 'descriptive', label: 'Deskriptif', icon: BarChart3 },
+      ];
+      if (results.pairedTTest || results.nGain) {
+        tabs.push({ id: 'paired-ttest', label: 'Paired t-Test & N-Gain', icon: GitCompare });
+      }
+      if (results.independentTTest) {
+        tabs.push({ id: 'independent-ttest', label: 'Independent t-Test', icon: GitCompare });
+      }
+      if (results.oneWayAnova) {
+        tabs.push({ id: 'oneway-anova', label: 'One-Way ANOVA', icon: Layers });
+      }
+      if (results.nonParametric) {
+        tabs.push({ id: 'nonparametric', label: 'Uji Non-Parametrik', icon: ShieldCheck });
+      }
+      return tabs;
+    }
+
+    const tabs: TabItem[] = [...TABS_LIST];
+    if (results.pairedTTest || results.nGain) {
+      tabs.push({ id: 'paired-ttest', label: 'Paired t-Test & N-Gain', icon: GitCompare });
+    }
+    if (results.independentTTest) {
+      tabs.push({ id: 'independent-ttest', label: 'Independent t-Test', icon: GitCompare });
+    }
+    if (results.oneWayAnova) {
+      tabs.push({ id: 'oneway-anova', label: 'One-Way ANOVA', icon: Layers });
+    }
+    if (results.nonParametric) {
+      tabs.push({ id: 'nonparametric', label: 'Uji Non-Parametrik', icon: ShieldCheck });
+    }
+    return tabs;
+  }, [results]);
 
   const loadData = React.useCallback(async () => {
     setIsLoading(true);
@@ -251,12 +370,17 @@ export default function HasilPage() {
     assumptions: 'Uji Asumsi Klasik (Normalitas, VIF, Glejser)',
     regression: 'Regresi Linier Berganda (OLS)',
     correlation: 'Korelasi Pearson',
+    'paired-ttest': 'Paired Sample t-Test & N-Gain',
+    'independent-ttest': 'Independent Sample t-Test & Levene',
+    'oneway-anova': 'One-Way ANOVA & Post-Hoc Tukey',
+    nonparametric: 'Uji Non-Parametrik Alternatif',
   };
 
-  // Navigasi Sebelumnya & Berikutnya antar-tab
-  const currentTabIndex = TAB_ORDER.indexOf(activeTab);
-  const prevTabKey = currentTabIndex > 0 ? TAB_ORDER[currentTabIndex - 1] : null;
-  const nextTabKey = currentTabIndex < TAB_ORDER.length - 1 ? TAB_ORDER[currentTabIndex + 1] : null;
+  // Navigasi Sebelumnya & Berikutnya antar-tab dinamis
+  const activeTabOrder = useMemo(() => computedTabs.map((t) => t.id), [computedTabs]);
+  const currentTabIndex = activeTabOrder.indexOf(activeTab);
+  const prevTabKey = currentTabIndex > 0 ? activeTabOrder[currentTabIndex - 1] : null;
+  const nextTabKey = currentTabIndex < activeTabOrder.length - 1 ? activeTabOrder[currentTabIndex + 1] : null;
 
   // Unduh Cepat Word dari Header
   const handleDirectWordDownload = async () => {
@@ -1527,6 +1651,373 @@ export default function HasilPage() {
     },
   ];
 
+  // 7. Paired Sample t-Test
+  const pairedTTestCols: ColumnDef<PairedTTestResult>[] = [
+    {
+      key: 'pairName',
+      header: 'Pasangan Pengujian',
+      render: (r) => (
+        <span className="font-semibold text-foreground">
+          {r.preVar} &rarr; {r.postVar}
+        </span>
+      ),
+      getValue: (r) => `${r.preVar} - ${r.postVar}`,
+    },
+    {
+      key: 'meanPre',
+      header: 'Mean Pre',
+      align: 'right',
+      getValue: (r) => formatNumber(r.meanPre, 3),
+    },
+    {
+      key: 'meanPost',
+      header: 'Mean Post',
+      align: 'right',
+      getValue: (r) => formatNumber(r.meanPost, 3),
+    },
+    {
+      key: 'meanDiff',
+      header: 'Selisih (Mean Diff)',
+      align: 'right',
+      render: (r) => (
+        <span className="font-semibold text-primary">
+          {formatNumber(r.meanDiff, 3)}
+        </span>
+      ),
+      getValue: (r) => formatNumber(r.meanDiff, 3),
+    },
+    {
+      key: 'stdErrorDiff',
+      header: 'Std. Error',
+      align: 'right',
+      getValue: (r) => formatNumber(r.stdErrorDiff, 3),
+    },
+    {
+      key: 'tHitung',
+      header: 't Hitung',
+      align: 'right',
+      render: (r) => <span className="font-semibold">{formatNumber(r.tHitung, 3)}</span>,
+      getValue: (r) => formatNumber(r.tHitung, 3),
+    },
+    {
+      key: 'tTabel',
+      header: `t Tabel (df=${results?.pairedTTest?.df || 0})`,
+      align: 'right',
+      getValue: (r) => formatNumber(r.tTabel, 3),
+    },
+    {
+      key: 'pValue',
+      header: 'Sig. (2-tailed)',
+      align: 'right',
+      getValue: (r) => formatNumber(r.pValue, 4),
+    },
+    {
+      key: 'significant',
+      header: 'Kesimpulan',
+      align: 'center',
+      render: (r) => (
+        <Badge variant={r.significant ? 'pine' : 'secondary'} className="text-[12px]">
+          {r.significant ? 'Signifikan Meningkat' : 'Tidak Signifikan'}
+        </Badge>
+      ),
+      getValue: (r) => (r.significant ? 'Signifikan' : 'Tidak'),
+    },
+  ];
+
+  // 8. N-Gain Score Summary
+  const nGainCols: ColumnDef<NGainSummary>[] = [
+    {
+      key: 'metric',
+      header: 'Metrik Evaluasi',
+      render: () => <span className="font-semibold">N-Gain Score Ternormalisasi</span>,
+      getValue: () => 'N-Gain Score',
+    },
+    {
+      key: 'meanScorePre',
+      header: 'Mean Skor Pre',
+      align: 'right',
+      getValue: (r) => formatNumber(r.meanScorePre, 2),
+    },
+    {
+      key: 'meanScorePost',
+      header: 'Mean Skor Post',
+      align: 'right',
+      getValue: (r) => formatNumber(r.meanScorePost, 2),
+    },
+    {
+      key: 'meanNGainScore',
+      header: 'Rata-rata N-Gain (g)',
+      align: 'right',
+      render: (r) => (
+        <span className="font-semibold text-primary">{formatNumber(r.meanNGainScore, 3)}</span>
+      ),
+      getValue: (r) => formatNumber(r.meanNGainScore, 3),
+    },
+    {
+      key: 'meanNGainPercent',
+      header: 'N-Gain Persen (%)',
+      align: 'right',
+      render: (r) => (
+        <span className="font-semibold text-primary">{formatNumber(r.meanNGainPercent, 1)}%</span>
+      ),
+      getValue: (r) => `${formatNumber(r.meanNGainPercent, 1)}%`,
+    },
+    {
+      key: 'hakeCategory',
+      header: 'Kategori Hake (1998)',
+      align: 'center',
+      render: (r) => (
+        <Badge
+          variant={
+            r.hakeCategory === 'Tinggi'
+              ? 'pine'
+              : r.hakeCategory === 'Sedang'
+              ? 'amber'
+              : 'secondary'
+          }
+          className="text-[12px]"
+        >
+          {r.hakeCategory}
+        </Badge>
+      ),
+      getValue: (r) => r.hakeCategory,
+    },
+    {
+      key: 'meltzerCategory',
+      header: 'Efektivitas Meltzer (2002)',
+      align: 'center',
+      render: (r) => (
+        <Badge
+          variant={
+            r.meltzerCategory === 'Efektif'
+              ? 'pine'
+              : r.meltzerCategory === 'Cukup Efektif'
+              ? 'brand'
+              : 'amber'
+          }
+          className="text-[12px]"
+        >
+          {r.meltzerCategory}
+        </Badge>
+      ),
+      getValue: (r) => r.meltzerCategory,
+    },
+  ];
+
+  // 9. Independent Sample t-Test
+  const independentTTestCols: ColumnDef<{
+    assumption: string;
+    fLevene: number | string;
+    sigLevene: number | string;
+    tHitung: number;
+    df: number;
+    pValue: number;
+    meanDiff: number;
+    stdErrorDiff: number;
+    ciLower: number;
+    ciUpper: number;
+    isRecommended: boolean;
+  }>[] = [
+    {
+      key: 'assumption',
+      header: 'Asumsi Varians',
+      render: (r) => (
+        <div className="flex items-center gap-1.5 font-medium">
+          <span>{r.assumption}</span>
+          {r.isRecommended && (
+            <Badge variant="amber" className="text-[10px] px-1.5 py-0">
+              ★ Rekomendasi
+            </Badge>
+          )}
+        </div>
+      ),
+      getValue: (r) => r.assumption,
+    },
+    {
+      key: 'fLevene',
+      header: 'Levene F',
+      align: 'right',
+      getValue: (r) => (typeof r.fLevene === 'number' ? formatNumber(r.fLevene, 3) : r.fLevene),
+    },
+    {
+      key: 'sigLevene',
+      header: 'Levene Sig.',
+      align: 'right',
+      getValue: (r) => (typeof r.sigLevene === 'number' ? formatNumber(r.sigLevene, 3) : r.sigLevene),
+    },
+    {
+      key: 'tHitung',
+      header: 't Hitung',
+      align: 'right',
+      render: (r) => <span className="font-semibold">{formatNumber(r.tHitung, 3)}</span>,
+      getValue: (r) => formatNumber(r.tHitung, 3),
+    },
+    {
+      key: 'df',
+      header: 'df',
+      align: 'right',
+      getValue: (r) => formatNumber(r.df, 1),
+    },
+    {
+      key: 'pValue',
+      header: 'Sig. (2-tailed)',
+      align: 'right',
+      render: (r) => <span className="font-semibold">{formatNumber(r.pValue, 4)}</span>,
+      getValue: (r) => formatNumber(r.pValue, 4),
+    },
+    {
+      key: 'meanDiff',
+      header: 'Mean Diff',
+      align: 'right',
+      getValue: (r) => formatNumber(r.meanDiff, 3),
+    },
+    {
+      key: 'stdErrorDiff',
+      header: 'Std. Error',
+      align: 'right',
+      getValue: (r) => formatNumber(r.stdErrorDiff, 3),
+    },
+  ];
+
+  // 10. One-Way ANOVA
+  const oneWayAnovaCols: ColumnDef<{
+    source: string;
+    ss: number;
+    df: number;
+    ms: number;
+    f: number | string;
+    sig: number | string;
+  }>[] = [
+    {
+      key: 'source',
+      header: 'Sumber Variasi',
+      render: (r) => <span className="font-semibold">{r.source}</span>,
+      getValue: (r) => r.source,
+    },
+    {
+      key: 'ss',
+      header: 'Sum of Squares',
+      align: 'right',
+      getValue: (r) => formatNumber(r.ss, 3),
+    },
+    {
+      key: 'df',
+      header: 'df',
+      align: 'right',
+      getValue: (r) => String(r.df),
+    },
+    {
+      key: 'ms',
+      header: 'Mean Square',
+      align: 'right',
+      getValue: (r) => (r.ms > 0 ? formatNumber(r.ms, 3) : '-'),
+    },
+    {
+      key: 'f',
+      header: 'F Hitung',
+      align: 'right',
+      render: (r) => <span className="font-semibold">{typeof r.f === 'number' ? formatNumber(r.f, 3) : r.f}</span>,
+      getValue: (r) => (typeof r.f === 'number' ? formatNumber(r.f, 3) : r.f),
+    },
+    {
+      key: 'sig',
+      header: 'Sig.',
+      align: 'right',
+      render: (r) => <span className="font-semibold">{typeof r.sig === 'number' ? formatNumber(r.sig, 4) : r.sig}</span>,
+      getValue: (r) => (typeof r.sig === 'number' ? formatNumber(r.sig, 4) : r.sig),
+    },
+  ];
+
+  // 11. Non-Parametric Tests
+  const nonParametricCols: ColumnDef<NonParametricResult>[] = [
+    {
+      key: 'testName',
+      header: 'Uji Non-Parametrik',
+      render: (r) => <span className="font-semibold">{r.testName}</span>,
+      getValue: (r) => r.testName,
+    },
+    {
+      key: 'dependentVar',
+      header: 'Variabel',
+      getValue: (r) => r.dependentVar,
+    },
+    {
+      key: 'groupVar',
+      header: 'Kelompok / Pasangan',
+      getValue: (r) => r.groupVar || 'Sampel Berpasangan',
+    },
+    {
+      key: 'statistic',
+      header: 'Nilai Statistik Uji',
+      align: 'right',
+      render: (r) => <span className="font-semibold">{formatNumber(r.statistic, 3)}</span>,
+      getValue: (r) => formatNumber(r.statistic, 3),
+    },
+    {
+      key: 'zValue',
+      header: 'Z Hitung (Asymptotic)',
+      align: 'right',
+      getValue: (r) => (r.zValue !== undefined ? formatNumber(r.zValue, 3) : '-'),
+    },
+    {
+      key: 'pValue',
+      header: 'Asymp. Sig. (2-tailed)',
+      align: 'right',
+      render: (r) => <span className="font-semibold">{formatNumber(r.pValue, 4)}</span>,
+      getValue: (r) => formatNumber(r.pValue, 4),
+    },
+    {
+      key: 'significant',
+      header: 'Kesimpulan',
+      align: 'center',
+      render: (r) => (
+        <Badge variant={r.significant ? 'pine' : 'secondary'} className="text-[12px]">
+          {r.significant ? 'Berbeda Signifikan' : 'Tidak Berbeda Signifikan'}
+        </Badge>
+      ),
+      getValue: (r) => (r.significant ? 'Signifikan' : 'Tidak'),
+    },
+  ];
+
+  // 12. Spearman Rank Heteroscedasticity Alternative
+  const spearmanHeteroCols: ColumnDef<HeteroscedasticityResult>[] = [
+    {
+      key: 'variable',
+      header: 'Variabel Bebas',
+      render: (r) => <span className="font-semibold text-foreground">{r.variable}</span>,
+      getValue: (r) => r.variable,
+    },
+    {
+      key: 'test',
+      header: 'Metode Uji',
+      getValue: (r) => r.test,
+    },
+    {
+      key: 'tHitung',
+      header: 't Hitung',
+      align: 'right',
+      getValue: (r) => formatNumber(r.tHitung, 3),
+    },
+    {
+      key: 'pValue',
+      header: 'Sig. (2-tailed)',
+      align: 'right',
+      render: (r) => <span className="font-semibold">{formatNumber(r.pValue, 3)}</span>,
+      getValue: (r) => formatNumber(r.pValue, 3),
+    },
+    {
+      key: 'significant',
+      header: 'Kesimpulan Homoskedastisitas',
+      align: 'center',
+      render: (r) => (
+        <Badge variant={!r.significant ? 'pine' : 'destructive'} className="text-[12px]">
+          {!r.significant ? 'Bebas Heteroskedastisitas (Sig. > 0,05)' : 'Terindikasi Heteroskedastisitas'}
+        </Badge>
+      ),
+      getValue: (r) => (!r.significant ? 'Bebas' : 'Terindikasi'),
+    },
+  ];
+
   return (
     <div className="space-y-6 max-w-full min-w-0">
       {/* Sticky Header Meja Kerja Hasil */}
@@ -1720,7 +2211,7 @@ export default function HasilPage() {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full min-w-0">
               {/* Scrollable Tabs dengan Shadow Indicator, Fade Gradient, dan Aksesibilitas Penuh */}
               <ScrollableTabs
-                tabs={TABS_LIST}
+                tabs={computedTabs}
                 activeTab={activeTab}
                 onSelectTab={setActiveTab}
               />
@@ -1837,6 +2328,31 @@ export default function HasilPage() {
                   />
                 )}
 
+                {/* Troubleshooter Uji Validitas */}
+                {results.validity && results.validity.some((v) => !v.valid) && (
+                  <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-50/70 dark:bg-amber-950/20 dark:border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                        <span className="font-semibold text-xs sm:text-sm text-foreground">
+                          Asisten Penyelamat Data: Ditemukan {results.validity.filter((v) => !v.valid).length} butir gugur ({results.validity.filter((v) => !v.valid).map((v) => v.item).join(', ')})
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Ingin menghapus butir gugur dan menghitung ulang skor komposit variabel serta seluruh regresi secara otomatis? Dataset asli Anda tetap aman dan utuh di Riwayat.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={handleEliminateInvalidItems}
+                      className="bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shrink-0 rounded-lg min-h-[38px] shadow-sm cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                      Eliminasi Butir Gugur &amp; Hitung Ulang (Buat Versi Baru)
+                    </Button>
+                  </div>
+                )}
+
                 <ResultTable
                   tableNumber="Tabel 4.2"
                   title="Hasil Pengujian Validitas Instrumen Kuesioner (Pearson Product Moment)"
@@ -1853,6 +2369,16 @@ export default function HasilPage() {
                   explanation={results.explanations.validity}
                   onHoverNumber={setHighlightedNumber}
                   activeNumber={highlightedNumber}
+                />
+
+                {/* Bekal Sidang Skripsi */}
+                <ThesisDefenseCompanion
+                  testType="validity"
+                  dataMetrics={{
+                    n: results.respondentCount,
+                    df: results.respondentCount - 2,
+                    rTabel: results.validity?.[0]?.rTabel,
+                  }}
                 />
               </TabsContent>
 
@@ -1888,10 +2414,100 @@ export default function HasilPage() {
                   onHoverNumber={setHighlightedNumber}
                   activeNumber={highlightedNumber}
                 />
+
+                {/* Bekal Sidang Skripsi */}
+                <ThesisDefenseCompanion
+                  testType="reliability"
+                  dataMetrics={{
+                    n: results.respondentCount,
+                    cronbachAlpha: results.reliability?.[0]?.cronbachAlpha,
+                  }}
+                />
               </TabsContent>
 
               {/* 4. UJI ASUMSI KLASIK */}
               <TabsContent value="assumptions" className="space-y-6 mt-4">
+                {/* Asisten Penyembuh Asumsi Klasik (One-Click Troubleshooter) */}
+                {((results.normality && !results.normality[0]?.normal) ||
+                  (results.heteroscedasticity &&
+                    results.heteroscedasticity.some((h) => h.significant))) && (
+                  <div className="p-4 sm:p-5 rounded-xl border border-blue-500/30 bg-blue-50/70 dark:bg-blue-950/20 dark:border-blue-500/30 space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                          <span className="font-semibold text-sm text-foreground">
+                            Asisten Penyembuh Asumsi Klasik
+                          </span>
+                          <Badge variant="brand" className="text-[10px]">
+                            Solusi Metodologis Sah
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Asumsi normalitas atau heteroskedastisitas belum terpenuhi? OlahData menyediakan 2 tindakan penyelamat terukur sesuai metodologi riset Prof. Dr. Imam Ghozali (2018):
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                      {/* 1. Outlier Residual Eliminator */}
+                      <div className="p-3.5 rounded-lg bg-background border border-border space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-xs text-foreground">
+                            1. Deteksi &amp; Eliminasi Outlier Residual
+                          </span>
+                          <Badge variant="outline" className="text-[10px] font-mono">
+                            |Z_res| &gt; 2,5
+                          </Badge>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          {results.residualOutliers && results.residualOutliers.totalOutliers > 0
+                            ? `Ditemukan ${results.residualOutliers.totalOutliers} responden dengan residual ekstrim (Baris: ${results.residualOutliers.outliers.map((o) => o.rowNumber).join(', ')}). Estimasi nilai Sig. normalitas baru: ~${formatNumber(results.residualOutliers.estimatedNormalSigIfRemoved, 3)}.`
+                            : 'Tidak terdeteksi outlier residual ekstrim (|Z| > 2,5). Model residual relatif stabil.'}
+                        </p>
+                        {results.residualOutliers && results.residualOutliers.totalOutliers > 0 && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() =>
+                              handleEliminateOutliers(
+                                results.residualOutliers!.outliers.map((o) => o.rowNumber)
+                              )
+                            }
+                            className="w-full text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-md cursor-pointer font-medium"
+                          >
+                            Kecualikan {results.residualOutliers.totalOutliers} Responden Outlier &amp; Jalankan Ulang
+                          </Button>
+                        )}
+                      </div>
+
+                      {/* 2. Rank Spearman Alternative Switcher */}
+                      <div className="p-3.5 rounded-lg bg-background border border-border space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-xs text-foreground">
+                            2. Peralihan Metode Uji Sah (Rank Spearman)
+                          </span>
+                          <Badge variant="outline" className="text-[10px]">
+                            Prof. Imam Ghozali
+                          </Badge>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          Uji Korelasi Rank Spearman mengkorelasikan variabel bebas terhadap |residual|. Jika Sig. &gt; 0,05, bebas heteroskedastisitas tanpa perlu memotong data.
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowSpearmanHetero(!showSpearmanHetero)}
+                          className="w-full text-xs rounded-md cursor-pointer font-medium"
+                        >
+                          {showSpearmanHetero ? 'Sembunyikan Uji Spearman' : 'Tampilkan Uji Rank Spearman'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* 4a. Normalitas */}
                 <div className="space-y-4">
                   <div className="border-b border-border pb-2">
@@ -1938,6 +2554,15 @@ export default function HasilPage() {
                     onHoverNumber={setHighlightedNumber}
                     activeNumber={highlightedNumber}
                   />
+
+                  {/* Bekal Sidang Skripsi */}
+                  <ThesisDefenseCompanion
+                    testType="normality"
+                    dataMetrics={{
+                      n: results.respondentCount,
+                      ksSig: results.normality?.[0]?.pValue,
+                    }}
+                  />
                 </div>
 
                 {/* 4b. Multikolinearitas */}
@@ -1969,6 +2594,16 @@ export default function HasilPage() {
                     onHoverNumber={setHighlightedNumber}
                     activeNumber={highlightedNumber}
                   />
+
+                  {/* Bekal Sidang Skripsi */}
+                  <ThesisDefenseCompanion
+                    testType="multicollinearity"
+                    dataMetrics={{
+                      n: results.respondentCount,
+                      maxVif: results.multicollinearity?.reduce((max, m) => Math.max(max, m.vif), 0),
+                      minTolerance: results.multicollinearity?.reduce((min, m) => Math.min(min, m.tolerance), 1),
+                    }}
+                  />
                 </div>
 
                 {/* 4c. Heteroskedastisitas */}
@@ -1989,6 +2624,21 @@ export default function HasilPage() {
                     highlightedValue={highlightedNumber}
                   />
 
+                  {/* Alternative Spearman Rank Table if toggled */}
+                  {showSpearmanHetero && results.spearmanHetero && (
+                    <div className="space-y-2 pt-2">
+                      <ResultTable
+                        tableNumber="Tabel 4.6c"
+                        title="Hasil Uji Heteroskedastisitas Alternatif (Korelasi Rank Spearman)"
+                        note="* Rujukan: Prof. Dr. Imam Ghozali (2018). Uji korelasi Rank Spearman antara variabel independen dengan absolute residual. Kriteria: Sig. > 0,05 bebas heteroskedastisitas."
+                        columns={spearmanHeteroCols}
+                        data={results.spearmanHetero}
+                        rowKey={(r) => r.variable}
+                        highlightedValue={highlightedNumber}
+                      />
+                    </div>
+                  )}
+
                   <ExplanationBox
                     title="Interpretasi Uji Heteroskedastisitas"
                     summarySentence={
@@ -1999,6 +2649,15 @@ export default function HasilPage() {
                     explanation={results.explanations.heteroscedasticity}
                     onHoverNumber={setHighlightedNumber}
                     activeNumber={highlightedNumber}
+                  />
+
+                  {/* Bekal Sidang Skripsi */}
+                  <ThesisDefenseCompanion
+                    testType="heteroscedasticity"
+                    dataMetrics={{
+                      n: results.respondentCount,
+                      glejserSigMin: results.heteroscedasticity?.reduce((min, h) => Math.min(min, h.pValue), 1),
+                    }}
                   />
                 </div>
 
@@ -2181,6 +2840,20 @@ export default function HasilPage() {
                     activeNumber={highlightedNumber}
                   />
                 </div>
+
+                {/* Bekal Sidang Skripsi */}
+                <ThesisDefenseCompanion
+                  testType="regression"
+                  dataMetrics={{
+                    n: results.respondentCount,
+                    df: results.respondentCount - (results.regression?.length || 3),
+                    fHitung: results.fTest?.fHitung,
+                    fTabel: results.fTest?.fTabel,
+                    rSquare: results.determination?.rSquare,
+                    tHitung: results.regression?.[1]?.tHitung,
+                    tTabel: results.regression?.[1]?.tTabel,
+                  }}
+                />
               </TabsContent>
 
               {/* 6. KORELASI PEARSON */}
@@ -2202,6 +2875,322 @@ export default function HasilPage() {
                   onHoverNumber={setHighlightedNumber}
                   activeNumber={highlightedNumber}
                 />
+              </TabsContent>
+
+              {/* 7. PAIRED SAMPLE T-TEST & N-GAIN */}
+              <TabsContent value="paired-ttest" className="space-y-6 mt-4">
+                {results.pairedTTest && (
+                  <div className="space-y-4">
+                    <ResultTable
+                      tableNumber="Tabel 4.11"
+                      title="Hasil Uji Beda Rata-rata Berpasangan (Paired Sample t-Test)"
+                      note={`Taraf signifikansi α = 0,05 (uji 2 sisi). Derajat kebebasan df = N - 1 = ${results.pairedTTest.df}. Korelasi r = ${formatNumber(results.pairedTTest.correlation, 3)} (Sig. = ${formatNumber(results.pairedTTest.sigCorrelation, 4)}).`}
+                      columns={pairedTTestCols}
+                      data={[results.pairedTTest]}
+                      rowKey={() => 'paired-1'}
+                      highlightedValue={highlightedNumber}
+                    />
+
+                    {results.explanations.pairedTTest && (
+                      <ExplanationBox
+                        title="Interpretasi Paired Sample t-Test"
+                        summarySentence={
+                          results.pairedTTest.significant
+                            ? `Nilai t hitung ${formatNumber(results.pairedTTest.tHitung, 3)} > t tabel ${formatNumber(results.pairedTTest.tTabel, 3)} (Sig. = ${formatNumber(results.pairedTTest.pValue, 4)} < 0,05) membuktikan perlakuan berpengaruh secara signifikan.`
+                            : `Nilai t hitung ${formatNumber(results.pairedTTest.tHitung, 3)} tidak melampaui t tabel (Sig. ≥ 0,05).`
+                        }
+                        explanation={results.explanations.pairedTTest}
+                        onHoverNumber={setHighlightedNumber}
+                        activeNumber={highlightedNumber}
+                      />
+                    )}
+
+                    <ThesisDefenseCompanion
+                      testType="paired-ttest"
+                      dataMetrics={{
+                        n: results.respondentCount,
+                        df: results.pairedTTest.df,
+                        tHitung: results.pairedTTest.tHitung,
+                        tTabel: results.pairedTTest.tTabel,
+                      }}
+                    />
+                  </div>
+                )}
+
+                {results.nGain && (
+                  <div className="space-y-4 pt-6 border-t border-border">
+                    <ResultTable
+                      tableNumber="Tabel 4.12"
+                      title="Hasil Analisis Efektivitas Pembelajaran (N-Gain Score & Persen)"
+                      note={`* Skor ideal maksimal = ${results.nGain.idealMaxScore}. Formula N-Gain = (%Post - %Pre) / (100 - %Pre). Klasifikasi Hake (1998) & Kriteria Efektivitas Meltzer (2002).`}
+                      columns={nGainCols}
+                      data={[results.nGain]}
+                      rowKey={() => 'ngain-1'}
+                      highlightedValue={highlightedNumber}
+                    />
+
+                    {/* Distribusi Kategori Hake & Meltzer */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 rounded-xl border border-border bg-card space-y-2">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          Distribusi Kategori Hake (1998)
+                        </span>
+                        <div className="space-y-1.5 text-xs">
+                          {results.nGain.hakeDistribution.map((dist) => (
+                            <div key={dist.category} className="flex items-center justify-between">
+                              <span className="text-foreground">{dist.category} (g {dist.category === 'Tinggi' ? '≥ 0,70' : dist.category === 'Sedang' ? '0,30 - 0,69' : '< 0,30'}):</span>
+                              <Badge variant={dist.category === 'Tinggi' ? 'pine' : dist.category === 'Sedang' ? 'amber' : 'secondary'}>
+                                {dist.count} siswa ({formatNumber(dist.percentage, 1)}%)
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-xl border border-border bg-card space-y-2">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          Distribusi Tafsiran Meltzer (2002)
+                        </span>
+                        <div className="space-y-1.5 text-xs">
+                          {results.nGain.meltzerDistribution.map((dist) => (
+                            <div key={dist.category} className="flex items-center justify-between">
+                              <span className="text-foreground">{dist.category}:</span>
+                              <Badge variant={dist.category === 'Efektif' ? 'pine' : dist.category === 'Cukup Efektif' ? 'brand' : 'amber'}>
+                                {dist.count} siswa ({formatNumber(dist.percentage, 1)}%)
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {results.explanations.ngain && (
+                      <ExplanationBox
+                        title="Interpretasi Uji N-Gain Score"
+                        summarySentence={`Nilai rata-rata N-Gain sebesar ${formatNumber(results.nGain.meanNGainScore, 3)} (${formatNumber(results.nGain.meanNGainPercent, 1)}%) termasuk dalam kategori "${results.nGain.hakeCategory}" dan tingkat efektivitas "${results.nGain.meltzerCategory}".`}
+                        explanation={results.explanations.ngain}
+                        onHoverNumber={setHighlightedNumber}
+                        activeNumber={highlightedNumber}
+                      />
+                    )}
+
+                    <ThesisDefenseCompanion
+                      testType="ngain"
+                      dataMetrics={{
+                        nGainScore: results.nGain.meanNGainScore,
+                        nGainPercent: results.nGain.meanNGainPercent,
+                        hakeCategory: results.nGain.hakeCategory,
+                        meltzerCategory: results.nGain.meltzerCategory,
+                      }}
+                    />
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* 8. INDEPENDENT SAMPLE T-TEST */}
+              <TabsContent value="independent-ttest" className="space-y-6 mt-4">
+                {results.independentTTest && (
+                  <div className="space-y-6">
+                    {/* Ringkasan Statistik Kelompok */}
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-semibold text-foreground">Statistik Deskriptif Kelompok</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {results.independentTTest.groups.map((grp) => (
+                          <div key={grp.groupName} className="p-4 rounded-xl border border-border bg-card space-y-1">
+                            <div className="font-semibold text-foreground text-sm">{grp.groupName}</div>
+                            <div className="text-xs text-muted-foreground grid grid-cols-2 gap-2 pt-2">
+                              <div>N: <span className="font-mono font-medium text-foreground">{grp.n}</span></div>
+                              <div>Mean: <span className="font-mono font-medium text-foreground">{formatNumber(grp.mean, 3)}</span></div>
+                              <div>Std. Deviasi: <span className="font-mono font-medium text-foreground">{formatNumber(grp.stdDev, 3)}</span></div>
+                              <div>Std. Error: <span className="font-mono font-medium text-foreground">{formatNumber(grp.stdError, 3)}</span></div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <ResultTable
+                      tableNumber="Tabel 4.13"
+                      title="Hasil Uji Beda Dua Kelompok Bebas (Independent Samples t-Test)"
+                      note={`* Uji Homogenitas Levene: F = ${formatNumber(results.independentTTest.levene.fStatistic, 3)}, Sig. = ${formatNumber(results.independentTTest.levene.pValue, 4)}. Baris yang ditandai bintang (★ Rekomendasi) adalah baris yang sah digunakan sesuai hasil uji Levene.`}
+                      columns={independentTTestCols}
+                      data={results.independentTTest.rows.map((row, idx) => ({
+                        ...row,
+                        fLevene: idx === 0 ? results.independentTTest!.levene.fStatistic : '-',
+                        sigLevene: idx === 0 ? results.independentTTest!.levene.pValue : '-',
+                      }))}
+                      rowKey={(r) => r.assumption}
+                      highlightedValue={highlightedNumber}
+                    />
+
+                    {results.explanations.independentTTest && (
+                      <ExplanationBox
+                        title="Interpretasi Independent Samples t-Test"
+                        summarySentence={
+                          results.independentTTest.recommendedRow.pValue < 0.05
+                            ? `Terdapat perbedaan yang signifikan antara kedua kelompok (t = ${formatNumber(results.independentTTest.recommendedRow.tHitung, 3)}, Sig. = ${formatNumber(results.independentTTest.recommendedRow.pValue, 4)} < 0,05).`
+                            : `Tidak terdapat perbedaan signifikan antara kedua kelompok (Sig. ≥ 0,05).`
+                        }
+                        explanation={results.explanations.independentTTest}
+                        onHoverNumber={setHighlightedNumber}
+                        activeNumber={highlightedNumber}
+                      />
+                    )}
+
+                    <ThesisDefenseCompanion
+                      testType="independent-ttest"
+                      dataMetrics={{
+                        n: results.respondentCount,
+                        df: results.independentTTest.recommendedRow.df,
+                        leveneSig: results.independentTTest.levene.pValue,
+                        tHitung: results.independentTTest.recommendedRow.tHitung,
+                      }}
+                    />
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* 9. ONE-WAY ANOVA */}
+              <TabsContent value="oneway-anova" className="space-y-6 mt-4">
+                {results.oneWayAnova && (
+                  <div className="space-y-6">
+                    <ResultTable
+                      tableNumber="Tabel 4.14"
+                      title="Hasil Analisis Varians Satu Jalur (One-Way ANOVA)"
+                      note={`F tabel (df1 = ${results.oneWayAnova.dfBetween}, df2 = ${results.oneWayAnova.dfWithin}, α = 0,05) = ${formatNumber(results.oneWayAnova.fTabel, 3)}. Kriteria: F hitung > F tabel dan Sig. < 0,05.`}
+                      columns={oneWayAnovaCols}
+                      data={[
+                        {
+                          source: 'Between Groups (Antar Kelompok)',
+                          ss: results.oneWayAnova.ssBetween,
+                          df: results.oneWayAnova.dfBetween,
+                          ms: results.oneWayAnova.msBetween,
+                          f: results.oneWayAnova.fHitung,
+                          sig: results.oneWayAnova.pValue,
+                        },
+                        {
+                          source: 'Within Groups (Dalam Kelompok)',
+                          ss: results.oneWayAnova.ssWithin,
+                          df: results.oneWayAnova.dfWithin,
+                          ms: results.oneWayAnova.msWithin,
+                          f: '-',
+                          sig: '-',
+                        },
+                        {
+                          source: 'Total',
+                          ss: results.oneWayAnova.ssTotal,
+                          df: results.oneWayAnova.dfTotal,
+                          ms: 0,
+                          f: '-',
+                          sig: '-',
+                        },
+                      ]}
+                      rowKey={(r) => r.source}
+                      highlightedValue={highlightedNumber}
+                    />
+
+                    {/* Uji Post-Hoc Tukey HSD jika ada */}
+                    {results.oneWayAnova.postHocTukey && results.oneWayAnova.postHocTukey.length > 0 && (
+                      <div className="space-y-3 pt-4 border-t border-border">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-semibold text-foreground">
+                            Uji Lanjutan Post-Hoc Perbandingan Berganda (Tukey HSD)
+                          </h4>
+                          <Badge variant="outline" className="text-xs">Post-Hoc Tukey</Badge>
+                        </div>
+                        <div className="overflow-x-auto rounded-xl border border-border">
+                          <table className="w-full text-xs text-left">
+                            <thead className="bg-muted/50 border-b border-border">
+                              <tr>
+                                <th className="p-2.5 font-semibold text-foreground">(I) Kelompok</th>
+                                <th className="p-2.5 font-semibold text-foreground">(J) Kelompok</th>
+                                <th className="p-2.5 font-semibold text-right text-foreground">Mean Diff (I-J)</th>
+                                <th className="p-2.5 font-semibold text-right text-foreground">Std. Error</th>
+                                <th className="p-2.5 font-semibold text-right text-foreground">Sig.</th>
+                                <th className="p-2.5 font-semibold text-center text-foreground">Kesimpulan</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border font-mono">
+                              {results.oneWayAnova.postHocTukey.map((thsd, idx) => (
+                                <tr key={idx} className="hover:bg-muted/30">
+                                  <td className="p-2.5 font-sans font-medium text-foreground">{thsd.groupI}</td>
+                                  <td className="p-2.5 font-sans text-muted-foreground">{thsd.groupJ}</td>
+                                  <td className="p-2.5 text-right font-medium text-foreground">{formatNumber(thsd.meanDiff, 3)}</td>
+                                  <td className="p-2.5 text-right text-muted-foreground">{formatNumber(thsd.stdError, 3)}</td>
+                                  <td className="p-2.5 text-right font-semibold">{formatNumber(thsd.pValue, 4)}</td>
+                                  <td className="p-2.5 text-center font-sans">
+                                    <Badge variant={thsd.significant ? 'pine' : 'secondary'} className="text-[11px]">
+                                      {thsd.significant ? 'Berbeda Nyata' : 'Tidak Berbeda'}
+                                    </Badge>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {results.explanations.oneWayAnova && (
+                      <ExplanationBox
+                        title="Interpretasi One-Way ANOVA"
+                        summarySentence={
+                          results.oneWayAnova.significant
+                            ? `Nilai F hitung ${formatNumber(results.oneWayAnova.fHitung, 3)} > F tabel ${formatNumber(results.oneWayAnova.fTabel, 3)} (Sig. = ${formatNumber(results.oneWayAnova.pValue, 4)} < 0,05) membuktikan terdapat perbedaan rata-rata yang signifikan antar kelompok.`
+                            : `Nilai F hitung ${formatNumber(results.oneWayAnova.fHitung, 3)} tidak melampaui F tabel (Sig. ≥ 0,05).`
+                        }
+                        explanation={results.explanations.oneWayAnova}
+                        onHoverNumber={setHighlightedNumber}
+                        activeNumber={highlightedNumber}
+                      />
+                    )}
+
+                    <ThesisDefenseCompanion
+                      testType="oneway-anova"
+                      dataMetrics={{
+                        n: results.respondentCount,
+                        df: results.oneWayAnova.dfBetween,
+                        fHitung: results.oneWayAnova.fHitung,
+                        fTabel: results.oneWayAnova.fTabel,
+                      }}
+                    />
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* 10. UJI NON-PARAMETRIK */}
+              <TabsContent value="nonparametric" className="space-y-6 mt-4">
+                {results.nonParametric && (
+                  <div className="space-y-6">
+                    <ResultTable
+                      tableNumber="Tabel 4.15"
+                      title="Hasil Pengujian Statistik Non-Parametrik Alternatif"
+                      note={`Metode alternatif bebas asumsi distribusi normalitas: ${results.nonParametric.testName}. Alasan peralihan: ${results.nonParametric.reason}.`}
+                      columns={nonParametricCols}
+                      data={[results.nonParametric]}
+                      rowKey={(r) => r.testName}
+                      highlightedValue={highlightedNumber}
+                    />
+
+                    {results.explanations.nonParametric && (
+                      <ExplanationBox
+                        title={`Interpretasi Uji ${results.nonParametric.testName}`}
+                        summarySentence={results.nonParametric.conclusion}
+                        explanation={results.explanations.nonParametric}
+                        onHoverNumber={setHighlightedNumber}
+                        activeNumber={highlightedNumber}
+                      />
+                    )}
+
+                    <ThesisDefenseCompanion
+                      testType="nonparametric"
+                      dataMetrics={{
+                        n: results.respondentCount,
+                        ksSig: 0.02,
+                      }}
+                    />
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           )}
