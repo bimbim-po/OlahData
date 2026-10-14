@@ -214,37 +214,48 @@ export function AppShell({ children }: AppShellProps) {
         )}
       >
         {/* Top Header: Logo OlahData & Collapse Toggle */}
-        <div className="p-4 border-b border-sidebar-border/70 flex items-center justify-between gap-2">
-          <Link href="/app" className="flex items-center gap-2.5 group min-w-0 overflow-hidden">
-            <div className="p-1 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shrink-0">
-              <LogoIcon size={30} />
-            </div>
-            {!isCollapsed && (
-              <div className="min-w-0 flex-1">
-                <div className="font-bold text-base tracking-tight text-foreground group-hover:text-primary transition-colors truncate">
-                  {APP_NAME}
-                </div>
+        {isCollapsed ? (
+          <div className="h-16 border-b border-sidebar-border/70 flex items-center justify-center px-2">
+            <button
+              type="button"
+              onClick={() => setIsCollapsed(false)}
+              className="h-10 w-10 flex items-center justify-center rounded-xl hover:bg-muted text-foreground transition-all group cursor-pointer relative"
+              title="Perlebar bilah samping"
+              aria-label="Perlebar bilah samping"
+            >
+              <div className="transition-transform group-hover:scale-105 group-hover:opacity-0 absolute inset-0 flex items-center justify-center">
+                <LogoIcon size={30} />
               </div>
-            )}
-          </Link>
+              <div className="hidden group-hover:flex items-center justify-center text-primary">
+                <ChevronRightSquare className="h-5 w-5" />
+              </div>
+            </button>
+          </div>
+        ) : (
+          <div className="h-16 px-4 border-b border-sidebar-border/70 flex items-center justify-between gap-2">
+            <Link href="/app" className="flex items-center gap-2.5 min-w-0 group" title="Kembali ke Beranda Proyek">
+              <div className="p-1 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shrink-0">
+                <LogoIcon size={30} />
+              </div>
+              <span className="font-bold text-base tracking-tight text-foreground group-hover:text-primary transition-colors truncate">
+                {APP_NAME}
+              </span>
+            </Link>
 
-          <button
-            type="button"
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="text-muted-foreground hover:text-foreground p-1 rounded-md transition-colors cursor-pointer"
-            title={isCollapsed ? 'Perlebar bilah samping' : 'Ciutkan bilah samping'}
-            aria-label="Ciutkan atau perlebar sidebar"
-          >
-            {isCollapsed ? (
-              <ChevronRightSquare className="h-4 w-4" />
-            ) : (
+            <button
+              type="button"
+              onClick={() => setIsCollapsed(true)}
+              className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+              title="Ciutkan bilah samping"
+              aria-label="Ciutkan bilah samping"
+            >
               <ChevronLeftSquare className="h-4 w-4" />
-            )}
-          </button>
-        </div>
+            </button>
+          </div>
+        )}
 
         {/* Tombol Proyek Baru */}
-        <div className="p-3">
+        <div className={cn('p-3', isCollapsed && 'px-2')}>
           <Button
             asChild
             className={cn(
@@ -260,7 +271,7 @@ export function AppShell({ children }: AppShellProps) {
         </div>
 
         {/* Menu Navigasi Utama */}
-        <nav className="flex-1 px-3 py-1 space-y-1 overflow-y-auto">
+        <nav className={cn('flex-1 py-1 space-y-1.5 overflow-y-auto', isCollapsed ? 'px-2' : 'px-3')}>
           {NAV_ITEMS.map((item) => {
             const active = item.isActive(pathname);
             const Icon = item.icon;
@@ -270,17 +281,19 @@ export function AppShell({ children }: AppShellProps) {
                 href={item.href}
                 title={item.name}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all cursor-pointer relative',
-                  isCollapsed ? 'justify-center px-0' : 'justify-start',
+                  'flex items-center rounded-lg text-xs sm:text-sm font-medium transition-all cursor-pointer relative',
+                  isCollapsed
+                    ? 'h-10 w-10 mx-auto justify-center p-0'
+                    : 'h-10 px-3 justify-start gap-3',
                   active
-                    ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
+                    ? 'bg-primary/12 text-primary font-semibold dark:bg-primary/20 dark:text-primary-foreground border border-primary/20 shadow-xs'
                     : 'text-sidebar-foreground/80 hover:bg-muted hover:text-sidebar-foreground'
                 )}
               >
                 <Icon
                   className={cn(
-                    'h-4 w-4 shrink-0',
-                    active ? 'text-primary-foreground' : 'text-muted-foreground'
+                    'h-4 w-4 shrink-0 transition-colors',
+                    active ? 'text-primary dark:text-primary-foreground' : 'text-muted-foreground'
                   )}
                 />
                 {!isCollapsed && <span className="truncate">{item.name}</span>}
@@ -290,7 +303,7 @@ export function AppShell({ children }: AppShellProps) {
         </nav>
 
         {/* Bagian Bawah: Paket & Akun Pengguna ala Gemini */}
-        <div className="p-3 border-t border-sidebar-border/70 space-y-2">
+        <div className={cn('border-t border-sidebar-border/70 space-y-2', isCollapsed ? 'p-2' : 'p-3')}>
           {/* Item Paket Minimalis ala Gemini */}
           {!isCollapsed ? (
             <button
@@ -331,40 +344,97 @@ export function AppShell({ children }: AppShellProps) {
                   reason: 'Akses Penuh Seluruh Fitur Skripsi',
                 })
               }
-              className="w-full flex justify-center p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer"
+              className="h-10 w-10 mx-auto flex items-center justify-center rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 transition-all cursor-pointer"
               title={`Paket: ${getPlanBadgeLabel()} - Klik untuk tingkatkan`}
             >
-              <Sparkles className="h-4 w-4 text-amber-500" />
+              <Sparkles className="h-4 w-4" />
             </button>
           )}
 
-          {/* Profil Akun Pengguna dengan Tooltip Penuh & Truncate Rapi */}
-          <div
-            className={cn(
-              'flex items-center gap-2.5 p-2 rounded-xl hover:bg-muted/50 transition-colors',
-              isCollapsed && 'justify-center p-1.5'
-            )}
-          >
-            <Avatar className="h-8 w-8 shrink-0">
-              <AvatarFallback>{getUserInitials()}</AvatarFallback>
-            </Avatar>
-            {!isCollapsed && (
-              <div className="min-w-0 flex-1">
-                <p
-                  className="text-[13px] font-semibold text-foreground truncate"
-                  title={user?.name || 'Mahasiswa'}
-                >
-                  {user?.name || 'Mahasiswa'}
-                </p>
-                <p
-                  className="text-[13px] text-muted-foreground truncate"
-                  title={user?.email || 'mahasiswa@kampus.ac.id'}
-                >
-                  {user?.email || 'mahasiswa@kampus.ac.id'}
-                </p>
-              </div>
-            )}
-          </div>
+          {/* Profil Akun Pengguna dengan Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className={cn(
+                  'w-full flex items-center rounded-xl hover:bg-muted/70 transition-colors text-left cursor-pointer group',
+                  isCollapsed ? 'h-10 w-10 mx-auto justify-center p-0' : 'p-2 gap-2.5'
+                )}
+                title={user?.name || 'Mahasiswa'}
+                aria-label="Menu akun pengguna"
+              >
+                <Avatar className="h-8 w-8 shrink-0 border border-border/60">
+                  <AvatarFallback className="text-xs font-semibold bg-primary/10 text-primary">
+                    {getUserInitials()}
+                  </AvatarFallback>
+                </Avatar>
+                {!isCollapsed && (
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="text-[13px] font-semibold text-foreground truncate group-hover:text-primary transition-colors"
+                      title={user?.name || 'Mahasiswa'}
+                    >
+                      {user?.name || 'Mahasiswa'}
+                    </p>
+                    <p
+                      className="text-[11px] text-muted-foreground truncate"
+                      title={user?.email || 'mahasiswa@kampus.ac.id'}
+                    >
+                      {user?.email || 'mahasiswa@kampus.ac.id'}
+                    </p>
+                  </div>
+                )}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align={isCollapsed ? 'start' : 'end'} side={isCollapsed ? 'right' : 'top'} className="w-60 p-2 ml-2">
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-semibold leading-none text-foreground truncate">
+                    {user?.name || 'Mahasiswa Demo'}
+                  </p>
+                  <p className="text-xs leading-none text-muted-foreground truncate">
+                    {user?.email || 'mahasiswa@kampus.ac.id'}
+                  </p>
+                  <p className="text-[12px] text-primary font-medium mt-1 truncate">
+                    {user?.university || 'Perguruan Tinggi'}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/app/riwayat" className="flex items-center gap-2 w-full cursor-pointer">
+                  <History className="h-4 w-4 text-primary" />
+                  <span>Riwayat Analisis</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/app/langganan" className="flex items-center gap-2 w-full cursor-pointer">
+                  <Sparkles className="h-4 w-4 text-amber-500" />
+                  <span>Langganan &amp; Kuota ({getPlanBadgeLabel()})</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/app/bantuan" className="flex items-center gap-2 w-full cursor-pointer">
+                  <BookOpen className="h-4 w-4 text-muted-foreground" />
+                  <span>Pusat Bantuan</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/app/pengaturan" className="flex items-center gap-2 w-full cursor-pointer">
+                  <Settings className="h-4 w-4 text-muted-foreground" />
+                  <span>Pengaturan Akun</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleLogout}
+                className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                <span>Keluar</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </aside>
 
@@ -379,6 +449,20 @@ export function AppShell({ children }: AppShellProps) {
         <header className="sticky top-0 z-40 h-16 border-b border-border bg-card/95 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-2">
           {/* Breadcrumb / Nav Back */}
           <div className="flex items-center gap-2 min-w-0 flex-1">
+            {/* Desktop Sidebar Toggle Button */}
+            <button
+              type="button"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="hidden lg:inline-flex items-center justify-center h-9 w-9 rounded-md border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0 touch-manipulation cursor-pointer"
+              title={isCollapsed ? 'Perlebar bilah samping' : 'Ciutkan bilah samping'}
+              aria-label="Toggle bilah samping"
+            >
+              {isCollapsed ? (
+                <ChevronRightSquare className="h-4 w-4" />
+              ) : (
+                <ChevronLeftSquare className="h-4 w-4" />
+              )}
+            </button>
             {parentRoute && (
               <Link
                 href={parentRoute}
