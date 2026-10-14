@@ -70,9 +70,7 @@ export function Logo({
 
   return (
     <div className={cn('inline-flex items-center font-sans tracking-tight', config.gap, className)}>
-      <div className="relative flex items-center justify-center p-0.5 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
-        <LogoIcon size={config.icon} />
-      </div>
+      <LogoIcon size={config.icon} />
       {showText && (
         <span
           className={cn(

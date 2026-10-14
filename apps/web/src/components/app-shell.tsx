@@ -234,9 +234,7 @@ export function AppShell({ children }: AppShellProps) {
         ) : (
           <div className="h-16 px-4 border-b border-sidebar-border/70 flex items-center justify-between gap-2">
             <Link href="/app" className="flex items-center gap-2.5 min-w-0 group" title="Kembali ke Beranda Proyek">
-              <div className="p-1 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shrink-0">
-                <LogoIcon size={30} />
-              </div>
+              <LogoIcon size={30} />
               <span className="font-bold text-base tracking-tight text-foreground group-hover:text-primary transition-colors truncate">
                 {APP_NAME}
               </span>
