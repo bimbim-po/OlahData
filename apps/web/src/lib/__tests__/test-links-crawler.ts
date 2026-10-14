@@ -129,6 +129,7 @@ async function runCrawler() {
     const ROUTES_TO_AUDIT = [
       '/',
       '/harga',
+      '/panduan',
       '/pernyataan-penggunaan',
       '/privasi',
       '/syarat',

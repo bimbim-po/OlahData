@@ -93,7 +93,7 @@ export function SiteHeader() {
   const navLinks = [
     { href: '/', label: 'Beranda' },
     { href: '/harga', label: 'Harga' },
-    { href: '/pernyataan-penggunaan', label: 'Panduan Penggunaan' },
+    { href: '/panduan', label: 'Panduan Penggunaan' },
   ];
 
   return (

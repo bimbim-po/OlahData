@@ -58,7 +58,28 @@ export default function SettingsPage() {
 
   // Usage counters & projects state
   const [projects, setProjects] = useState<Project[]>([]);
-  const [activeProjectsCount, setActiveProjectsCount] = useState(1);
+  const [activeProjectsCount, setActiveProjectsCount] = useState(0);
+
+  // Helper untuk memisahkan proyek contoh dari proyek pribadi pengguna
+  const isSampleProject = (p: Project) => {
+    return (
+      p.id === 'sample' ||
+      p.id.startsWith('sample') ||
+      p.id === 'project-1' ||
+      p.id === 'project-2' ||
+      p.id === 'project-3' ||
+      (p as unknown as { isSample?: boolean }).isSample === true ||
+      p.title?.toLowerCase().includes('kualitas layanan dan kepuasan') ||
+      p.title?.toLowerCase().includes('contoh') ||
+      p.title?.toLowerCase().includes('simulasi')
+    );
+  };
+
+  const sampleProjects = projects.filter(isSampleProject);
+  const userCustomProjects = projects.filter((p) => !isSampleProject(p));
+
+  const sampleCount = sampleProjects.length;
+  const userProjectsCount = userCustomProjects.length;
 
   // Dialogs
   const [isConfirmDeleteProjectsOpen, setIsConfirmDeleteProjectsOpen] = useState(false);
@@ -376,12 +397,19 @@ export default function SettingsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {/* Proyek Aktif */}
                 <div className="p-3.5 rounded-xl border border-border bg-card space-y-1">
-                  <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">
-                    Proyek Aktif
-                  </span>
-                  <div className="flex items-baseline gap-1.5">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-[11px] font-semibold uppercase text-muted-foreground tracking-wider">
+                      Proyek Pribadi
+                    </span>
+                    {sampleCount > 0 && (
+                      <Badge variant="outline" className="text-[9px] font-normal py-0 px-1 text-muted-foreground bg-muted/40 border-border">
+                        Simulasi
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-baseline gap-1.5 flex-wrap">
                     <span className="text-xl font-bold text-foreground">
-                      {activeProjectsCount}
+                      {userProjectsCount}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       / {currentPlan.quotaProjects === Infinity ? 'Tak Terbatas' : `${currentPlan.quotaProjects} proyek`}
@@ -389,17 +417,27 @@ export default function SettingsPage() {
                   </div>
                   <div className="w-full bg-muted rounded-full h-1.5 mt-2 overflow-hidden">
                     <div
-                      className="bg-primary h-1.5 rounded-full"
+                      className="bg-primary h-1.5 rounded-full transition-all duration-300"
                       style={{
                         width: `${Math.min(
                           100,
-                          currentPlan.quotaProjects === Infinity
-                            ? 20
-                            : (activeProjectsCount / currentPlan.quotaProjects) * 100
+                          Math.max(
+                            0,
+                            currentPlan.quotaProjects === Infinity
+                              ? 20
+                              : Math.round((userProjectsCount / currentPlan.quotaProjects) * 100)
+                          )
                         )}%`,
                       }}
                     />
                   </div>
+                  <p className="text-[11px] text-muted-foreground mt-1 leading-tight">
+                    {sampleCount > 0
+                      ? `${sampleCount} proyek contoh aktif (tidak memotong kuota)`
+                      : userProjectsCount === 0
+                      ? 'Belum ada proyek pribadi dibuat'
+                      : `${userProjectsCount} dari ${currentPlan.quotaProjects} kuota terpakai`}
+                  </p>
                 </div>
 
                 {/* Responden Maks */}

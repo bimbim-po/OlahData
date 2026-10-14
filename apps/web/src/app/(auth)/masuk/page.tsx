@@ -17,6 +17,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { useToast } from '@/components/ui/toaster';
 import { PageActions } from '@/components/page-actions';
 
+import { Badge } from '@/components/ui/badge';
+
 const loginSchema = z.object({
   email: z
     .string()
@@ -75,14 +77,6 @@ function MasukForm() {
     }
   };
 
-  const handleGoogleLogin = () => {
-    toast({
-      title: COPY.auth.googleToast,
-      description: 'Gunakan alamat email dan kata sandi untuk masuk saat ini.',
-      variant: 'default',
-    });
-  };
-
   const daftarHref = lanjut !== '/app' ? `/daftar?lanjut=${encodeURIComponent(lanjut)}` : '/daftar';
 
   return (
@@ -98,13 +92,14 @@ function MasukForm() {
         </CardHeader>
 
         <CardContent className="p-6 sm:p-8 pt-2 space-y-4">
-          {/* Google OAuth Button */}
+          {/* Google OAuth Button - Nonaktif sementara selama integrasi */}
           <Button
             type="button"
             variant="outline"
-            className="w-full gap-2.5 font-medium py-2.5 h-11 border-border cursor-pointer min-h-[44px]"
-            onClick={handleGoogleLogin}
-            disabled={isLoading}
+            disabled
+            aria-disabled="true"
+            className="w-full gap-2.5 font-medium py-2.5 h-11 border-border cursor-not-allowed opacity-60 min-h-[44px]"
+            title="Autentikasi Google sedang dalam tahap integrasi. Silakan masuk menggunakan email & kata sandi atau coba mode simulasi."
           >
             <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
               <path
@@ -125,6 +120,9 @@ function MasukForm() {
               />
             </svg>
             <span>{COPY.auth.googleButton}</span>
+            <Badge variant="outline" className="text-[11px] font-normal py-0 px-2 ml-1 text-muted-foreground border-border bg-muted/40">
+              Segera Hadir
+            </Badge>
           </Button>
 
           <div className="relative my-4">
@@ -239,6 +237,23 @@ function MasukForm() {
           </p>
         </CardFooter>
       </Card>
+
+      {/* Shortcut Callout Coba Langsung dengan Data Contoh (Tanpa Login) */}
+      <div className="rounded-xl border border-primary/25 bg-primary/5 p-4 text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+        <div className="space-y-0.5">
+          <p className="text-xs font-semibold text-foreground">
+            Belum punya akun atau ingin langsung mencoba?
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Jalankan uji validitas, reliabilitas, &amp; regresi langsung dengan data kuesioner contoh tanpa perlu login.
+          </p>
+        </div>
+        <Button asChild variant="outline" size="sm" className="whitespace-nowrap shrink-0 text-xs font-semibold border-primary/30 hover:bg-primary/10">
+          <Link href="/app/proyek/baru?contoh=1">
+            <span>Coba Data Contoh &rarr;</span>
+          </Link>
+        </Button>
+      </div>
 
       {/* PageActions Navigasi Halaman */}
       <PageActions

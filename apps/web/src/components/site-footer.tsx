@@ -64,15 +64,23 @@ export function SiteFooter() {
           {/* Kolom 2: Bantuan */}
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground">
-              Bantuan
+              Bantuan &amp; Etika
             </h4>
             <ul className="mt-4 space-y-2.5 text-sm">
+              <li>
+                <Link
+                  href="/panduan"
+                  className="text-muted-foreground transition-colors hover:text-foreground inline-flex py-0.5"
+                >
+                  Panduan Penggunaan
+                </Link>
+              </li>
               <li>
                 <Link
                   href="/pernyataan-penggunaan"
                   className="text-muted-foreground transition-colors hover:text-foreground inline-flex py-0.5"
                 >
-                  Panduan Penggunaan Alat
+                  Pernyataan Penggunaan Alat
                 </Link>
               </li>
               <li>

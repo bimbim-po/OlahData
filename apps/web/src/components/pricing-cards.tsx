@@ -50,13 +50,13 @@ export function PricingCards({
   return (
     <div className={cn('w-full space-y-6', className)}>
       {showDisclaimer && (
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 text-center">
-          <Badge variant="outline" className="text-[11px] font-medium py-0.5 px-2.5 bg-muted/50 border-border">
-            {SIMULATION_LABEL}
+        <div className="rounded-xl border border-primary/25 bg-primary/5 p-3.5 sm:p-4 text-center sm:text-left flex flex-col sm:flex-row items-center gap-3">
+          <Badge variant="mint" className="text-[11px] font-semibold py-0.5 px-2.5 shrink-0">
+            Status Akses Awal (Beta)
           </Badge>
-          <span className="text-xs text-muted-foreground">
-            Tarif simulasi pra-rilis, dapat disesuaikan sebelum peluncuran resmi.
-          </span>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Fitur analisis statistik inti sudah dapat digunakan gratis. Sistem pembayaran otomatis untuk paket berbayar sedang dalam tahap aktivasi.
+          </p>
         </div>
       )}
 
@@ -138,7 +138,7 @@ export function PricingCards({
                 </CardContent>
               </div>
 
-              <CardFooter className="pt-3 pb-5">
+              <CardFooter className="pt-3 pb-5 flex flex-col gap-1.5">
                 <Button
                   variant={isHighlighted ? 'default' : 'outline'}
                   size="default"
@@ -148,6 +148,11 @@ export function PricingCards({
                 >
                   {buttonText}
                 </Button>
+                {IS_PRE_RELEASE_SIMULATION && (planId === 'monthly' || planId === 'thesis') && !isCurrent && (
+                  <p className="text-[11px] text-muted-foreground text-center leading-snug">
+                    Dapatkan akses prioritas &amp; harga khusus saat kuota paket berbayar dibuka.
+                  </p>
+                )}
               </CardFooter>
             </Card>
           );

@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/toaster';
 import { PageActions } from '@/components/page-actions';
 
@@ -95,14 +96,6 @@ function DaftarForm() {
     }
   };
 
-  const handleGoogleRegister = () => {
-    toast({
-      title: COPY.auth.googleToast,
-      description: 'Silakan isi formulir pendaftaran akun berikut.',
-      variant: 'default',
-    });
-  };
-
   const masukHref = lanjut !== '/app' ? `/masuk?lanjut=${encodeURIComponent(lanjut)}` : '/masuk';
 
   return (
@@ -118,13 +111,14 @@ function DaftarForm() {
         </CardHeader>
 
         <CardContent className="p-6 sm:p-8 pt-2 space-y-4">
-          {/* Google OAuth Button */}
+          {/* Google OAuth Button - Nonaktif sementara selama integrasi */}
           <Button
             type="button"
             variant="outline"
-            className="w-full gap-2.5 font-medium py-2.5 h-11 border-border cursor-pointer min-h-[44px]"
-            onClick={handleGoogleRegister}
-            disabled={isLoading}
+            disabled
+            aria-disabled="true"
+            className="w-full gap-2.5 font-medium py-2.5 h-11 border-border cursor-not-allowed opacity-60 min-h-[44px]"
+            title="Autentikasi Google sedang dalam tahap integrasi. Silakan mendaftar menggunakan email & kata sandi atau coba mode simulasi."
           >
             <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
               <path
@@ -145,6 +139,9 @@ function DaftarForm() {
               />
             </svg>
             <span>{COPY.auth.googleButton}</span>
+            <Badge variant="outline" className="text-[11px] font-normal py-0 px-2 ml-1 text-muted-foreground border-border bg-muted/40">
+              Segera Hadir
+            </Badge>
           </Button>
 
           <div className="relative my-4">

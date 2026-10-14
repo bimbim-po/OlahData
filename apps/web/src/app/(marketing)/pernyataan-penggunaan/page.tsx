@@ -32,7 +32,7 @@ export function PernyataanPenggunaanPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 space-y-10">
       {/* Breadcrumb */}
-      <Breadcrumb items={[{ label: 'Panduan Penggunaan Alat', href: '/pernyataan-penggunaan' }]} />
+      <Breadcrumb items={[{ label: 'Pernyataan Penggunaan Alat', href: '/pernyataan-penggunaan' }]} />
 
       {/* Header */}
       <div className="space-y-4">
