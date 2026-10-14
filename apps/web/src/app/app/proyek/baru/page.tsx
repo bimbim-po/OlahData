@@ -256,7 +256,7 @@ function NewProjectForm() {
             </div>
 
             {/* Submit & Cancel Buttons */}
-            <div className="pt-3 border-t border-border flex items-center justify-end gap-3 flex-wrap">
+            <div className="mt-8 pt-6 border-t border-border flex items-center justify-end gap-3 flex-wrap">
               <Button
                 type="button"
                 variant="outline"

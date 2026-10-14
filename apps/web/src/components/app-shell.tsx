@@ -170,11 +170,11 @@ export function AppShell({ children }: AppShellProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row antialiased w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen bg-background text-foreground flex flex-col antialiased w-full max-w-full overflow-x-clip">
       {/* Desktop Sidebar (Lebar tetap 240px di desktop, bisa diciutkan jadi ikon) */}
       <aside
         className={cn(
-          'hidden lg:flex flex-col border-r border-sidebar-border bg-sidebar-bg shrink-0 h-screen sticky top-0 transition-all duration-200 z-30 select-none',
+          'hidden lg:flex flex-col border-r border-sidebar-border bg-sidebar-bg shrink-0 h-screen fixed top-0 left-0 bottom-0 transition-all duration-200 z-30 select-none',
           isCollapsed ? 'w-[72px]' : 'w-[240px]'
         )}
       >
@@ -324,7 +324,12 @@ export function AppShell({ children }: AppShellProps) {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 w-full max-w-full overflow-x-hidden">
+      <div
+        className={cn(
+          'flex-1 flex flex-col min-w-0 w-full max-w-full transition-all duration-200',
+          isCollapsed ? 'lg:pl-[72px]' : 'lg:pl-[240px]'
+        )}
+      >
         {/* Sticky Header Meja Kerja */}
         <header className="sticky top-0 z-30 h-14 sm:h-16 border-b border-border bg-card/90 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-2">
           {/* Breadcrumb / Nav Back */}

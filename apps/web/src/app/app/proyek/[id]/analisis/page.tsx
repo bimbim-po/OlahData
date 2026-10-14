@@ -313,7 +313,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
 
             <FileDropzone />
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
               <Button
                 asChild
                 variant="outline"
@@ -410,7 +410,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
             </div>
 
             {/* Navigation Buttons */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
               <Button
                 type="button"
                 variant="outline"
@@ -547,7 +547,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
             </div>
 
             {/* Navigation Buttons */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
               <Button
                 type="button"
                 variant="outline"
@@ -634,7 +634,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
             </div>
 
             {/* Navigation Buttons */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
               <Button
                 type="button"
                 variant="outline"
@@ -878,7 +878,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
               </div>
             ) : (
               /* Ready to run CTA */
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
                 <Button
                   type="button"
                   variant="outline"
