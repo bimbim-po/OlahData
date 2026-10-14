@@ -15,7 +15,8 @@ import {
   Save,
   CreditCard,
   Download,
-  Sparkles,
+  Zap,
+  GraduationCap,
   ExternalLink,
   ShieldAlert,
   ArrowRight,
@@ -398,7 +399,7 @@ export default function SettingsPage() {
                   className="gap-1.5 font-semibold cursor-pointer"
                 >
                   <span>Pilihan Paket &amp; Upgrade</span>
-                  <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                  <Zap className="h-3.5 w-3.5 text-amber-500" />
                 </Button>
               </div>
             </CardHeader>
@@ -496,7 +497,7 @@ export default function SettingsPage() {
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="space-y-0.5">
                     <h4 className="font-semibold text-sm text-foreground flex items-center gap-1.5">
-                      <Sparkles className="h-4 w-4 text-amber-500" />
+                      <GraduationCap className="h-4 w-4 text-amber-500" />
                       <span>Rekomendasi Skripsi: Paket 3 Bulan</span>
                     </h4>
                     <p className="text-xs text-muted-foreground">

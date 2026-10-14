@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useState, useMemo } from 'react';
-import { Copy, Check, Info, FileText, HelpCircle, BookOpen, Sparkles, AlertCircle } from 'lucide-react';
+import { Copy, Check, Info, FileText, HelpCircle, BookOpen, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

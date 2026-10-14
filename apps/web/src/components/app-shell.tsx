@@ -12,7 +12,7 @@ import {
   LogOut,
   ChevronRight,
   ChevronLeft,
-  Sparkles,
+  Zap,
   ChevronLeftSquare,
   ChevronRightSquare,
   History,
@@ -379,13 +379,13 @@ export function AppShell({ children }: AppShellProps) {
                   }
                   className="cursor-pointer text-amber-600 dark:text-amber-400 font-semibold focus:text-amber-600 focus:bg-amber-500/10"
                 >
-                  <Sparkles className="h-4 w-4 mr-2 text-amber-500" />
+                  <Zap className="h-4 w-4 mr-2 text-amber-500" />
                   <span>Upgrade ke Pro (Mulai Rp 39rb)</span>
                 </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem asChild>
                   <Link href="/app/langganan" className="flex items-center gap-2 w-full cursor-pointer">
-                    <Sparkles className="h-4 w-4 text-amber-500" />
+                    <CreditCard className="h-4 w-4 text-amber-500" />
                     <span>Langganan &amp; Kuota</span>
                   </Link>
                 </DropdownMenuItem>
@@ -501,7 +501,7 @@ export function AppShell({ children }: AppShellProps) {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/app/langganan" className="flex items-center gap-2 w-full">
-                    <Sparkles className="h-4 w-4 text-amber-500" />
+                    <CreditCard className="h-4 w-4 text-amber-500" />
                     <span>Langganan &amp; Kuota ({getPlanBadgeLabel()})</span>
                   </Link>
                 </DropdownMenuItem>

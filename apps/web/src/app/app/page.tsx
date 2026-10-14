@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import {
   Plus,
   Search,
-  Sparkles,
   FolderKanban,
   MoreVertical,
   ExternalLink,
@@ -178,7 +177,7 @@ export default function ProjectsPage() {
             disabled={isCreatingSample}
             className="text-xs sm:text-sm min-h-[44px] h-11 sm:h-10 rounded-[10px]"
           >
-            <Sparkles className="h-4 w-4 text-amber-500 mr-1.5" />
+            <FileSpreadsheet className="h-4 w-4 text-primary mr-1.5" />
             {isCreatingSample ? 'Menyiapkan...' : 'Pakai data contoh'}
           </Button>
 

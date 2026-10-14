@@ -31,7 +31,8 @@ import {
   Loader2,
   SlidersHorizontal,
   HelpCircle,
-  Sparkles,
+  Scissors,
+  RefreshCw,
   Table as TableIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -2692,7 +2693,7 @@ export default function HasilPage() {
                   <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-50/70 dark:bg-amber-950/20 dark:border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                        <Scissors className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                         <span className="font-semibold text-xs sm:text-sm text-foreground">
                           Asisten Penyelamat Data: Ditemukan {results.validity.filter((v) => !v.valid).length} butir gugur ({results.validity.filter((v) => !v.valid).map((v) => v.item).join(', ')})
                         </span>
@@ -2706,7 +2707,7 @@ export default function HasilPage() {
                       onClick={handleEliminateInvalidItems}
                       className="bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shrink-0 rounded-lg min-h-[38px] shadow-sm cursor-pointer"
                     >
-                      <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                      <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
                       Eliminasi Butir Gugur &amp; Hitung Ulang (Buat Versi Baru)
                     </Button>
                   </div>
@@ -2805,7 +2806,7 @@ export default function HasilPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                          <ShieldCheck className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                           <span className="font-semibold text-sm text-foreground">
                             Asisten Penyembuh Asumsi Klasik
                           </span>

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import {
-  Sparkles,
+  Zap,
   Check,
   ShieldCheck,
   QrCode,
@@ -228,7 +228,7 @@ export function UpgradeCheckoutModal() {
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center shrink-0">
-                <Sparkles className="h-4 w-4" />
+                <Zap className="h-4 w-4" />
               </div>
               <div>
                 <DialogTitle className="text-base font-bold text-foreground">

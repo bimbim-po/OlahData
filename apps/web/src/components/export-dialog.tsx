@@ -6,7 +6,8 @@ import {
   FileText,
   FileType2,
   Download,
-  Sparkles,
+  PenTool,
+  Zap,
   ShieldAlert,
   Loader2,
   Check,
@@ -309,7 +310,7 @@ export function ExportDialog({
           {format === 'word' && (
             <div className="p-3 border border-border rounded-xl bg-card space-y-2">
               <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                <PenTool className="h-3.5 w-3.5 text-primary" />
                 <span>Gaya Bahasa Draf Interpretasi Bab 4</span>
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -429,7 +430,7 @@ export function ExportDialog({
                   }}
                   className="h-8 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs cursor-pointer"
                 >
-                  <Sparkles className="h-3 w-3 mr-1" />
+                  <Zap className="h-3 w-3 mr-1" />
                   Buka Kunci Ekspor (Mulai Rp 39.000)
                 </Button>
               </div>

@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { ArrowLeft, CheckCircle2, Sparkles, HelpCircle, Lock } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, FlaskConical, Zap, HelpCircle, Lock } from 'lucide-react';
 import { createProject, getProjects } from '@/lib/api';
 import type { Project } from '@/lib/api/types';
 import { Button } from '@/components/ui/button';
@@ -129,7 +129,7 @@ function NewProjectForm() {
       {isDemo && (
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-center justify-between gap-3 text-xs sm:text-sm">
           <div className="flex items-center gap-2.5">
-            <Sparkles className="h-4 w-4 text-primary shrink-0" />
+            <FlaskConical className="h-4 w-4 text-primary shrink-0" />
             <p className="text-foreground">
               <strong className="font-semibold">Ruang Kerja Simulasi Demo:</strong> Anda dapat langsung mencoba seluruh tahapan analisis menggunakan data contoh tanpa perlu mendaftar.
             </p>
@@ -179,7 +179,7 @@ function NewProjectForm() {
               }
               className="w-full sm:w-auto font-semibold rounded-xl min-h-[44px] px-6 text-xs sm:text-sm bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer shadow-xs"
             >
-              <Sparkles className="w-4 h-4 mr-2" />
+              <Zap className="w-4 h-4 mr-2" />
               Tingkatkan Paket (Mulai Rp 39.000)
             </Button>
             <Button

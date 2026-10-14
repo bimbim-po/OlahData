@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Sparkles, Info, Lock } from 'lucide-react';
+import { CheckCheck, Info, Lock } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -88,7 +88,7 @@ export function TestCard({ test, isSelected, onToggle, className, isLocked }: Te
             )}
             {test.recommended && (
               <Badge variant="pine" className="text-[10px] shrink-0 font-medium py-0.5 px-2">
-                <Sparkles className="w-3 h-3 mr-1" />
+                <CheckCheck className="w-3 h-3 mr-1" />
                 Direkomendasikan
               </Badge>
             )}

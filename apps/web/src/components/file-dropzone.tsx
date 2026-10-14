@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { UploadCloud, FileSpreadsheet, Sparkles, RefreshCw, AlertCircle, CheckCircle2, Hash } from 'lucide-react';
+import { UploadCloud, FileSpreadsheet, FlaskConical, Table, RefreshCw, AlertCircle, CheckCircle2, Hash } from 'lucide-react';
 import { useWizardStore } from '@/stores/wizard-store';
 import { mockDataset, mockExperimentalDataset, mockHealthDataset, mockIssues } from '@/lib/mock/dataset-contoh';
 import { analyzeDatasetQuality } from '@/lib/validation';
@@ -182,7 +182,7 @@ export function FileDropzone({ onFileLoaded, className }: FileDropzoneProps) {
             variant="outline"
             className="border-primary text-primary hover:bg-primary hover:text-white shrink-0 font-medium cursor-pointer shadow-sm rounded-[10px] min-h-[40px] text-xs"
           >
-            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+            <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" />
             Kuesioner (N=120)
           </Button>
           <Button
@@ -191,7 +191,7 @@ export function FileDropzone({ onFileLoaded, className }: FileDropzoneProps) {
             variant="outline"
             className="border-primary/80 bg-primary/10 text-primary hover:bg-primary hover:text-white shrink-0 font-medium cursor-pointer shadow-sm rounded-[10px] min-h-[40px] text-xs"
           >
-            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+            <FlaskConical className="w-3.5 h-3.5 mr-1.5" />
             Eksperimen (N=60)
           </Button>
           <Button
@@ -200,7 +200,7 @@ export function FileDropzone({ onFileLoaded, className }: FileDropzoneProps) {
             variant="outline"
             className="border-emerald-500/80 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-600 hover:text-white shrink-0 font-medium cursor-pointer shadow-sm rounded-[10px] min-h-[40px] text-xs"
           >
-            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+            <Table className="w-3.5 h-3.5 mr-1.5" />
             Chi-Square (N=100)
           </Button>
         </div>

@@ -13,7 +13,7 @@ import {
   ArrowRight,
   ShieldCheck,
   HelpCircle,
-  Sparkles,
+  Workflow,
   BookOpen,
   Info,
   ChevronDown,
@@ -184,7 +184,7 @@ export default function PanduanPenggunaanPage() {
       <section className="space-y-6">
         <div>
           <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary uppercase tracking-wider mb-1">
-            <Sparkles className="h-3.5 w-3.5" />
+            <Workflow className="h-3.5 w-3.5" />
             <span>Alur Sistematis</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground">

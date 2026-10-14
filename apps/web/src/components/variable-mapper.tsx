@@ -4,7 +4,7 @@ import * as React from 'react';
 import {
   Plus,
   Trash2,
-  Sparkles,
+  ScanLine,
   Layers,
   ArrowRightLeft,
   CheckCircle2,
@@ -196,7 +196,7 @@ export function VariableMapper({
             onClick={handleAutoDetect}
             className="text-xs border-primary/50 text-primary hover:bg-primary/10 cursor-pointer"
           >
-            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+            <ScanLine className="w-3.5 h-3.5 mr-1.5" />
             Deteksi otomatis dari data contoh
           </Button>
 
@@ -262,7 +262,7 @@ export function VariableMapper({
             onClick={handleAutoDetect}
             className="cursor-pointer"
           >
-            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+            <ScanLine className="w-3.5 h-3.5 mr-1.5" />
             Deteksi otomatis sekarang
           </Button>
         </div>

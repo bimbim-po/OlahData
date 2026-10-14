@@ -12,7 +12,9 @@ import {
   FileSpreadsheet,
   Layers,
   Activity,
-  Sparkles,
+  Zap,
+  Wrench,
+  Binary,
   Loader2,
   Database,
   ShieldCheck,
@@ -533,7 +535,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                     }
                     className="font-semibold text-xs rounded-[10px] bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer shadow-xs"
                   >
-                    <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                    <Zap className="w-3.5 h-3.5 mr-1.5" />
                     Tingkatkan Paket untuk {formatNumber(fileData.length)} Responden
                   </Button>
                   <Button
@@ -617,7 +619,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
             {detectedLikertColumns.length > 0 && (
               <div className="p-4 sm:p-5 rounded-[16px] border border-primary/30 bg-primary/10 text-foreground flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <Sparkles className="w-5 h-5 shrink-0 text-primary mt-0.5" />
+                  <Wrench className="w-5 h-5 shrink-0 text-primary mt-0.5" />
                   <div className="space-y-1">
                     <span className="font-bold text-sm block">
                       Terdeteksi Jawaban Teks Google Forms pada {detectedLikertColumns.length} Kolom
@@ -633,7 +635,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                   onClick={handleRecodeLikert}
                   className="shrink-0 font-semibold cursor-pointer gap-1.5 rounded-[10px]"
                 >
-                  <Sparkles className="w-4 h-4" />
+                  <Binary className="w-4 h-4" />
                   Konversi Otomatis ke Angka 1-5
                 </Button>
               </div>

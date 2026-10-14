@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Lock, Sparkles } from 'lucide-react';
+import { Lock, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUpgradeModal } from '@/lib/entitlements';
 import { cn } from '@/lib/utils';
@@ -67,7 +67,7 @@ export function ProResultBlur({
             }
             className="w-full font-semibold rounded-xl min-h-[44px] shadow-sm text-xs sm:text-sm bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
           >
-            <Sparkles className="w-4 h-4 mr-2" />
+            <Zap className="w-4 h-4 mr-2" />
             Buka Kunci Hasil &amp; Narasi Lengkap (Mulai Rp 39.000)
           </Button>
 

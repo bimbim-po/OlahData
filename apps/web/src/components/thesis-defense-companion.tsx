@@ -10,7 +10,6 @@ import {
   Copy,
   Check,
   HelpCircle,
-  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -457,7 +456,7 @@ export function ThesisDefenseCompanion({
                     <div className="rounded-md bg-amber-50/60 p-3 text-xs leading-relaxed text-slate-700 dark:bg-amber-950/30 dark:text-slate-300">
                       <div className="mb-1.5 flex items-center justify-between">
                         <span className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-800 dark:text-amber-300">
-                          <Sparkles className="h-3.5 w-3.5" />
+                          <GraduationCap className="h-3.5 w-3.5" />
                           Draf Jawaban Mahasiswa di Meja Sidang:
                         </span>
                         <Button

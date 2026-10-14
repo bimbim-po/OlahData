@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-  Sparkles,
+  Zap,
   CreditCard,
   QrCode,
   Building,
@@ -212,7 +212,7 @@ export default function SubscriptionPage() {
                 setIsModalOpen(true);
               }}
             >
-              <Sparkles className="h-4 w-4 mr-2 text-amber-300" />
+              <Zap className="h-4 w-4 mr-2 text-amber-300" />
               Ganti Paket
             </Button>
           </CardFooter>

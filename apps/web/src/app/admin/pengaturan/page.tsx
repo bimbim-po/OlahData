@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   AlertTriangle,
   RotateCcw,
-  Sparkles,
   FileText,
   UserPlus,
   Clock,
@@ -184,7 +183,7 @@ export default function PengaturanProdukPage() {
       <Card className="border-border">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            <Sliders className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             <CardTitle className="text-base font-medium">Feature Flags & Saklar Darurat</CardTitle>
           </div>
           <CardDescription>

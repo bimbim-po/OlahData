@@ -14,7 +14,7 @@ import {
   Copy,
   Mail,
   ChevronDown,
-  Sparkles,
+  Timer,
   ArrowRight,
   ShieldCheck,
   ExternalLink,
@@ -320,7 +320,7 @@ export default function HelpCenterPage() {
           <section id="mulai-cepat" className="scroll-mt-24 space-y-4">
             <div className="border-b border-border pb-3">
               <h2 className="font-serif text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-                <Sparkles className="h-6 w-6 text-primary" />
+                <Timer className="h-6 w-6 text-primary" />
                 <span>Mulai Cepat 60 Detik</span>
               </h2>
               <p className="text-sm text-muted-foreground mt-1">

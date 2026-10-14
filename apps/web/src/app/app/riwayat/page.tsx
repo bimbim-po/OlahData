@@ -18,7 +18,6 @@ import {
   FileSpreadsheet,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
   ExternalLink,
   PlusCircle,
 } from 'lucide-react';
