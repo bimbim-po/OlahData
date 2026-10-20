@@ -8,6 +8,7 @@
     "build:export": "node scripts/build-export.mjs",
     "deploy:pages": "npx wrangler pages deploy out --project-name=olah-data --branch=main",
     "test:stats": "npx tsx src/lib/__tests__/test-regression-formula.ts && npx tsx src/lib/__tests__/test-comparative-stats.ts && npx tsx src/lib/__tests__/test-categorical-stats.ts",
+    "test:flow": "npx tsx src/lib/__tests__/test-5screen-flow.ts",
     "test:comparative": "npx tsx src/lib/__tests__/test-comparative-stats.ts",
     "test:categorical": "npx tsx src/lib/__tests__/test-categorical-stats.ts",
     "start": "next start",

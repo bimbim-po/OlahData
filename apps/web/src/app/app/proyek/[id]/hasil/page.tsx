@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   FileDown,
@@ -36,8 +36,16 @@ import {
   Table as TableIcon,
   Lock,
   BookOpen,
+  UploadCloud,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ScrollableTabs, type TabItem } from '@/components/scrollable-tabs';
@@ -48,6 +56,11 @@ import { TraceabilityPanel } from '@/components/traceability-panel';
 import { ExportDialog } from '@/components/export-dialog';
 import { StatisticalReferenceTablesDialog } from '@/components/statistical-reference-tables-dialog';
 import { DataSourcePanel } from '@/components/data-source-panel';
+import { TopSummaryTrafficLights } from '@/components/top-summary-traffic-lights';
+import { Chapter4InterpretationCard } from '@/components/chapter4-interpretation-card';
+import { TambahAnalisisSelector } from '@/components/tambah-analisis-selector';
+import { Chapter4AsyncExportModal } from '@/components/chapter4-async-export-modal';
+import { AcademicResidualPlots, AcademicHeteroscedasticityPlot } from '@/components/academic-residual-plots';
 import { PageActions } from '@/components/page-actions';
 import { useToast } from '@/components/ui/toaster';
 import { useWizardStore } from '@/stores/wizard-store';
@@ -99,6 +112,17 @@ import type {
 } from '@/lib/api/types';
 import { APP_NAME, ENGINE_VERSION } from '@/lib/constants';
 import { COPY } from '@/lib/copy';
+import { mockResults } from '@/lib/mock/results';
+
+interface HypothesisDecisionRow {
+  hypothesis: string;
+  statement: string;
+  coefficient: string;
+  testValue: string;
+  pValue: string;
+  decision: string;
+  isAccepted: boolean;
+}
 
 const TAB_ORDER = [
   'descriptive',
@@ -154,9 +178,39 @@ export default function HasilPage() {
   const [showSpearmanHetero, setShowSpearmanHetero] = useState(false);
   const [heteroMethod, setHeteroMethod] = useState<'glejser' | 'park' | 'spearman'>('glejser');
   const [showReferenceTables, setShowReferenceTables] = useState(false);
+  const [enabledOptionalTables, setEnabledOptionalTables] = useState<string[]>(['tabel_4_12_korelasi']);
+  const [chapter4ModalOpen, setChapter4ModalOpen] = useState(false);
+  const [chapter4ExportFormat, setChapter4ExportFormat] = useState<'docx' | 'pdf'>('docx');
+
+  const toggleOptionalTable = (tableId: string) => {
+    setEnabledOptionalTables((prev) =>
+      prev.includes(tableId) ? prev.filter((id) => id !== tableId) : [...prev, tableId]
+    );
+  };
   const { toast } = useToast();
-  const isSample = isSampleProject(projectId) || isSampleProject(project);
+  const searchParams = useSearchParams();
+  const isDemoParam = searchParams?.get('contoh') === '1';
+  const isSample = isSampleProject(projectId) || isSampleProject(project) || isDemoParam;
   const { isFree, canExport, openUpgradeModal } = usePlanGate(projectId, isSample);
+
+  const handleResetDemo = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(`olahdata_results_${projectId}`);
+        localStorage.removeItem('olahdata_results_sample');
+        localStorage.removeItem('olahdata_results_project-1');
+      } catch {
+        // ignore
+      }
+    }
+    useWizardStore.getState().resetWizard();
+    setResults(mockResults);
+    toast({
+      title: 'Data contoh berhasil direset',
+      description: 'Seluruh modifikasi simulasi telah dibersihkan kembali ke data acuan awal.',
+      variant: 'success',
+    });
+  };
 
   const handleEliminateInvalidItems = () => {
     if (!results || !results.validity) return;
@@ -266,23 +320,23 @@ export default function HasilPage() {
     }
 
     const tabs: TabItem[] = [...TABS_LIST];
-    if (results.crosstab || results.chiSquare) {
+    if (results.crosstab || results.chiSquare || enabledOptionalTables.includes('tabel_4_15_chi_kuadrat')) {
       tabs.push({ id: 'crosstab', label: 'Tabulasi Silang & Chi-Square', icon: TableIcon });
     }
     if (results.pairedTTest || results.nGain) {
       tabs.push({ id: 'paired-ttest', label: 'Paired t-Test & N-Gain', icon: GitCompare });
     }
-    if (results.independentTTest) {
+    if (results.independentTTest || enabledOptionalTables.includes('tabel_4_13_uji_beda_2')) {
       tabs.push({ id: 'independent-ttest', label: 'Independent t-Test', icon: GitCompare });
     }
-    if (results.oneWayAnova) {
+    if (results.oneWayAnova || enabledOptionalTables.includes('tabel_4_14_uji_beda_3')) {
       tabs.push({ id: 'oneway-anova', label: 'One-Way ANOVA', icon: Layers });
     }
     if (results.nonParametric) {
       tabs.push({ id: 'nonparametric', label: 'Uji Non-Parametrik', icon: ShieldCheck });
     }
     return tabs;
-  }, [results]);
+  }, [results, enabledOptionalTables]);
 
   const loadData = React.useCallback(async () => {
     setIsLoading(true);
@@ -396,6 +450,42 @@ export default function HasilPage() {
     () => (results ? generateCorrelationIntinya(results) : ''),
     [results]
   );
+
+  const hypothesisRows = useMemo<HypothesisDecisionRow[]>(() => {
+    if (!results || !results.regression) return [];
+    const rows: HypothesisDecisionRow[] = [];
+    let hIdx = 1;
+    const predictors = results.regression.filter(
+      (r) => !r.variable.toLowerCase().includes('konstanta') && !r.variable.toLowerCase().includes('constant')
+    );
+    predictors.forEach((p) => {
+      const isAccepted = p.significant || p.pValue < 0.05;
+      const direction = p.coefficient > 0 ? 'positif' : 'negatif';
+      rows.push({
+        hypothesis: `H${hIdx}`,
+        statement: `${p.variable} berpengaruh ${direction} dan signifikan terhadap variabel terikat`,
+        coefficient: formatNumber(p.coefficient, 3),
+        testValue: `t = ${formatNumber(p.tHitung, 3)}`,
+        pValue: p.pValue < 0.001 ? '< 0,001' : formatNumber(p.pValue, 4),
+        decision: isAccepted ? 'Diterima (Signifikan)' : 'Ditolak (Tidak Signifikan)',
+        isAccepted,
+      });
+      hIdx++;
+    });
+    if (results.fTest) {
+      const isAccepted = results.fTest.significant;
+      rows.push({
+        hypothesis: `H${hIdx} (Simultan)`,
+        statement: `Seluruh variabel bebas secara simultan berpengaruh signifikan terhadap variabel terikat`,
+        coefficient: `R² = ${results.determination ? formatNumber(results.determination.rSquare, 3) : '-'}`,
+        testValue: `F = ${formatNumber(results.fTest.fHitung, 3)}`,
+        pValue: results.fTest.pValue < 0.001 ? '< 0,001' : formatNumber(results.fTest.pValue, 4),
+        decision: isAccepted ? 'Diterima (Signifikan)' : 'Ditolak (Tidak Signifikan)',
+        isAccepted,
+      });
+    }
+    return rows;
+  }, [results]);
 
   // Tab names for traceability panel & navigation
   const testNamesMap: Record<string, string> = {
@@ -521,33 +611,11 @@ export default function HasilPage() {
     try {
       const allHtmlSections: string[] = [];
 
-      // 1. Deskriptif
-      if (results.descriptive && results.descriptive.length > 0) {
-        const descHtml = buildWordTableHtml({
-          tableNumber: 'Tabel 4.1',
-          title: 'Hasil Analisis Statistik Deskriptif Variabel Penelitian & TCR',
-          note: `Sumber: Data primer. N = ${results.respondentCount}. ${LIKERT_INTERVAL_NOTE}`,
-          columns: descriptiveCols.map((c) => ({ header: c.header, align: c.align })),
-          rows: results.descriptive.map((r) => [
-            r.variable,
-            formatNumber(r.n),
-            formatNumber(r.mean, 3),
-            formatNumber(r.median, 3),
-            formatNumber(r.stdDev, 3),
-            formatNumber(r.min, 3),
-            formatNumber(r.max, 3),
-            r.tcr !== undefined ? `${formatNumber(r.tcr, 1)}%` : '-',
-            r.tcrCategory || '-',
-          ]),
-        });
-        allHtmlSections.push(descHtml);
-      }
-
-      // 1b. Demografi
+      // 4.1 Demografi (Karakteristik Responden)
       if (results.demographics && results.demographics.length > 0) {
         const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
         results.demographics.forEach((demo, dIdx) => {
-          const letter = letters[dIdx] || `${dIdx + 1}`;
+          const letter = results.demographics!.length > 1 ? letters[dIdx] || `${dIdx + 1}` : '';
           const demoHtml = buildWordTableHtml({
             tableNumber: `Tabel 4.1${letter}`,
             title: `Distribusi Frekuensi Karakteristik Responden Berdasarkan ${demo.variable.replace(/_/g, ' ')}`,
@@ -564,12 +632,57 @@ export default function HasilPage() {
         });
       }
 
-      // 2. Validitas
+      // 4.2 Deskriptif Variabel Penelitian
+      if (results.descriptive && results.descriptive.length > 0) {
+        const descHtml = buildWordTableHtml({
+          tableNumber: 'Tabel 4.2',
+          title: 'Hasil Analisis Statistik Deskriptif Variabel Penelitian & TCR',
+          note: `Sumber data: Data primer. N = ${results.respondentCount}. ${LIKERT_INTERVAL_NOTE}`,
+          columns: descriptiveCols.map((c) => ({ header: c.header, align: c.align })),
+          rows: results.descriptive.map((r) => [
+            r.variable,
+            formatNumber(r.n),
+            formatNumber(r.mean, 3),
+            formatNumber(r.median, 3),
+            formatNumber(r.stdDev, 3),
+            formatNumber(r.min, 3),
+            formatNumber(r.max, 3),
+            r.tcr !== undefined ? `${formatNumber(r.tcr, 1)}%` : '-',
+            r.tcrCategory || '-',
+          ]),
+        });
+        allHtmlSections.push(descHtml);
+      }
+
+      // 4.3 Distribusi Jawaban per Butir (Likert)
+      if (results.itemDescriptive && results.itemDescriptive.length > 0) {
+        const distHtml = buildWordTableHtml({
+          tableNumber: 'Tabel 4.3',
+          title: 'Distribusi Frekuensi Jawaban Responden per Butir Kuesioner',
+          note: '* STS = Sangat Tidak Setuju (1), TS = Tidak Setuju (2), N = Netral (3), S = Setuju (4), SS = Sangat Setuju (5).',
+          columns: likertItemCols.map((c) => ({ header: c.header, align: c.align })),
+          rows: results.itemDescriptive.map((r) => [
+            r.variable,
+            formatNumber(r.freq1 ?? 0),
+            formatNumber(r.freq2 ?? 0),
+            formatNumber(r.freq3 ?? 0),
+            formatNumber(r.freq4 ?? 0),
+            formatNumber(r.freq5 ?? 0),
+            formatNumber(r.n),
+            formatNumber(r.mean, 2),
+            r.tcr !== undefined ? `${formatNumber(r.tcr, 1)}%` : '-',
+            r.tcrCategory || '-',
+          ]),
+        });
+        allHtmlSections.push(distHtml);
+      }
+
+      // 4.4 Validitas
       if (results.validity && results.validity.length > 0) {
         const valHtml = buildWordTableHtml({
-          tableNumber: 'Tabel 4.2',
+          tableNumber: 'Tabel 4.4',
           title: 'Hasil Pengujian Validitas Instrumen Kuesioner (Pearson Product Moment)',
-          note: `Derajat bebas df = N - 2 = ${results.respondentCount - 2}, taraf signifikansi α = 0,05.`,
+          note: `Derajat bebas df = N - 2 = ${results.respondentCount - 2}, taraf signifikansi α = 0,05 (r tabel = ${results.validity[0]?.rTabel ? formatNumber(results.validity[0].rTabel, 4) : '0,1816'}). Kriteria: r hitung > r tabel.`,
           columns: validityCols.map((c) => ({ header: c.header, align: c.align })),
           rows: results.validity.map((r) => [
             r.item,
@@ -582,12 +695,12 @@ export default function HasilPage() {
         allHtmlSections.push(valHtml);
       }
 
-      // 3. Reliabilitas
+      // 4.5 Reliabilitas
       if (results.reliability && results.reliability.length > 0) {
         const relHtml = buildWordTableHtml({
-          tableNumber: 'Tabel 4.3',
+          tableNumber: 'Tabel 4.5',
           title: 'Hasil Pengujian Reliabilitas Konstruk (Cronbach\'s Alpha)',
-          note: 'Kriteria reliabilitas: Cronbach\'s Alpha ≥ 0,600 (standar minimum).',
+          note: 'Kriteria reliabilitas: Cronbach\'s Alpha ≥ 0,600 (standar minimum) / ≥ 0,700 (konservatif).',
           columns: reliabilityCols.map((c) => ({ header: c.header, align: c.align })),
           rows: results.reliability.map((r) => [
             r.construct,
@@ -600,12 +713,12 @@ export default function HasilPage() {
         allHtmlSections.push(relHtml);
       }
 
-      // 4. Asumsi Klasik: Normalitas, VIF, Hetero, DW, Linearity
+      // 4.6 Normalitas Residual
       if (results.normality && results.normality.length > 0) {
         const normHtml = buildWordTableHtml({
-          tableNumber: 'Tabel 4.4',
-          title: 'Hasil Uji Normalitas Kolmogorov-Smirnov Residual',
-          note: `N = ${results.respondentCount}. Kriteria: Sig. ≥ 0,05 berdistribusi normal.`,
+          tableNumber: 'Tabel 4.6',
+          title: 'Hasil Uji Normalitas Residual Regresi (Kolmogorov-Smirnov & Shapiro-Wilk)',
+          note: `Uji dilakukan terhadap unstandardized residual model regresi (N = ${results.respondentCount}). Kriteria: Sig. ≥ 0,05.`,
           columns: normalityCols.map((c) => ({ header: c.header, align: c.align })),
           rows: results.normality.map((r) => [
             r.test,
@@ -618,10 +731,11 @@ export default function HasilPage() {
         allHtmlSections.push(normHtml);
       }
 
+      // 4.7 Multikolinearitas
       if (results.multicollinearity && results.multicollinearity.length > 0) {
         const multiHtml = buildWordTableHtml({
-          tableNumber: 'Tabel 4.5',
-          title: 'Hasil Uji Multikolinearitas (Tolerance & VIF)',
+          tableNumber: 'Tabel 4.7',
+          title: 'Hasil Uji Multikolinearitas Variabel Bebas (Tolerance & VIF)',
           note: '* Ambang batas: Tolerance > 0,10 dan VIF < 10,00.',
           columns: multicollinearityCols.map((c) => ({ header: c.header, align: c.align })),
           rows: results.multicollinearity.map((r) => [
@@ -635,9 +749,10 @@ export default function HasilPage() {
         allHtmlSections.push(multiHtml);
       }
 
+      // 4.8 Heteroskedastisitas
       if (results.heteroscedasticity && results.heteroscedasticity.length > 0) {
         const heteroHtml = buildWordTableHtml({
-          tableNumber: 'Tabel 4.6',
+          tableNumber: 'Tabel 4.8',
           title: 'Hasil Uji Heteroskedastisitas (Metode Glejser)',
           note: '* Kriteria: Sig. > 0,05 bebas heteroskedastisitas.',
           columns: heteroscedasticityCols.map((c) => ({ header: c.header, align: c.align })),
@@ -652,10 +767,11 @@ export default function HasilPage() {
         allHtmlSections.push(heteroHtml);
       }
 
+      // 4.9 Durbin-Watson
       if (results.durbinWatson) {
         const dwHtml = buildWordTableHtml({
-          tableNumber: 'Tabel 4.6b',
-          title: 'Hasil Uji Autokorelasi Durbin-Watson',
+          tableNumber: 'Tabel 4.9',
+          title: 'Hasil Uji Autokorelasi Durbin-Watson Model Regresi',
           note: `k = ${kPredictors}, N = ${results.respondentCount}. Kriteria: dU < d < 4 - dU.`,
           columns: durbinWatsonCols.map((c) => ({ header: c.header, align: c.align })),
           rows: [[
@@ -669,28 +785,10 @@ export default function HasilPage() {
         allHtmlSections.push(dwHtml);
       }
 
-      if (results.linearity && results.linearity.length > 0) {
-        const linHtml = buildWordTableHtml({
-          tableNumber: 'Tabel 4.6c',
-          title: 'Hasil Uji Linearitas (Deviation from Linearity ANOVA)',
-          note: '* Kriteria: Sig. Deviation > 0,05 atau Sig. Linearity < 0,05.',
-          columns: linearityCols.map((c) => ({ header: c.header, align: c.align })),
-          rows: results.linearity.map((r) => [
-            `${r.independentVar} → ${r.dependentVar}`,
-            formatNumber(r.fDeviation, 3),
-            formatNumber(r.sigDeviation, 3),
-            formatNumber(r.fLinearity, 3),
-            formatNumber(r.sigLinearity, 3),
-            r.isLinear ? 'Linier' : 'Tidak Linier',
-          ]),
-        });
-        allHtmlSections.push(linHtml);
-      }
-
-      // 5. Regresi
+      // 4.10 Regresi Linier Berganda
       if (results.regression && results.regression.length > 0) {
         const regHtml = buildWordTableHtml({
-          tableNumber: 'Tabel 4.7',
+          tableNumber: 'Tabel 4.10a',
           title: 'Hasil Analisis Regresi Linier Berganda dan Uji t Parsial',
           note: `Taraf signifikansi α = 0,05. df residual = ${results.respondentCount - results.regression.length}.`,
           columns: regressionCols.map((c) => ({ header: c.header, align: c.align })),
@@ -702,16 +800,47 @@ export default function HasilPage() {
             formatNumber(r.tHitung, 3),
             r.tTabel !== undefined ? formatNumber(r.tTabel, 3) : '-',
             formatNumber(r.pValue, 3),
-            r.significant ? 'Signifikan' : 'Tidak Signifikan',
+            r.variable.toLowerCase().includes('konstanta') ? '-' : (r.significant ? 'Signifikan' : 'Tidak Signifikan'),
           ]),
         });
         allHtmlSections.push(regHtml);
+
+        if (results.determination) {
+          const detHtml = buildWordTableHtml({
+            tableNumber: 'Tabel 4.10b',
+            title: 'Hasil Analisis Koefisien Determinasi (Model Summary)',
+            columns: determinationCols.map((c) => ({ header: c.header, align: c.align })),
+            rows: [[
+              '1',
+              formatNumber(results.determination.rSquare, 3),
+              formatNumber(results.determination.adjustedRSquare, 3),
+              formatNumber(results.determination.stdError, 3),
+            ]],
+          });
+          allHtmlSections.push(detHtml);
+        }
+
+        if (results.fTest) {
+          const fHtml = buildWordTableHtml({
+            tableNumber: 'Tabel 4.10c',
+            title: 'Hasil Uji Signifikansi Simultan (Uji F / ANOVA Model)',
+            columns: fTestCols.map((c) => ({ header: c.header, align: c.align })),
+            rows: [[
+              'Regresi Simultan',
+              formatNumber(results.fTest.fHitung, 3),
+              formatNumber(results.fTest.fTabel, 3),
+              formatNumber(results.fTest.pValue, 3),
+              results.fTest.significant ? 'Signifikan Simultan' : 'Tidak Signifikan',
+            ]],
+          });
+          allHtmlSections.push(fHtml);
+        }
 
         // SE and SR table
         const predictors = results.regression.filter((r) => !r.variable.toLowerCase().includes('konstanta') && r.sePercent !== undefined);
         if (predictors.length > 0) {
           const seSrHtml = buildWordTableHtml({
-            tableNumber: 'Tabel 4.7b',
+            tableNumber: 'Tabel 4.10d',
             title: 'Sumbangan Efektif (SE %) dan Sumbangan Relatif (SR %) Variabel Bebas',
             note: `Total SE = ${(results.determination?.rSquare ? results.determination.rSquare * 100 : 0).toFixed(2)}%, Total SR = 100,00%.`,
             columns: seSrCols.map((c) => ({ header: c.header, align: c.align })),
@@ -724,9 +853,82 @@ export default function HasilPage() {
           });
           allHtmlSections.push(seSrHtml);
         }
+
+        // 4.11 Ringkasan Keputusan Hipotesis
+        const hipHtml = buildWordTableHtml({
+          tableNumber: 'Tabel 4.11',
+          title: 'Ringkasan Keputusan Pengujian Hipotesis Penelitian',
+          note: '* Kriteria: Sig. p < 0,05 dan t hitung > t tabel / F hitung > F tabel.',
+          columns: hypothesisCols.map((c) => ({ header: c.header, align: c.align })),
+          rows: hypothesisRows.map((h) => [
+            h.hypothesis,
+            h.statement,
+            h.coefficient,
+            h.testValue,
+            h.pValue,
+            h.decision,
+          ]),
+        });
+        allHtmlSections.push(hipHtml);
       }
 
-      // 6. Tabulasi Silang & Chi-Square (Categorical)
+      // 4.12 Matriks Korelasi
+      if (results.correlation && results.correlation.length > 0) {
+        const corrHtml = buildWordTableHtml({
+          tableNumber: 'Tabel 4.12',
+          title: 'Matriks Korelasi Pearson Antar Variabel Penelitian',
+          note: `Taraf signifikansi α = 0,05 (dua arah, N = ${results.respondentCount}).`,
+          columns: correlationCols.map((c) => ({ header: c.header, align: c.align })),
+          rows: results.correlation.map((r) => [
+            r.variable1,
+            r.variable2,
+            formatNumber(r.coefficient, 3),
+            formatNumber(r.pValue, 4),
+            r.significant ? 'Signifikan' : 'Tidak Signifikan',
+          ]),
+        });
+        allHtmlSections.push(corrHtml);
+      }
+
+      // 4.13 Uji Beda 2 Kelompok (Independent t-Test)
+      if (results.independentTTest) {
+        const it = results.independentTTest;
+        const itHtml = buildWordTableHtml({
+          tableNumber: 'Tabel 4.13',
+          title: 'Hasil Uji Beda Dua Kelompok Bebas (Independent Samples t-Test)',
+          note: `* Uji Levene: F = ${formatNumber(it.levene.fStatistic, 3)}, Sig. = ${formatNumber(it.levene.pValue, 4)}.`,
+          columns: independentTTestCols.map((c) => ({ header: c.header, align: c.align })),
+          rows: it.rows.map((row, idx) => [
+            row.assumption,
+            idx === 0 ? formatNumber(it.levene.fStatistic, 3) : '-',
+            idx === 0 ? formatNumber(it.levene.pValue, 4) : '-',
+            formatNumber(row.tHitung, 3),
+            formatNumber(row.df, 1),
+            formatNumber(row.pValue, 4),
+            formatNumber(row.meanDiff, 3),
+          ]),
+        });
+        allHtmlSections.push(itHtml);
+      }
+
+      // 4.14 One-Way ANOVA
+      if (results.oneWayAnova) {
+        const an = results.oneWayAnova;
+        const anHtml = buildWordTableHtml({
+          tableNumber: 'Tabel 4.14',
+          title: 'Hasil Analisis Varians Satu Jalur (One-Way ANOVA)',
+          note: `F tabel (df1 = ${an.dfBetween}, df2 = ${an.dfWithin}, α = 0,05) = ${formatNumber(an.fTabel, 3)}.`,
+          columns: oneWayAnovaCols.map((c) => ({ header: c.header, align: c.align })),
+          rows: [
+            ['Between Groups', formatNumber(an.ssBetween, 3), an.dfBetween, formatNumber(an.msBetween, 3), formatNumber(an.fHitung, 3), formatNumber(an.pValue, 4)],
+            ['Within Groups', formatNumber(an.ssWithin, 3), an.dfWithin, formatNumber(an.msWithin, 3), '-', '-'],
+            ['Total', formatNumber(an.ssTotal, 3), an.dfTotal, '-', '-', '-'],
+          ],
+        });
+        allHtmlSections.push(anHtml);
+      }
+
+      // 4.15 Tabulasi Silang & Chi-Square (Categorical)
       if (results.crosstab && results.chiSquare) {
         const ct = results.crosstab;
         const cs = results.chiSquare;
@@ -741,7 +943,7 @@ export default function HasilPage() {
         });
 
         allHtmlSections.push(buildWordTableHtml({
-          tableNumber: 'Tabel 4.16',
+          tableNumber: 'Tabel 4.15a',
           title: `Hasil Tabulasi Silang ${ct.rowVar} dan ${ct.colVar}`,
           note: `Total N = ${ct.totalN} responden.`,
           columns: [
@@ -763,7 +965,7 @@ export default function HasilPage() {
           csRows.push(["Fisher's Exact Test", '-', '-', formatNumber(cs.fisherExact, 4), cs.fisherExact < 0.05 ? 'Signifikan' : 'Tidak']);
         }
         allHtmlSections.push(buildWordTableHtml({
-          tableNumber: 'Tabel 4.17',
+          tableNumber: 'Tabel 4.15b',
           title: "Hasil Uji Chi-Square & Fisher's Exact Test",
           note: cs.cochranFootnote,
           columns: [
@@ -779,7 +981,7 @@ export default function HasilPage() {
         if (results.riskEstimate) {
           const re = results.riskEstimate;
           allHtmlSections.push(buildWordTableHtml({
-            tableNumber: 'Tabel 4.18',
+            tableNumber: 'Tabel 4.15c',
             title: `Estimasi Risiko Epidemiologi (${re.exposureVar})`,
             columns: [
               { header: 'Ukuran Asosiasi', align: 'left' },
@@ -823,26 +1025,68 @@ export default function HasilPage() {
     try {
       let tableHtml = '';
       if (activeTab === 'descriptive') {
-        tableHtml = buildWordTableHtml({
-          tableNumber: 'Tabel 4.1',
-          title: 'Hasil Analisis Statistik Deskriptif Variabel Penelitian & TCR',
-          note: `Sumber: Data primer. N = ${results.respondentCount}. ${LIKERT_INTERVAL_NOTE}`,
-          columns: descriptiveCols.map((c) => ({ header: c.header, align: c.align })),
-          rows: (results.descriptive || []).map((r) => [
-            r.variable,
-            formatNumber(r.n),
-            formatNumber(r.mean, 3),
-            formatNumber(r.median, 3),
-            formatNumber(r.stdDev, 3),
-            formatNumber(r.min, 3),
-            formatNumber(r.max, 3),
-            r.tcr !== undefined ? `${formatNumber(r.tcr, 1)}%` : '-',
-            r.tcrCategory || '-',
-          ]),
-        });
+        const parts: string[] = [];
+        if (results.demographics && results.demographics.length > 0) {
+          const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+          results.demographics.forEach((demo, dIdx) => {
+            const letter = results.demographics!.length > 1 ? letters[dIdx] || `${dIdx + 1}` : '';
+            parts.push(buildWordTableHtml({
+              tableNumber: `Tabel 4.1${letter}`,
+              title: `Distribusi Frekuensi Karakteristik Responden Berdasarkan ${demo.variable.replace(/_/g, ' ')}`,
+              note: `Total responden N = ${results.respondentCount}.`,
+              columns: demographicCategoryCols.map((c) => ({ header: c.header, align: c.align })),
+              rows: demo.categories.map((c) => [
+                c.category,
+                formatNumber(c.frequency),
+                `${formatNumber(c.percentage, 1)}%`,
+                `${formatNumber(c.cumulativePercentage, 1)}%`,
+              ]),
+            }));
+          });
+        }
+        if (results.descriptive && results.descriptive.length > 0) {
+          parts.push(buildWordTableHtml({
+            tableNumber: 'Tabel 4.2',
+            title: 'Hasil Analisis Statistik Deskriptif Variabel Penelitian & TCR',
+            note: `Sumber: Data primer. N = ${results.respondentCount}. ${LIKERT_INTERVAL_NOTE}`,
+            columns: descriptiveCols.map((c) => ({ header: c.header, align: c.align })),
+            rows: (results.descriptive || []).map((r) => [
+              r.variable,
+              formatNumber(r.n),
+              formatNumber(r.mean, 3),
+              formatNumber(r.median, 3),
+              formatNumber(r.stdDev, 3),
+              formatNumber(r.min, 3),
+              formatNumber(r.max, 3),
+              r.tcr !== undefined ? `${formatNumber(r.tcr, 1)}%` : '-',
+              r.tcrCategory || '-',
+            ]),
+          }));
+        }
+        if (results.itemDescriptive && results.itemDescriptive.length > 0) {
+          parts.push(buildWordTableHtml({
+            tableNumber: 'Tabel 4.3',
+            title: 'Distribusi Frekuensi Jawaban Responden per Butir Kuesioner',
+            note: '* STS (1), TS (2), N (3), S (4), SS (5).',
+            columns: likertItemCols.map((c) => ({ header: c.header, align: c.align })),
+            rows: results.itemDescriptive.map((r) => [
+              r.variable,
+              formatNumber(r.freq1 ?? 0),
+              formatNumber(r.freq2 ?? 0),
+              formatNumber(r.freq3 ?? 0),
+              formatNumber(r.freq4 ?? 0),
+              formatNumber(r.freq5 ?? 0),
+              formatNumber(r.n),
+              formatNumber(r.mean, 2),
+              r.tcr !== undefined ? `${formatNumber(r.tcr, 1)}%` : '-',
+              r.tcrCategory || '-',
+            ]),
+          }));
+        }
+        tableHtml = parts.join('<br/><br/>');
       } else if (activeTab === 'validity') {
         tableHtml = buildWordTableHtml({
-          tableNumber: 'Tabel 4.2',
+          tableNumber: 'Tabel 4.4',
           title: 'Hasil Pengujian Validitas Instrumen Kuesioner (Pearson Product Moment)',
           note: `Derajat bebas df = N - 2 = ${results.respondentCount - 2}, taraf signifikansi α = 0,05.`,
           columns: validityCols.map((c) => ({ header: c.header, align: c.align })),
@@ -856,7 +1100,7 @@ export default function HasilPage() {
         });
       } else if (activeTab === 'reliability') {
         tableHtml = buildWordTableHtml({
-          tableNumber: 'Tabel 4.3',
+          tableNumber: 'Tabel 4.5',
           title: 'Hasil Pengujian Reliabilitas Konstruk (Cronbach\'s Alpha)',
           note: 'Kriteria reliabilitas: Cronbach\'s Alpha ≥ 0,600 (standar minimum).',
           columns: reliabilityCols.map((c) => ({ header: c.header, align: c.align })),
@@ -872,8 +1116,8 @@ export default function HasilPage() {
         const parts: string[] = [];
         if (results.normality && results.normality.length > 0) {
           parts.push(buildWordTableHtml({
-            tableNumber: 'Tabel 4.4',
-            title: 'Hasil Uji Normalitas Residual Kolmogorov-Smirnov',
+            tableNumber: 'Tabel 4.6',
+            title: 'Hasil Uji Normalitas Residual Regresi (Kolmogorov-Smirnov & Shapiro-Wilk)',
             columns: normalityCols.map((c) => ({ header: c.header, align: c.align })),
             rows: results.normality.map((r) => [
               r.test,
@@ -886,7 +1130,7 @@ export default function HasilPage() {
         }
         if (results.multicollinearity && results.multicollinearity.length > 0) {
           parts.push(buildWordTableHtml({
-            tableNumber: 'Tabel 4.5',
+            tableNumber: 'Tabel 4.7',
             title: 'Hasil Uji Multikolinearitas (Tolerance & VIF)',
             columns: multicollinearityCols.map((c) => ({ header: c.header, align: c.align })),
             rows: results.multicollinearity.map((r) => [
@@ -900,7 +1144,7 @@ export default function HasilPage() {
         }
         if (results.heteroscedasticity && results.heteroscedasticity.length > 0) {
           parts.push(buildWordTableHtml({
-            tableNumber: 'Tabel 4.6',
+            tableNumber: 'Tabel 4.8',
             title: 'Hasil Uji Heteroskedastisitas (Metode Glejser)',
             columns: heteroscedasticityCols.map((c) => ({ header: c.header, align: c.align })),
             rows: results.heteroscedasticity.map((r) => [
@@ -914,7 +1158,7 @@ export default function HasilPage() {
         }
         if (results.durbinWatson) {
           parts.push(buildWordTableHtml({
-            tableNumber: 'Tabel 4.6b',
+            tableNumber: 'Tabel 4.9',
             title: 'Hasil Uji Autokorelasi Durbin-Watson',
             columns: durbinWatsonCols.map((c) => ({ header: c.header, align: c.align })),
             rows: [[
@@ -926,26 +1170,11 @@ export default function HasilPage() {
             ]],
           }));
         }
-        if (results.linearity && results.linearity.length > 0) {
-          parts.push(buildWordTableHtml({
-            tableNumber: 'Tabel 4.6c',
-            title: 'Hasil Uji Linearitas Hubungan (Deviation from Linearity)',
-            columns: linearityCols.map((c) => ({ header: c.header, align: c.align })),
-            rows: results.linearity.map((r) => [
-              `${r.independentVar} → ${r.dependentVar}`,
-              formatNumber(r.fDeviation, 3),
-              formatNumber(r.sigDeviation, 3),
-              formatNumber(r.fLinearity, 3),
-              formatNumber(r.sigLinearity, 3),
-              r.isLinear ? 'Linier' : 'Tidak Linier',
-            ]),
-          }));
-        }
         tableHtml = parts.join('<br/><br/>');
       } else if (activeTab === 'regression') {
         const parts: string[] = [];
         parts.push(buildWordTableHtml({
-          tableNumber: 'Tabel 4.7',
+          tableNumber: 'Tabel 4.10a',
           title: 'Hasil Analisis Regresi Linier Berganda dan Uji t Parsial',
           note: `Taraf signifikansi α = 0,05. df residual = ${results.respondentCount - (results.regression?.length || 3)}.`,
           columns: regressionCols.map((c) => ({ header: c.header, align: c.align })),
@@ -961,10 +1190,39 @@ export default function HasilPage() {
           ]),
         }));
 
+        if (results.determination) {
+          parts.push(buildWordTableHtml({
+            tableNumber: 'Tabel 4.10b',
+            title: 'Hasil Analisis Koefisien Determinasi (Model Summary)',
+            columns: determinationCols.map((c) => ({ header: c.header, align: c.align })),
+            rows: [[
+              '1',
+              formatNumber(results.determination.rSquare, 3),
+              formatNumber(results.determination.adjustedRSquare, 3),
+              formatNumber(results.determination.stdError, 3),
+            ]],
+          }));
+        }
+
+        if (results.fTest) {
+          parts.push(buildWordTableHtml({
+            tableNumber: 'Tabel 4.10c',
+            title: 'Hasil Uji Signifikansi Simultan (Uji F / ANOVA Model)',
+            columns: fTestCols.map((c) => ({ header: c.header, align: c.align })),
+            rows: [[
+              'Regresi Simultan',
+              formatNumber(results.fTest.fHitung, 3),
+              formatNumber(results.fTest.fTabel, 3),
+              formatNumber(results.fTest.pValue, 3),
+              results.fTest.significant ? 'Signifikan Simultan' : 'Tidak Signifikan',
+            ]],
+          }));
+        }
+
         const predictors = (results.regression || []).filter((r) => !r.variable.toLowerCase().includes('konstanta') && r.sePercent !== undefined);
         if (predictors.length > 0) {
           parts.push(buildWordTableHtml({
-            tableNumber: 'Tabel 4.7b',
+            tableNumber: 'Tabel 4.10d',
             title: 'Sumbangan Efektif (SE %) dan Sumbangan Relatif (SR %)',
             columns: seSrCols.map((c) => ({ header: c.header, align: c.align })),
             rows: predictors.map((r) => [
@@ -975,10 +1233,25 @@ export default function HasilPage() {
             ]),
           }));
         }
+
+        parts.push(buildWordTableHtml({
+          tableNumber: 'Tabel 4.11',
+          title: 'Ringkasan Keputusan Pengujian Hipotesis Penelitian',
+          columns: hypothesisCols.map((c) => ({ header: c.header, align: c.align })),
+          rows: hypothesisRows.map((h) => [
+            h.hypothesis,
+            h.statement,
+            h.coefficient,
+            h.testValue,
+            h.pValue,
+            h.decision,
+          ]),
+        }));
+
         tableHtml = parts.join('<br/><br/>');
       } else if (activeTab === 'correlation') {
         tableHtml = buildWordTableHtml({
-          tableNumber: 'Tabel 4.10',
+          tableNumber: 'Tabel 4.12',
           title: 'Matriks Korelasi Pearson Antar Variabel Penelitian',
           note: 'Korelasi diuji pada tingkat signifikansi α = 0,05 (dua arah).',
           columns: correlationCols.map((c) => ({ header: c.header, align: c.align })),
@@ -990,6 +1263,34 @@ export default function HasilPage() {
             r.strength,
             r.significant ? 'Signifikan' : 'Tidak',
           ]),
+        });
+      } else if (activeTab === 'independent-ttest' && results.independentTTest) {
+        const it = results.independentTTest;
+        tableHtml = buildWordTableHtml({
+          tableNumber: 'Tabel 4.13',
+          title: 'Hasil Uji Beda Dua Kelompok Bebas (Independent Samples t-Test)',
+          columns: independentTTestCols.map((c) => ({ header: c.header, align: c.align })),
+          rows: it.rows.map((row, idx) => [
+            row.assumption,
+            idx === 0 ? formatNumber(it.levene.fStatistic, 3) : '-',
+            idx === 0 ? formatNumber(it.levene.pValue, 4) : '-',
+            formatNumber(row.tHitung, 3),
+            formatNumber(row.df, 1),
+            formatNumber(row.pValue, 4),
+            formatNumber(row.meanDiff, 3),
+          ]),
+        });
+      } else if (activeTab === 'oneway-anova' && results.oneWayAnova) {
+        const an = results.oneWayAnova;
+        tableHtml = buildWordTableHtml({
+          tableNumber: 'Tabel 4.14',
+          title: 'Hasil Analisis Varians Satu Jalur (One-Way ANOVA)',
+          columns: oneWayAnovaCols.map((c) => ({ header: c.header, align: c.align })),
+          rows: [
+            ['Between Groups', formatNumber(an.ssBetween, 3), an.dfBetween, formatNumber(an.msBetween, 3), formatNumber(an.fHitung, 3), formatNumber(an.pValue, 4)],
+            ['Within Groups', formatNumber(an.ssWithin, 3), an.dfWithin, formatNumber(an.msWithin, 3), '-', '-'],
+            ['Total', formatNumber(an.ssTotal, 3), an.dfTotal, '-', '-', '-'],
+          ],
         });
       } else if (activeTab === 'crosstab' && results.crosstab && results.chiSquare) {
         const ct = results.crosstab;
@@ -1007,7 +1308,7 @@ export default function HasilPage() {
         });
 
         parts.push(buildWordTableHtml({
-          tableNumber: 'Tabel 4.16',
+          tableNumber: 'Tabel 4.15a',
           title: `Hasil Tabulasi Silang ${ct.rowVar} dan ${ct.colVar}`,
           note: `Total N = ${ct.totalN} responden.`,
           columns: [
@@ -1025,15 +1326,12 @@ export default function HasilPage() {
         if (cs.continuityCorrection !== undefined) {
           csRows.push(['Continuity Correction (Yates)', formatNumber(cs.continuityCorrection, 3), 1, formatNumber(cs.continuityCorrectionSig || 0, 4), (cs.continuityCorrectionSig || 0) < 0.05 ? 'Signifikan' : 'Tidak']);
         }
-        if (cs.likelihoodRatio !== undefined) {
-          csRows.push(['Likelihood Ratio', formatNumber(cs.likelihoodRatio, 3), cs.df, formatNumber(cs.likelihoodRatioSig || 0, 4), (cs.likelihoodRatioSig || 0) < 0.05 ? 'Signifikan' : 'Tidak']);
-        }
         if (cs.fisherExact !== undefined) {
           csRows.push(["Fisher's Exact Test", '-', '-', formatNumber(cs.fisherExact, 4), cs.fisherExact < 0.05 ? 'Signifikan' : 'Tidak']);
         }
 
         parts.push(buildWordTableHtml({
-          tableNumber: 'Tabel 4.17',
+          tableNumber: 'Tabel 4.15b',
           title: "Hasil Uji Chi-Square & Fisher's Exact Test",
           note: cs.cochranFootnote,
           columns: [
@@ -1049,7 +1347,7 @@ export default function HasilPage() {
         if (results.riskEstimate) {
           const re = results.riskEstimate;
           parts.push(buildWordTableHtml({
-            tableNumber: 'Tabel 4.18',
+            tableNumber: 'Tabel 4.15c',
             title: `Estimasi Risiko Epidemiologi (${re.exposureVar})`,
             columns: [
               { header: 'Ukuran Asosiasi', align: 'left' },
@@ -1061,7 +1359,6 @@ export default function HasilPage() {
             rows: [
               [`Odds Ratio (OR) untuk ${re.exposureVar}`, formatNumber(re.oddsRatio, 3), formatNumber(re.ciLower, 3), formatNumber(re.ciUpper, 3), re.ciLower > 1.0 ? 'Faktor Risiko Signifikan' : (re.ciUpper < 1.0 ? 'Faktor Protektif Signifikan' : 'Bukan Risiko')],
               ['Relative Risk (RR) Kohort 1', formatNumber(re.forCohortRisk1, 3), formatNumber(re.forCohortRisk1CiLower, 3), formatNumber(re.forCohortRisk1CiUpper, 3), 'Kelompok Kasus'],
-              ['Relative Risk (RR) Kohort 2', formatNumber(re.forCohortRisk2, 3), formatNumber(re.forCohortRisk2CiLower, 3), formatNumber(re.forCohortRisk2CiUpper, 3), 'Kelompok Kontrol'],
             ],
           }));
         }
@@ -1328,6 +1625,95 @@ export default function HasilPage() {
         ) : (
           <span>-</span>
         ),
+      getValue: (r) => r.tcrCategory || '-',
+    },
+  ];
+
+  // 1b-2. Distribusi Frekuensi Jawaban per Butir (Skala Likert 1-5)
+  const likertItemCols: ColumnDef<DescriptiveResult>[] = [
+    {
+      key: 'variable',
+      header: 'Butir Indikator',
+      className: 'font-mono font-semibold',
+      render: (r) => <span className="text-foreground">{r.variable}</span>,
+      getValue: (r) => r.variable,
+    },
+    {
+      key: 'freq1',
+      header: 'STS (1)',
+      align: 'right',
+      render: (r) => <span className="tabular-nums font-mono">{formatNumber(r.freq1 ?? 0)}</span>,
+      getValue: (r) => formatNumber(r.freq1 ?? 0),
+    },
+    {
+      key: 'freq2',
+      header: 'TS (2)',
+      align: 'right',
+      render: (r) => <span className="tabular-nums font-mono">{formatNumber(r.freq2 ?? 0)}</span>,
+      getValue: (r) => formatNumber(r.freq2 ?? 0),
+    },
+    {
+      key: 'freq3',
+      header: 'N (3)',
+      align: 'right',
+      render: (r) => <span className="tabular-nums font-mono">{formatNumber(r.freq3 ?? 0)}</span>,
+      getValue: (r) => formatNumber(r.freq3 ?? 0),
+    },
+    {
+      key: 'freq4',
+      header: 'S (4)',
+      align: 'right',
+      render: (r) => <span className="tabular-nums font-mono">{formatNumber(r.freq4 ?? 0)}</span>,
+      getValue: (r) => formatNumber(r.freq4 ?? 0),
+    },
+    {
+      key: 'freq5',
+      header: 'SS (5)',
+      align: 'right',
+      render: (r) => <span className="tabular-nums font-mono">{formatNumber(r.freq5 ?? 0)}</span>,
+      getValue: (r) => formatNumber(r.freq5 ?? 0),
+    },
+    {
+      key: 'n',
+      header: 'Total N',
+      align: 'right',
+      render: (r) => <span className="tabular-nums font-mono font-bold">{formatNumber(r.n)}</span>,
+      getValue: (r) => formatNumber(r.n),
+    },
+    {
+      key: 'mean',
+      header: 'Rata-rata',
+      align: 'right',
+      render: (r) => (
+        <span className="tabular-nums font-mono font-bold text-foreground">
+          {formatNumber(r.mean, 2)}
+        </span>
+      ),
+      getValue: (r) => formatNumber(r.mean, 2),
+    },
+    {
+      key: 'tcr',
+      header: 'TCR (%)',
+      align: 'right',
+      render: (r) => (
+        <span className="tabular-nums font-mono font-semibold text-foreground">
+          {r.tcr !== undefined ? `${formatNumber(r.tcr, 1)}%` : '-'}
+        </span>
+      ),
+      getValue: (r) => (r.tcr !== undefined ? `${formatNumber(r.tcr, 1)}%` : '-'),
+    },
+    {
+      key: 'tcrCategory',
+      header: 'Kategori',
+      align: 'center',
+      render: (r) => (
+        <Badge
+          variant={r.tcrCategory === 'Sangat Baik' || r.tcrCategory === 'Baik' ? 'pine' : 'secondary'}
+          className="text-[11px]"
+        >
+          {r.tcrCategory || '-'}
+        </Badge>
+      ),
       getValue: (r) => r.tcrCategory || '-',
     },
   ];
@@ -1700,12 +2086,21 @@ export default function HasilPage() {
       key: 'significant',
       header: 'Signifikansi',
       align: 'center',
-      render: (r) => (
-        <Badge variant={r.significant ? 'pine' : 'secondary'} className="text-[13px] min-h-[24px]">
-          {r.significant ? 'Signifikan' : 'Tidak Signifikan'}
-        </Badge>
-      ),
-      getValue: (r) => (r.significant ? 'Signifikan' : 'Tidak'),
+      render: (r) => {
+        const isConst = r.variable.toLowerCase().includes('konstanta') || r.variable.toLowerCase().includes('constant');
+        if (isConst) {
+          return <span className="text-muted-foreground font-mono">-</span>;
+        }
+        return (
+          <Badge variant={r.significant ? 'pine' : 'secondary'} className="text-[13px] min-h-[24px]">
+            {r.significant ? 'Signifikan' : 'Tidak Signifikan'}
+          </Badge>
+        );
+      },
+      getValue: (r) => {
+        const isConst = r.variable.toLowerCase().includes('konstanta') || r.variable.toLowerCase().includes('constant');
+        return isConst ? '-' : (r.significant ? 'Signifikan' : 'Tidak');
+      },
     },
   ];
 
@@ -1811,6 +2206,54 @@ export default function HasilPage() {
       header: 'Std. Error of the Estimate',
       align: 'right',
       getValue: (r) => formatNumber(r.stdError, 3),
+    },
+  ];
+
+  // 5d. Keputusan Hipotesis Penelitian (Tabel 4.11)
+  const hypothesisCols: ColumnDef<HypothesisDecisionRow>[] = [
+    {
+      key: 'hypothesis',
+      header: 'Hipotesis',
+      render: (r) => <span className="font-bold text-foreground font-mono">{r.hypothesis}</span>,
+      getValue: (r) => r.hypothesis,
+    },
+    {
+      key: 'statement',
+      header: 'Pernyataan Hubungan / Jalur',
+      render: (r) => <span className="text-foreground font-medium">{r.statement}</span>,
+      getValue: (r) => r.statement,
+    },
+    {
+      key: 'coefficient',
+      header: 'Koefisien (B / R²)',
+      align: 'right',
+      render: (r) => <span className="tabular-nums font-mono">{r.coefficient}</span>,
+      getValue: (r) => r.coefficient,
+    },
+    {
+      key: 'testValue',
+      header: 'Nilai Uji (t / F)',
+      align: 'right',
+      render: (r) => <span className="tabular-nums font-mono font-semibold">{r.testValue}</span>,
+      getValue: (r) => r.testValue,
+    },
+    {
+      key: 'pValue',
+      header: 'Sig. (p-value)',
+      align: 'right',
+      render: (r) => <span className="tabular-nums font-mono font-semibold">{r.pValue}</span>,
+      getValue: (r) => r.pValue,
+    },
+    {
+      key: 'decision',
+      header: 'Keputusan Hipotesis',
+      align: 'center',
+      render: (r) => (
+        <Badge variant={r.isAccepted ? 'pine' : 'secondary'} className="text-xs font-semibold">
+          {r.decision}
+        </Badge>
+      ),
+      getValue: (r) => r.decision,
     },
   ];
 
@@ -2437,126 +2880,148 @@ export default function HasilPage() {
     <div className="space-y-6 max-w-full min-w-0">
       {/* Sticky Header Meja Kerja Hasil */}
       <div className="sticky top-16 z-20 bg-background/95 backdrop-blur-md pb-4 pt-3 sm:pt-4 border-b border-border/80 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="space-y-1 min-w-0 flex-1">
-          <div className="flex items-center gap-2 text-[13px] text-muted-foreground flex-wrap">
+        <div className="space-y-1.5 min-w-0 flex-1">
+          {/* Breadcrumb Nav */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
             <Link href="/app" className="hover:text-foreground transition-colors">
               Proyek
             </Link>
-            <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+            <ChevronRight className="h-3 w-3 shrink-0" />
             <span
               className="text-foreground font-medium truncate max-w-[200px] sm:max-w-[320px]"
               title={project?.title || 'Skripsi Saya'}
             >
               {project?.title || 'Skripsi Saya'}
             </span>
-            <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+            <ChevronRight className="h-3 w-3 shrink-0" />
             <span className="text-primary font-semibold">Hasil Bab 4</span>
           </div>
 
+          {/* Heading & Metadata */}
           <div className="flex items-center gap-2.5 flex-wrap">
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground font-serif">
               Hasil Analisis &amp; Pembahasan Bab 4
             </h1>
-            <Badge variant="outline" className="text-[13px] bg-muted/40 font-mono min-h-[24px]">
-              N = {results.respondentCount}
+            <Badge variant="outline" className="text-xs bg-muted/50 font-mono py-0.5">
+              N = {results.respondentCount} responden
             </Badge>
+            {isSample && (
+              <Badge variant="amber" className="text-xs font-semibold py-0.5">
+                Data Contoh
+              </Badge>
+            )}
+          </div>
+
+          {/* Dataset & Timestamp Metadata Strip */}
+          <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap pt-0.5">
+            <span className="inline-flex items-center gap-1 font-mono">
+              <FileText className="w-3.5 h-3.5 text-primary" />
+              {results.sourceMeta?.fileName || 'dataset_kuesioner.xlsx'}
+            </span>
+            <span>•</span>
+            <span className="inline-flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+              {formatDateTime(project?.updatedAt || project?.createdAt || new Date().toISOString())}
+            </span>
+            <span>•</span>
+            <span className="font-mono text-[11px] text-muted-foreground/80">
+              Verifikasi: {results.sourceMeta?.sha256 ? results.sourceMeta.sha256.substring(0, 8) : 'sha256-verified'}
+            </span>
           </div>
         </div>
 
-        {/* Action Buttons: Unduh Word, Unduh PDF, Salin Semua Tabel */}
-        <div className="flex items-center gap-2 flex-wrap shrink-0">
+        {/* Action Buttons: 1 Tombol Utama "Unduh Bab 4 (Word)" + Dropdown "Unduh Lainnya" */}
+        <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+          <TambahAnalisisSelector
+            enabledTableIds={enabledOptionalTables}
+            onToggleTable={toggleOptionalTable}
+          />
+
+          {/* Tombol Utama: Unduh Bab 4 (Word) */}
           <Button
-            variant="outline"
             size="sm"
-            onClick={handleCopyAllTables}
-            className="text-[13px] min-h-[40px] px-3.5 gap-1.5 touch-manipulation cursor-pointer"
-            title="Salin seluruh tabel sekaligus dalam format Microsoft Word"
+            onClick={() => {
+              setChapter4ExportFormat('docx');
+              setChapter4ModalOpen(true);
+            }}
+            className="text-[13px] min-h-[44px] px-4 gap-2 font-semibold shadow-xs touch-manipulation cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl"
+            title="Unduh draf naskah Bab 4 format Microsoft Word (.docx) dengan tabel APA 7th asli"
           >
-            {copiedAll ? (
-              <>
-                <Check className="h-4 w-4 text-primary" />
-                <span className="text-primary font-medium">Semua Tabel Tersalin</span>
-              </>
-            ) : (
-              <>
-                <Copy className="h-4 w-4 text-muted-foreground" />
-                <span>Salin Semua Tabel</span>
-              </>
-            )}
+            <FileDown className="h-4 w-4" />
+            <span>Unduh Bab 4 (Word)</span>
           </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowReferenceTables(true)}
-            className="text-[13px] min-h-[40px] px-3.5 gap-1.5 font-medium touch-manipulation cursor-pointer border-amber-500/40 hover:bg-amber-500/10 text-amber-900 dark:text-amber-200"
-            title="Buka lampiran tabel r, t, dan F dengan baris df proyek yang telah distabilo kuning"
-          >
-            <BookOpen className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-            <span>Tabel r, t, F (Stabilo)</span>
-          </Button>
+          {/* Dropdown Menu: Unduh Lainnya & Salin Semua */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-[13px] min-h-[44px] px-3.5 gap-1.5 touch-manipulation cursor-pointer rounded-xl font-medium border-border hover:bg-muted"
+                aria-label="Menu unduh lainnya"
+              >
+                <span>Unduh Lainnya</span>
+                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-60 p-1.5 rounded-xl">
+              <DropdownMenuItem
+                onClick={() => {
+                  setChapter4ExportFormat('pdf');
+                  setChapter4ModalOpen(true);
+                }}
+                className="gap-2.5 cursor-pointer text-xs py-2.5 font-medium"
+              >
+                <FileText className="h-4 w-4 text-rose-500" />
+                <div className="flex flex-col">
+                  <span>Unduh Laporan Resmi (PDF)</span>
+                  <span className="text-[10px] text-muted-foreground">Format siap cetak untuk sidang</span>
+                </div>
+              </DropdownMenuItem>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDirectWordDownload}
-            disabled={isExportingWord}
-            className="text-[13px] min-h-[40px] px-3.5 gap-1.5 font-medium touch-manipulation cursor-pointer"
-            title="Unduh laporan lengkap format Microsoft Word (.docx)"
-          >
-            {isExportingWord ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <FileDown className="h-4 w-4 text-primary" />
-            )}
-            <span>Unduh Word</span>
-          </Button>
+              <DropdownMenuItem
+                onClick={handleCopyAllTables}
+                className="gap-2.5 cursor-pointer text-xs py-2.5 font-medium"
+              >
+                <Copy className="h-4 w-4 text-primary" />
+                <div className="flex flex-col">
+                  <span>Salin Semua Tabel Sekaligus</span>
+                  <span className="text-[10px] text-muted-foreground">Format tabel APA 7th untuk Word</span>
+                </div>
+              </DropdownMenuItem>
 
-          <Button
-            size="sm"
-            onClick={handleDirectPdfDownload}
-            disabled={isExportingPdf}
-            className="text-[13px] min-h-[40px] px-3.5 gap-1.5 font-semibold shadow-xs touch-manipulation cursor-pointer"
-            title="Unduh laporan resmi terverifikasi format PDF (.pdf)"
-          >
-            {isExportingPdf ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <FileDown className="h-4 w-4" />
-            )}
-            <span>Unduh PDF</span>
-          </Button>
+              <DropdownMenuItem
+                onClick={() => setShowReferenceTables(true)}
+                className="gap-2.5 cursor-pointer text-xs py-2.5 font-medium text-amber-900 dark:text-amber-200"
+              >
+                <BookOpen className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <div className="flex flex-col">
+                  <span>Tabel r, t, F (df Berstabilo)</span>
+                  <span className="text-[10px] text-muted-foreground">Buka tabel referensi statistik</span>
+                </div>
+              </DropdownMenuItem>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setExportOpen(true)}
-            className="text-[13px] min-h-[40px] w-10 px-0 text-muted-foreground hover:text-foreground touch-manipulation cursor-pointer"
-            title="Pilihan ekspor lanjutan &amp; opsi watermark"
-            aria-label="Pilihan ekspor lanjutan"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-          </Button>
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem
+                onClick={() => setExportOpen(true)}
+                className="gap-2.5 cursor-pointer text-xs py-2 text-muted-foreground"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                <span>Opsi Ekspor Lanjutan &amp; Lampiran</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <Button
             asChild
             variant="ghost"
             size="sm"
-            className="text-[13px] min-h-[40px] px-2.5 gap-1.5 text-muted-foreground hover:text-foreground touch-manipulation cursor-pointer"
+            className="text-[13px] min-h-[44px] px-2.5 gap-1.5 text-muted-foreground hover:text-foreground touch-manipulation cursor-pointer rounded-xl"
             title="Buka panduan interpretasi hasil Bab 4"
           >
             <Link
-              href={`/app/bantuan#${
-                activeTab === 'reliability'
-                  ? 'reliabilitas'
-                  : activeTab === 'validity'
-                  ? 'validitas'
-                  : activeTab === 'assumptions'
-                  ? 'asumsi-klasik'
-                  : activeTab === 'regression'
-                  ? 'regresi'
-                  : 'panduan-hasil'
-              }`}
+              href="/app/bantuan"
               target="_blank"
             >
               <HelpCircle className="h-4 w-4 text-primary" />
@@ -2566,8 +3031,53 @@ export default function HasilPage() {
         </div>
       </div>
 
+      {/* Banner Mode Data Contoh & Reset Demo */}
+      {isSample && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl border border-amber-500/40 bg-amber-500/10 text-foreground shadow-xs">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Badge variant="amber" className="text-xs font-semibold px-2.5 py-0.5 rounded-[6px]">
+                {COPY.badges.sampleData}
+              </Badge>
+              <h4 className="font-semibold text-sm sm:text-base text-foreground">
+                Anda Sedang Melihat Hasil Data Contoh
+              </h4>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed max-w-[72ch]">
+              Seluruh tabel Bab 4, narasi interpretasi, dan lampiran di bawah ini menggunakan dataset simulasi kuesioner (N = 120). Uji lanjutan (ANOVA, Uji Beda, Chi-Square, Durbin-Watson) terbuka penuh dalam mode demo ini.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleResetDemo}
+              className="cursor-pointer rounded-xl min-h-[40px] px-3.5 border-amber-500/40 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20"
+            >
+              <RotateCcw className="w-4 h-4 mr-1.5" />
+              Reset Demo
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              asChild
+              className="cursor-pointer font-semibold rounded-xl min-h-[40px] px-4 bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <Link href="/app/proyek/baru">
+                <UploadCloud className="w-4 h-4 mr-1.5" />
+                Pakai Data Saya
+              </Link>
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Panel Sumber Data & Integritas Matriks */}
       <DataSourcePanel meta={results.sourceMeta} projectId={projectId} />
+
+      {/* Ringkasan Eksekutif Bab 4 (Lampu Hijau / Kuning / Merah) */}
+      <TopSummaryTrafficLights results={results} onJumpToTab={(tabId) => setActiveTab(tabId)} />
 
       {/* Dual-View Segmented Output Toggle: APA 7th vs SPSS Classic */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3.5 rounded-2xl border border-border bg-card shadow-xs">
@@ -2603,7 +3113,7 @@ export default function HasilPage() {
             )}
           >
             <FileText className="h-4 w-4 text-primary" />
-            <span>📄 Tabel Naskah Bab 4 (APA 7th)</span>
+            <span>Tabel Naskah Bab 4 (APA 7th)</span>
           </button>
           <button
             type="button"
@@ -2618,7 +3128,7 @@ export default function HasilPage() {
             )}
           >
             <Layers className="h-4 w-4 text-emerald-500" />
-            <span>🖥️ Mode Lampiran (Gaya SPSS)</span>
+            <span>Mode Lampiran (Gaya SPSS)</span>
           </button>
         </div>
       </div>
@@ -2628,6 +3138,7 @@ export default function HasilPage() {
         <div className="w-full min-w-0 space-y-6">
           <ProResultBlur
             isLocked={isFree && !isSample}
+            isSample={isSample}
             testName="Lampiran Output SPSS Klasik"
             reason="Tampilan lembar output klasik SPSS (.spv/tabel pivot) lengkap dengan seluruh tabel komparatif dan regresi tersedia pada Paket Bulanan &amp; Paket Skripsi."
           >
@@ -2652,38 +3163,31 @@ export default function HasilPage() {
 
               {/* 1. STATISTIK DESKRIPTIF */}
               <TabsContent value="descriptive" className="space-y-6 mt-4">
-                <ResultTable
-                  tableNumber="Tabel 4.1"
-                  title="Hasil Analisis Statistik Deskriptif Variabel Penelitian"
-                  note={`Sumber data: ${results.sourceMeta?.fileName || 'Data Primer'}. N = ${results.respondentCount} responden valid. Skala Likert 1-5. ${LIKERT_INTERVAL_NOTE}`}
-                  columns={descriptiveCols}
-                  data={results.descriptive || []}
-                  rowKey={(r) => r.variable}
-                  highlightedValue={highlightedNumber}
-                />
-
-                {/* Profil Demografi Responden jika ada */}
-                {results.demographics && results.demographics.length > 0 && (
-                  <div className="space-y-4 pt-4 border-t border-border">
+                {/* Tabel 4.1: Profil & Karakteristik Responden */}
+                {results.demographics && results.demographics.length > 0 ? (
+                  <div className="space-y-4">
                     <div className="border-b border-border pb-2">
+                      <span className="text-xs font-bold text-primary font-mono uppercase tracking-wider block">
+                        Tabel 4.1 (Format Baku APA 7th Edition)
+                      </span>
                       <h3 className="font-serif text-lg font-bold text-foreground">
-                        Karakteristik &amp; Demografi Responden
+                        Distribusi Frekuensi Karakteristik Responden Penelitian
                       </h3>
-                      <p className="text-xs text-muted-foreground">
-                        Distribusi frekuensi karakteristik profil responden penelitian (N = {results.respondentCount}).
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Sebaran karakteristik profil demografi responden (N = {results.respondentCount}).
                       </p>
                     </div>
 
                     <div className="grid grid-cols-1 gap-6">
                       {results.demographics.map((demo, dIdx) => {
                         const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
-                        const letter = letters[dIdx] || `${dIdx + 1}`;
+                        const letter = results.demographics!.length > 1 ? letters[dIdx] || `${dIdx + 1}` : '';
                         return (
                           <ResultTable
                             key={demo.variable}
                             tableNumber={`Tabel 4.1${letter}`}
                             title={`Distribusi Frekuensi Karakteristik Responden Berdasarkan ${demo.variable.replace(/_/g, ' ')}`}
-                            note={`Total responden N = ${results.respondentCount}. Kategori terbanyak: ${demo.majorityCategory || '-'}.`}
+                            note={`Total responden N = ${results.respondentCount}. Kategori mayoritas: ${demo.majorityCategory || '-'}.`}
                             columns={demographicCategoryCols}
                             data={demo.categories}
                             rowKey={(c) => `${demo.variable}-${c.category}`}
@@ -2692,27 +3196,79 @@ export default function HasilPage() {
                         );
                       })}
                     </div>
-
-                    {results.explanations.demographics && (
-                      <ExplanationBox
-                        title="Interpretasi Karakteristik Responden"
-                        summarySentence="Ringkasan profil demografi responden penelitian berdasarkan sebaran frekuensi."
-                        explanation={results.explanations.demographics}
-                        onHoverNumber={setHighlightedNumber}
-                        activeNumber={highlightedNumber}
-                      />
-                    )}
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl border border-dashed border-border/80 bg-muted/20 space-y-1">
+                    <span className="text-xs font-bold text-primary font-mono uppercase tracking-wider block">
+                      Tabel 4.1
+                    </span>
+                    <h3 className="text-sm font-semibold text-foreground">
+                      Karakteristik &amp; Demografi Responden
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Kolom demografi kuesioner (seperti Jenis Kelamin, Usia, Pendidikan) dirangkum otomatis pada bagian ini saat file kuesioner memuat data profil responden.
+                    </p>
                   </div>
                 )}
 
-                {/* Tabel 4.1B: Distribusi Frekuensi & Kategori Skor per Indikator (TCR) */}
+                {/* Tabel 4.2: Statistik Deskriptif Variabel Penelitian */}
+                <div className="space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <span className="text-xs font-bold text-primary font-mono uppercase tracking-wider block">
+                        Tabel 4.2 (Format Baku APA 7th Edition)
+                      </span>
+                      <h3 className="font-serif text-lg font-bold text-foreground">
+                        Hasil Analisis Statistik Deskriptif Variabel Penelitian
+                      </h3>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowItemDetails(!showItemDetails)}
+                      className="text-xs h-8 px-3 gap-1.5 self-start sm:self-auto cursor-pointer"
+                    >
+                      {showItemDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                      <span>{showItemDetails ? 'Sembunyikan Rincian per Butir' : 'Lihat Rincian per Indikator'}</span>
+                    </Button>
+                  </div>
+
+                  <ResultTable
+                    tableNumber="Tabel 4.2"
+                    title="Hasil Analisis Statistik Deskriptif Variabel Penelitian & TCR"
+                    note={`Sumber data: ${results.sourceMeta?.fileName || 'Data Primer'}. N = ${results.respondentCount} responden valid. Skala Likert 1-5. ${LIKERT_INTERVAL_NOTE}`}
+                    columns={descriptiveCols}
+                    data={results.descriptive || []}
+                    rowKey={(r) => r.variable}
+                    highlightedValue={highlightedNumber}
+                  />
+
+                  {/* Folded Item Details Table */}
+                  {showItemDetails && results.itemDescriptive && results.itemDescriptive.length > 0 && (
+                    <div className="pt-2 pl-2 border-l-2 border-primary/40 space-y-2">
+                      <span className="text-xs font-semibold text-foreground block">
+                        Rincian Statistik Deskriptif per Butir Pertanyaan (TCR Indikator):
+                      </span>
+                      <ResultTable
+                        tableNumber="Tabel 4.2 (Rincian)"
+                        title="Rincian Skor Rata-rata & TCR per Butir Pertanyaan"
+                        columns={itemDescriptiveCols}
+                        data={results.itemDescriptive}
+                        rowKey={(r) => r.variable}
+                        highlightedValue={highlightedNumber}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Tabel 4.3: Distribusi Frekuensi Jawaban per Butir (Likert STS..SS) */}
                 {results.itemDescriptive && results.itemDescriptive.length > 0 && (
-                  <div className="space-y-3 pt-2">
+                  <div className="space-y-3 pt-2 border-t border-border">
                     <ResultTable
-                      tableNumber="Tabel 4.1B"
-                      title="Distribusi Frekuensi & Kategori Skor per Indikator (Tingkat Capaian Responden / TCR)"
-                      note={`* Kategori Interval Mean: 1,00–1,80 = Sangat Rendah; 1,81–2,60 = Rendah; 2,61–3,40 = Cukup; 3,41–4,20 = Tinggi; 4,21–5,00 = Sangat Tinggi. Rumus TCR = (Mean / 5) × 100%. N = ${results.respondentCount} responden.`}
-                      columns={itemDescriptiveCols}
+                      tableNumber="Tabel 4.3"
+                      title="Distribusi Frekuensi Jawaban Responden per Butir Kuesioner (Skala Likert 1-5)"
+                      note={`* STS = Sangat Tidak Setuju (1), TS = Tidak Setuju (2), N = Netral (3), S = Setuju (4), SS = Sangat Setuju (5). TCR = Tingkat Capaian Responden. N = ${results.respondentCount} responden.`}
+                      columns={likertItemCols}
                       data={results.itemDescriptive}
                       rowKey={(r) => r.variable}
                       highlightedValue={highlightedNumber}
@@ -2720,10 +3276,16 @@ export default function HasilPage() {
                   </div>
                 )}
 
-                <ExplanationBox
-                  title="Interpretasi Statistik Deskriptif &amp; TCR"
-                  summarySentence={descriptiveIntinya}
-                  explanation={results.explanations.descriptive}
+                {/* Chapter 4 Rule-Based Interpretation & Discussion Scaffold */}
+                <Chapter4InterpretationCard
+                  tableNumber="Tabel 4.1–4.3"
+                  intinya={descriptiveIntinya}
+                  interpretation={results.explanations.descriptive}
+                  guidingQuestions={[
+                    'Apakah kecenderungan rata-rata jawaban responden ini mencerminkan kondisi lapangan yang sesungguhnya?',
+                    'Indikator butir manakah yang memiliki skor tertinggi dan terendah, serta apa makna praktisnya bagi responden?',
+                    'Bagaimana interpretasi TCR ini memperkuat latar belakang masalah yang diajukan pada Bab 1?',
+                  ]}
                   onHoverNumber={setHighlightedNumber}
                   activeNumber={highlightedNumber}
                 />
@@ -2774,7 +3336,7 @@ export default function HasilPage() {
                 )}
 
                 <ResultTable
-                  tableNumber="Tabel 4.2"
+                  tableNumber="Tabel 4.4"
                   title="Hasil Pengujian Validitas Instrumen Kuesioner (Pearson Product Moment)"
                   note={`Derajat bebas df = N - 2 = ${results.respondentCount - 2}, taraf signifikansi α = 0,05 (r tabel = ${results.validity?.[0]?.rTabel ? formatNumber(results.validity[0].rTabel, 4) : '0,1816'}). Kriteria: r hitung > r tabel = Valid.`}
                   columns={validityCols}
@@ -2783,10 +3345,15 @@ export default function HasilPage() {
                   highlightedValue={highlightedNumber}
                 />
 
-                <ExplanationBox
-                  title="Interpretasi Uji Validitas"
-                  summarySentence={validityIntinya}
-                  explanation={results.explanations.validity}
+                <Chapter4InterpretationCard
+                  tableNumber="Tabel 4.4"
+                  intinya={validityIntinya}
+                  interpretation={results.explanations.validity}
+                  guidingQuestions={[
+                    'Apakah seluruh butir pernyataan mampu mengukur konstruk penelitian secara akurat sesuai indikator teori?',
+                    'Jika ada butir yang gugur, faktor apa dalam redaksi pertanyaan atau pemahaman responden yang memengaruhinya?',
+                    'Bagaimana dampak eliminasi butir gugur terhadap validitas isi (content validity) instrumen Anda?',
+                  ]}
                   onHoverNumber={setHighlightedNumber}
                   activeNumber={highlightedNumber}
                 />
@@ -2806,6 +3373,7 @@ export default function HasilPage() {
               <TabsContent value="reliability" className="space-y-6 mt-4">
                 <ProResultBlur
                   isLocked={isFree && !isSample}
+                  isSample={isSample}
                   testName="Uji Reliabilitas (Cronbach's Alpha)"
                   reason="Koefisien reliabilitas Cronbach's Alpha, item-deleted statistics, dan interpretasi Bab 4 lengkap tersedia pada Paket Bulanan & Paket Skripsi."
                 >
@@ -2823,19 +3391,24 @@ export default function HasilPage() {
                   )}
 
                   <ResultTable
-                    tableNumber="Tabel 4.3"
+                    tableNumber="Tabel 4.5"
                     title="Hasil Pengujian Reliabilitas Konstruk (Cronbach's Alpha)"
-                    note="* Ambang batas reliabilitas standar kuesioner menurut Nunnaly & Ghozali adalah Cronbach's Alpha ≥ 0,600."
+                    note="* Ambang batas reliabilitas standar kuesioner menurut Nunnaly & Ghozali adalah Cronbach's Alpha ≥ 0,600 (atau ≥ 0,700 untuk standar konservatif)."
                     columns={reliabilityCols}
                     data={results.reliability || []}
                     rowKey={(r) => r.construct}
                     highlightedValue={highlightedNumber}
                   />
 
-                  <ExplanationBox
-                    title="Interpretasi Uji Reliabilitas"
-                    summarySentence={reliabilityIntinya}
-                    explanation={results.explanations.reliability}
+                  <Chapter4InterpretationCard
+                    tableNumber="Tabel 4.5"
+                    intinya={reliabilityIntinya}
+                    interpretation={results.explanations.reliability}
+                    guidingQuestions={[
+                      'Apakah koefisien Cronbach Alpha seluruh konstruk memenuhi syarat keandalan instrumen (≥ 0,600 / ≥ 0,700)?',
+                      'Bagaimana konsistensi internal responden dalam menjawab pertanyaan-pertanyaan yang mengukur dimensi yang sama?',
+                      'Apakah ada indikasi butir yang jika dihapus dapat meningkatkan nilai Alpha secara signifikan?',
+                    ]}
                     onHoverNumber={setHighlightedNumber}
                     activeNumber={highlightedNumber}
                   />
@@ -2855,6 +3428,7 @@ export default function HasilPage() {
               <TabsContent value="assumptions" className="space-y-6 mt-4">
                 <ProResultBlur
                   isLocked={isFree && !isSample}
+                  isSample={isSample}
                   testName="Uji Asumsi Klasik"
                   reason="Angka uji Normalitas K-S, Multikolinearitas (VIF), Heteroskedastisitas Glejser, Durbin-Watson, serta Asisten Penyembuh Asumsi tersedia pada Paket Bulanan & Paket Skripsi."
                 >
@@ -2982,7 +3556,7 @@ export default function HasilPage() {
                   )}
 
                   <ResultTable
-                    tableNumber="Tabel 4.4"
+                    tableNumber="Tabel 4.6"
                     title="Hasil Uji Normalitas Kolmogorov-Smirnov Residual"
                     note={`Uji dilakukan terhadap unstandardized residual model regresi (N = ${results.respondentCount}). Kriteria: Sig. ≥ 0,05 berdistribusi normal.`}
                     columns={normalityCols}
@@ -2991,14 +3565,25 @@ export default function HasilPage() {
                     highlightedValue={highlightedNumber}
                   />
 
-                  <ExplanationBox
-                    title="Interpretasi Uji Normalitas"
-                    summarySentence={
+                  {/* Visualizer Plot Histogram Residual & Kurva Normal + Normal P-P Plot */}
+                  <AcademicResidualPlots
+                    n={results.respondentCount}
+                    isNormal={results.normality?.[0]?.normal ?? true}
+                  />
+
+                  <Chapter4InterpretationCard
+                    tableNumber="Tabel 4.6"
+                    intinya={
                       results.normality?.[0]?.normal
                         ? `Nilai Sig. Kolmogorov-Smirnov sebesar ${formatNumber(results.normality[0].pValue, 3)} (≥ 0,05) membuktikan data residual berdistribusi normal.`
                         : `Nilai Sig. Kolmogorov-Smirnov sebesar ${results.normality?.[0] ? formatNumber(results.normality[0].pValue, 3) : '-'} (< 0,05) mengindikasikan residual belum berdistribusi normal.`
                     }
-                    explanation={results.explanations.normality}
+                    interpretation={results.explanations.normality}
+                    guidingQuestions={[
+                      'Apakah asumsi normalitas residual terpenuhi sehingga estimasi OLS tidak bias?',
+                      'Bagaimana pola sebaran titik residual pada Kurva Normal dan Normal P-P Plot?',
+                      'Apakah ada nilai residual ekstrim (outlier) yang perlu diteliti lebih lanjut?',
+                    ]}
                     onHoverNumber={setHighlightedNumber}
                     activeNumber={highlightedNumber}
                   />
@@ -3022,7 +3607,7 @@ export default function HasilPage() {
                   </div>
 
                   <ResultTable
-                    tableNumber="Tabel 4.5"
+                    tableNumber="Tabel 4.7"
                     title="Hasil Uji Multikolinearitas Variabel Bebas (Tolerance & VIF)"
                     note="* Ambang batas: Nilai Tolerance > 0,10 dan Variance Inflation Factor (VIF) < 10,00."
                     columns={multicollinearityCols}
@@ -3031,14 +3616,19 @@ export default function HasilPage() {
                     highlightedValue={highlightedNumber}
                   />
 
-                  <ExplanationBox
-                    title="Interpretasi Uji Multikolinearitas"
-                    summarySentence={
+                  <Chapter4InterpretationCard
+                    tableNumber="Tabel 4.7"
+                    intinya={
                       results.multicollinearity?.some((m) => m.problematic)
                         ? 'Ditemukan indikasi multikolinearitas pada variabel bebas (VIF ≥ 10,00).'
                         : 'Seluruh variabel bebas memiliki VIF < 10,00 dan Tolerance > 0,10, membuktikan model regresi bebas dari masalah multikolinearitas.'
                     }
-                    explanation={results.explanations.multicollinearity}
+                    interpretation={results.explanations.multicollinearity}
+                    guidingQuestions={[
+                      'Apakah seluruh variabel bebas memiliki nilai VIF < 10,00 dan Tolerance > 0,10?',
+                      'Apakah ada korelasi yang terlalu tinggi antar variabel independen?',
+                      'Bagaimana keterkaitan antar variabel independen memengaruhi stabilitas koefisien regresi?',
+                    ]}
                     onHoverNumber={setHighlightedNumber}
                     activeNumber={highlightedNumber}
                   />
@@ -3141,7 +3731,7 @@ export default function HasilPage() {
 
                   {heteroMethod === 'glejser' && (
                     <ResultTable
-                      tableNumber="Tabel 4.6"
+                      tableNumber="Tabel 4.8"
                       title="Hasil Uji Heteroskedastisitas Menggunakan Metode Glejser"
                       note="* Variabel dependen uji adalah Nilai Absolut Residual |e_i|. Kriteria: Sig. > 0,05 tidak terdapat gejala heteroskedastisitas."
                       columns={heteroscedasticityCols}
@@ -3153,7 +3743,7 @@ export default function HasilPage() {
 
                   {heteroMethod === 'park' && (
                     <ResultTable
-                      tableNumber="Tabel 4.6"
+                      tableNumber="Tabel 4.8"
                       title="Hasil Uji Heteroskedastisitas Menggunakan Metode Uji Park"
                       note="* Rujukan: Damodar Gujarati / Prof. Dr. Imam Ghozali. Variabel dependen adalah ln(e²). Kriteria: Sig. > 0,05 bebas heteroskedastisitas."
                       columns={parkHeteroCols}
@@ -3165,7 +3755,7 @@ export default function HasilPage() {
 
                   {heteroMethod === 'spearman' && (
                     <ResultTable
-                      tableNumber="Tabel 4.6"
+                      tableNumber="Tabel 4.8"
                       title="Hasil Uji Heteroskedastisitas Menggunakan Korelasi Rank Spearman"
                       note="* Rujukan: Prof. Dr. Imam Ghozali (2018). Uji korelasi Rank Spearman antara variabel independen dengan absolute residual. Kriteria: Sig. > 0,05 bebas heteroskedastisitas."
                       columns={spearmanHeteroCols}
@@ -3175,14 +3765,25 @@ export default function HasilPage() {
                     />
                   )}
 
-                  <ExplanationBox
-                    title="Interpretasi Uji Heteroskedastisitas"
-                    summarySentence={
+                  {/* Visualizer Plot Scatter Residual vs Fitted */}
+                  <AcademicHeteroscedasticityPlot
+                    n={results.respondentCount}
+                    isHomoscedastic={!results.heteroscedasticity?.some((h) => h.significant)}
+                  />
+
+                  <Chapter4InterpretationCard
+                    tableNumber="Tabel 4.8"
+                    intinya={
                       results.heteroscedasticity?.some((h) => h.significant)
                         ? 'Terdapat variabel yang terindikasi heteroskedastisitas (p < 0,05 pada Uji Glejser).'
                         : 'Nilai Sig. Uji Glejser seluruh variabel bebas berada di atas 0,05, membuktikan tidak ada gejala heteroskedastisitas pada residual.'
                     }
-                    explanation={results.explanations.heteroscedasticity}
+                    interpretation={results.explanations.heteroscedasticity}
+                    guidingQuestions={[
+                      'Apakah varians residual bersifat konstan (homoskedastisitas) di seluruh rentang nilai prediksi?',
+                      'Bagaimana pola sebaran titik pada grafik Scatterplot Residual vs Predicted?',
+                      'Jika terjadi ketidaksamaan varians, metode penyelamat apa (Park atau Spearman) yang membuktikan keabsahan model?',
+                    ]}
                     onHoverNumber={setHighlightedNumber}
                     activeNumber={highlightedNumber}
                   />
@@ -3198,49 +3799,62 @@ export default function HasilPage() {
                 </div>
 
                 {/* 4d. Autokorelasi Durbin-Watson */}
-                {results.durbinWatson && (
-                  <div className="space-y-4 pt-6 border-t border-border">
-                    <div className="border-b border-border pb-2">
-                      <h3 className="font-serif text-lg font-bold text-foreground">
-                        4. Uji Autokorelasi (Durbin-Watson)
-                      </h3>
-                    </div>
+                {(results.durbinWatson || enabledOptionalTables.includes('tabel_4_9_dw')) && results.durbinWatson && (
+                  <ProResultBlur
+                    isLocked={isFree && !isSample}
+                    isSample={isSample}
+                    testName="Uji Autokorelasi Durbin-Watson"
+                    reason="Uji autokorelasi Durbin-Watson untuk model regresi runtun waktu tersedia pada Paket Bulanan & Paket Skripsi."
+                  >
+                    <div className="space-y-4 pt-6 border-t border-border">
+                      <div className="border-b border-border pb-2">
+                        <h3 className="font-serif text-lg font-bold text-foreground">
+                          4. Uji Autokorelasi (Durbin-Watson)
+                        </h3>
+                      </div>
 
-                    <AssumptionAlert
-                      status={results.durbinWatson.status === 'bebas' ? 'passed' : 'violated'}
-                      title={
-                        results.durbinWatson.status === 'bebas'
-                          ? `Asumsi Non-Autokorelasi Terpenuhi (d = ${formatNumber(results.durbinWatson.dwStatistic, 4)})`
-                          : `Perhatian: Terindikasi Gejala Autokorelasi (d = ${formatNumber(results.durbinWatson.dwStatistic, 4)})`
-                      }
-                      description={`Nilai statistik Durbin-Watson sebesar ${formatNumber(results.durbinWatson.dwStatistic, 4)} berada pada rentang batas kritis dL = ${formatNumber(results.durbinWatson.dL, 4)} dan dU = ${formatNumber(results.durbinWatson.dU, 4)} (4 - dU = ${formatNumber(4 - results.durbinWatson.dU, 4)}).`}
-                      recommendation={
-                        results.durbinWatson.status === 'bebas'
-                          ? 'Tidak terdapat autokorelasi positif maupun negatif pada residual model regresi.'
-                          : 'Periksa urutan data observasi atau tambahkan variabel kontrol bila relevan.'
-                      }
-                    />
+                      <AssumptionAlert
+                        status={results.durbinWatson.status === 'bebas' ? 'passed' : 'violated'}
+                        title={
+                          results.durbinWatson.status === 'bebas'
+                            ? `Asumsi Non-Autokorelasi Terpenuhi (d = ${formatNumber(results.durbinWatson.dwStatistic, 4)})`
+                            : `Perhatian: Terindikasi Gejala Autokorelasi (d = ${formatNumber(results.durbinWatson.dwStatistic, 4)})`
+                        }
+                        description={`Nilai statistik Durbin-Watson sebesar ${formatNumber(results.durbinWatson.dwStatistic, 4)} berada pada rentang batas kritis dL = ${formatNumber(results.durbinWatson.dL, 4)} dan dU = ${formatNumber(results.durbinWatson.dU, 4)} (4 - dU = ${formatNumber(4 - results.durbinWatson.dU, 4)}).`}
+                        recommendation={
+                          results.durbinWatson.status === 'bebas'
+                            ? 'Tidak terdapat autokorelasi positif maupun negatif pada residual model regresi.'
+                            : 'Periksa urutan data observasi atau tambahkan variabel kontrol bila relevan.'
+                        }
+                      />
 
-                    <ResultTable
-                      tableNumber="Tabel 4.6b"
-                      title="Hasil Uji Autokorelasi Durbin-Watson Model Regresi"
-                      note={`Derajat signifikansi α = 0,05, k = ${kPredictors}, N = ${results.respondentCount}. Kriteria bebas autokorelasi: dU < d < 4 - dU.`}
-                      columns={durbinWatsonCols}
-                      data={[results.durbinWatson]}
-                      rowKey={() => 'dw-1'}
-                      highlightedValue={highlightedNumber}
-                    />
+                      <ResultTable
+                        tableNumber="Tabel 4.9"
+                        title="Hasil Uji Autokorelasi Durbin-Watson Model Regresi"
+                        note={`Derajat signifikansi α = 0,05, k = ${kPredictors}, N = ${results.respondentCount}. Kriteria bebas autokorelasi: dU < d < 4 - dU.`}
+                        columns={durbinWatsonCols}
+                        data={[results.durbinWatson]}
+                        rowKey={() => 'dw-1'}
+                        highlightedValue={highlightedNumber}
+                      />
 
-                    {results.explanations.durbinWatson && (
-                      <ExplanationBox
-                        title="Interpretasi Uji Autokorelasi Durbin-Watson"
-                        summarySentence={results.durbinWatson.conclusion}
-                        explanation={results.explanations.durbinWatson}
+                      <Chapter4InterpretationCard
+                        tableNumber="Tabel 4.9"
+                        intinya={results.durbinWatson.conclusion}
+                        interpretation={
+                          results.explanations.durbinWatson ||
+                          `Nilai statistik Durbin-Watson sebesar ${formatNumber(results.durbinWatson.dwStatistic, 4)} membuktikan bahwa residual regresi terbebas dari masalah autokorelasi linier.`
+                        }
+                        guidingQuestions={[
+                          'Apakah nilai statistik Durbin-Watson berada di antara rentang dU dan 4 - dU?',
+                          'Apakah ada ketergantungan residual antar waktu observasi responden?',
+                          'Mengapa data survei kuesioner cross-sectional umumnya bebas masalah autokorelasi?',
+                        ]}
                         onHoverNumber={setHighlightedNumber}
                         activeNumber={highlightedNumber}
                       />
-                    )}
-                  </div>
+                    </div>
+                  </ProResultBlur>
                 )}
 
                 {/* 4e. Linearitas (Deviation from Linearity) */}
@@ -3284,104 +3898,173 @@ export default function HasilPage() {
               <TabsContent value="regression" className="space-y-6 mt-4">
                 <ProResultBlur
                   isLocked={isFree && !isSample}
+                  isSample={isSample}
                   testName="Regresi Linier & Uji Hipotesis"
                   reason="Nilai t-hitung parsial, F-hitung simultan, koefisien determinasi R², sumbangan efektif (SE%), dan draf narasi Bab 4 lengkap tersedia pada Paket Bulanan & Paket Skripsi."
                 >
-                  {/* 5a. Koefisien Regresi & Uji t Parsial */}
-                <div className="space-y-4">
-                  <ResultTable
-                    tableNumber="Tabel 4.7"
-                    title="Hasil Analisis Regresi Linier Berganda dan Uji t Parsial"
-                    note={`Taraf signifikansi α = 0,05. df residual = ${results.respondentCount - (results.regression?.length || 3)}. Kriteria: Sig. < 0,05 = Signifikan.`}
-                    columns={regressionCols}
-                    data={results.regression || []}
-                    rowKey={(r) => r.variable}
-                    highlightedValue={highlightedNumber}
-                  />
-
-                  <ExplanationBox
-                    title="Interpretasi Model Regresi & Uji t Parsial"
-                    summarySentence={regressionIntinya}
-                    explanation={results.explanations.regression}
-                    onHoverNumber={setHighlightedNumber}
-                    activeNumber={highlightedNumber}
-                  />
-                </div>
-
-                {/* 5b. Sumbangan Efektif (SE%) & Sumbangan Relatif (SR%) */}
-                {results.regression && results.regression.some((r) => r.sePercent !== undefined) && (
-                  <div className="space-y-4 pt-6 border-t border-border">
+                  {/* 5a. Koefisien Regresi & Uji t Parsial (Tabel 4.10a) */}
+                  <div className="space-y-4">
                     <ResultTable
-                      tableNumber="Tabel 4.7b"
-                      title="Perhitungan Sumbangan Efektif (SE %) dan Sumbangan Relatif (SR %) Variabel Bebas"
-                      note={`* Sumbangan Efektif total = R² × 100% (${results.determination ? formatNumber(results.determination.rSquare * 100, 2) : '0'}%), dan total Sumbangan Relatif = 100,00%. Formula: SE = Beta × r_xy × 100%, SR = (SE / R²) × 100%.`}
-                      columns={seSrCols}
-                      data={results.regression.filter((r) => !r.variable.toLowerCase().includes('konstanta') && r.sePercent !== undefined)}
+                      tableNumber="Tabel 4.10a"
+                      title="Hasil Analisis Regresi Linier Berganda dan Uji t Parsial"
+                      note={`Taraf signifikansi α = 0,05. df residual = ${results.respondentCount - (results.regression?.length || 3)}. Kriteria: Sig. < 0,05 = Signifikan.`}
+                      columns={regressionCols}
+                      data={results.regression || []}
                       rowKey={(r) => r.variable}
                       highlightedValue={highlightedNumber}
                     />
+                  </div>
 
-                    {results.explanations.contribution && (
-                      <ExplanationBox
-                        title="Interpretasi Sumbangan Efektif & Relatif"
-                        summarySentence="Menjelaskan porsi kontribusi nyata masing-masing variabel bebas terhadap variabel terikat."
-                        explanation={results.explanations.contribution}
+                  {/* Ringkasan Model Regresi Akademik (N, R, R2, adj R2, F, p, SE) */}
+                  <div className="space-y-3 pt-4 border-t border-border">
+                    <div className="border-b border-border pb-1.5">
+                      <span className="text-xs font-bold text-primary font-mono uppercase tracking-wider block">
+                        Ringkasan Model Regresi (Model Summary)
+                      </span>
+                      <h4 className="font-semibold text-sm text-foreground">
+                        Statistik Kelayakan &amp; Kebaikan Model (Goodness of Fit)
+                      </h4>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 p-3.5 rounded-xl border border-border bg-card text-center shadow-xs">
+                      <div className="space-y-0.5 p-1.5 rounded-lg bg-muted/40">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">N Responden</span>
+                        <p className="text-sm sm:text-base font-bold font-mono text-foreground tabular-nums">{results.respondentCount}</p>
+                      </div>
+                      <div className="space-y-0.5 p-1.5 rounded-lg bg-muted/40">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Korelasi (R)</span>
+                        <p className="text-sm sm:text-base font-bold font-mono text-foreground tabular-nums">
+                          {results.determination ? formatNumber(Math.sqrt(Math.max(0, results.determination.rSquare)), 3) : '-'}
+                        </p>
+                      </div>
+                      <div className="space-y-0.5 p-1.5 rounded-lg bg-primary/10 border border-primary/20">
+                        <span className="text-[10px] font-bold text-primary uppercase tracking-wider block">R² (R-Square)</span>
+                        <p className="text-sm sm:text-base font-bold font-mono text-primary tabular-nums">
+                          {results.determination ? formatNumber(results.determination.rSquare, 3) : '-'}
+                        </p>
+                      </div>
+                      <div className="space-y-0.5 p-1.5 rounded-lg bg-muted/40">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Adjusted R²</span>
+                        <p className="text-sm sm:text-base font-bold font-mono text-foreground tabular-nums">
+                          {results.determination ? formatNumber(results.determination.adjustedRSquare, 3) : '-'}
+                        </p>
+                      </div>
+                      <div className="space-y-0.5 p-1.5 rounded-lg bg-muted/40">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">F Hitung</span>
+                        <p className="text-sm sm:text-base font-bold font-mono text-foreground tabular-nums">
+                          {results.fTest ? formatNumber(results.fTest.fHitung, 3) : '-'}
+                        </p>
+                      </div>
+                      <div className="space-y-0.5 p-1.5 rounded-lg bg-muted/40">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Sig. F (p)</span>
+                        <p className="text-sm sm:text-base font-bold font-mono text-emerald-600 dark:text-emerald-400 tabular-nums">
+                          {results.fTest ? (results.fTest.pValue < 0.001 ? '< 0,001' : formatNumber(results.fTest.pValue, 4)) : '-'}
+                        </p>
+                      </div>
+                      <div className="space-y-0.5 p-1.5 rounded-lg bg-muted/40">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Std. Error</span>
+                        <p className="text-sm sm:text-base font-bold font-mono text-foreground tabular-nums">
+                          {results.determination ? formatNumber(results.determination.stdError, 3) : '-'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 5b. Koefisien Determinasi R² (Tabel 4.10b) */}
+                  <div className="space-y-4 pt-6 border-t border-border">
+                    <ResultTable
+                      tableNumber="Tabel 4.10b"
+                      title="Hasil Analisis Koefisien Determinasi (Model Summary)"
+                      note="* Model regresi OLS dengan variabel independen terstandarisasi."
+                      columns={determinationCols}
+                      data={results.determination ? [results.determination] : []}
+                      rowKey={() => 'det-1'}
+                      highlightedValue={highlightedNumber}
+                    />
+                  </div>
+
+                  {/* 5c. Uji F Simultan (Tabel 4.10c) */}
+                  <div className="space-y-4 pt-6 border-t border-border">
+                    <ResultTable
+                      tableNumber="Tabel 4.10c"
+                      title="Hasil Uji Signifikansi Simultan (Uji F / ANOVA Model)"
+                      note={`F tabel pada derajat bebas df1 = ${kPredictors}, df2 = ${results.respondentCount - (results.regression?.length || 3)}, α = 0,05. Kriteria: F hitung > F tabel dan Sig. < 0,05.`}
+                      columns={fTestCols}
+                      data={results.fTest ? [results.fTest] : []}
+                      rowKey={() => 'ftest-1'}
+                      highlightedValue={highlightedNumber}
+                    />
+                  </div>
+
+                  {/* 5d. Sumbangan Efektif (SE%) & Sumbangan Relatif (SR%) (Tabel 4.10d) */}
+                  {results.regression && results.regression.some((r) => r.sePercent !== undefined) && (
+                    <div className="space-y-4 pt-6 border-t border-border">
+                      <ResultTable
+                        tableNumber="Tabel 4.10d"
+                        title="Perhitungan Sumbangan Efektif (SE %) dan Sumbangan Relatif (SR %) Variabel Bebas"
+                        note={`* Sumbangan Efektif total = R² × 100% (${results.determination ? formatNumber(results.determination.rSquare * 100, 2) : '0'}%), dan total Sumbangan Relatif = 100,00%. Formula: SE = Beta × r_xy × 100%, SR = (SE / R²) × 100%.`}
+                        columns={seSrCols}
+                        data={results.regression.filter((r) => !r.variable.toLowerCase().includes('konstanta') && r.sePercent !== undefined)}
+                        rowKey={(r) => r.variable}
+                        highlightedValue={highlightedNumber}
+                      />
+                    </div>
+                  )}
+
+                  {/* Narasi Interpretasi Model Regresi Tabel 4.10 */}
+                  <Chapter4InterpretationCard
+                    tableNumber="Tabel 4.10"
+                    intinya={regressionIntinya}
+                    interpretation={results.explanations.regression}
+                    guidingQuestions={[
+                      'Bagaimana arah (positif/negatif) dan besaran koefisien regresi masing-masing variabel bebas?',
+                      'Variabel bebas manakah yang memberikan sumbangan efektif (SE%) paling dominan terhadap variabel terikat?',
+                      'Berapa persen kemampuan model regresi (R²) dalam menjelaskan fenomena yang diteliti?',
+                    ]}
+                    onHoverNumber={setHighlightedNumber}
+                    activeNumber={highlightedNumber}
+                  />
+
+                  {/* 5e. Ringkasan Pembuktian & Keputusan Hipotesis Penelitian (Tabel 4.11) */}
+                  {hypothesisRows.length > 0 && (
+                    <div className="space-y-4 pt-6 border-t border-border">
+                      <div className="border-b border-border pb-2">
+                        <h3 className="font-serif text-lg font-bold text-foreground">
+                          Pembuktian &amp; Keputusan Hipotesis Penelitian
+                        </h3>
+                      </div>
+
+                      <ResultTable
+                        tableNumber="Tabel 4.11"
+                        title="Ringkasan Pembuktian dan Keputusan Pengujian Hipotesis Penelitian"
+                        note="* Hipotesis diterima apabila t hitung > t tabel (atau F hitung > F tabel) dan nilai signifikansi p-value < 0,05 dengan arah koefisien sejalan dengan teori yang diajukan."
+                        columns={hypothesisCols}
+                        data={hypothesisRows}
+                        rowKey={(r) => r.hypothesis}
+                        highlightedValue={highlightedNumber}
+                      />
+
+                      <Chapter4InterpretationCard
+                        tableNumber="Tabel 4.11"
+                        intinya={
+                          hypothesisRows.every((h) => h.isAccepted)
+                            ? 'Seluruh hipotesis penelitian yang diajukan terbukti diterima secara signifikan pada taraf signifikansi α = 0,05.'
+                            : `Sebanyak ${hypothesisRows.filter((h) => h.isAccepted).length} dari ${hypothesisRows.length} hipotesis penelitian terbukti diterima secara statistik.`
+                        }
+                        interpretation={
+                          results.explanations.hypotheses ||
+                          `Berdasarkan ringkasan Tabel 4.11, pengujian hipotesis secara empiris memperlihatkan penerimaan dan penolakan hipotesis penelitian berdasarkan kriteria signifikansi (p < 0,05) serta perbandingan nilai statistik uji terhadap nilai tabel distribusi.`
+                        }
+                        guidingQuestions={[
+                          'Hipotesis mana saja yang terbukti diterima dan hipotesis mana yang ditolak?',
+                          'Apakah arah pengaruh empiris (positif/negatif) selaras dengan kajian teori awal Anda?',
+                          'Faktor kontekstual apa di lapangan yang menjelaskan mengapa suatu hipotesis diterima atau ditolak?',
+                        ]}
                         onHoverNumber={setHighlightedNumber}
                         activeNumber={highlightedNumber}
                       />
-                    )}
-                  </div>
-                )}
-
-                {/* 5c. Uji F Simultan */}
-                <div className="space-y-4 pt-6 border-t border-border">
-                  <ResultTable
-                    tableNumber="Tabel 4.8"
-                    title="Hasil Uji Signifikansi Simultan (Uji F / ANOVA Model)"
-                    note={`F tabel pada derajat bebas df1 = ${kPredictors}, df2 = ${results.respondentCount - (results.regression?.length || 3)}, α = 0,05. Kriteria: F hitung > F tabel dan Sig. < 0,05.`}
-                    columns={fTestCols}
-                    data={results.fTest ? [results.fTest] : []}
-                    rowKey={() => 'ftest-1'}
-                    highlightedValue={highlightedNumber}
-                  />
-
-                  <ExplanationBox
-                    title="Interpretasi Uji F Simultan"
-                    summarySentence={
-                      results.fTest?.significant
-                        ? `Nilai F hitung ${formatNumber(results.fTest.fHitung, 2)} > F tabel ${formatNumber(results.fTest.fTabel, 2)} (Sig. = ${formatNumber(results.fTest.pValue, 3)}) membuktikan seluruh variabel bebas secara serempak berpengaruh signifikan.`
-                        : `Nilai F hitung ${results.fTest ? formatNumber(results.fTest.fHitung, 2) : '-'} tidak melampaui F tabel (Sig. ≥ 0,05).`
-                    }
-                    explanation={results.explanations.fTest}
-                    onHoverNumber={setHighlightedNumber}
-                    activeNumber={highlightedNumber}
-                  />
-                </div>
-
-                {/* 5d. Koefisien Determinasi R² */}
-                <div className="space-y-4 pt-6 border-t border-border">
-                  <ResultTable
-                    tableNumber="Tabel 4.9"
-                    title="Hasil Analisis Koefisien Determinasi (Model Summary)"
-                    note="* Model regresi OLS dengan variabel independen terstandarisasi."
-                    columns={determinationCols}
-                    data={results.determination ? [results.determination] : []}
-                    rowKey={() => 'det-1'}
-                    highlightedValue={highlightedNumber}
-                  />
-
-                  <ExplanationBox
-                    title="Interpretasi Koefisien Determinasi R²"
-                    summarySentence={
-                      results.determination
-                        ? `Nilai R² sebesar ${formatNumber(results.determination.rSquare, 3)} menunjukkan ${formatNumber(results.determination.rSquare * 100, 1)}% variasi variabel terikat dapat dijelaskan oleh model.`
-                        : 'Koefisien determinasi model penelitian.'
-                    }
-                    explanation={results.explanations.determination}
-                    onHoverNumber={setHighlightedNumber}
-                    activeNumber={highlightedNumber}
-                  />
-                </div>
+                    </div>
+                  )}
 
                 {/* Bekal Sidang Skripsi */}
                 <ThesisDefenseCompanion
@@ -3403,11 +4086,12 @@ export default function HasilPage() {
               <TabsContent value="correlation" className="space-y-6 mt-4">
                 <ProResultBlur
                   isLocked={isFree && !isSample}
+                  isSample={isSample}
                   testName="Korelasi Pearson Product Moment"
                   reason="Matriks korelasi Pearson dan signifikansi p-value antar variabel lengkap tersedia pada Paket Bulanan & Paket Skripsi."
                 >
                   <ResultTable
-                    tableNumber="Tabel 4.10"
+                    tableNumber="Tabel 4.12"
                     title="Matriks Korelasi Pearson Antar Variabel Penelitian"
                     note={`Korelasi diuji pada tingkat signifikansi α = 0,05 (dua arah, N = ${results.respondentCount}).`}
                     columns={correlationCols}
@@ -3416,10 +4100,15 @@ export default function HasilPage() {
                     highlightedValue={highlightedNumber}
                   />
 
-                  <ExplanationBox
-                    title="Interpretasi Korelasi Pearson"
-                    summarySentence={correlationIntinya}
-                    explanation={results.explanations.correlation}
+                  <Chapter4InterpretationCard
+                    tableNumber="Tabel 4.12"
+                    intinya={correlationIntinya}
+                    interpretation={results.explanations.correlation}
+                    guidingQuestions={[
+                      'Bagaimana tingkat keeratan (derajat korelasi) antar masing-masing variabel penelitian?',
+                      'Apakah arah korelasi seluruh variabel bersifat positif linier searah?',
+                      'Apakah terdapat variabel dengan korelasi yang sangat tinggi (r > 0,80) yang berpotensi multikolinearitas?',
+                    ]}
                     onHoverNumber={setHighlightedNumber}
                     activeNumber={highlightedNumber}
                   />
@@ -3430,6 +4119,7 @@ export default function HasilPage() {
               <TabsContent value="paired-ttest" className="space-y-6 mt-4">
                 <ProResultBlur
                   isLocked={isFree && !isSample}
+                  isSample={isSample}
                   testName="Paired Sample t-Test & N-Gain"
                   reason="Nilai t-hitung perlakuan, taraf signifikansi p-value, dan skor N-Gain efektivitas pembelajaran tersedia pada Paket Bulanan & Paket Skripsi."
                 >
@@ -3546,6 +4236,7 @@ export default function HasilPage() {
               <TabsContent value="independent-ttest" className="space-y-6 mt-4">
                 <ProResultBlur
                   isLocked={isFree && !isSample}
+                  isSample={isSample}
                   testName="Independent Sample t-Test & Uji Homogenitas Levene"
                   reason="Uji homogenitas Levene, nilai t-hitung kelompok bebas, dan draf pembahasan Bab 4 lengkap tersedia pada Paket Bulanan & Paket Skripsi."
                 >
@@ -3584,14 +4275,19 @@ export default function HasilPage() {
                       />
 
                       {results.explanations.independentTTest && (
-                        <ExplanationBox
-                          title="Interpretasi Independent Samples t-Test"
-                          summarySentence={
+                        <Chapter4InterpretationCard
+                          tableNumber="Tabel 4.13"
+                          intinya={
                             results.independentTTest.recommendedRow.pValue < 0.05
                               ? `Terdapat perbedaan yang signifikan antara kedua kelompok (t = ${formatNumber(results.independentTTest.recommendedRow.tHitung, 3)}, Sig. = ${formatNumber(results.independentTTest.recommendedRow.pValue, 4)} < 0,05).`
                               : `Tidak terdapat perbedaan signifikan antara kedua kelompok (Sig. ≥ 0,05).`
                           }
-                          explanation={results.explanations.independentTTest}
+                          interpretation={results.explanations.independentTTest}
+                          guidingQuestions={[
+                            'Apakah asumsi homogenitas varians terpenuhi berdasarkan hasil Uji Levene?',
+                            'Kelompok manakah yang memiliki skor rata-rata (mean) lebih unggul secara empiris?',
+                            'Apakah perbedaan antar kelompok tersebut bermakna secara praktis dalam konteks penelitian Anda?',
+                          ]}
                           onHoverNumber={setHighlightedNumber}
                           activeNumber={highlightedNumber}
                         />
@@ -3615,6 +4311,7 @@ export default function HasilPage() {
               <TabsContent value="oneway-anova" className="space-y-6 mt-4">
                 <ProResultBlur
                   isLocked={isFree && !isSample}
+                  isSample={isSample}
                   testName="One-Way ANOVA & Uji Lanjutan Post-Hoc"
                   reason="Nilai F-hitung ANOVA, taraf signifikansi p-value, dan perbandingan berganda Post-Hoc Tukey HSD tersedia pada Paket Bulanan & Paket Skripsi."
                 >
@@ -3698,14 +4395,19 @@ export default function HasilPage() {
                       )}
 
                       {results.explanations.oneWayAnova && (
-                        <ExplanationBox
-                          title="Interpretasi One-Way ANOVA"
-                          summarySentence={
+                        <Chapter4InterpretationCard
+                          tableNumber="Tabel 4.14"
+                          intinya={
                             results.oneWayAnova.significant
                               ? `Nilai F hitung ${formatNumber(results.oneWayAnova.fHitung, 3)} > F tabel ${formatNumber(results.oneWayAnova.fTabel, 3)} (Sig. = ${formatNumber(results.oneWayAnova.pValue, 4)} < 0,05) membuktikan terdapat perbedaan rata-rata yang signifikan antar kelompok.`
                               : `Nilai F hitung ${formatNumber(results.oneWayAnova.fHitung, 3)} tidak melampaui F tabel (Sig. ≥ 0,05).`
                           }
-                          explanation={results.explanations.oneWayAnova}
+                          interpretation={results.explanations.oneWayAnova}
+                          guidingQuestions={[
+                            'Apakah variasi skor antar kelompok lebih besar secara signifikan dibandingkan variasi di dalam kelompok?',
+                            'Berdasarkan uji lanjutan Post-Hoc Tukey HSD, pasangan kelompok mana saja yang berbeda secara nyata?',
+                            'Apa implikasi temuan perbedaan rata-rata ini terhadap pengambilan kebijakan atau saran praktis skripsi?',
+                          ]}
                           onHoverNumber={setHighlightedNumber}
                           activeNumber={highlightedNumber}
                         />
@@ -3729,6 +4431,7 @@ export default function HasilPage() {
               <TabsContent value="nonparametric" className="space-y-6 mt-4">
                 <ProResultBlur
                   isLocked={isFree && !isSample}
+                  isSample={isSample}
                   testName="Uji Non-Parametrik Alternatif"
                   reason="Uji Wilcoxon Signed-Rank, Mann-Whitney U, dan Kruskal-Wallis tersedia pada Paket Bulanan & Paket Skripsi."
                 >
@@ -3770,6 +4473,7 @@ export default function HasilPage() {
               <TabsContent value="crosstab" className="space-y-6 mt-4">
                 <ProResultBlur
                   isLocked={isFree && !isSample}
+                  isSample={isSample}
                   testName="Tabulasi Silang, Chi-Square, & Odds Ratio"
                   reason="Uji Pearson Chi-Square, Fisher's Exact Test, Continuity Correction, dan estimasi risiko Odds Ratio (OR) 95% CI tersedia pada Paket Bulanan & Paket Skripsi."
                 >
@@ -3780,7 +4484,7 @@ export default function HasilPage() {
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/80 pb-3">
                         <div>
                           <span className="text-xs font-bold text-primary font-mono uppercase tracking-wider block">
-                            Tabel 4.16 (Format Baku APA 7th Edition)
+                            Tabel 4.15a (Format Baku APA 7th Edition)
                           </span>
                           <h3 className="text-base font-bold text-foreground font-serif">
                             Hasil Tabulasi Silang {results.crosstab.rowVar} dan {results.crosstab.colVar}
@@ -3930,7 +4634,7 @@ export default function HasilPage() {
 
                       return (
                         <ResultTable
-                          tableNumber="Tabel 4.17"
+                          tableNumber="Tabel 4.15b"
                           title="Hasil Pengujian Asosiasi Independensi Chi-Square dan Fisher's Exact Test"
                           note={cs.cochranFootnote}
                           columns={chiSquareTableCols}
@@ -3944,7 +4648,7 @@ export default function HasilPage() {
                     {/* Risk Estimate (Odds Ratio) if 2x2 */}
                     {results.riskEstimate && (
                       <ResultTable
-                        tableNumber="Tabel 4.18"
+                        tableNumber="Tabel 4.15c"
                         title={`Estimasi Risiko Epidemiologi (Odds Ratio & Relative Risk) untuk ${results.riskEstimate.exposureVar}`}
                         note="Tingkat kepercayaan 95% Confidence Interval (metode Woolf/Logit)."
                         columns={riskEstimateTableCols}
@@ -4014,7 +4718,7 @@ export default function HasilPage() {
 
                       return (
                         <ResultTable
-                          tableNumber="Tabel 4.19"
+                          tableNumber="Tabel 4.15d"
                           title="Koefisien Kekuatan Hubungan (Symmetric Measures)"
                           note="Ukuran keeratan asosiasi variabel nominal."
                           columns={symmetricMeasuresTableCols}
@@ -4025,22 +4729,17 @@ export default function HasilPage() {
                       );
                     })()}
 
-                    {/* Interpretasi Naratif Akademik */}
+                    {/* Interpretasi Naratif Akademik Tabel 4.15 */}
                     {results.explanations.chiSquare && (
-                      <ExplanationBox
-                        title="Interpretasi Uji Independensi Chi-Square & Kaidah Cochran"
-                        summarySentence={results.chiSquare.conclusion}
-                        explanation={results.explanations.chiSquare}
-                        onHoverNumber={setHighlightedNumber}
-                        activeNumber={highlightedNumber}
-                      />
-                    )}
-
-                    {results.explanations.oddsRatio && (
-                      <ExplanationBox
-                        title="Interpretasi Ukuran Risiko Epidemiologi (Odds Ratio & 95% CI)"
-                        summarySentence={results.riskEstimate?.conclusion || 'Estimasi risiko paparan terhadap outcome kesehatan.'}
-                        explanation={results.explanations.oddsRatio}
+                      <Chapter4InterpretationCard
+                        tableNumber="Tabel 4.15"
+                        intinya={results.chiSquare.conclusion}
+                        interpretation={results.explanations.chiSquare}
+                        guidingQuestions={[
+                          'Apakah kaidah Cochran terpenuhi (sel dengan frekuensi harapan < 5 kurang dari 20%)?',
+                          'Apakah terdapat hubungan asosiasi yang bermakna antara kedua variabel kategorik?',
+                          'Jika berupa tabel 2x2, berapa nilai Odds Ratio (OR) atau Relative Risk (RR) dan batas 95% Confidence Interval-nya?',
+                        ]}
                         onHoverNumber={setHighlightedNumber}
                         activeNumber={highlightedNumber}
                       />
@@ -4219,6 +4918,16 @@ export default function HasilPage() {
         rTabel={results.validity?.[0]?.rTabel}
         tTabel={results.tTabel}
         fTabel={results.fTabel}
+      />
+
+      {/* Chapter 4 Async Word & PDF Exporter Modal */}
+      <Chapter4AsyncExportModal
+        open={chapter4ModalOpen}
+        onOpenChange={setChapter4ModalOpen}
+        results={results}
+        projectTitle={project?.title}
+        onCopyAllTables={handleCopyAllTables}
+        initialFormat={chapter4ExportFormat}
       />
     </div>
   );

@@ -1,0 +1,27 @@
+{
+  "landing": {
+    "hasIndependentClaim": true,
+    "hasOldSpss100Claim": false,
+    "primaryCta": true,
+    "secondaryCta": true
+  },
+  "pricing": {
+    "hasComingSoonText": true,
+    "hasBulanan100kLimit": true,
+    "hasSkripsiLimit": true
+  },
+  "hasil": {
+    "hasPrimaryWordBtn": true,
+    "hasUnduhLainnya": true,
+    "hasTrafficLightJumps": true,
+    "hasModelSummaryStrip": true,
+    "constantHasHypothesisLabel": false,
+    "hasThinScrollbar": true,
+    "noKendala": true
+  },
+  "mobile360": {
+    "hasPageHorizontalScroll": false,
+    "viewportWidth": 360,
+    "documentScrollWidth": 350
+  }
+}

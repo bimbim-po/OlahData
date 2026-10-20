@@ -999,7 +999,7 @@ export async function exportResult(
           formatNumber(r.tHitung, 3),
           r.tTabel !== undefined ? formatNumber(r.tTabel, 3) : '-',
           formatNumber(r.pValue, 3),
-          r.significant ? 'Signifikan' : 'Tidak',
+          r.variable.toLowerCase().includes('konstanta') || r.variable.toLowerCase().includes('constant') ? '-' : (r.significant ? 'Signifikan' : 'Tidak'),
         ]),
       });
 

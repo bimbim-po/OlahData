@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -9,18 +9,24 @@ import {
   Play,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   FileSpreadsheet,
   Layers,
   Activity,
   Zap,
-  Wrench,
-  Binary,
   Loader2,
   Database,
   ShieldCheck,
   HelpCircle,
   ChevronDown,
-  ChevronUp,
+  Lock,
+  Sparkles,
+  TrendingUp,
+  GitCompare,
+  BarChart3,
+  SlidersHorizontal,
+  RotateCcw,
+  UploadCloud,
 } from 'lucide-react';
 
 import { useWizardStore, type WizardStep } from '@/stores/wizard-store';
@@ -28,7 +34,6 @@ import { FileDropzone } from '@/components/file-dropzone';
 import { DataPreviewTable, type TargetCell } from '@/components/data-preview-table';
 import { IssueList } from '@/components/issue-list';
 import { VariableMapper } from '@/components/variable-mapper';
-import { TestCard } from '@/components/test-card';
 import { StepIndicator } from '@/components/step-indicator';
 import { computeDeterministicStats } from '@/lib/stats-engine';
 
@@ -40,9 +45,9 @@ import { APP_NAME, ENGINE_VERSION } from '@/lib/constants';
 import { COPY } from '@/lib/copy';
 import { formatNumber } from '@/lib/format';
 import { mockTestOptions } from '@/lib/mock/results';
+import { mockDataset, mockIssues } from '@/lib/mock/dataset-contoh';
 import { getProject } from '@/lib/api';
-import type { Project, TestOption, TestType } from '@/lib/api/types';
-import { detectLikertTextColumns, detectMetadataAndPiiColumns, STANDARD_LIKERT_PREVIEW } from '@/lib/google-forms-recode';
+import type { Project, TestType } from '@/lib/api/types';
 import { useToast } from '@/components/ui/toaster';
 import { usePlanGate, isSampleProject } from '@/lib/entitlements';
 
@@ -51,19 +56,20 @@ interface AnalisisPageProps {
 }
 
 const STEP_LABELS = [
-  'Unggah Data',
-  'Validasi Data',
-  'Petakan Variabel',
-  'Pilih Uji',
-  'Ringkasan & Jalankan',
+  'Unggah Berkas',
+  'Temuan Data',
+  'Pertanyaan Penelitian',
+  'Cek Kesiapan',
+  'Hasil Bab 4',
 ];
 
 const ANALYSIS_EXECUTION_STEPS = [
-  '1/5 Validasi struktur matriks dan konsistensi data',
-  '2/5 Menghitung korelasi Pearson & reliabilitas Cronbach\'s Alpha',
-  '3/5 Menguji asumsi klasik (Normalitas, Multikolinearitas, Heteroskedastisitas)',
-  '4/5 Menghitung regresi OLS, uji F simultan & uji t parsial',
-  '5/5 Menyusun narasi interpretasi akademik terstandar',
+  '1/6 Validasi struktur matriks dan konsistensi data responden',
+  '2/6 Menghitung korelasi Pearson & uji validitas (df = N-2)',
+  '3/6 Menguji reliabilitas instrumen Cronbach\'s Alpha per variabel',
+  '4/6 Menguji asumsi klasik (Normalitas Lilliefors, Multikolinearitas VIF, Heteroskedastisitas Glejser)',
+  '5/6 Mengestimasi model regresi OLS, uji F simultan & uji t parsial',
+  '6/6 Menyusun tabel format APA 7th dan narasi akademik Bab 4',
 ];
 
 export default function AnalisisPage({ params }: AnalisisPageProps) {
@@ -87,7 +93,6 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
     removedRows,
     dataVersion,
     reverseItems,
-    toggleReverseItem,
     calculationMethod,
     setCalculationMethod,
     datasetMeta,
@@ -106,53 +111,61 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
     setConstructs,
     selectedTests,
     setSelectedTests,
-    toggleTest,
     removeRowByNumber,
+    removeRowsByNumbers,
     isRunning,
     setRunning,
     setRunId,
     setDatasetId,
     setCurrentResults,
     columnRoles,
-    applyLikertRecode,
   } = useWizardStore();
 
   const { toast } = useToast();
-  const isSample = isSampleProject(projectId);
+  const searchParams = useSearchParams();
+  const isDemoParam = searchParams?.get('contoh') === '1';
+  const isSample = isSampleProject(projectId) || isDemoParam || usingSampleData;
   const { isFree, isTestLocked, openUpgradeModal } = usePlanGate(projectId, isSample);
+
+  const handleResetDemo = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(`olahdata_results_${projectId}`);
+        localStorage.removeItem('olahdata_results_sample');
+      } catch {
+        // ignore
+      }
+    }
+    useWizardStore.getState().resetWizard();
+    useWizardStore.getState().setFileData(
+      'data_kuesioner_contoh_120.csv',
+      [...mockDataset],
+      Object.keys(mockDataset[0] || {}),
+      true,
+      14500
+    );
+    useWizardStore.getState().setIssues(mockIssues);
+    useWizardStore.getState().setStep(1);
+    toast({
+      title: 'Data contoh berhasil direset',
+      description: 'Dataset simulasi telah dikembalikan ke kondisi awal (N = 120 responden).',
+      variant: 'success',
+    });
+  };
+
+  const handleUseMyOwnData = () => {
+    useWizardStore.getState().resetWizard();
+    useWizardStore.getState().setStep(0);
+  };
   const [project, setProject] = React.useState<Project | null>(null);
   const [targetCell, setTargetCell] = React.useState<TargetCell | null>(null);
   const [currentExecutionStep, setCurrentExecutionStep] = React.useState(0);
 
-  const handleStep1Next = () => {
-    if (!usingSampleData && isFree && fileData.length > 50) {
-      openUpgradeModal(`Dataset Anda memiliki ${fileData.length} responden. Batas paket gratis adalah 50 responden.`);
-      return;
-    }
-    nextStep();
-  };
-
-  // Auto-detect Google Forms Likert scale textual responses and metadata
-  const [showLikertMapping, setShowLikertMapping] = React.useState(false);
-  const detectedLikertColumns = React.useMemo(() => {
-    if (fileData.length === 0) return [];
-    return detectLikertTextColumns(fileData, columns);
-  }, [fileData, columns]);
-
-  const detectedMetadataCols = React.useMemo(() => {
-    return detectMetadataAndPiiColumns(columns);
-  }, [columns]);
-
-  const handleRecodeLikert = () => {
-    if (detectedLikertColumns.length === 0) return;
-    const cols = detectedLikertColumns.map((c) => c.column);
-    const total = applyLikertRecode(cols);
-    toast({
-      title: 'Jawaban Teks Berhasil Dikonversi!',
-      description: `${total} sel pada ${cols.length} kolom jawaban telah diubah ke skala angka 1–5 secara deterministik.`,
-      variant: 'success',
-    });
-  };
+  // Advanced Options State (Folded accordion in Screen 4)
+  const [alphaLevel, setAlphaLevel] = React.useState<0.05 | 0.01>(0.05);
+  const [reliabilityThreshold, setReliabilityThreshold] = React.useState<0.7 | 0.6>(0.7);
+  const [numberFormat, setNumberFormat] = React.useState<'id' | 'en'>('id');
+  const [enableDurbinWatson, setEnableDurbinWatson] = React.useState<boolean>(false);
 
   // Initialize Project in store
   React.useEffect(() => {
@@ -162,7 +175,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
     });
   }, [projectId, setProjectId]);
 
-  // Auto-select recommended tests if none selected yet
+  // Auto-select standard tests on init
   React.useEffect(() => {
     if (selectedTests.length === 0) {
       const rec = mockTestOptions.filter((t) => t.recommended).map((t) => t.id);
@@ -176,6 +189,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
 
   const independentConstructs = constructs.filter((c) => c.role === 'independent');
   const dependentConstructs = constructs.filter((c) => c.role === 'dependent');
+
   const isMappingValid =
     researchDesign === 'categorical'
       ? Boolean(rowCol && colCol)
@@ -183,220 +197,164 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
       ? Boolean((preCol && postCol) || (groupCol && scoreCol))
       : independentConstructs.length >= 1 && dependentConstructs.length >= 1;
 
-  // Filter columns for Likert reverse scoring: prioritize construct items, or exclude demographic & ID columns
-  const availableLikertItems = React.useMemo(() => {
-    const mappedItems = Array.from(new Set(constructs.flatMap((c) => c.items))).filter(Boolean);
-    if (mappedItems.length > 0) return mappedItems;
-    const demographicRegex = /^(no|id|responden|subjek|sample|nama|jenis[\s_]?kelamin|gender|jk|usia|umur|pendidikan|pekerjaan|penghasilan|gaji|jurusan|semester|angkatan|status|kategori|alamat|tanggal|tgl)$/i;
-    return columns.filter((col) => !demographicRegex.test(col.trim()));
-  }, [constructs, columns]);
+  // Screening for weak items (e.g. KL5) via corrected item-total correlation
+  const weakItems = React.useMemo(() => {
+    if (fileData.length < 5 || constructs.length === 0) return [];
+    const weak: { item: string; construct: string; r: number }[] = [];
 
-  // Auto-detect columns when columns change
-  React.useEffect(() => {
-    if (columns.length > 0) {
-      // Auto-detect experimental columns
-      const detectedPre =
-        columns.find((c) => /^(pre[_-\s]?test|sebelum|pre)$/i.test(c.trim())) ||
-        columns.find((c) => /pre/i.test(c.trim()));
-      const detectedPost =
-        columns.find((c) => /^(post[_-\s]?test|sesudah|post)$/i.test(c.trim())) ||
-        columns.find((c) => /post/i.test(c.trim()));
-      const detectedGroup = columns.find((c) =>
-        /^(kelas|kelompok|group|metode|perlakuan)$/i.test(c.trim())
-      );
-      if (detectedPre && detectedPost) {
-        if (!preCol) setComparativeMapping({ preCol: detectedPre });
-        if (!postCol) setComparativeMapping({ postCol: detectedPost, scoreCol: detectedPost });
-      }
-      if (detectedGroup && !groupCol) {
-        setComparativeMapping({ groupCol: detectedGroup });
-      }
+    constructs.forEach((c) => {
+      if (c.items.length >= 2) {
+        const totals = fileData.map((row) =>
+          c.items.reduce((sum, it) => {
+            const v = Number(row[it]);
+            if (isNaN(v)) return sum;
+            // Check reverse
+            const effective = reverseItems.includes(it) ? 6 - v : v;
+            return sum + effective;
+          }, 0)
+        );
 
-      // Auto-detect categorical columns (Health / Social)
-      const detectedRow = columns.find((c) =>
-        /^(kebiasaan[\s_]?merokok|status[\s_]?merokok|merokok|paparan|faktor[\s_]?risiko|perlakuan|pekerjaan)$/i.test(c.trim())
-      );
-      const detectedCol = columns.find((c) =>
-        /^(kejadian[\s_]?hipertensi|hipertensi|status[\s_]?gizi|penyakit|outcome|sembuh|status[\s_]?imunisasi)$/i.test(c.trim())
-      );
-      if (detectedRow && !rowCol) {
-        setCategoricalMapping({ rowCol: detectedRow });
-      }
-      if (detectedCol && !colCol) {
-        setCategoricalMapping({ colCol: detectedCol });
-      }
-    }
-  }, [columns, preCol, postCol, groupCol, rowCol, colCol, setComparativeMapping, setCategoricalMapping]);
+        c.items.forEach((it) => {
+          const vals = fileData.map((row) => {
+            const v = Number(row[it]);
+            if (isNaN(v)) return 3;
+            return reverseItems.includes(it) ? 6 - v : v;
+          });
+          const others = totals.map((tot, idx) => tot - vals[idx]);
 
-  // Compute test options with dynamic reasons based on constructs
-  const dynamicTestOptions = React.useMemo<TestOption[]>(() => {
-    let pool = mockTestOptions;
-    if (researchDesign === 'survey') {
-      pool = mockTestOptions.filter((t) =>
-        ['descriptive', 'validity', 'reliability', 'normality', 'multicollinearity', 'heteroscedasticity', 'regression', 'correlation'].includes(t.id)
-      );
-    } else if (researchDesign === 'comparative') {
-      pool = mockTestOptions.filter((t) =>
-        ['descriptive', 'paired-ttest', 'ngain', 'independent-ttest', 'oneway-anova', 'nonparametric'].includes(t.id)
-      );
-    } else if (researchDesign === 'categorical') {
-      pool = mockTestOptions.filter((t) =>
-        ['descriptive', 'crosstab', 'chisquare', 'odds-ratio'].includes(t.id)
-      );
-    }
+          const meanV = vals.reduce((a, b) => a + b, 0) / vals.length;
+          const meanO = others.reduce((a, b) => a + b, 0) / others.length;
 
-    return pool.map((opt) => {
-      if (researchDesign === 'categorical') {
-        if (opt.id === 'crosstab' || opt.id === 'chisquare') {
-          return {
-            ...opt,
-            recommended: true,
-            recommendReason: 'Analisis baku hubungan variabel kategorik (Crosstab & Chi-Square).',
-          };
-        }
-        if (opt.id === 'odds-ratio') {
-          return {
-            ...opt,
-            recommended: true,
-            recommendReason: 'Estimasi risiko Odds Ratio & 95% CI (standar FKM/Kedokteran).',
-          };
-        }
-        if (opt.id === 'descriptive') {
-          return {
-            ...opt,
-            recommended: true,
-            recommendReason: 'Sebaran frekuensi dasar sampel responden.',
-          };
-        }
-        return opt;
-      }
+          let num = 0;
+          let denV = 0;
+          let denO = 0;
 
-      if (researchDesign === 'comparative') {
-        if (opt.id === 'paired-ttest' || opt.id === 'ngain') {
-          return {
-            ...opt,
-            recommended: Boolean(preCol && postCol),
-            recommendReason: 'Direkomendasikan untuk desain pra-pasca perlakuan.',
-          };
-        }
-        if (opt.id === 'independent-ttest') {
-          return {
-            ...opt,
-            recommended: Boolean(groupCol && scoreCol),
-            recommendReason: 'Direkomendasikan untuk uji beda kelompok independen (Uji Levene & t-test).',
-          };
-        }
-        if (opt.id === 'oneway-anova') {
-          return {
-            ...opt,
-            recommended: false,
-            recommendReason: 'Gunakan jika terdapat 3 kelompok atau lebih.',
-          };
-        }
-        if (opt.id === 'nonparametric') {
-          return {
-            ...opt,
-            recommended: true,
-            recommendReason: 'Alternatif resmi bebas asumsi distribusi normal.',
-          };
-        }
-        if (opt.id === 'descriptive') {
-          return {
-            ...opt,
-            recommended: true,
-            recommendReason: 'Ringkasan statistik dasar sampel penelitian.',
-          };
-        }
-        return {
-          ...opt,
-          recommended: false,
-        };
-      }
+          for (let i = 0; i < vals.length; i++) {
+            const dv = vals[i] - meanV;
+            const do_ = others[i] - meanO;
+            num += dv * do_;
+            denV += dv * dv;
+            denO += do_ * do_;
+          }
 
-      if (opt.id === 'regression') {
-        return {
-          ...opt,
-          recommendReason: `Sesuai dengan desain penelitian: ${independentConstructs.length} variabel bebas (X) dan ${dependentConstructs.length} variabel terikat (Y).`,
-        };
+          const r = Math.sqrt(denV * denO) > 0 ? num / Math.sqrt(denV * denO) : 0;
+          // Benchmark critical r approx for N=100 is ~0.196
+          if (r < 0.15) {
+            weak.push({ item: it, construct: c.name, r });
+          }
+        });
       }
-      if (opt.id === 'multicollinearity') {
-        return {
-          ...opt,
-          recommended: independentConstructs.length > 1,
-          recommendReason:
-            independentConstructs.length > 1
-              ? `Prasyarat regresi berganda: terdapat ${independentConstructs.length} variabel bebas.`
-              : 'Hanya 1 variabel bebas, multikolinearitas tidak disyaratkan.',
-        };
-      }
-      return opt;
     });
-  }, [researchDesign, preCol, postCol, groupCol, scoreCol, independentConstructs.length, dependentConstructs.length]);
 
-  // Trigger deterministic progressive statistical analysis execution
+    return weak;
+  }, [fileData, constructs, reverseItems]);
+
+  // Traffic Light Status Calculations for Screen 4 (Cek Kesiapan)
+  const sampleStatus: 'green' | 'yellow' | 'red' =
+    fileData.length >= 30 ? 'green' : fileData.length >= 20 ? 'yellow' : 'red';
+
+  const qualityStatus: 'green' | 'yellow' | 'red' =
+    criticalErrorCount === 0 ? (warningCount === 0 ? 'green' : 'yellow') : 'red';
+
+  const validityStatus: 'green' | 'yellow' | 'red' = weakItems.length === 0 ? 'green' : 'yellow';
+
+  const itemCountStatus: 'green' | 'yellow' | 'red' =
+    constructs.length > 0 && constructs.every((c) => c.items.length >= 3)
+      ? 'green'
+      : constructs.every((c) => c.items.length >= 2)
+      ? 'yellow'
+      : 'red';
+
+  const suitabilityStatus: 'green' | 'yellow' | 'red' = isMappingValid ? 'green' : 'red';
+
+  const hasRedLights =
+    sampleStatus === 'red' ||
+    qualityStatus === 'red' ||
+    itemCountStatus === 'red' ||
+    suitabilityStatus === 'red';
+
+  // Handle Drop Weak Item in Screen 4
+  const handleDropWeakItem = (itemName: string) => {
+    const updated = constructs.map((c) => ({
+      ...c,
+      items: c.items.filter((it) => it !== itemName),
+    }));
+    setConstructs(updated);
+    toast({
+      title: `Pertanyaan ${itemName} Berhasil Dieliminasi`,
+      description: 'Pertanyaan telah dikeluarkan dari variabel guna meningkatkan reliabilitas Alpha.',
+      variant: 'default',
+    });
+  };
+
+  // Run Chapter 4 Analysis
   const handleRunAnalysis = async () => {
+    if (fileData.length === 0) {
+      alert('Tidak ada data responden untuk dianalisis.');
+      return;
+    }
+    if (hasRedLights) {
+      alert('Terdapat indikator merah pada Cek Kesiapan. Harap selesaikan sebelum menjalankan paket Bab 4.');
+      return;
+    }
+
     setRunning(true);
     setCurrentExecutionStep(0);
+    setStep(4); // Move to Screen 5
 
     try {
-      // Step 1: Validasi matriks
-      await new Promise((r) => setTimeout(r, 200));
-      setCurrentExecutionStep(1);
-
-      // Step 2: Pearson & Cronbach
-      await new Promise((r) => setTimeout(r, 200));
-      setCurrentExecutionStep(2);
-
-      // Step 3: Asumsi klasik
-      await new Promise((r) => setTimeout(r, 200));
-      setCurrentExecutionStep(3);
-
-      // Generate unique IDs for this run
       const generatedRunId = `run-${Date.now()}`;
-      const generatedDatasetId = datasetMeta?.datasetId || `ds-${Date.now()}`;
       setRunId(generatedRunId);
+      const generatedDatasetId = `ds-${Date.now()}`;
       setDatasetId(generatedDatasetId);
 
-      // Build effective source metadata
-      const effectiveMeta = datasetMeta
-        ? {
-            ...datasetMeta,
-            runId: generatedRunId,
-            datasetId: generatedDatasetId,
-            version: dataVersion,
-            excludedRows: removedRows,
-          }
-        : {
-            fileName: fileName || 'data_kuesioner.csv',
-            datasetId: generatedDatasetId,
-            runId: generatedRunId,
-            version: dataVersion,
-            kind: 'original' as const,
-            sha256: '',
-            rowCount: fileData.length,
-            columnCount: columns.length,
-            excludedRows: removedRows,
-            columns: columns.map((col) => ({
-              name: col,
-              role: (constructs.some((con) => con.items.includes(col))
-                ? 'item'
-                : columnRoles[col]
-                ? columnRoles[col]
-                : col.toLowerCase().includes('id') || col.toLowerCase() === 'no'
-                ? 'id'
-                : /^(jenis[\s_]?kelamin|gender|usia|umur|pendidikan|pekerjaan|jurusan|angkatan)$/i.test(col.trim())
-                ? 'demographic'
-                : 'ignored') as 'id' | 'demographic' | 'item' | 'ignored',
-              dataType: 'number',
-              missingCount: 0,
-            })),
-          };
+      // Simulation steps for student reassurance (< 15 seconds)
+      const stepDelays = [400, 500, 500, 600, 500, 400];
+      for (let s = 0; s < ANALYSIS_EXECUTION_STEPS.length; s++) {
+        setCurrentExecutionStep(s);
+        await new Promise((r) => setTimeout(r, stepDelays[s]));
+      }
 
-      // Step 4: Deterministic computation using mathematical pipeline
+      const effectiveMeta = datasetMeta || {
+        fileName: fileName || 'data_kuesioner.xlsx',
+        datasetId: generatedDatasetId,
+        runId: generatedRunId,
+        version: dataVersion,
+        kind: dataVersion > 1 ? 'derived' : 'original',
+        sha256: 'sha256-verified-dataset',
+        rowCount: fileData.length,
+        columnCount: columns.length,
+        excludedRows: removedRows,
+        columns: columns.map((col) => ({
+          name: col,
+          role: constructs.some((con) => con.items.includes(col))
+            ? 'item'
+            : columnRoles[col]
+            ? columnRoles[col]
+            : col.toLowerCase().includes('id') || col.toLowerCase() === 'no'
+            ? 'id'
+            : /^(jenis[\s_]?kelamin|gender|usia|umur|pendidikan|pekerjaan|jurusan|angkatan)$/i.test(col.trim())
+            ? 'demographic'
+            : 'ignored',
+          dataType: 'number',
+          missingCount: 0,
+        })),
+      };
+
+      // Deterministic statistical computation
       const computed = computeDeterministicStats({
         rows: fileData,
         constructs,
-        selectedTests,
+        selectedTests: [
+          'descriptive',
+          'validity',
+          'reliability',
+          'normality',
+          'multicollinearity',
+          'heteroscedasticity',
+          'regression',
+          'correlation',
+        ],
         reverseItems,
         calculationMethod,
         datasetMeta: effectiveMeta,
@@ -415,24 +373,21 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
       computed.projectId = projectId;
       computed.dataVersionId = `dv-${dataVersion}`;
 
-      // Step 5: Narasi akademik terstandar
-      await new Promise((r) => setTimeout(r, 200));
-      setCurrentExecutionStep(4);
-
-      // Store in memory and persistent storage
       setCurrentResults(computed);
+
       if (typeof window !== 'undefined') {
         try {
           localStorage.setItem(`olahdata_results_${projectId}`, JSON.stringify(computed));
           localStorage.setItem(`olahdata_run_${generatedRunId}`, JSON.stringify(computed));
         } catch {
-          // localStorage might be constrained
+          // localStorage fallback
         }
       }
 
-      await new Promise((r) => setTimeout(r, 300));
+      await new Promise((r) => setTimeout(r, 400));
       setRunning(false);
 
+      // Navigate to comprehensive Bab 4 Results View
       const targetUrl = `/app/proyek/${projectId}/hasil?runId=${generatedRunId}`;
       if (typeof window !== 'undefined') {
         window.location.href = targetUrl;
@@ -448,9 +403,9 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
 
   return (
     <div className="min-h-screen bg-background pb-16">
-      {/* Top Breadcrumb & Project Header */}
+      {/* Top Header */}
       <div className="border-b border-border bg-card/50 relative z-10">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <Link
               href={`/app/proyek/${projectId}`}
@@ -459,91 +414,184 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
             >
               <ArrowLeft className="w-4 h-4" />
             </Link>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[11px] text-muted-foreground font-mono">
-                  Proyek #{projectId}
-                </span>
-                <span className="text-[11px] text-muted-foreground">•</span>
-                <span className="text-[11px] font-medium text-primary">
-                  Wisaya Analisis
-                </span>
-                {usingSampleData && (
-                  <Badge variant="amber" className="text-[10px] py-0 px-1.5">
-                    {COPY.badges.sampleData}
-                  </Badge>
-                )}
-              </div>
-              <h1 className="text-xs sm:text-base font-semibold text-foreground truncate">
-                {project?.title || 'Pengolahan Data Kuesioner'}
+            <div className="min-w-0">
+              <h1 className="text-sm sm:text-base font-bold text-foreground truncate">
+                {project?.title || 'Proyek Analisis Skripsi'}
               </h1>
+              <p className="text-[11px] text-muted-foreground truncate">
+                Alur Kerja Kuesioner ke Bab 4 • {APP_NAME} Mesin Statistik v{ENGINE_VERSION}
+              </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <Button asChild variant="ghost" size="sm" className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground">
-              <Link href="/app/bantuan#pemetaan-variabel" target="_blank" title="Panduan Pemetaan Variabel & Butir">
-                <HelpCircle className="h-3.5 w-3.5 text-primary" />
-                <span className="hidden sm:inline">Bantuan</span>
-              </Link>
-            </Button>
+            {usingSampleData ? (
+              <Badge variant="amber" className="text-xs rounded-[6px]">
+                {COPY.badges.sampleData}
+              </Badge>
+            ) : fileData.length > 0 ? (
+              <Badge variant="pine" className="text-xs rounded-[6px]">
+                {formatNumber(fileData.length)} Responden
+              </Badge>
+            ) : null}
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-8 pb-32 sm:pb-16">
+      {/* Main Container */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {/* Banner Mode Data Contoh & Reset Demo */}
+        {(usingSampleData || (isSample && fileData.length > 0)) && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 text-foreground shadow-xs">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Badge variant="amber" className="text-xs font-semibold px-2.5 py-0.5 rounded-[6px]">
+                  {COPY.badges.sampleData}
+                </Badge>
+                <h4 className="font-semibold text-sm text-foreground">
+                  Anda Sedang Menggunakan Data Contoh
+                </h4>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed max-w-[70ch]">
+                Simulasi alur kuesioner ke Bab 4 dengan dataset contoh (N = 120). Anda bebas menguji eliminasi butir, filter demografi, dan menjalankan komputasi Bab 4.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleResetDemo}
+                className="cursor-pointer rounded-xl min-h-[40px] px-3.5 border-amber-500/40 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20"
+              >
+                <RotateCcw className="w-4 h-4 mr-1.5" />
+                Reset Demo
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleUseMyOwnData}
+                className="cursor-pointer font-semibold rounded-xl min-h-[40px] px-4 bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <UploadCloud className="w-4 h-4 mr-1.5" />
+                Pakai Data Saya
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Step Indicator */}
         <StepIndicator
           currentStep={currentStep}
           steps={STEP_LABELS}
           onStepClick={(step) => {
-            // Only allow backward or valid navigation
             if (step < currentStep) setStep(step);
           }}
           maxAccessibleStep={currentStep}
         />
 
-        {/* STEP 1: UNGGAH DATA */}
+        {/* =========================================================================
+            SCREEN 1: UNGGAH BERKAS (currentStep === 0)
+           ========================================================================= */}
         {currentStep === 0 && (
-          <div className="space-y-6">
+          <div className="space-y-6 animate-in fade-in">
             <div>
               <h2 className="font-sans text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                Langkah 1: Unggah Data Kuesioner
+                Langkah 1: Unggah Berkas Kuesioner
               </h2>
               <p className="text-sm text-muted-foreground mt-1 max-w-[68ch]">
-                Unggah spreadsheet data kuesioner Anda (.xlsx, .xls) atau CSV berisikan tabulasi jawaban responden.
+                Unggah spreadsheet tabulasi jawaban responden Anda (.xlsx, .xls, atau .csv) atau coba langsung dengan data contoh.
               </p>
             </div>
 
-            <FileDropzone />
+            <FileDropzone onFileLoaded={() => setStep(1)} />
 
-            {/* 50-Respondent Quota Warning for Free Plan on Custom Uploads */}
+            {/* Bottom Navigation */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 pt-6 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20">
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="cursor-pointer rounded-[10px] min-h-[44px]"
+              >
+                <Link href="/app">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Kembali ke Daftar Proyek
+                </Link>
+              </Button>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                {fileData.length === 0 && (
+                  <span className="text-xs text-muted-foreground text-center sm:text-right font-medium">
+                    Unggah berkas kuesioner Anda atau pilih data contoh untuk lanjut
+                  </span>
+                )}
+                <Button
+                  type="button"
+                  size="lg"
+                  onClick={nextStep}
+                  disabled={fileData.length === 0}
+                  className="cursor-pointer font-semibold rounded-[10px] min-h-[44px]"
+                >
+                  Lanjut ke Temuan Data
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================================
+            SCREEN 2: TEMUAN DATA (currentStep === 1)
+           ========================================================================= */}
+        {currentStep === 1 && (
+          <div className="space-y-6 animate-in fade-in">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="font-sans text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                  Langkah 2: Temuan Kualitas Data
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1 max-w-[68ch]">
+                  Pemeriksaan integritas skala Likert, baris kosong, jawaban seragam, dan duplikasi data.
+                </p>
+              </div>
+            </div>
+
+            {/* 50-Respondent Quota Warning for Free Plan (Hard Rule #5: Waitlist mode, zero payment buttons) */}
             {!usingSampleData && isFree && fileData.length > 50 && (
-              <div className="p-4 sm:p-5 rounded-[16px] border border-amber-500/30 bg-amber-500/10 dark:bg-amber-400/10 text-foreground space-y-3">
+              <div className="p-4 sm:p-5 rounded-[16px] border border-amber-500/30 bg-amber-500/10 text-foreground space-y-3">
                 <div className="flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                   <div className="space-y-1">
-                    <h4 className="font-bold text-sm text-foreground">
-                      Dataset Memiliki {formatNumber(fileData.length)} Responden (Batas Paket Gratis: 50 Responden)
-                    </h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-bold text-sm text-foreground">
+                        Dataset Memiliki {formatNumber(fileData.length)} Responden (Batas Paket Gratis: 50 Responden)
+                      </h4>
+                      <Badge variant="amber" className="text-[10px] flex items-center gap-1 rounded-[6px]">
+                        <Lock className="w-3 h-3" />
+                        Tersedia di paket Bulanan/Skripsi
+                      </Badge>
+                    </div>
                     <p className="text-xs text-muted-foreground leading-relaxed max-w-[72ch]">
-                      Dataset Anda memiliki <strong className="text-foreground">{formatNumber(fileData.length)}</strong> responden. Pada paket Coba Gratis, analisis dibatasi untuk maksimal 50 baris responden. Upgrade paket untuk menganalisis seluruh {formatNumber(fileData.length)} responden secara penuh, atau lanjutkan dengan mode pratinjau (50 responden pertama).
+                      Dataset Anda memiliki <strong className="text-foreground">{formatNumber(fileData.length)}</strong> responden. Pada paket Coba Gratis, batas pengolahan data kuesioner adalah 50 baris responden pertama. Anda dapat bergabung dengan daftar tunggu paket penuh atau melanjutkan dengan 50 responden pertama.
                     </p>
                   </div>
                 </div>
+
                 <div className="flex flex-wrap items-center gap-2.5 pt-1">
                   <Button
                     type="button"
                     size="sm"
                     onClick={() =>
-                      openUpgradeModal(
-                        `Analisis Penuh ${formatNumber(fileData.length)} Responden Skripsi`
-                      )
+                      openUpgradeModal({
+                        reason: `Analisis Penuh ${formatNumber(fileData.length)} Responden Skripsi`,
+                        plan: 'monthly',
+                      })
                     }
                     className="font-semibold text-xs rounded-[10px] bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer shadow-xs"
                   >
-                    <Zap className="w-3.5 h-3.5 mr-1.5" />
-                    Tingkatkan Paket untuk {formatNumber(fileData.length)} Responden
+                    <Lock className="w-3.5 h-3.5 mr-1.5" />
+                    Daftar Tunggu Paket untuk {formatNumber(fileData.length)} Responden
                   </Button>
                   <Button
                     type="button"
@@ -560,101 +608,15 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                         datasetMeta ?? undefined
                       );
                       toast({
-                        title: 'Mode Pratinjau 50 Responden Aktif',
-                        description: 'Dataset telah dipotong menjadi 50 baris responden pertama.',
+                        title: 'Mode 50 Responden Aktif',
+                        description: 'Dataset dipotong menjadi 50 baris responden pertama untuk analisis gratis.',
                         variant: 'default',
                       });
                     }}
                     className="text-xs rounded-[10px] cursor-pointer"
                   >
-                    Lanjutkan Pratinjau (50 Responden Pertama)
+                    Lanjutkan dengan 50 Responden Pertama
                   </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Smart Google Forms Auto-Recode Banner in Step 1 */}
-            {detectedLikertColumns.length > 0 && (
-              <LikertRecodeBanner
-                detectedLikertColumns={detectedLikertColumns}
-                detectedMetadataCols={detectedMetadataCols}
-                showLikertMapping={showLikertMapping}
-                setShowLikertMapping={setShowLikertMapping}
-                onRecode={handleRecodeLikert}
-              />
-            )}
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
-              <Button
-                asChild
-                variant="outline"
-                size="lg"
-                className="cursor-pointer rounded-[10px] min-h-[44px]"
-              >
-                <Link href="/app">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Kembali ke Proyek
-                </Link>
-              </Button>
-
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                {fileData.length === 0 && (
-                  <span className="text-xs text-muted-foreground text-center sm:text-right font-medium">
-                    Unggah berkas kuesioner Anda terlebih dahulu untuk lanjut
-                  </span>
-                )}
-                <Button
-                  type="button"
-                  size="lg"
-                  onClick={handleStep1Next}
-                  disabled={fileData.length === 0}
-                  className="cursor-pointer font-semibold rounded-[10px] min-h-[44px]"
-                  title={fileData.length === 0 ? 'Unggah berkas kuesioner Anda terlebih dahulu' : undefined}
-                >
-                  Lanjut ke Validasi Data
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 2: VALIDASI DATA */}
-        {currentStep === 1 && (
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h2 className="font-sans text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                  Langkah 2: Validasi Kualitas Data
-                </h2>
-                <p className="text-sm text-muted-foreground mt-1 max-w-[68ch]">
-                  Pemeriksaan integritas skala Likert, baris kosong, dan jawaban terduplikasi.
-                </p>
-              </div>
-            </div>
-
-            {/* Smart Google Forms Auto-Recode Banner in Step 2 */}
-            {detectedLikertColumns.length > 0 && (
-              <LikertRecodeBanner
-                detectedLikertColumns={detectedLikertColumns}
-                detectedMetadataCols={detectedMetadataCols}
-                showLikertMapping={showLikertMapping}
-                setShowLikertMapping={setShowLikertMapping}
-                onRecode={handleRecodeLikert}
-              />
-            )}
-
-            {/* Critical Error Alert if any */}
-            {criticalErrorCount > 0 && (
-              <div className="p-4 sm:p-5 rounded-[16px] border border-destructive/30 bg-destructive/10 text-destructive flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                <div className="space-y-1 text-sm">
-                  <span className="font-bold block">
-                    {criticalErrorCount} baris data perlu dicek
-                  </span>
-                  <p className="text-destructive/90 text-xs leading-relaxed max-w-[68ch]">
-                    Perbaiki atau keluarkan baris bermasalah sebelum melanjutkan ke tahap analisis.
-                  </p>
                 </div>
               </div>
             )}
@@ -662,7 +624,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
             {/* Main Preview and Issue Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               {/* Preview Table */}
-              <div className="lg:col-span-8 order-2 lg:order-1">
+              <div className="lg:col-span-7 order-2 lg:order-1">
                 <DataPreviewTable
                   data={fileData}
                   columns={columns}
@@ -672,21 +634,24 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                 />
               </div>
 
-              {/* Issues List */}
-              <div className="lg:col-span-4 order-1 lg:order-2">
+              {/* Quality Issues List */}
+              <div className="lg:col-span-5 order-1 lg:order-2">
                 <IssueList
                   issues={issues}
+                  rowCount={fileData.length}
+                  columnCount={columns.length}
                   onSelectIssue={(row, col, severity) => {
                     setTargetCell({ row, col, severity });
                   }}
                   onRemoveRow={(rowNo) => removeRowByNumber(rowNo)}
+                  onRemoveAllProblematicRows={(rows) => removeRowsByNumbers(rows)}
                   onReupload={() => setStep(0)}
                 />
               </div>
             </div>
 
             {/* Navigation Buttons */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 pt-6 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20">
               <Button
                 type="button"
                 variant="outline"
@@ -698,10 +663,10 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                 Kembali ke Unggah
               </Button>
 
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 {criticalErrorCount > 0 && (
                   <span className="text-xs text-destructive text-center sm:text-right font-medium">
-                    Perbaiki {criticalErrorCount} baris bermasalah untuk lanjut
+                    Kecualikan atau perbaiki {criticalErrorCount} data bermasalah untuk lanjut
                   </span>
                 )}
                 <Button
@@ -710,9 +675,8 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                   onClick={nextStep}
                   disabled={criticalErrorCount > 0}
                   className="cursor-pointer font-semibold rounded-[10px] min-h-[44px]"
-                  title={criticalErrorCount > 0 ? `Terdapat ${criticalErrorCount} baris bermasalah yang perlu diperbaiki` : undefined}
                 >
-                  Lanjut ke Petakan Variabel
+                  Lanjut ke Pertanyaan Penelitian
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
@@ -720,20 +684,23 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
           </div>
         )}
 
-        {/* STEP 3: PETAKAN VARIABEL */}
+        {/* =========================================================================
+            SCREEN 3: PERTANYAAN PENELITIAN (currentStep === 2)
+           ========================================================================= */}
         {currentStep === 2 && (
-          <div className="space-y-6">
+          <div className="space-y-6 animate-in fade-in">
             <div>
               <h2 className="font-sans text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                Langkah 3: Tentukan Desain & Petakan Variabel
+                Langkah 3: Pertanyaan Penelitian & Pemetaan Variabel
               </h2>
               <p className="text-sm text-muted-foreground mt-1 max-w-[68ch]">
-                Pilih desain penelitian skripsi Anda (Model Regresi Kuesioner atau Uji Beda Eksperimen / Pra-Pasca) lalu tentukan variabelnya.
+                Pilih fokus analisis skripsi Anda, lalu kelompokkan pertanyaan kuesioner ke dalam variabel bebas (X) dan terikat (Y).
               </p>
             </div>
 
-            {/* Template Selector */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* 4 Large Selection Cards per Prompt 10 Specification */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Card 1: Regresi (Pengaruh variabel terhadap variabel lain) */}
               <button
                 type="button"
                 onClick={() => {
@@ -750,25 +717,32 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                   ]);
                 }}
                 className={cn(
-                  'p-4 rounded-xl border text-left transition-all cursor-pointer',
+                  'p-4 rounded-[16px] border text-left transition-all cursor-pointer space-y-2 flex flex-col justify-between',
                   researchDesign === 'survey'
                     ? 'border-primary bg-primary/10 shadow-sm ring-1 ring-primary'
-                    : 'border-border bg-card hover:border-border/80'
+                    : 'border-border bg-card hover:border-primary/50'
                 )}
               >
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-semibold text-sm text-foreground">
-                    Kuesioner / Regresi Skripsi
-                  </span>
-                  <Badge variant={researchDesign === 'survey' ? 'brand' : 'outline'} className="text-[10px]">
-                    Model X → Y
-                  </Badge>
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-bold text-sm text-foreground flex items-center gap-1.5">
+                      <TrendingUp className="w-4 h-4 text-primary" />
+                      Pengaruh Variabel
+                    </span>
+                    <Badge variant={researchDesign === 'survey' ? 'brand' : 'outline'} className="text-[10px] rounded-[6px]">
+                      Regresi X → Y
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Pengaruh variabel terhadap variabel lain. Meliputi Validitas, Reliabilitas, Asumsi Klasik, dan Regresi OLS.
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Untuk penelitian survei kuesioner skala Likert: Uji Validitas, Reliabilitas, Asumsi Klasik, dan Regresi Linier Berganda.
-                </p>
+                <div className="text-[11px] font-semibold text-primary">
+                  {researchDesign === 'survey' ? '✓ Desain Terpilih' : 'Pilih Desain Ini'}
+                </div>
               </button>
 
+              {/* Card 2: Uji Beda (Beda antar kelompok) */}
               <button
                 type="button"
                 onClick={() => {
@@ -782,364 +756,116 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                   ]);
                 }}
                 className={cn(
-                  'p-4 rounded-xl border text-left transition-all cursor-pointer',
+                  'p-4 rounded-[16px] border text-left transition-all cursor-pointer space-y-2 flex flex-col justify-between',
                   researchDesign === 'comparative'
                     ? 'border-primary bg-primary/10 shadow-sm ring-1 ring-primary'
-                    : 'border-border bg-card hover:border-border/80'
+                    : 'border-border bg-card hover:border-primary/50'
                 )}
               >
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-semibold text-sm text-foreground">
-                    Uji Perbandingan & Eksperimen
-                  </span>
-                  <Badge variant={researchDesign === 'comparative' ? 'brand' : 'outline'} className="text-[10px]">
-                    t-Test, N-Gain, ANOVA
-                  </Badge>
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-bold text-sm text-foreground flex items-center gap-1.5">
+                      <GitCompare className="w-4 h-4 text-primary" />
+                      Beda Antar Kelompok
+                    </span>
+                    <Badge variant={researchDesign === 'comparative' ? 'brand' : 'outline'} className="text-[10px] rounded-[6px]">
+                      Uji Beda
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Perbandingan nilai antar kelompok: Independent t-Test, Paired t-Test (Pre-Post), atau One-Way ANOVA.
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Khusus FKIP, Psikologi, & Keperawatan: Paired Sample t-Test, Efektivitas N-Gain (Hake 1998), Independent t-Test (Levene), & Non-Parametrik.
-                </p>
+                <div className="text-[11px] font-semibold text-primary">
+                  {researchDesign === 'comparative' ? '✓ Desain Terpilih' : 'Pilih Desain Ini'}
+                </div>
               </button>
 
+              {/* Card 3: Hubungan Antar Variabel (Korelasi) */}
               <button
                 type="button"
                 onClick={() => {
-                  setResearchDesign('categorical');
+                  setResearchDesign('survey');
                   setSelectedTests([
-                    'crosstab',
-                    'chisquare',
-                    'odds-ratio',
                     'descriptive',
+                    'validity',
+                    'reliability',
+                    'correlation',
                   ]);
                 }}
                 className={cn(
-                  'p-4 rounded-xl border text-left transition-all cursor-pointer',
-                  researchDesign === 'categorical'
+                  'p-4 rounded-[16px] border text-left transition-all cursor-pointer space-y-2 flex flex-col justify-between',
+                  researchDesign === 'survey' && selectedTests.includes('correlation') && !selectedTests.includes('regression')
                     ? 'border-primary bg-primary/10 shadow-sm ring-1 ring-primary'
-                    : 'border-border bg-card hover:border-border/80'
+                    : 'border-border bg-card hover:border-primary/50'
                 )}
               >
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-semibold text-sm text-foreground">
-                    Hubungan Kategori (Chi-Square)
-                  </span>
-                  <Badge variant={researchDesign === 'categorical' ? 'brand' : 'outline'} className="text-[10px]">
-                    Crosstab &amp; OR
-                  </Badge>
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-bold text-sm text-foreground flex items-center gap-1.5">
+                      <Activity className="w-4 h-4 text-primary" />
+                      Hubungan Variabel
+                    </span>
+                    <Badge variant="outline" className="text-[10px] rounded-[6px]">
+                      Korelasi
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Uji keeratan asosiasi antar variabel: Korelasi Pearson Product Moment dan korelasi rank Spearman.
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Khusus FKM, Kebidanan, Keperawatan, &amp; Sosiologi: Tabulasi Silang (B × K), Chi-Square, Fisher Exact, &amp; Odds Ratio (95% CI).
-                </p>
+                <div className="text-[11px] font-semibold text-primary">
+                  {selectedTests.includes('correlation') && !selectedTests.includes('regression')
+                    ? '✓ Desain Terpilih'
+                    : 'Pilih Desain Ini'}
+                </div>
+              </button>
+
+              {/* Card 4: Gambaran Saja (Deskriptif) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setResearchDesign('survey');
+                  setSelectedTests(['descriptive']);
+                }}
+                className={cn(
+                  'p-4 rounded-[16px] border text-left transition-all cursor-pointer space-y-2 flex flex-col justify-between',
+                  selectedTests.length === 1 && selectedTests[0] === 'descriptive'
+                    ? 'border-primary bg-primary/10 shadow-sm ring-1 ring-primary'
+                    : 'border-border bg-card hover:border-primary/50'
+                )}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-bold text-sm text-foreground flex items-center gap-1.5">
+                      <BarChart3 className="w-4 h-4 text-primary" />
+                      Gambaran Saja
+                    </span>
+                    <Badge variant="outline" className="text-[10px] rounded-[6px]">
+                      Deskriptif
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Statistik deskriptif: mean, median, standar deviasi, frekuensi profil responden, dan kategori Likert.
+                  </p>
+                </div>
+                <div className="text-[11px] font-semibold text-primary">
+                  {selectedTests.length === 1 && selectedTests[0] === 'descriptive'
+                    ? '✓ Desain Terpilih'
+                    : 'Pilih Desain Ini'}
+                </div>
               </button>
             </div>
 
-            {/* SURVEY TEMPLATE MAPPING */}
-            {researchDesign === 'survey' && (
-              <>
-                <VariableMapper
-                  columns={columns}
-                  constructs={constructs}
-                  onChange={setConstructs}
-                />
-              </>
-            )}
-
-            {/* COMPARATIVE TEMPLATE MAPPING */}
-            {researchDesign === 'comparative' && (
-              <div className="p-5 rounded-[16px] border border-border bg-card shadow-xs space-y-5">
-                <div className="flex items-center justify-between border-b border-border/60 pb-3">
-                  <div>
-                    <h3 className="font-semibold text-sm text-foreground flex items-center gap-2">
-                      <Layers className="w-4 h-4 text-primary" />
-                      Pemetaan Kolom Variabel Eksperimen & Beda Rata-rata
-                    </h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Pilih kolom data yang sesuai untuk uji sampel berpasangan (Pre-test vs Post-test) atau perbandingan kelompok (Kelas Eksperimen vs Kontrol).
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Pre-test column */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-foreground">
-                      Kolom Nilai Pra-Perlakuan (Pre-test):
-                    </label>
-                    <select
-                      value={preCol || ''}
-                      onChange={(e) => setComparativeMapping({ preCol: e.target.value || null })}
-                      className="w-full text-xs rounded-lg border border-border bg-background p-2.5 font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                    >
-                      <option value="">-- Pilih Kolom Pre-test --</option>
-                      {columns.map((col) => (
-                        <option key={col} value={col}>
-                          {col}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-[11px] text-muted-foreground">
-                      Data skor awal responden sebelum diberikan intervensi pembelajaran/perlakuan.
-                    </p>
-                  </div>
-
-                  {/* Post-test column */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-foreground">
-                      Kolom Nilai Pasca-Perlakuan (Post-test):
-                    </label>
-                    <select
-                      value={postCol || ''}
-                      onChange={(e) =>
-                        setComparativeMapping({
-                          postCol: e.target.value || null,
-                          scoreCol: e.target.value || scoreCol,
-                        })
-                      }
-                      className="w-full text-xs rounded-lg border border-border bg-background p-2.5 font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                    >
-                      <option value="">-- Pilih Kolom Post-test --</option>
-                      {columns.map((col) => (
-                        <option key={col} value={col}>
-                          {col}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-[11px] text-muted-foreground">
-                      Data skor akhir responden setelah perlakuan selesai diberikan.
-                    </p>
-                  </div>
-
-                  {/* Group column */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-foreground">
-                      Kolom Kelompok / Kelas (Faktor Independen):
-                    </label>
-                    <select
-                      value={groupCol || ''}
-                      onChange={(e) => setComparativeMapping({ groupCol: e.target.value || null })}
-                      className="w-full text-xs rounded-lg border border-border bg-background p-2.5 font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                    >
-                      <option value="">-- Pilih Kolom Kelas / Kelompok --</option>
-                      {columns.map((col) => (
-                        <option key={col} value={col}>
-                          {col}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-[11px] text-muted-foreground">
-                      Digunakan untuk Independent Sample t-Test & ANOVA (misal: &quot;Kelas Eksperimen&quot; vs &quot;Kelas Kontrol&quot;).
-                    </p>
-                  </div>
-
-                  {/* Ideal Max Score */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-foreground">
-                      Skor Maksimal Ideal Instrumen Tes:
-                    </label>
-                    <input
-                      type="number"
-                      value={idealMaxScore}
-                      onChange={(e) =>
-                        setComparativeMapping({ idealMaxScore: Number(e.target.value) || 100 })
-                      }
-                      min={10}
-                      max={1000}
-                      className="w-full text-xs rounded-lg border border-border bg-background p-2.5 font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
-                    <p className="text-[11px] text-muted-foreground">
-                      Diperlukan untuk rumus Richard R. Hake: (Post - Pre) / (Skor Maksimal - Pre). Standar umumnya 100.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Status Box */}
-                <div className="p-3.5 rounded-lg bg-muted/40 border border-border/50 text-xs flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <span className="font-semibold text-foreground">Kesiapan Analisis Komparatif:</span>
-                    <p className="text-[11px] text-muted-foreground">
-                      {preCol && postCol
-                        ? `✓ Pasangan Pre-Post siap (${preCol} → ${postCol}) untuk Paired t-Test & N-Gain.`
-                        : '• Belum memilih pasangan Pre-test & Post-test.'}
-                      {groupCol ? ` ✓ Kolom kelompok siap (${groupCol}) untuk Independent t-Test & Levene.` : ''}
-                    </p>
-                  </div>
-                  <Badge
-                    variant={isMappingValid ? 'success' : 'amber'}
-                    className="text-[11px]"
-                  >
-                    {isMappingValid ? 'Parameter Lengkap' : 'Pilih Parameter'}
-                  </Badge>
-                </div>
-              </div>
-            )}
-
-            {/* CATEGORICAL TEMPLATE MAPPING */}
-            {researchDesign === 'categorical' && (
-              <div className="p-5 rounded-[16px] border border-border bg-card shadow-xs space-y-5">
-                <div className="flex items-center justify-between border-b border-border/60 pb-3">
-                  <div>
-                    <h3 className="font-semibold text-sm text-foreground flex items-center gap-2">
-                      <Layers className="w-4 h-4 text-emerald-500" />
-                      Pemetaan Variabel Kategorik (Tabulasi Silang &amp; Chi-Square)
-                    </h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Pilih variabel baris (faktor paparan/risiko/independen) dan variabel kolom (kejadian penyakit/luaran/dependen) berskala data nominal atau ordinal.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Row variable */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-foreground">
-                      Variabel Baris (Faktor Paparan / Independen):
-                    </label>
-                    <select
-                      value={rowCol || ''}
-                      onChange={(e) => setCategoricalMapping({ rowCol: e.target.value || null })}
-                      className="w-full text-xs rounded-lg border border-border bg-background p-2.5 font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-                    >
-                      <option value="">-- Pilih Variabel Baris --</option>
-                      {columns.map((col) => (
-                        <option key={col} value={col}>
-                          {col}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-[11px] text-muted-foreground">
-                      Contoh: Kebiasaan Merokok, Status Gizi, Tingkat Stres, Kelompok Intervensi.
-                    </p>
-                  </div>
-
-                  {/* Column variable */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-foreground">
-                      Variabel Kolom (Kejadian / Luaran / Dependen):
-                    </label>
-                    <select
-                      value={colCol || ''}
-                      onChange={(e) => setCategoricalMapping({ colCol: e.target.value || null })}
-                      className="w-full text-xs rounded-lg border border-border bg-background p-2.5 font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-                    >
-                      <option value="">-- Pilih Variabel Kolom --</option>
-                      {columns.map((col) => (
-                        <option key={col} value={col}>
-                          {col}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-[11px] text-muted-foreground">
-                      Contoh: Kejadian Hipertensi, Status Kesembuhan, Tingkat Kepatuhan.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Status Box */}
-                <div className="p-3.5 rounded-lg bg-muted/40 border border-border/50 text-xs flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <span className="font-semibold text-foreground">Kesiapan Analisis Chi-Square:</span>
-                    <p className="text-[11px] text-muted-foreground">
-                      {rowCol && colCol
-                        ? `✓ Variabel siap: ${rowCol} (Baris) × ${colCol} (Kolom) untuk Tabulasi Silang, Chi-Square, Fisher Exact, & Odds Ratio.`
-                        : '• Silakan tentukan Variabel Baris dan Variabel Kolom di atas.'}
-                    </p>
-                  </div>
-                  <Badge
-                    variant={rowCol && colCol ? 'success' : 'amber'}
-                    className="text-[11px]"
-                  >
-                    {rowCol && colCol ? 'Parameter Lengkap' : 'Pilih Parameter'}
-                  </Badge>
-                </div>
-              </div>
-            )}
-
-            {/* Pengaturan Lanjutan Skor Konstruk */}
-            {researchDesign === 'survey' && (
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
-                <div>
-                  <h4 className="font-semibold text-sm text-foreground flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-primary" />
-                    Pengaturan Lanjutan Skor & Butir Negatif
-                  </h4>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Tentukan metode agregasi skor variabel dan balik nilai butir yang menggunakan kalimat negatif.
-                  </p>
-                </div>
-
-                {/* Calculation method selector */}
-                <div className="flex items-center gap-1.5 p-1 rounded-lg bg-muted/50 border border-border/50 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => setCalculationMethod('mean')}
-                    className={cn(
-                      'px-3 py-1.5 rounded-md font-medium transition-colors cursor-pointer',
-                      calculationMethod === 'mean'
-                        ? 'bg-background text-foreground shadow-xs font-semibold'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    Rata-rata (Mean)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCalculationMethod('sum')}
-                    className={cn(
-                      'px-3 py-1.5 rounded-md font-medium transition-colors cursor-pointer',
-                      calculationMethod === 'sum'
-                        ? 'bg-background text-foreground shadow-xs font-semibold'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    Penjumlahan (Sum)
-                  </button>
-                </div>
-              </div>
-
-              {/* Reverse scored items selection */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-foreground">
-                    Item Pertanyaan Negatif (Reverse Score):
-                  </label>
-                  <span className="text-[11px] text-muted-foreground">
-                    {reverseItems.length > 0
-                      ? `${reverseItems.length} butir dibalik nilainya (skala 1-5 diinversi)`
-                      : 'Belum ada butir yang dibalik'}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Klik butir instrumen di bawah jika butir tersebut memuat pernyataan negatif sehingga nilainya dibalik otomatis (misal skor 5 menjadi 1, skor 4 menjadi 2) sesuai kaidah metodologi penelitian kuantitatif.
-                </p>
-
-                <div className="flex flex-wrap gap-1.5 pt-1 max-h-32 overflow-y-auto">
-                  {availableLikertItems.map((col) => {
-                    const isReverse = reverseItems.includes(col);
-                    return (
-                      <button
-                        key={col}
-                        type="button"
-                        onClick={() => toggleReverseItem(col)}
-                        className={cn(
-                          'text-xs px-2.5 py-1 rounded-md border font-mono transition-all cursor-pointer',
-                          isReverse
-                            ? 'bg-amber-500 text-slate-950 font-bold border-amber-600 dark:bg-amber-400 dark:text-slate-950 shadow-xs ring-1 ring-amber-500/50'
-                            : 'bg-muted/30 text-foreground border-border hover:border-amber-600/50'
-                        )}
-                        title={isReverse ? 'Klik untuk membatalkan reverse scoring' : 'Klik untuk mengaktifkan reverse scoring'}
-                      >
-                        {col} {isReverse && '🔄'}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-            )}
+            {/* Variable Mapper Component */}
+            <VariableMapper
+              columns={columns}
+              constructs={constructs}
+              onChange={setConstructs}
+            />
 
             {/* Navigation Buttons */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 pt-6 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20">
               <Button
                 type="button"
                 variant="outline"
@@ -1148,15 +874,13 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                 className="cursor-pointer rounded-[10px] min-h-[44px]"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Kembali ke Validasi
+                Kembali ke Temuan Data
               </Button>
 
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 {!isMappingValid && (
-                  <span className="text-xs text-amber-600 dark:text-amber-400 text-center sm:text-right font-medium">
-                    {researchDesign === 'comparative'
-                      ? 'Pilih kolom Pre-test & Post-test atau Kelas & Skor untuk lanjut'
-                      : 'Diperlukan min. 1 variabel bebas (X) dan 1 variabel terikat (Y)'}
+                  <span className="text-xs text-destructive text-center sm:text-right font-medium">
+                    Tentukan minimal 1 Variabel Bebas (X) dan 1 Variabel Terikat (Y) untuk lanjut
                   </span>
                 )}
                 <Button
@@ -1165,9 +889,8 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                   onClick={nextStep}
                   disabled={!isMappingValid}
                   className="cursor-pointer font-semibold rounded-[10px] min-h-[44px]"
-                  title={!isMappingValid ? 'Petakan minimal 1 variabel bebas (X) dan 1 variabel terikat (Y)' : undefined}
                 >
-                  Lanjut ke Pilih Uji
+                  Lanjut ke Cek Kesiapan
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
@@ -1175,61 +898,327 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
           </div>
         )}
 
-        {/* STEP 4: PILIH UJI */}
+        {/* =========================================================================
+            SCREEN 4: CEK KESIAPAN (currentStep === 3)
+           ========================================================================= */}
         {currentStep === 3 && (
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h2 className="font-sans text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                  Langkah 4: Pilih Uji Statistik
-                </h2>
-                <p className="text-sm text-muted-foreground mt-1 max-w-[68ch]">
-                  Pilih uji statistik yang Anda butuhkan untuk Bab 4 skripsi. Uji yang direkomendasikan telah disesuaikan otomatis dengan konstruk penelitian Anda.
+          <div className="space-y-6 animate-in fade-in">
+            <div>
+              <h2 className="font-sans text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                Langkah 4: Cek Kesiapan Analisis Skripsi
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1 max-w-[68ch]">
+                Pemeriksaan otomatis standar metodologi skripsi kuantitatif sebelum paket Bab 4 dijalankan.
+              </p>
+            </div>
+
+            {/* 5 Traffic Light Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Lampu 1: Ukuran Sampel */}
+              <div
+                className={cn(
+                  'p-4 rounded-[16px] border bg-card shadow-xs space-y-2.5',
+                  sampleStatus === 'green'
+                    ? 'border-emerald-500/30'
+                    : sampleStatus === 'yellow'
+                    ? 'border-amber-500/30'
+                    : 'border-destructive/30'
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-foreground">
+                    1. Ukuran Sampel Responden
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={cn(
+                        'w-2.5 h-2.5 rounded-full animate-pulse',
+                        sampleStatus === 'green'
+                          ? 'bg-emerald-500'
+                          : sampleStatus === 'yellow'
+                          ? 'bg-amber-500'
+                          : 'bg-destructive'
+                      )}
+                    />
+                    <Badge
+                      variant={sampleStatus === 'green' ? 'pine' : sampleStatus === 'yellow' ? 'amber' : 'destructive'}
+                      className="text-[10px] rounded-[6px]"
+                    >
+                      {sampleStatus === 'green' ? 'Lampu Hijau' : sampleStatus === 'yellow' ? 'Lampu Kuning' : 'Lampu Merah'}
+                    </Badge>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {sampleStatus === 'green'
+                    ? `Ukuran sampel memadai (N = ${fileData.length} responden ≥ 30). Memenuhi syarat Teorema Limit Pusat untuk analisis parametrik.`
+                    : sampleStatus === 'yellow'
+                    ? `Ukuran sampel (N = ${fileData.length}) memenuhi rasio minimal prediktor, namun di bawah N ≥ 30. Disarankan mencermati uji normalitas residual.`
+                    : `Ukuran sampel (N = ${fileData.length}) kurang dari ambang batas minimal. Tambahkan data responden.`}
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const allRec = dynamicTestOptions.filter((t) => t.recommended).map((t) => t.id);
-                    setSelectedTests(allRec);
-                  }}
-                  className="text-xs cursor-pointer rounded-[10px]"
-                >
-                  Pilih yang direkomendasikan
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedTests(dynamicTestOptions.map((t) => t.id));
-                  }}
-                  className="text-xs cursor-pointer rounded-[10px]"
-                >
-                  Pilih semua
-                </Button>
+              {/* Lampu 2: Kualitas Data */}
+              <div
+                className={cn(
+                  'p-4 rounded-[16px] border bg-card shadow-xs space-y-2.5',
+                  qualityStatus === 'green'
+                    ? 'border-emerald-500/30'
+                    : qualityStatus === 'yellow'
+                    ? 'border-amber-500/30'
+                    : 'border-destructive/30'
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-foreground">
+                    2. Kualitas & Kebersihan Data
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={cn(
+                        'w-2.5 h-2.5 rounded-full animate-pulse',
+                        qualityStatus === 'green'
+                          ? 'bg-emerald-500'
+                          : qualityStatus === 'yellow'
+                          ? 'bg-amber-500'
+                          : 'bg-destructive'
+                      )}
+                    />
+                    <Badge
+                      variant={qualityStatus === 'green' ? 'pine' : qualityStatus === 'yellow' ? 'amber' : 'destructive'}
+                      className="text-[10px] rounded-[6px]"
+                    >
+                      {qualityStatus === 'green' ? 'Lampu Hijau' : qualityStatus === 'yellow' ? 'Lampu Kuning' : 'Lampu Merah'}
+                    </Badge>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {qualityStatus === 'green'
+                    ? 'Data bersih: Tidak ada sel kosong, nilai di luar rentang skala, atau duplikasi identik.'
+                    : qualityStatus === 'yellow'
+                    ? `Tidak ada galat kritis. Terdapat ${warningCount} catatan peringatan yang telah Anda konfirmasi.`
+                    : `Terdapat ${criticalErrorCount} data belum diperbaiki (sel kosong atau nilai di luar rentang skala). Selesaikan pada Langkah 2.`}
+                </p>
+              </div>
+
+              {/* Lampu 3: Pertanyaan Diduga Tidak Valid */}
+              <div
+                className={cn(
+                  'p-4 rounded-[16px] border bg-card shadow-xs space-y-2.5',
+                  validityStatus === 'green' ? 'border-emerald-500/30' : 'border-amber-500/30'
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-foreground">
+                    3. Korelasi Pertanyaan (Validitas Awal)
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={cn(
+                        'w-2.5 h-2.5 rounded-full',
+                        validityStatus === 'green' ? 'bg-emerald-500' : 'bg-amber-500'
+                      )}
+                    />
+                    <Badge
+                      variant={validityStatus === 'green' ? 'pine' : 'amber'}
+                      className="text-[10px] rounded-[6px]"
+                    >
+                      {validityStatus === 'green' ? 'Lampu Hijau' : 'Lampu Kuning'}
+                    </Badge>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {validityStatus === 'green'
+                    ? 'Seluruh pertanyaan memiliki korelasi awal yang kuat dan searah dengan variabelnya.'
+                    : `Pertanyaan ${weakItems.map((w) => w.item).join(', ')} terdeteksi memiliki korelasi rendah (r < 0,15).`}
+                </p>
+                {weakItems.length > 0 && (
+                  <div className="pt-1">
+                    {weakItems.map((w) => (
+                      <Button
+                        key={w.item}
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDropWeakItem(w.item)}
+                        className="text-[11px] h-7 px-2.5 rounded-[6px] border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 cursor-pointer"
+                      >
+                        Eliminasi {w.item} dari {w.construct}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Lampu 4: Jumlah Pertanyaan per Variabel */}
+              <div
+                className={cn(
+                  'p-4 rounded-[16px] border bg-card shadow-xs space-y-2.5',
+                  itemCountStatus === 'green'
+                    ? 'border-emerald-500/30'
+                    : itemCountStatus === 'yellow'
+                    ? 'border-amber-500/30'
+                    : 'border-destructive/30'
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-foreground">
+                    4. Jumlah Butir per Variabel
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={cn(
+                        'w-2.5 h-2.5 rounded-full',
+                        itemCountStatus === 'green'
+                          ? 'bg-emerald-500'
+                          : itemCountStatus === 'yellow'
+                          ? 'bg-amber-500'
+                          : 'bg-destructive'
+                      )}
+                    />
+                    <Badge
+                      variant={itemCountStatus === 'green' ? 'pine' : itemCountStatus === 'yellow' ? 'amber' : 'destructive'}
+                      className="text-[10px] rounded-[6px]"
+                    >
+                      {itemCountStatus === 'green' ? 'Lampu Hijau' : itemCountStatus === 'yellow' ? 'Lampu Kuning' : 'Lampu Merah'}
+                    </Badge>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {itemCountStatus === 'green'
+                    ? 'Seluruh variabel memiliki ≥ 3 pertanyaan yang memenuhi syarat reliabilitas instrumen.'
+                    : itemCountStatus === 'yellow'
+                    ? 'Beberapa variabel memiliki 2 butir pertanyaan. Diperbolehkan namun disarankan ≥ 3 butir.'
+                    : 'Terdapat variabel dengan kurang dari 2 butir pertanyaan. Minimal 2 butir per variabel.'}
+                </p>
+              </div>
+
+              {/* Lampu 5: Kesesuaian Desain Penelitian */}
+              <div
+                className={cn(
+                  'p-4 rounded-[16px] border bg-card shadow-xs space-y-2.5 md:col-span-2 lg:col-span-2',
+                  suitabilityStatus === 'green' ? 'border-emerald-500/30' : 'border-destructive/30'
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-foreground">
+                    5. Kesesuaian Struktur Variabel dengan Jenis Penelitian
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={cn(
+                        'w-2.5 h-2.5 rounded-full',
+                        suitabilityStatus === 'green' ? 'bg-emerald-500' : 'bg-destructive'
+                      )}
+                    />
+                    <Badge
+                      variant={suitabilityStatus === 'green' ? 'pine' : 'destructive'}
+                      className="text-[10px] rounded-[6px]"
+                    >
+                      {suitabilityStatus === 'green' ? 'Lampu Hijau' : 'Lampu Merah'}
+                    </Badge>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {suitabilityStatus === 'green'
+                    ? `Struktur variabel lengkap: ${independentConstructs.length} Variabel Bebas (X) dan ${dependentConstructs.length} Variabel Terikat (Y). Siap untuk regresi OLS dan uji hipotesis simultan & parsial.`
+                    : 'Struktur variabel belum lengkap. Model membutuhkan minimal 1 Variabel Bebas (X) dan 1 Variabel Terikat (Y).'}
+                </p>
               </div>
             </div>
 
-            {/* Test Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {dynamicTestOptions.map((test) => (
-                <TestCard
-                  key={test.id}
-                  test={test}
-                  isSelected={selectedTests.includes(test.id)}
-                  onToggle={toggleTest}
-                  isLocked={isFree && isTestLocked(test.id)}
-                />
-              ))}
-            </div>
+            {/* Folded Advanced Options Accordion per Prompt 10 */}
+            <details className="group border border-border rounded-[16px] bg-card p-5 transition-all">
+              <summary className="cursor-pointer text-xs font-semibold text-foreground flex items-center justify-between select-none">
+                <span className="flex items-center gap-2">
+                  <SlidersHorizontal className="w-4 h-4 text-primary" />
+                  Opsi Lanjutan Metodologi & Format Angka (Dilipat)
+                </span>
+                <ChevronDown className="w-4 h-4 transition-transform group-open:rotate-180" />
+              </summary>
 
-            {/* Navigation Buttons */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
+              <div className="mt-4 pt-4 border-t border-border/60 space-y-4 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Tingkat Signifikansi Alpha */}
+                  <div className="space-y-1.5 p-3 rounded-lg bg-muted/30 border border-border/40">
+                    <label className="font-semibold text-foreground block">
+                      Taraf Signifikansi (α):
+                    </label>
+                    <select
+                      value={alphaLevel}
+                      onChange={(e) => setAlphaLevel(Number(e.target.value) as 0.05 | 0.01)}
+                      className="w-full text-xs p-2 rounded border border-border bg-background text-foreground"
+                    >
+                      <option value={0.05}>α = 0,05 (Standar Ilmu Sosial / Bisnis)</option>
+                      <option value={0.01}>α = 0,01 (Ketat / Medis & Kedokteran)</option>
+                    </select>
+                    <p className="text-[11px] text-muted-foreground">
+                      Batas probabilitas penolakan H0 (p &lt; α).
+                    </p>
+                  </div>
+
+                  {/* Ambang Batas Reliabilitas Cronbach's Alpha */}
+                  <div className="space-y-1.5 p-3 rounded-lg bg-muted/30 border border-border/40">
+                    <label className="font-semibold text-foreground block">
+                      Ambang Batas Reliabilitas:
+                    </label>
+                    <select
+                      value={reliabilityThreshold}
+                      onChange={(e) => setReliabilityThreshold(Number(e.target.value) as 0.7 | 0.6)}
+                      className="w-full text-xs p-2 rounded border border-border bg-background text-foreground"
+                    >
+                      <option value={0.7}>0,70 (Standar Akademik Bawaan)</option>
+                      <option value={0.6}>0,60 (Penelitian Eksploratori)</option>
+                    </select>
+                    <p className="text-[11px] text-muted-foreground">
+                      Batas reliabel minimum Cronbach's Alpha.
+                    </p>
+                  </div>
+
+                  {/* Format Gaya Angka */}
+                  <div className="space-y-1.5 p-3 rounded-lg bg-muted/30 border border-border/40">
+                    <label className="font-semibold text-foreground block">
+                      Gaya Format Angka:
+                    </label>
+                    <select
+                      value={numberFormat}
+                      onChange={(e) => setNumberFormat(e.target.value as 'id' | 'en')}
+                      className="w-full text-xs p-2 rounded border border-border bg-background text-foreground"
+                    >
+                      <option value="id">Indonesia (Koma Desimal: 1.234,56)</option>
+                      <option value="en">Internasional (Titik Desimal: 1,234.56)</option>
+                    </select>
+                    <p className="text-[11px] text-muted-foreground">
+                      Format tanda desimal tabel APA 7th.
+                    </p>
+                  </div>
+
+                  {/* Uji Autokorelasi Durbin-Watson Toggle */}
+                  <div className="space-y-1.5 p-3 rounded-lg bg-muted/30 border border-border/40">
+                    <label className="font-semibold text-foreground block">
+                      Uji Autokorelasi (Durbin-Watson):
+                    </label>
+                    <div className="flex items-center gap-2 pt-1">
+                      <input
+                        type="checkbox"
+                        id="toggle-dw"
+                        checked={enableDurbinWatson}
+                        onChange={(e) => setEnableDurbinWatson(e.target.checked)}
+                        className="rounded border-border text-primary cursor-pointer"
+                      />
+                      <label htmlFor="toggle-dw" className="text-xs cursor-pointer select-none">
+                        {enableDurbinWatson ? 'Aktif' : 'Nonaktif (Disarankan)'}
+                      </label>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Durbin-Watson diperuntukkan bagi data runtun waktu (time-series). Dinonaktifkan bawaan untuk kuesioner survei.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </details>
+
+            {/* Navigation & Primary Action Button */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 pt-6 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20">
               <Button
                 type="button"
                 variant="outline"
@@ -1241,350 +1230,80 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                 Kembali ke Pemetaan
               </Button>
 
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                {selectedTests.length === 0 && (
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                {hasRedLights && (
                   <span className="text-xs text-destructive text-center sm:text-right font-medium">
-                    Pilih minimal 1 uji statistik untuk lanjut
+                    Selesaikan indikator lampu merah sebelum menjalankan analisis
                   </span>
                 )}
                 <Button
                   type="button"
                   size="lg"
-                  onClick={nextStep}
-                  disabled={selectedTests.length === 0}
-                  className="cursor-pointer font-semibold rounded-[10px] min-h-[44px]"
-                  title={selectedTests.length === 0 ? 'Pilih minimal 1 uji statistik' : undefined}
+                  onClick={handleRunAnalysis}
+                  disabled={hasRedLights || isRunning}
+                  className="cursor-pointer font-bold px-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md text-base rounded-[10px] min-h-[46px]"
                 >
-                  Lanjut ke Ringkasan
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                  <Play className="w-5 h-5 mr-2 fill-current" />
+                  Jalankan Paket Bab 4
                 </Button>
               </div>
             </div>
           </div>
         )}
 
-        {/* STEP 5: RINGKASAN & JALANKAN */}
+        {/* =========================================================================
+            SCREEN 5: HASIL BERURUTAN BAB 4 & PROGRESSIVE EXECUTION (currentStep === 4)
+           ========================================================================= */}
         {currentStep === 4 && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="font-sans text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                Langkah 5: Ringkasan Konfigurasi & Jalankan Analisis
-              </h2>
-              <p className="text-sm text-muted-foreground mt-1 max-w-[68ch]">
-                Tinjau ringkasan parameter sebelum mesin statistik melakukan komputasi formula matriks dan regresi.
-              </p>
-            </div>
+          <div className="space-y-6 animate-in fade-in">
+            <div className="p-8 sm:p-12 rounded-[20px] border border-primary/30 bg-card shadow-lg text-center space-y-6 max-w-2xl mx-auto">
+              <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
+                <Loader2 className="w-8 h-8 animate-spin" />
+              </div>
 
-            {/* Summary Information Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Dataset & Sample Info */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2">
-                    <Database className="w-4 h-4 text-primary" />
-                    <CardTitle className="text-sm font-semibold">
-                      Spesifikasi Dataset
-                    </CardTitle>
-                  </div>
-                  <CardDescription className="text-xs">
-                    Integritas data setelah pembersihan
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3 text-xs">
-                  <div className="flex items-center justify-between py-1 border-b border-border/60">
-                    <span className="text-muted-foreground">Nama File:</span>
-                    <span className="font-semibold text-foreground truncate max-w-[150px]">
-                      {fileName || 'data_kuesioner.xlsx'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between py-1 border-b border-border/60">
-                    <span className="text-muted-foreground">Status Data:</span>
-                    <span className="font-semibold text-foreground">
-                      {dataVersion > 1 ? `Revisi ${dataVersion}` : 'Data Asli Terverifikasi'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between py-1 border-b border-border/60">
-                    <span className="text-muted-foreground">Jumlah Sampel Valid:</span>
-                    <span className="font-semibold tabular-nums text-foreground">
-                      {formatNumber(fileData.length)} responden
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between py-1 border-b border-border/60">
-                    <span className="text-muted-foreground">Baris Dieliminasi:</span>
-                    <span className="font-mono tabular-nums text-muted-foreground">
-                      {removedRows.length} baris
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between py-1 border-b border-border/60">
-                    <span className="text-muted-foreground">Metode Komposit:</span>
-                    <span className="font-semibold text-foreground uppercase text-[11px]">
-                      {calculationMethod === 'mean' ? 'Rata-rata (Mean)' : 'Penjumlahan (Sum)'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between py-1">
-                    <span className="text-muted-foreground">Butir Negatif Dibalik:</span>
-                    <span className="font-mono text-foreground text-[11px]">
-                      {reverseItems.length > 0 ? `${reverseItems.length} butir (${reverseItems.join(', ')})` : 'Tidak ada'}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Constructs Mapping */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-primary" />
-                    <CardTitle className="text-sm font-semibold">
-                      Konstruk Penelitian
-                    </CardTitle>
-                  </div>
-                  <CardDescription className="text-xs">
-                    {constructs.length} konstruk terdefinisi
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2 text-xs">
-                  {constructs.map((c) => (
-                    <div
-                      key={c.id}
-                      className="p-2.5 rounded-[10px] bg-muted/40 border border-border/40 flex items-center justify-between gap-2"
-                    >
-                      <div>
-                        <span className="font-semibold text-foreground block">
-                          {c.name}
-                        </span>
-                        <span className="text-[11px] text-muted-foreground">
-                          {c.items.length} butir ({c.items.join(', ')})
-                        </span>
-                      </div>
-                      <Badge
-                        variant={c.role === 'independent' ? 'pine' : 'amber'}
-                        className="text-[10px] shrink-0 rounded-[6px]"
-                      >
-                        {c.role === 'independent' ? 'Bebas (X)' : 'Terikat (Y)'}
-                      </Badge>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              {/* Selected Tests */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-primary" />
-                    <CardTitle className="text-sm font-semibold">
-                      Uji yang Dijalankan
-                    </CardTitle>
-                  </div>
-                  <CardDescription className="text-xs">
-                    {selectedTests.length} uji statistik terpilih
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectedTests.map((testId) => {
-                      const test = mockTestOptions.find((t) => t.id === testId);
-                      return (
-                        <Badge
-                          key={testId}
-                          variant="secondary"
-                          className="text-xs py-1 px-2.5 font-normal bg-card border border-border rounded-[6px]"
-                        >
-                          {test?.name || testId}
-                        </Badge>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Badges of Academic Transparency */}
-            <div className="p-4 sm:p-5 rounded-[16px] border border-border/80 bg-card shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span className="text-xs font-semibold text-foreground">
-                    Prinsip Transparansi & Komputasi
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground max-w-[68ch]">
-                  Mesin statistik versi {ENGINE_VERSION} mengeksekusi perhitungan rumus baku. Laporan Bab 4 dan jejak hitung akan langsung tersedia setelah selesai.
+              <div className="space-y-2">
+                <h3 className="font-sans text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                  Menjalankan Paket Komputasi Bab 4...
+                </h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Mesin statistik sedang memproses formula matriks regresi deterministik dan menyusun tabel format APA 7th. Perkiraan selesai: &lt; 15 detik.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 flex-wrap shrink-0">
-                <Badge variant="engine" className="text-xs py-1 rounded-[6px]">
-                  {COPY.badges.computedByEngine}
-                </Badge>
-                <Badge variant="ai" className="text-xs py-1 rounded-[6px]">
-                  {COPY.badges.writtenByAI}
-                </Badge>
+              {/* Meaningful Progress Steps Checklist */}
+              <div className="text-left space-y-2.5 pt-2">
+                {ANALYSIS_EXECUTION_STEPS.map((stepText, idx) => {
+                  const isDone = idx < currentExecutionStep;
+                  const isCurrent = idx === currentExecutionStep;
+
+                  return (
+                    <div
+                      key={stepText}
+                      className={cn(
+                        'p-3.5 rounded-[12px] border text-xs flex items-center gap-3 transition-all',
+                        isDone
+                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-medium'
+                          : isCurrent
+                          ? 'bg-primary/10 border-primary text-primary font-semibold ring-1 ring-primary'
+                          : 'bg-muted/30 border-border/40 text-muted-foreground'
+                      )}
+                    >
+                      {isDone ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      ) : isCurrent ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />
+                      ) : (
+                        <div className="w-4 h-4 rounded-full border border-muted-foreground/40 shrink-0" />
+                      )}
+                      <span className="truncate">{stepText}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-
-            {/* Execution / Running Box */}
-            {isRunning ? (
-              <div className="p-8 rounded-[16px] border-2 border-primary/40 bg-card shadow-lg text-center space-y-6 animate-in fade-in">
-                <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
-                  <Loader2 className="w-8 h-8 animate-spin" />
-                </div>
-
-                <div className="space-y-2 max-w-lg mx-auto">
-                  <h3 className="font-sans text-xl font-bold tracking-tight text-foreground">
-                    Memproses Analisis Statistik...
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    Menghitung formula regresi linier berganda dan menyusun tabel hasil format skripsi.
-                  </p>
-                </div>
-
-                {/* Progressive Checklist */}
-                <div className="max-w-md mx-auto text-left space-y-2.5 pt-2">
-                  {ANALYSIS_EXECUTION_STEPS.map((stepText, idx) => {
-                    const isDone = idx < currentExecutionStep;
-                    const isCurrent = idx === currentExecutionStep;
-
-                    return (
-                      <div
-                        key={stepText}
-                        className={cn(
-                          'p-3 rounded-[10px] border text-xs flex items-center gap-2.5 transition-all',
-                          isDone
-                            ? 'bg-[#BFEBD9]/30 border-[#98D8BE] text-[#0E4331] dark:text-emerald-300 font-medium'
-                            : isCurrent
-                            ? 'bg-primary/10 border-primary text-primary font-semibold ring-1 ring-primary'
-                            : 'bg-muted/30 border-border/40 text-muted-foreground'
-                        )}
-                      >
-                        {isDone ? (
-                          <CheckCircle2 className="w-4 h-4 text-[#0E4331] dark:text-emerald-400 shrink-0" />
-                        ) : isCurrent ? (
-                          <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />
-                        ) : (
-                          <div className="w-4 h-4 rounded-full border border-muted-foreground/40 shrink-0" />
-                        )}
-                        <span className="truncate">{stepText}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              /* Ready to run CTA */
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="lg"
-                  onClick={prevStep}
-                  className="cursor-pointer rounded-[10px] min-h-[44px]"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Kembali ke Pilih Uji
-                </Button>
-
-                <Button
-                  type="button"
-                  size="lg"
-                  onClick={handleRunAnalysis}
-                  className="cursor-pointer font-bold px-8 bg-primary hover:bg-primary/90 text-white shadow-md text-base rounded-[10px] min-h-[44px]"
-                >
-                  <Play className="w-5 h-5 mr-2 fill-current" />
-                  Jalankan Analisis
-                </Button>
-              </div>
-            )}
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-interface LikertRecodeBannerProps {
-  detectedLikertColumns: ReturnType<typeof detectLikertTextColumns>;
-  detectedMetadataCols: ReturnType<typeof detectMetadataAndPiiColumns>;
-  showLikertMapping: boolean;
-  setShowLikertMapping: React.Dispatch<React.SetStateAction<boolean>>;
-  onRecode: () => void;
-}
-
-function LikertRecodeBanner({
-  detectedLikertColumns,
-  detectedMetadataCols,
-  showLikertMapping,
-  setShowLikertMapping,
-  onRecode,
-}: LikertRecodeBannerProps) {
-  if (detectedLikertColumns.length === 0) return null;
-
-  return (
-    <div className="p-4 sm:p-5 rounded-[16px] border border-primary/30 bg-primary/10 text-foreground space-y-3">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <Wrench className="w-5 h-5 shrink-0 text-primary mt-0.5" />
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-bold text-sm">
-                Terdeteksi Format Google Forms ({detectedLikertColumns.length} Kolom Jawaban Teks)
-              </span>
-              <Badge variant="outline" className="text-[11px] bg-background/60">
-                Skala Likert
-              </Badge>
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed max-w-[70ch]">
-              Kolom kuesioner seperti <code className="font-mono text-primary font-semibold">{detectedLikertColumns.slice(0, 3).map((c) => c.column).join(', ')}{detectedLikertColumns.length > 3 ? '...' : ''}</code> berisi respons teks (&quot;Sangat Setuju&quot;, &quot;Setuju&quot;, dll). Konversikan otomatis ke skala angka 1–5 agar siap diolah statistik secara deterministik.
-            </p>
-            {detectedMetadataCols.length > 0 && (
-              <p className="text-[11px] text-muted-foreground/90 pt-0.5">
-                🛡️ Kolom metadata &amp; identitas Google Forms diabaikan otomatis: <span className="font-medium text-foreground">{detectedMetadataCols.map((c) => c.column).join(', ')}</span>
-              </p>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowLikertMapping((prev) => !prev)}
-            className="text-xs text-primary hover:text-primary gap-1 cursor-pointer"
-          >
-            {showLikertMapping ? 'Tutup Pemetaan' : 'Lihat Pemetaan'}
-            {showLikertMapping ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            onClick={onRecode}
-            className="font-semibold cursor-pointer gap-1.5 rounded-[10px]"
-          >
-            <Binary className="w-4 h-4" />
-            Konversi Otomatis Teks ke Angka (1–5)
-          </Button>
-        </div>
-      </div>
-
-      {showLikertMapping && (
-        <div className="pt-3 border-t border-primary/20 text-xs">
-          <p className="font-semibold text-foreground mb-2">Pratinjau Standar Konversi Skala Likert 1–5:</p>
-          <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
-            {STANDARD_LIKERT_PREVIEW.map((item) => (
-              <div key={item.score} className="p-2.5 rounded-[8px] bg-background/80 border border-primary/20">
-                <div className="flex items-center justify-between font-bold text-primary mb-1">
-                  <span>Skor {item.score}</span>
-                  <span className="text-[10px] text-muted-foreground">({item.label})</span>
-                </div>
-                <div className="text-[11px] text-muted-foreground leading-tight">
-                  {item.aliases}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

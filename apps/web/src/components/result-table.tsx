@@ -409,14 +409,13 @@ export function ResultTable<T>({
       </div>
 
       {/* Journal Table Body (Gaya Tiga Garis Akademik APA 7th, Kolom Pertama Menempel) */}
-      <div className="relative overflow-x-auto rounded-[6px] border border-border/80 shadow-inner">
+      <div className="relative overflow-x-auto rounded-[6px] border border-border/80 shadow-inner [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-muted/20">
         <table className="table-journal w-full text-left text-sm font-sans border-collapse">
           <thead>
             {/* Garis atas tebal (2px) dan garis bawah header (1px) */}
             <tr className="border-t-2 border-b border-foreground bg-muted/20">
               {columns.map((col, cIdx) => (
-                <th
-                  key={col.key}
+                <th scope="col" key={col.key}
                   className={cn(
                     'py-2.5 px-3 font-semibold text-foreground text-[13px] tracking-normal whitespace-nowrap',
                     cIdx === 0 &&

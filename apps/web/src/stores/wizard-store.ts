@@ -35,9 +35,11 @@ interface WizardState {
   rowCol: string | null;
   colCol: string | null;
 
-  // Step 3: Variable mapping
+  // Step 3: Variable mapping & Research Question
   constructs: Construct[];
   calculationMethod: 'mean' | 'sum';
+  researchTitle: string;
+  hypotheses: string[];
 
   // Step 4: Test selection
   selectedTests: TestType[];
@@ -66,6 +68,7 @@ interface WizardState {
   setIssues: (issues: DataIssue[]) => void;
   removeRow: (rowIndex: number) => void;
   removeRowByNumber: (rowNumber: number) => void;
+  removeRowsByNumbers: (rowNumbers: number[]) => void;
   setReverseItems: (items: string[]) => void;
   toggleReverseItem: (item: string) => void;
   setColumnRole: (col: string, role: 'id' | 'demographic' | 'item' | 'ignored') => void;
@@ -85,6 +88,8 @@ interface WizardState {
   eliminateOutliers: (rowNumbers: number[]) => void;
   setConstructs: (constructs: Construct[]) => void;
   setCalculationMethod: (method: 'mean' | 'sum') => void;
+  setResearchTitle: (title: string) => void;
+  setHypotheses: (hypotheses: string[]) => void;
   setSelectedTests: (tests: TestType[]) => void;
   toggleTest: (test: TestType) => void;
   setRunning: (running: boolean) => void;
@@ -120,6 +125,8 @@ const initialState = {
   colCol: null,
   constructs: [],
   calculationMethod: 'mean' as const,
+  researchTitle: '',
+  hypotheses: [] as string[],
   selectedTests: [] as TestType[],
   isRunning: false,
   runProgress: [],
@@ -249,6 +256,33 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       };
     }),
 
+  removeRowsByNumbers: (rowNumbers) =>
+    set((state) => {
+      const rowNumbersSet = new Set(rowNumbers);
+      const updatedRemoved = Array.from(new Set([...state.removedRows, ...rowNumbers])).sort((a, b) => a - b);
+      const newRows = state.fileData.filter((r, idx) => {
+        const rowNo = typeof r.No === 'number' ? r.No : idx + 1;
+        return !rowNumbersSet.has(rowNo);
+      });
+      const updatedMeta = state.datasetMeta
+        ? {
+            ...state.datasetMeta,
+            kind: 'derived' as const,
+            version: state.dataVersion + 1,
+            rowCount: newRows.length,
+            excludedRows: updatedRemoved,
+          }
+        : null;
+
+      return {
+        removedRows: updatedRemoved,
+        dataVersion: state.dataVersion + 1,
+        fileData: newRows,
+        issues: state.issues.filter((issue) => !issue.row || !rowNumbersSet.has(issue.row)),
+        datasetMeta: updatedMeta,
+      };
+    }),
+
   setReverseItems: (items) => set({ reverseItems: items }),
 
   toggleReverseItem: (item) =>
@@ -355,6 +389,10 @@ export const useWizardStore = create<WizardState>((set, get) => ({
   setConstructs: (constructs) => set({ constructs }),
 
   setCalculationMethod: (method) => set({ calculationMethod: method }),
+
+  setResearchTitle: (researchTitle) => set({ researchTitle }),
+
+  setHypotheses: (hypotheses) => set({ hypotheses }),
 
   setSelectedTests: (tests) => set({ selectedTests: tests }),
 

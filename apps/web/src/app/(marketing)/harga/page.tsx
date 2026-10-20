@@ -14,15 +14,15 @@ import { PageActions } from '@/components/page-actions';
 export default function HargaPage() {
   const pricingFaq = [
     {
-      q: 'Metode pembayaran apa saja yang didukung?',
-      a: 'Pembayaran mendukung QRIS (GoPay, OVO, Dana, ShopeePay), Transfer Virtual Account Bank Nasional (BCA, Mandiri, BNI, BRI), dan kartu debit online berlogo Visa/Mastercard.',
+      q: 'Bagaimana cara memesan paket berbayar?',
+      a: 'Paket berbayar segera hadir. Masukkan surel Anda pada tombol daftar tunggu untuk menerima pemberitahuan pertama saat sistem langganan dibuka.',
     },
     {
-      q: 'Apakah paket bulanan otomatis memotong saldo?',
-      a: 'Tidak ada perpanjangan otomatis tanpa persetujuan Anda. Anda membayar hanya untuk jangka waktu yang Anda pilih.',
+      q: 'Berapa batasan kuota responden pada setiap paket?',
+      a: 'Paket Bulanan mendukung hingga 5 proyek dan 100.000 responden. Paket Skripsi mendukung 1 proyek aktif dengan responden batas wajar dan riwayat versi dataset.',
     },
     {
-      q: 'Apakah data proyek hilang jika masa aktif langganan habis?',
+      q: 'Apakah data saya hilang jika masa aktif habis?',
       a: 'Data dan seluruh riwayat analisis Anda tetap tersimpan aman di akun Anda dan dapat Anda buka kembali kapan pun Anda memperbarui paket.',
     },
   ];

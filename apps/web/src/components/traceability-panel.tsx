@@ -19,6 +19,7 @@ import {
   GraduationCap,
   BookOpen,
   HelpCircle,
+  Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -361,7 +362,7 @@ export function TraceabilityPanel({
             )}
           >
             <GraduationCap className="w-3.5 h-3.5 text-amber-500" />
-            <span>🎓 Bekal Sidang</span>
+            <span>Bekal Sidang</span>
           </button>
         </div>
       </div>
@@ -502,8 +503,9 @@ export function TraceabilityPanel({
         {/* TAB 2: BEKAL SIDANG (TANYA-JAWAB DOSEN) */}
         {activeTab === 'defense' && (
           <div className="space-y-3">
-            <div className="p-2.5 rounded-lg bg-amber-50/70 dark:bg-amber-950/20 border border-amber-500/30 text-[11.5px] text-amber-900 dark:text-amber-200 leading-snug">
-              💡 <span className="font-bold">Jawaban Siap Sidang:</span> Angka di bawah ini otomatis disesuaikan dengan hasil komputasi proyek Anda.
+            <div className="flex items-center gap-2 p-2.5 rounded-lg bg-amber-50/70 dark:bg-amber-950/20 border border-amber-500/30 text-[11.5px] text-amber-900 dark:text-amber-200 leading-snug">
+              <Info className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span><span className="font-bold">Jawaban Siap Sidang:</span> Angka di bawah ini otomatis disesuaikan dengan hasil komputasi proyek Anda.</span>
             </div>
 
             <div className="space-y-2">

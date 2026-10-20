@@ -198,7 +198,7 @@ export function SiteHeader() {
               aria-label={mobileMenuOpen ? 'Tutup menu' : 'Buka menu'}
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-navigation-panel"
-              className="text-foreground h-10 w-10 min-h-[40px] min-w-[40px] sm:h-11 sm:w-11 sm:min-h-[44px] sm:min-w-[44px] touch-manipulation cursor-pointer"
+              className="text-foreground h-11 w-11 min-h-[44px] min-w-[44px] touch-manipulation cursor-pointer"
             >
               {mobileMenuOpen ? (
                 <X className="h-5 w-5" aria-hidden="true" />

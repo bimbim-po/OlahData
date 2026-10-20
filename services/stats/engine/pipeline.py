@@ -4,45 +4,55 @@ import pandas as pd
 import numpy as np
 
 from config import settings
-from engine.descriptive import compute_descriptive
+from engine.descriptive import compute_descriptive, compute_construct_scores
 from engine.validity import compute_validity
 from engine.reliability import compute_reliability
 from engine.regression import compute_regression
-from engine.assumptions import compute_normality, compute_multicollinearity, compute_heteroscedasticity
+from engine.assumptions import (
+    compute_normality,
+    compute_multicollinearity,
+    compute_heteroscedasticity,
+    compute_autocorrelation
+)
 from engine.correlation import compute_correlation
-from engine.anova import compute_anova
+from engine.comparative import compute_two_group_difference, compute_three_plus_group_difference
+from engine.categorical import compute_chi_square
+from validation import check_sample_size, scan_dataset_quality
 
 def run_statistical_analysis(
     df: pd.DataFrame,
     constructs: List[Dict[str, Any]],
     selected_tests: List[str],
     significance_level: float = 0.05,
+    negative_items: Optional[List[str]] = None,
+    scale_min: int = 1,
+    scale_max: int = 5,
     project_id: str = "proj-default",
     data_version_id: str = "dv-default"
 ) -> Dict[str, Any]:
     """
     Orchestrates deterministic statistical analysis on the input dataset.
-    Follows Indonesian quantitative thesis standards (Likert scale 1-5).
-    Guarantees strict reproducibility.
+    Strictly follows Indonesian S1 quantitative thesis standards.
+    Guarantees full mathematical determinism and reproducibility.
     """
     clean_df = df.copy()
     n_respondents = len(clean_df)
 
-    # Calculate construct aggregate scores (mean of items to preserve 1-5 scale)
-    construct_scores_df = pd.DataFrame(index=clean_df.index)
-    construct_role_map: Dict[str, str] = {}
-    construct_name_map: Dict[str, str] = {}
+    # Pre-reverse negative items if specified (scale_max + scale_min - x)
+    if negative_items:
+        for it in negative_items:
+            if it in clean_df.columns:
+                clean_df[it] = (scale_max + scale_min) - clean_df[it]
 
+    # Map constructs and determine roles
+    construct_role_map: Dict[str, str] = {}
+    construct_code_map: Dict[str, str] = {}
     for c in constructs:
         c_name = c["name"]
-        c_items = [it for it in c.get("items", []) if it in clean_df.columns]
+        c_code = c.get("code", c_name)
         role = c.get("role", "independent")
-        construct_role_map[c_name] = role
-        construct_name_map[c_name] = c_name
-
-        if c_items:
-            # Construct score is the row mean of valid items
-            construct_scores_df[c_name] = clean_df[c_items].mean(axis=1)
+        construct_role_map[c_code] = role
+        construct_code_map[c_name] = c_code
 
     results: Dict[str, Any] = {
         "id": f"result-{int(datetime.datetime.utcnow().timestamp())}",
@@ -52,39 +62,71 @@ def run_statistical_analysis(
         "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
         "engineVersion": settings.ENGINE_VERSION,
         "significanceLevel": significance_level,
+        "sampleSize": check_sample_size(n_respondents, num_predictors=max(1, len([r for r in construct_role_map.values() if r == "independent"]))),
         "explanations": {},
     }
 
-    # 1. Descriptive Statistics
-    if "descriptive" in selected_tests:
-        # Run on construct composite scores
-        results["descriptive"] = compute_descriptive(construct_scores_df)
-
-    # 2. Validity (Pearson Item-Total)
-    if "validity" in selected_tests:
-        results["validity"] = compute_validity(
+    # 1. Validity testing (Corrected Item-Total Pearson Correlation)
+    validity_res = []
+    valid_items_map: Dict[str, List[str]] = {}
+    if "validity" in selected_tests or any(t in selected_tests for t in ["reliability", "regression"]):
+        validity_res = compute_validity(
             clean_df,
             constructs=constructs,
-            significance_level=significance_level
+            significance_level=significance_level,
+            use_corrected=True,
+            scale_min=scale_min,
+            scale_max=scale_max
+        )
+        if "validity" in selected_tests:
+            results["validity"] = validity_res
+
+        # Build valid items map per construct
+        for r in validity_res:
+            c_code = r.get("code", r["construct"])
+            if c_code not in valid_items_map:
+                valid_items_map[c_code] = []
+            if r["valid"]:
+                valid_items_map[c_code].append(r["item"])
+
+    # Compute Construct Scores (Mean of valid items)
+    construct_scores_df, table_notes = compute_construct_scores(
+        clean_df,
+        constructs=constructs,
+        valid_items_only=valid_items_map if valid_items_map else None,
+        scale_min=scale_min,
+        scale_max=scale_max
+    )
+    results["tableNotes"] = table_notes
+
+    # 2. Descriptive Statistics on construct scores
+    if "descriptive" in selected_tests:
+        results["descriptive"] = compute_descriptive(
+            construct_scores_df,
+            scale_min=float(scale_min),
+            scale_max=float(scale_max)
         )
 
-    # 3. Reliability (Cronbach's Alpha)
+    # 3. Reliability (Cronbach's Alpha, item analysis, before & after dropping invalid items)
     if "reliability" in selected_tests:
         results["reliability"] = compute_reliability(
             clean_df,
             constructs=constructs,
-            alpha_threshold=0.60
+            alpha_threshold=0.70,
+            valid_items_map=valid_items_map,
+            scale_min=scale_min,
+            scale_max=scale_max
         )
 
-    # Determine independent and dependent variables for regression and assumptions
-    indep_vars = [c_name for c_name, role in construct_role_map.items() if role == "independent" and c_name in construct_scores_df.columns]
-    dep_vars = [c_name for c_name, role in construct_role_map.items() if role == "dependent" and c_name in construct_scores_df.columns]
+    # 4. Regression & Classical Assumptions
+    indep_vars = [c_code for c_code, role in construct_role_map.items() if role == "independent" and c_code in construct_scores_df.columns]
+    dep_vars = [c_code for c_code, role in construct_role_map.items() if role == "dependent" and c_code in construct_scores_df.columns]
 
     residuals = None
     y_pred = None
 
     needs_regression = any(t in selected_tests for t in [
-        "regression", "normality", "multicollinearity", "heteroscedasticity", "f-test", "fTest", "determination", "anova"
+        "regression", "normality", "multicollinearity", "heteroscedasticity", "autocorrelation", "f-test", "fTest", "determination", "anova"
     ])
 
     if needs_regression and len(indep_vars) >= 1 and len(dep_vars) >= 1:
@@ -110,19 +152,20 @@ def run_statistical_analysis(
         if "anova" in selected_tests and "regression" not in selected_tests:
             results["anova"] = anova_res
 
-        # 4. Normality on regression residuals
+        # Classical Assumptions
         if "normality" in selected_tests and residuals is not None:
             results["normality"] = compute_normality(residuals, alpha=significance_level)
 
-        # 5. Multicollinearity on independent variables
         if "multicollinearity" in selected_tests:
             results["multicollinearity"] = compute_multicollinearity(x_df)
 
-        # 6. Heteroscedasticity via Glejser test
         if "heteroscedasticity" in selected_tests and residuals is not None:
-            results["heteroscedasticity"] = compute_heteroscedasticity(residuals, x_df, alpha=significance_level)
+            results["heteroscedasticity"] = compute_heteroscedasticity(residuals, x_df, y_pred=y_pred, alpha=significance_level)
 
-    # 7. Correlation
+        if "autocorrelation" in selected_tests and residuals is not None:
+            results["autocorrelation"] = compute_autocorrelation(residuals, enabled=False)
+
+    # 5. Correlation (Pearson & Spearman)
     if "correlation" in selected_tests and len(construct_scores_df.columns) >= 2:
         results["correlation"] = compute_correlation(
             construct_scores_df,

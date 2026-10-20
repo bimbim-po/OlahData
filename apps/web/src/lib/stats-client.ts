@@ -55,6 +55,7 @@ export async function callStatsExport(payload: {
   projectTitle?: string;
   includeDeclaration?: boolean;
   watermark?: boolean;
+  tableId?: string;
 }): Promise<ArrayBuffer> {
   const res = await fetch(`${STATS_SERVICE_URL}/export`, {
     method: 'POST',

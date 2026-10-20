@@ -1,0 +1,38 @@
+<USER_REQUEST>
+PERAN
+Kamu desainer produk dan engineer fullstack senior. Bangun alur OlahData sehingga mahasiswa yang pertama kali memakai bisa dari berkas kuesioner ke Bab 4 dalam 10 menit tanpa membaca panduan, dan dalam 60 detik dengan data contoh. Gunakan bahasa sehari-hari dan ramah; tidak menggurui, tidak kaku.
+
+ATURAN KERAS
+
+Tidak pernah membuat atau mengubah data responden; semua perbaikan data adalah keputusan pengguna yang tercatat.
+Istilah teknis (SHA-256, jejak audit, konstruk, butir) hanya di bagian "Detail teknis" yang dilipat; layar utama memakai "variabel", "pertanyaan", "dataset".
+Setiap layar menjawab satu pertanyaan, punya satu tombol utama, dan dapat kembali tanpa kehilangan pekerjaan (autosimpan).
+Berkas pengguna tidak boleh berakhir menjadi data contoh; bedakan jelas mode contoh (spanduk "Data contoh" dan tombol "Pakai data saya").
+ALUR LIMA LAYAR
+
+Unggah: seret atau pilih berkas CSV, XLSX, XLS (maks 10 MB). Tombol "Unduh templat" dan "Pakai data contoh" (tanpa login untuk contoh). Parser: deteksi pemisah (koma, titik koma, tab), encoding (UTF-8 dengan atau tanpa BOM, Windows-1252), baris header dan baris judul di atas header, lembar XLSX (pilih bila lebih dari satu), baris kosong di akhir, koma desimal. Ekspor Google Form: kolom Timestamp, Email address, nama kolom panjang; usulkan kode pendek (KL1, KP1, dan seterusnya) dan simpan teks asli sebagai label. Label teks Likert ("Sangat Setuju" dan padanannya, singkatan SS/S/N/TS/STS, bahasa Inggris) dipetakan ke angka lewat tabel pemetaan yang tampil dan bisa diubah. Hitung SHA-256 di klien dan server; bandingkan.
+Temuan data: kartu "Kami menemukan 120 responden dan 20 kolom" plus daftar temuan kualitas (kosong, di luar rentang, ID ganda, jawaban seragam, pencilan) dengan lokasi baris dan pilihan: kecualikan baris (membuat dataset turunan), perbaiki di berkas lalu unggah ulang, atau lanjutkan apa adanya (peringatan tercatat). Nilai tidak pernah diisi otomatis. Ukuran sampel dicek terhadap batas paket (50 responden untuk Gratis) dengan pesan ramah dan opsi daftar tunggu.
+Pertanyaan penelitian: pilihan kartu besar: "Pengaruh variabel terhadap variabel lain" (regresi), "Beda antar kelompok", "Hubungan antar variabel" (korelasi), "Gambaran saja" (deskriptif). Sistem mengelompokkan pertanyaan menjadi variabel (awalan nama kolom, korelasi tinggi, kemiripan teks); mahasiswa menyeret untuk memperbaiki, memberi nama variabel (mis. Kualitas Layanan), menandai peran (bebas X1, X2 / terikat Y / kontrol), menandai pertanyaan negatif (dibalik), dan mengatur kolom demografi. Judul penelitian dan hipotesis (H1, H2, ...) bisa diisi; ada contoh isian.
+Cek kesiapan: satu layar lampu hijau, kuning, merah (ukuran sampel, kualitas data, butir yang diduga tidak valid, jumlah butir per variabel, kesesuaian dengan jenis penelitian). Tombol "Jalankan Paket Bab 4" aktif bila tidak ada merah. Opsi lanjutan (alfa 0,05 atau 0,01, ambang reliabilitas 0,60 atau 0,70, gaya angka, Durbin-Watson) dilipat.
+Hasil berurutan Bab 4 (lihat Prompt 3). Selama komputasi tampilkan kemajuan bermakna ("Menghitung validitas 3 dari 6") dan perkiraan waktu; hasil pertama muncul < 15 detik untuk data contoh.
+PENDAMPING (bantuan tanpa bacaan panjang)
+
+Setiap istilah punya "Apa artinya?" berisi 2 kalimat dan contoh; tautkan ke artikel Bantuan.
+Setiap peringatan menawarkan tindakan konkret. Contoh butir tidak valid: "Butir KL5 tidak valid (r 0,12 < 0,18). Pilihan: buang butir ini dan hitung ulang (disarankan) / pertahankan dan jelaskan di pembahasan." Tampilkan dampaknya (alfa naik dari 0,708 ke 0,766) sebelum pengguna memilih.
+Bila asumsi gagal: jelaskan arti dan tawarkan alternatif (uji nonparametrik, transformasi, pencilan) dengan akibat.
+Pesan galat berbahasa Indonesia, jelas, tanpa jargon, dengan satu langkah perbaikan.
+STATUS PAKET TANPA PEMBAYARAN
+Selama payment gateway belum ada: fitur berbayar diberi gembok kecil dan penjelasan "Tersedia di paket Bulanan/Skripsi"; tombol "Daftar tunggu" membuka dialog surel (tabel waitlist; validasi surel, batas laju, tanpa login). Akun beta yang diberi paket oleh admin otomatis membuka fitur. Jangan menampilkan tombol bayar atau metode pembayaran.
+
+TES
+
+Playwright dengan fixture_kotor.csv: parser harus menemukan persis yang tercantum di masalah_diharapkan_kotor.json (pemisah, baris header ke-3, 5 butir label teks, 1 sel kosong, nilai 7, ID ganda, baris jawaban seragam, 2 baris kosong di akhir), tidak ada yang diubah diam-diam.
+Playwright dengan fixture_bersih.csv dan data contoh: alur selesai < 60 detik tanpa klik di luar tombol utama; angka di layar = hasil_acuan_bersih.json.
+Uji kegunaan skrip: 5 orang atau 5 skenario tertulis (mahasiswa baru, Google Form, Excel kampus, data berkoma desimal, data dengan Likert teks). Catat titik macet dan perbaiki.
+Aksesibilitas: seluruh alur dapat dioperasikan dengan keyboard dan pembaca layar; axe tanpa pelanggaran serius.
+KRITERIA SELESAI
+Alur lima layar berjalan end-to-end dengan fixture bersih dan kotor; tidak ada istilah teknis di layar utama; laporan titik macet sebelum dan sesudah.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-19T13:49:40+07:00.
+</ADDITIONAL_METADATA>

@@ -66,7 +66,8 @@ export function Bab4Preview() {
       ];
       const rows = [
         ['Kualitas Layanan (X1)', '8', '0,874', '0,700', 'Reliabel'],
-        ['Kepuasan Pelanggan (Y)', '7', '0,852', '0,700', 'Reliabel'],
+        ['Kepuasan Pelanggan (X2)', '7', '0,852', '0,700', 'Reliabel'],
+        ['Loyalitas Pelanggan (Y)', '6', '0,881', '0,700', 'Reliabel'],
       ];
       success = await copyWordTable({
         tableNumber: 'Tabel 4.9',
@@ -304,7 +305,7 @@ export function Bab4Preview() {
                       <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs tabular-nums text-foreground/90">
                         <span className="whitespace-nowrap">N = <strong>120</strong></span>
                         <span className="whitespace-nowrap">Jumlah Prediktor (k) = <strong>2</strong></span>
-                        <span className="whitespace-nowrap">F Hitung = <strong>70,824</strong> (Sig = 0,000)</span>
+                        <span className="whitespace-nowrap">F Hitung = <strong>70,824</strong> (Sig &lt; 0,001)</span>
                         <span className="whitespace-nowrap">R² = <strong>0,548</strong></span>
                         <span className="whitespace-nowrap">Adjusted R² = <strong>0,540</strong></span>
                         <span className="whitespace-nowrap">F Tabel = <strong>3,074</strong></span>

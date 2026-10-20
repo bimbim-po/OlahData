@@ -108,6 +108,9 @@ export interface DataIssue {
   row?: number;
   column?: string;
   value?: string | number | null;
+  type?: string;
+  duplicateOfRow?: number;
+  action?: string;
 }
 
 export interface Construct {
@@ -144,6 +147,11 @@ export interface DescriptiveResult {
   n: number;
   tcr?: number;
   tcrCategory?: string;
+  freq1?: number;
+  freq2?: number;
+  freq3?: number;
+  freq4?: number;
+  freq5?: number;
 }
 
 export interface ValidityResult {

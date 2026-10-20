@@ -53,7 +53,7 @@ export function PricingCards({
             Status Akses Awal (Beta)
           </Badge>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Fitur analisis statistik inti sudah dapat digunakan gratis. Sistem pembayaran otomatis untuk paket berbayar sedang dalam tahap aktivasi.
+            Paket berbayar segera hadir. Masukkan surel untuk diberi tahu. Fitur analisis data inti dapat dicoba langsung gratis tanpa login.
           </p>
         </div>
       )}

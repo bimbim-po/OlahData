@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: olahdata-stats-engine
+    env: docker
+    dockerfilePath: ./services/stats/Dockerfile
+    region: singapore
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: HOST
+        value: 0.0.0.0
+      - key: ENVIRONMENT
+        value: production
+      - key: STATS_SERVICE_KEY
+        sync: false # Set securely in Render dashboard

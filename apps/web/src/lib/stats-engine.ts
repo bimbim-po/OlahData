@@ -404,6 +404,16 @@ export function computeDeterministicStats(
           const maxScale = max > 5 ? Math.ceil(max) : 5;
           const { tcr, category: tcrCategory } = calculateTCR(mean, maxScale);
 
+          let f1 = 0, f2 = 0, f3 = 0, f4 = 0, f5 = 0;
+          vals.forEach((v) => {
+            const r = Math.round(v);
+            if (r === 1) f1++;
+            else if (r === 2) f2++;
+            else if (r === 3) f3++;
+            else if (r === 4) f4++;
+            else if (r === 5) f5++;
+          });
+
           itemDescResults.push({
             variable: `${itemCol} (${c.name})`,
             n: vals.length,
@@ -414,6 +424,11 @@ export function computeDeterministicStats(
             max: Number(max.toFixed(4)),
             tcr,
             tcrCategory,
+            freq1: f1,
+            freq2: f2,
+            freq3: f3,
+            freq4: f4,
+            freq5: f5,
           });
         }
       });
@@ -511,7 +526,11 @@ export function computeDeterministicStats(
 
       items.forEach((it) => {
         const itemVals = processedRows.map((r) => Number(r[it] || 0));
-        const { r } = pearsonCorrelation(itemVals, totalScores);
+        let compScores = totalScores;
+        if (items.length > 1) {
+          compScores = totalScores.map((tot, idx) => tot - itemVals[idx]);
+        }
+        const { r } = pearsonCorrelation(itemVals, compScores);
         const rHitung = Number(r.toFixed(4));
         const valid = rHitung > rTabel && rHitung > 0;
 

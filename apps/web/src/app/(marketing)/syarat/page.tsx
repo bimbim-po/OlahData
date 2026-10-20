@@ -139,37 +139,42 @@ export default function SyaratPage() {
         </section>
 
         {/* Section 6 */}
-        <section className="space-y-3">
+        <section className="space-y-4">
           <h2 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
-            6. Hukum yang Mengatur & Forum Penyelesaian Sengketa
+            6. Hukum yang Mengatur &amp; Forum Penyelesaian Sengketa
           </h2>
           <p>
             Syarat dan ketentuan ini diatur dan ditafsirkan berdasarkan hukum Negara Kesatuan Republik Indonesia. Setiap perselisihan yang timbul dari atau sehubungan dengan penggunaan layanan akan diupayakan untuk diselesaikan secara musyawarah untuk mufakat terlebih dahulu.
           </p>
-          <div className="rounded-lg border-2 border-dashed border-amber-300 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20 p-4 text-xs sm:text-sm">
-            <span className="font-mono font-bold text-amber-800 dark:text-amber-300 block mb-1">
-              [ISI OLEH PEMILIK]
-            </span>
-            <p className="text-amber-900/90 dark:text-amber-200/90">
-              Apabila penyelesaian secara musyawarah tidak mencapai kesepakatan dalam jangka waktu 30 (tiga puluh) hari kalender, maka para pihak sepakat untuk menyelesaikan sengketa tersebut melalui yurisdiksi eksklusif di [ISI OLEH PEMILIK: Contoh Pengadilan Negeri Jakarta Selatan / Badan Arbitrase Nasional Indonesia].
-            </p>
+
+          <div className="rounded-xl border border-dashed border-primary/40 bg-muted/40 p-5 space-y-2.5 text-xs sm:text-sm">
+            <div className="flex items-start gap-2">
+              <span className="font-semibold text-foreground min-w-[150px]">Penyelenggara:</span>
+              <span className="font-mono text-primary">[ISI: Nama Pemilik / Badan Usaha OlahData]</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="font-semibold text-foreground min-w-[150px]">Alamat Operasional:</span>
+              <span className="font-mono text-primary">[ISI: Alamat Kantor / Domisili Hukum Resmi]</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="font-semibold text-foreground min-w-[150px]">Surel Bantuan Hukum:</span>
+              <span className="font-mono text-primary">[ISI: Surel Kontak Resmi, mis. legal@olahdata.id]</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="font-semibold text-foreground min-w-[150px]">Yurisdiksi Sengketa:</span>
+              <span className="font-mono text-primary">[ISI: Pengadilan Negeri Domisili Hukum, mis. Pengadilan Negeri Jakarta Selatan]</span>
+            </div>
           </div>
         </section>
 
         {/* Section 7 */}
         <section className="space-y-3">
           <h2 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
-            7. Kontak Layanan
+            7. Ketentuan Transisi Beta &amp; Daftar Tunggu (Tanpa Payment Gateway)
           </h2>
           <p>
-            Untuk pertanyaan seputar syarat layanan, klarifikasi langganan, atau dukungan bantuan akademik, hubungi tim kami melalui:
+            Saat ini, seluruh tingkatan paket berbayar beroperasi dalam status daftar tunggu (waitlist) beta. Platform tidak memproses transaksi pembayaran kartu kredit atau gateway otomatis secara sepihak. Pengguna dapat mendaftar daftar tunggu secara gratis dan admin dapat memberikan akses paket pengujian secara manual.
           </p>
-          <div className="inline-flex items-center gap-2 text-primary font-medium text-xs sm:text-sm">
-            <Mail className="h-4 w-4" />
-            <a href={`mailto:${CONTACT_EMAIL}`} className="underline">
-              {CONTACT_EMAIL}
-            </a>
-          </div>
         </section>
       </div>
 

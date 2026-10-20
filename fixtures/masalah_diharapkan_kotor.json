@@ -1,0 +1,101 @@
+{
+  "dataset": "fixture_kotor.csv",
+  "delimiter": ";",
+  "headerRow": 3,
+  "titleRowsSkipped": 2,
+  "trailingEmptyRows": 2,
+  "textLikertCount": 5,
+  "textLikertDetails": [
+    {
+      "row": 10,
+      "column": "KL3",
+      "rawText": "Sangat Setuju",
+      "mappedValue": 5
+    },
+    {
+      "row": 11,
+      "column": "KL3",
+      "rawText": "Setuju",
+      "mappedValue": 4
+    },
+    {
+      "row": 12,
+      "column": "KL3",
+      "rawText": "Netral",
+      "mappedValue": 3
+    },
+    {
+      "row": 13,
+      "column": "KL3",
+      "rawText": "Tidak Setuju",
+      "mappedValue": 2
+    },
+    {
+      "row": 14,
+      "column": "KL3",
+      "rawText": "Sangat Tidak Setuju",
+      "mappedValue": 1
+    }
+  ],
+  "totalRows": 120,
+  "expectedIssuesCount": 7,
+  "sampleSizeWarnings": {
+    "nParametricThreshold": 30,
+    "nRegressionThreshold": 20,
+    "currentN": 120,
+    "warning": false
+  },
+  "issues": [
+    {
+      "type": "missing_cell",
+      "row": 7,
+      "column": "KL2",
+      "description": "Sel kosong (missing value) pada butir KL2",
+      "action": "Eksklusi responden atau input ulang data mentah"
+    },
+    {
+      "type": "out_of_scale",
+      "row": 15,
+      "column": "KP3",
+      "value": 7,
+      "description": "Nilai 7 di luar rentang skala Likert (1 - 5)",
+      "action": "Koreksi ke skala 1-5 atau eksklusi baris"
+    },
+    {
+      "type": "out_of_scale",
+      "row": 24,
+      "column": "LP1",
+      "value": 0,
+      "description": "Nilai 0 di luar rentang skala Likert (1 - 5)",
+      "action": "Koreksi ke skala 1-5 atau eksklusi baris"
+    },
+    {
+      "type": "duplicate_row",
+      "row": 34,
+      "duplicateOfRow": 33,
+      "description": "Baris duplikat identik dengan responden baris 33",
+      "action": "Eksklusi responden duplikat"
+    },
+    {
+      "type": "straight_lining",
+      "row": 42,
+      "value": 5,
+      "description": "Pola jawaban seragam konstan (seluruh butir dijawab 5)",
+      "action": "Eksklusi responden unengaged"
+    },
+    {
+      "type": "straight_lining",
+      "row": 55,
+      "value": 1,
+      "description": "Pola jawaban seragam konstan (seluruh butir dijawab 1)",
+      "action": "Eksklusi responden unengaged"
+    },
+    {
+      "type": "univariate_outlier",
+      "row": 68,
+      "column": "KP",
+      "description": "Pencilan univariat (|z| > 3 pada konstruk KP)",
+      "action": "Eksklusi responden pencilan"
+    }
+  ]
+}

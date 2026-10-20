@@ -119,18 +119,12 @@ function MasukForm() {
                 <Label htmlFor="password" className="text-xs font-semibold text-foreground">
                   {COPY.auth.password}
                 </Label>
-                <button
-                  type="button"
-                  onClick={() =>
-                    toast({
-                      title: 'Lupa kata sandi?',
-                      description: 'Silakan gunakan kata sandi demo (minimal 6 karakter) atau hubungi admin.',
-                    })
-                  }
+                <Link
+                  href="/lupa-sandi"
                   className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                 >
                   {COPY.auth.forgotPassword}
-                </button>
+                </Link>
               </div>
 
               <div className="relative">

@@ -1,8 +1,29 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 
+// In-memory rate limiting map: identifier -> timestamps[]
+const rateLimitMap = new Map<string, number[]>();
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+const MAX_REQUESTS_PER_WINDOW = 5;
+
+function isRateLimited(key: string): boolean {
+  const now = Date.now();
+  const timestamps = rateLimitMap.get(key) || [];
+  const validTimestamps = timestamps.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+
+  if (validTimestamps.length >= MAX_REQUESTS_PER_WINDOW) {
+    rateLimitMap.set(key, validTimestamps);
+    return true;
+  }
+
+  validTimestamps.push(now);
+  rateLimitMap.set(key, validTimestamps);
+  return false;
+}
+
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'anonymous';
     const body = await request.json();
     const { name, email, phone, university, plan, projectId, notes } = body || {};
 
@@ -13,9 +34,22 @@ export async function POST(request: Request) {
       );
     }
 
+    const cleanEmail = email.trim().toLowerCase();
+    const rateLimitKey = `${ip}_${cleanEmail}`;
+
+    if (isRateLimited(rateLimitKey)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Terlalu banyak permintaan daftar tunggu dalam waktu singkat. Silakan tunggu beberapa saat.',
+        },
+        { status: 429 }
+      );
+    }
+
     const payload = {
       name: name || 'Mahasiswa',
-      email: email.trim().toLowerCase(),
+      email: cleanEmail,
       phone: phone || null,
       university: university || null,
       plan: plan || 'monthly',

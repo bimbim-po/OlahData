@@ -72,6 +72,51 @@ const NAV_ITEMS = [
   },
 ];
 
+const MOBILE_NAV_ITEMS = [
+  {
+    name: 'Proyek',
+    shortName: 'Proyek',
+    href: '/app',
+    icon: FolderKanban,
+    isSpecial: false,
+    isActive: (pathname: string) =>
+      pathname === '/app' ||
+      (pathname.startsWith('/app/proyek') && pathname !== '/app/proyek/baru'),
+  },
+  {
+    name: 'Riwayat',
+    shortName: 'Riwayat',
+    href: '/app/riwayat',
+    icon: History,
+    isSpecial: false,
+    isActive: (pathname: string) => pathname.startsWith('/app/riwayat'),
+  },
+  {
+    name: 'Proyek Baru',
+    shortName: 'Baru',
+    href: '/app/proyek/baru',
+    icon: PlusCircle,
+    isSpecial: true,
+    isActive: (pathname: string) => pathname === '/app/proyek/baru',
+  },
+  {
+    name: 'Bantuan',
+    shortName: 'Bantuan',
+    href: '/app/bantuan',
+    icon: BookOpen,
+    isSpecial: false,
+    isActive: (pathname: string) => pathname.startsWith('/app/bantuan'),
+  },
+  {
+    name: 'Pengaturan',
+    shortName: 'Akun',
+    href: '/app/pengaturan',
+    icon: Settings,
+    isSpecial: false,
+    isActive: (pathname: string) => pathname.startsWith('/app/pengaturan'),
+  },
+];
+
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -101,6 +146,13 @@ export function AppShell({ children }: AppShellProps) {
   };
 
   const getParentRoute = () => {
+    if (pathname.includes('/hasil')) {
+      const match = pathname.match(/\/app\/proyek\/([^/]+)\/hasil/);
+      if (match) {
+        return `/app/proyek/${match[1]}/analisis`;
+      }
+      return '/app';
+    }
     if (
       pathname === '/app/proyek/baru' ||
       pathname.startsWith('/app/proyek/') ||
@@ -450,7 +502,7 @@ export function AppShell({ children }: AppShellProps) {
             {parentRoute && (
               <Link
                 href={parentRoute}
-                className="inline-flex items-center justify-center h-9 w-9 rounded-md border border-border bg-card text-foreground hover:bg-muted transition-colors shrink-0 touch-manipulation cursor-pointer"
+                className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] sm:min-h-[36px] sm:min-w-[36px] h-11 w-11 sm:h-9 sm:w-9 rounded-md border border-border bg-card text-foreground hover:bg-muted transition-colors shrink-0 touch-manipulation cursor-pointer"
                 aria-label="Kembali ke halaman sebelumnya"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -541,16 +593,16 @@ export function AppShell({ children }: AppShellProps) {
         aria-label="Navigasi bawah mobile"
         className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 backdrop-blur-md px-1 flex items-center justify-around h-16 pb-[env(safe-area-inset-bottom,0px)] shadow-lg"
       >
-        {NAV_ITEMS.map((item) => {
+        {MOBILE_NAV_ITEMS.map((item) => {
           const active = item.isActive(pathname);
-          const isCreate = item.href === '/app/proyek/baru';
+          const isSpecial = item.isSpecial;
           const Icon = item.icon;
           return (
             <Link
               key={item.name}
               href={item.href}
               className={cn(
-                'flex flex-col items-center justify-center flex-1 h-full min-h-[44px] py-1 px-1 rounded-lg text-[13px] font-medium transition-all touch-manipulation',
+                'flex flex-col items-center justify-center flex-1 h-full min-h-[44px] py-1 px-0.5 rounded-lg text-[11px] font-medium transition-all touch-manipulation',
                 active
                   ? 'text-primary font-bold'
                   : 'text-muted-foreground hover:text-foreground'
@@ -558,8 +610,8 @@ export function AppShell({ children }: AppShellProps) {
             >
               <div
                 className={cn(
-                  'p-1.5 rounded-full transition-colors',
-                  isCreate
+                  'p-1.5 rounded-full transition-colors flex items-center justify-center',
+                  isSpecial
                     ? 'bg-primary text-primary-foreground shadow-xs'
                     : active
                     ? 'bg-primary/10 text-primary'
@@ -569,7 +621,7 @@ export function AppShell({ children }: AppShellProps) {
                 <Icon
                   className={cn(
                     'h-4 w-4',
-                    isCreate
+                    isSpecial
                       ? 'text-primary-foreground'
                       : active
                       ? 'text-primary'
@@ -578,7 +630,7 @@ export function AppShell({ children }: AppShellProps) {
                   aria-hidden="true"
                 />
               </div>
-              <span className="truncate max-w-[72px] text-[13px]">{item.shortName}</span>
+              <span className="truncate max-w-[64px] text-[11px]">{item.shortName}</span>
             </Link>
           );
         })}

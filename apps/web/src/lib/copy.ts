@@ -17,11 +17,11 @@ export const COPY = {
 
   // Beranda (Marketing & Landing)
   hero: {
-    title: 'Unggah data kuesioner Anda. Dapatkan tabel Bab 4 dan penjelasan yang bisa Anda jelaskan sendiri.',
-    subtitle: 'Angka dihitung program dengan rumus statistik baku, bukan AI. Setiap angka di naskah tersambung ke sel asalnya agar Anda paham saat bimbingan.',
-    ctaPrimary: 'Coba Gratis',
-    ctaSecondary: 'Unggah berkas sendiri',
-    microCopy: 'Data responden aman • Tanpa manipulasi • Format baku APA 7th',
+    title: 'Dari kuesioner ke Bab 4, tanpa pusing.',
+    subtitle: 'Angka dihitung deterministik dengan rumus baku skripsi Indonesia—angka dicocokkan dengan hitungan independen (pustaka statistik) pada data acuan. Data responden asli Anda tidak pernah kami ubah atau manipulasi.',
+    ctaPrimary: 'Coba dengan data contoh',
+    ctaSecondary: 'Unggah data saya',
+    microCopy: 'Angka terverifikasi data acuan • Data responden tidak pernah diubah • Tanpa login untuk data contoh',
   },
 
   // Alur Kerja Meja Kerja
@@ -104,7 +104,7 @@ export const COPY = {
     items: [
       {
         q: 'Apakah hasil analisis ini sah untuk sidang skripsi?',
-        a: `${APP_NAME} memakai rumus baku yang dapat dicek ulang di SPSS atau JASP. Setiap hasil dilengkapi Jejak Hitung (rumus formula, derajat kebebasan df, nilai kritis pembanding) serta dokumen Pernyataan Penggunaan Alat yang dapat Anda lampirkan ke naskah skripsi.`,
+        a: `${APP_NAME} memakai rumus baku deterministik; angka dicocokkan dengan hitungan independen (pustaka statistik) pada data acuan. Setiap hasil dilengkapi Jejak Hitung (rumus formula, derajat kebebasan df, nilai kritis pembanding) serta dokumen Pernyataan Penggunaan Alat resmi. Pelajari metodologi lengkap pada halaman panduan kami.`,
       },
       {
         q: 'Bagaimana jika dosen pembimbing menanyakan dari mana angka diperoleh?',
@@ -215,7 +215,20 @@ export const COPY = {
     title: 'Pernyataan Penggunaan Alat',
     description: 'Halaman ini menyajikan draf Pernyataan Penggunaan Alat untuk lampiran skripsi Anda demi menjaga transparansi akademik.',
     advice: 'Konsultasikan dengan dosen pembimbing mengenai format lampiran yang berlaku di program studi Anda.',
-    template: `Dalam penelitian ini, pengolahan data statistik dilakukan dengan bantuan perangkat lunak ${APP_NAME} (versi [VERSI]). Seluruh data berasal dari lembar tabulasi kuesioner yang disebarkan kepada responden oleh peneliti. Angka statistik dihitung oleh mesin statistik deterministik menggunakan rumus matematika baku, bukan oleh AI. Penjelasan interpretasi disusun dengan bantuan AI dan telah saya periksa serta sesuaikan dengan bahasa saya sendiri. Jejak hitung formula lengkap dilampirkan pada Lampiran [NOMOR LAMPIRAN].`,
+    template: `PERNYATAAN PENGGUNAAN PERANGKAT LUNAK & INTEGRITAS RISET ILMIAH
+
+Judul Penelitian : [ISI: Judul Skripsi / Tesis Anda]
+Nama Peneliti    : [ISI: Nama Lengkap Peneliti / Mahasiswa]
+NIM / NRP        : [ISI: Nomor Induk Mahasiswa]
+Program Studi    : [ISI: Program Studi dan Fakultas]
+Perguruan Tinggi : [ISI: Nama Perguruan Tinggi / Universitas]
+Dosen Pembimbing : [ISI: Nama Dosen Pembimbing I & II]
+
+Dengan ini peneliti menyatakan secara terbuka dan jujur bahwa:
+1. Orisinalitas Data: Seluruh data numerik yang dianalisis bersumber murni dari jawaban responden asli kuesioner penelitian tanpa manipulasi, pengisian otomatis, atau fabrikasi data.
+2. Komputasi Deterministik: Kalkulasi statistik (Validitas Pearson, Reliabilitas Cronbach's Alpha, Asumsi Klasik, dan Regresi OLS) diproses secara deterministik menggunakan perangkat lunak ${APP_NAME} (versi [VERSI]) berbasis modul komputasi ilmiah baku (SciPy, statsmodels, dan pingouin).
+3. Transparansi AI: Draf interpretasi teks disusun dengan bantuan kecerdasan buatan terverifikasi (number guard) dan telah saya periksa, teliti, serta tuliskan kembali menggunakan kalimat saya sendiri.
+4. Lampiran Jejak Hitung: Seluruh nilai tabel r, t, dan F serta jejak verifikasi dataset dilampirkan secara transparan pada Lampiran [NOMOR LAMPIRAN].`,
   },
 
   // Autentikasi

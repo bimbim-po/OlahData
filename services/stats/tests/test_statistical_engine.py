@@ -50,10 +50,15 @@ def test_cronbach_alpha_tolerance(ref_data):
 def test_validity_pearson_tolerance(ref_data):
     df, ref = ref_data
     constructs = [{"name": "KL", "items": ["KL1", "KL2", "KL3"]}]
-    res = compute_validity(df, constructs, significance_level=0.05)
-    kl1_res = next(r for r in res if r["item"] == "KL1")
-
+    # Uncorrected Pearson against legacy reference value (0.8212)
+    res_uncorrected = compute_validity(df, constructs, significance_level=0.05, use_corrected=False)
+    kl1_res = next(r for r in res_uncorrected if r["item"] == "KL1")
     assert abs(kl1_res["rHitung"] - ref["r_kl1"]) < 0.001
+
+    # Corrected item-total correlation (thesis standard: item correlated with other items sum)
+    res_corrected = compute_validity(df, constructs, significance_level=0.05, use_corrected=True)
+    kl1_corr = next(r for r in res_corrected if r["item"] == "KL1")
+    assert abs(kl1_corr["rHitung"] - 0.5826) < 0.001
 
 def test_regression_tolerance(ref_data):
     df, ref = ref_data

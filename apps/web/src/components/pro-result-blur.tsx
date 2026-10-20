@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 
 interface ProResultBlurProps {
   isLocked: boolean;
+  isSample?: boolean;
   testName?: string;
   reason?: string;
   children: React.ReactNode;
@@ -16,6 +17,7 @@ interface ProResultBlurProps {
 
 export function ProResultBlur({
   isLocked,
+  isSample = false,
   testName = 'Uji Hipotesis',
   reason,
   children,
@@ -24,6 +26,22 @@ export function ProResultBlur({
   const { openUpgradeModal } = useUpgradeModal();
 
   if (!isLocked) {
+    if (isSample) {
+      return (
+        <div className={cn('relative space-y-2', className)}>
+          <div className="flex items-center justify-between gap-2 px-1">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+              Contoh
+            </span>
+            <span className="text-[11px] text-muted-foreground hidden sm:inline">
+              Simulasi hasil uji dengan dataset contoh
+            </span>
+          </div>
+          {children}
+        </div>
+      );
+    }
     return <>{children}</>;
   }
 

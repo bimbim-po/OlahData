@@ -1,0 +1,410 @@
+[
+  {
+    "route": "/",
+    "viewport": "360px",
+    "issue": "25 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (98x24px), button.inline-flex (69x23px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/harga",
+    "viewport": "360px",
+    "issue": "13 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (98x24px), a.hover:text-foreground (44x16px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/panduan",
+    "viewport": "360px",
+    "issue": "12 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (98x24px), a.hover:text-foreground (44x16px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/masuk",
+    "viewport": "360px",
+    "issue": "14 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (98x24px), a.text-xs (89x16px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/daftar",
+    "viewport": "360px",
+    "issue": "17 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (98x24px), button.absolute (24x24px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/pernyataan-penggunaan",
+    "viewport": "360px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/pernyataan-penggunaan",
+    "viewport": "360px",
+    "issue": "12 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (98x24px), a.hover:text-foreground (44x16px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/privasi",
+    "viewport": "360px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/privasi",
+    "viewport": "360px",
+    "issue": "13 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (98x24px), a.hover:text-foreground (44x16px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/syarat",
+    "viewport": "360px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/syarat",
+    "viewport": "360px",
+    "issue": "12 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (98x24px), a.hover:text-foreground (44x16px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/proyek/sample/hasil?contoh=1",
+    "viewport": "360px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/proyek/sample/hasil?contoh=1",
+    "viewport": "360px",
+    "issue": "10 elemen interaktif memiliki target sentuh < 44px (contoh: a.text-muted-foreground (36x16px), a.hover:text-foreground (39x21px), a.inline-flex (36x40px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/proyek/project-1/hasil",
+    "viewport": "360px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/proyek/project-1/hasil",
+    "viewport": "360px",
+    "issue": "10 elemen interaktif memiliki target sentuh < 44px (contoh: a.text-muted-foreground (36x16px), a.hover:text-foreground (39x21px), a.inline-flex (36x40px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/riwayat",
+    "viewport": "360px",
+    "issue": "13 elemen interaktif memiliki target sentuh < 44px (contoh: a.text-muted-foreground (36x16px), a.font-semibold (288x16px), button.inline-flex (34x44px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/bantuan",
+    "viewport": "360px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/",
+    "viewport": "390px",
+    "issue": "25 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (98x24px), button.inline-flex (69x23px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/harga",
+    "viewport": "390px",
+    "issue": "13 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (98x24px), a.hover:text-foreground (44x16px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/panduan",
+    "viewport": "390px",
+    "issue": "12 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (98x24px), a.hover:text-foreground (44x16px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/masuk",
+    "viewport": "390px",
+    "issue": "14 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (98x24px), a.text-xs (89x16px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/daftar",
+    "viewport": "390px",
+    "issue": "17 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (98x24px), button.absolute (24x24px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/pernyataan-penggunaan",
+    "viewport": "390px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/pernyataan-penggunaan",
+    "viewport": "390px",
+    "issue": "12 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (98x24px), a.hover:text-foreground (44x16px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/privasi",
+    "viewport": "390px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/privasi",
+    "viewport": "390px",
+    "issue": "13 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (98x24px), a.hover:text-foreground (44x16px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/syarat",
+    "viewport": "390px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/syarat",
+    "viewport": "390px",
+    "issue": "12 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (98x24px), a.hover:text-foreground (44x16px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/proyek/sample/hasil?contoh=1",
+    "viewport": "390px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/proyek/sample/hasil?contoh=1",
+    "viewport": "390px",
+    "issue": "10 elemen interaktif memiliki target sentuh < 44px (contoh: a.text-muted-foreground (36x16px), a.hover:text-foreground (39x21px), a.inline-flex (36x40px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/proyek/project-1/hasil",
+    "viewport": "390px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/proyek/project-1/hasil",
+    "viewport": "390px",
+    "issue": "10 elemen interaktif memiliki target sentuh < 44px (contoh: a.text-muted-foreground (36x16px), a.hover:text-foreground (39x21px), a.inline-flex (36x40px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/riwayat",
+    "viewport": "390px",
+    "issue": "13 elemen interaktif memiliki target sentuh < 44px (contoh: a.text-muted-foreground (36x16px), a.font-semibold (288x16px), button.inline-flex (34x44px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/bantuan",
+    "viewport": "390px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/",
+    "viewport": "768px",
+    "issue": "33 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (116x32px), button.inline-flex (36x36px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/harga",
+    "viewport": "768px",
+    "issue": "17 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (116x32px), button.inline-flex (36x36px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/panduan",
+    "viewport": "768px",
+    "issue": "17 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (116x32px), button.inline-flex (36x36px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/masuk",
+    "viewport": "768px",
+    "issue": "18 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (116x32px), button.inline-flex (36x36px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/daftar",
+    "viewport": "768px",
+    "issue": "20 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (116x32px), button.inline-flex (36x36px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/pernyataan-penggunaan",
+    "viewport": "768px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/pernyataan-penggunaan",
+    "viewport": "768px",
+    "issue": "16 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (116x32px), button.inline-flex (36x36px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/privasi",
+    "viewport": "768px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/privasi",
+    "viewport": "768px",
+    "issue": "15 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (116x32px), button.inline-flex (36x36px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/syarat",
+    "viewport": "768px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/syarat",
+    "viewport": "768px",
+    "issue": "15 elemen interaktif memiliki target sentuh < 44px (contoh: a.sr-only (1x1px), a.flex (116x32px), button.inline-flex (36x36px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/proyek/baru",
+    "viewport": "768px",
+    "issue": "8 elemen interaktif memiliki target sentuh < 44px (contoh: a.inline-flex (36x36px), a.text-muted-foreground (42x20px), button.inline-flex (36x36px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/proyek/baru?contoh=1",
+    "viewport": "768px",
+    "issue": "8 elemen interaktif memiliki target sentuh < 44px (contoh: a.inline-flex (36x36px), a.text-muted-foreground (42x20px), button.inline-flex (36x36px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/proyek/project-1",
+    "viewport": "768px",
+    "issue": "7 elemen interaktif memiliki target sentuh < 44px (contoh: a.inline-flex (36x36px), button.inline-flex (36x36px), button.inline-flex (36x36px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/proyek/sample/hasil?contoh=1",
+    "viewport": "768px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/proyek/sample/hasil?contoh=1",
+    "viewport": "768px",
+    "issue": "31 elemen interaktif memiliki target sentuh < 44px (contoh: a.inline-flex (36x36px), a.text-muted-foreground (42x20px), button.inline-flex (36x36px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/proyek/project-1/hasil",
+    "viewport": "768px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/proyek/project-1/hasil",
+    "viewport": "768px",
+    "issue": "31 elemen interaktif memiliki target sentuh < 44px (contoh: a.inline-flex (36x36px), a.text-muted-foreground (42x20px), button.inline-flex (36x36px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/riwayat",
+    "viewport": "768px",
+    "issue": "21 elemen interaktif memiliki target sentuh < 44px (contoh: a.inline-flex (36x36px), a.text-muted-foreground (42x20px), button.inline-flex (36x36px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/pengaturan",
+    "viewport": "768px",
+    "issue": "9 elemen interaktif memiliki target sentuh < 44px (contoh: a.inline-flex (36x36px), a.text-muted-foreground (42x20px), button.inline-flex (36x36px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/bantuan",
+    "viewport": "768px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/bantuan",
+    "viewport": "768px",
+    "issue": "12 elemen interaktif memiliki target sentuh < 44px (contoh: a.inline-flex (36x36px), a.text-muted-foreground (42x20px), button.inline-flex (36x36px))",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/pernyataan-penggunaan",
+    "viewport": "1024px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/privasi",
+    "viewport": "1024px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/syarat",
+    "viewport": "1024px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/proyek/sample/hasil?contoh=1",
+    "viewport": "1024px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/proyek/project-1/hasil",
+    "viewport": "1024px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/bantuan",
+    "viewport": "1024px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/pernyataan-penggunaan",
+    "viewport": "1440px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/privasi",
+    "viewport": "1440px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/syarat",
+    "viewport": "1440px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/proyek/sample/hasil?contoh=1",
+    "viewport": "1440px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/proyek/project-1/hasil",
+    "viewport": "1440px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  },
+  {
+    "route": "/app/bantuan",
+    "viewport": "1440px",
+    "issue": "Terdapat teks placeholder berkurung [ISI: ...] atau [TODO]",
+    "severity": "Rendah"
+  }
+]

@@ -9,15 +9,23 @@ const webRoot = path.resolve(__dirname, '..');
 
 const apiPath = path.join(webRoot, 'src', 'app', 'api');
 const apiTempPath = path.join(webRoot, 'src', 'app', '_api_server');
+const authPath = path.join(webRoot, 'src', 'app', 'auth');
+const authTempPath = path.join(webRoot, 'src', 'app', '_auth_server');
 
 console.log('--- OlahData Static Export Build ---');
 
-let renamed = false;
+let renamedApi = false;
+let renamedAuth = false;
 try {
   if (fs.existsSync(apiPath)) {
     console.log('[1/4] Moving server API routes aside for static export...');
     fs.renameSync(apiPath, apiTempPath);
-    renamed = true;
+    renamedApi = true;
+  }
+  if (fs.existsSync(authPath)) {
+    console.log('[1/4] Moving server auth route aside for static export...');
+    fs.renameSync(authPath, authTempPath);
+    renamedAuth = true;
   }
 
   console.log('[2/4] Running next build with NEXT_EXPORT=true...');
@@ -46,12 +54,25 @@ try {
 /admin/pelanggan/* /admin/pelanggan/sample 200
 `;
     fs.writeFileSync(path.join(outDir, '_redirects'), redirectsContent, 'utf-8');
-    console.log('Static export complete in out/ folder.');
+
+    const headersContent = `/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), browsing-topics=()
+`;
+    fs.writeFileSync(path.join(outDir, '_headers'), headersContent, 'utf-8');
+    console.log('Static export complete in out/ folder with _redirects and _headers.');
   }
 
 } finally {
-  if (renamed && fs.existsSync(apiTempPath)) {
+  if (renamedApi && fs.existsSync(apiTempPath)) {
     console.log('[4/4] Restoring server API routes...');
     fs.renameSync(apiTempPath, apiPath);
+  }
+  if (renamedAuth && fs.existsSync(authTempPath)) {
+    console.log('[4/4] Restoring server auth route...');
+    fs.renameSync(authTempPath, authPath);
   }
 }

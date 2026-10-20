@@ -25,13 +25,44 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='{"timestamp": "%(asctime)s", "level": "%(levelname)s", "service": "stats-engine", "message": "%(message)s"}'
+)
+logger = logging.getLogger("stats-engine")
+
+MAX_ROWS_LIMIT = 10000
+
 def verify_service_key(x_service_key: Optional[str] = Header(None)):
-    if settings.ENVIRONMENT == "production" or settings.SERVICE_KEY:
+    if settings.ENVIRONMENT == "production":
+        if not settings.SERVICE_KEY or settings.SERVICE_KEY == "dev-stats-secret-key-12345":
+            logger.error("Security alert: STATS_SERVICE_KEY has not been rotated from default dev key in production!")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Konfigurasi STATS_SERVICE_KEY wajib diatur dengan aman di lingkungan produksi."
+            )
+        if not x_service_key or x_service_key != settings.SERVICE_KEY:
+            logger.warning("Unauthorized access attempt: invalid or missing X-Service-Key")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Kunci layanan (X-Service-Key) tidak valid atau hilang."
+            )
+    elif settings.SERVICE_KEY:
         if not x_service_key or x_service_key != settings.SERVICE_KEY:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Kunci layanan (X-Service-Key) tidak valid atau hilang."
             )
+
+def check_payload_limits(rows: List[Dict[str, Any]]):
+    if len(rows) > MAX_ROWS_LIMIT:
+        logger.warning(f"Payload limit exceeded: {len(rows)} rows requested (max {MAX_ROWS_LIMIT})")
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"Jumlah baris responden ({len(rows)}) melebihi batas maksimum platform ({MAX_ROWS_LIMIT} baris)."
+        )
 
 # Pydantic Schemas
 class ConstructModel(BaseModel):
@@ -61,6 +92,7 @@ class ExportRequest(BaseModel):
     projectTitle: str = "Pengaruh Kualitas Layanan dan Kepuasan terhadap Loyalitas Pelanggan"
     includeDeclaration: bool = True
     watermark: bool = False
+    tableId: Optional[str] = None
 
 @app.get("/health")
 def health():
@@ -78,6 +110,9 @@ def validate_dataset(
     verify_service_key(x_service_key)
     if not req.rows:
         return {"issues": []}
+
+    check_payload_limits(req.rows)
+    logger.info(f"Validate request: {len(req.rows)} rows, scale {req.scale_min}-{req.scale_max}")
 
     df = pd.DataFrame(req.rows)
     issues = scan_dataset_quality(
@@ -98,6 +133,9 @@ def analyze(
     if not req.rows:
         raise HTTPException(status_code=400, detail="Data baris responden tidak boleh kosong.")
 
+    check_payload_limits(req.rows)
+    logger.info(f"Analyze request: project={req.projectId}, version={req.dataVersionId}, rows={len(req.rows)}, constructs={len(req.constructs)}, tests={req.selectedTests}")
+
     df = pd.DataFrame(req.rows)
     constructs_data = [c.dict() for c in req.constructs]
 
@@ -112,6 +150,7 @@ def analyze(
         )
         return results
     except Exception as e:
+        logger.error(f"Computation error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Gagal melakukan komputasi statistik: {str(e)}")
 
 @app.post("/export")
@@ -121,16 +160,20 @@ def export(
 ):
     verify_service_key(x_service_key)
     fmt = req.format.lower()
+    import datetime
+    safe_title = "".join(c if c.isalnum() else "_" for c in req.projectTitle[:30]).strip("_") or "Hasil"
+    today_str = datetime.date.today().strftime("%Y%m%d")
 
     if fmt in ["docx", "word"]:
         binary_data = generate_docx_report(
             results=req.results,
             project_title=req.projectTitle,
             include_declaration=req.includeDeclaration,
-            watermark=req.watermark
+            watermark=req.watermark,
+            selected_table_ids=[req.tableId] if req.tableId else None
         )
         media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        filename = "Laporan_Hasil_Penelitian_Bab4.docx"
+        filename = f"OlahData_Bab4_{safe_title}_{today_str}.docx"
     elif fmt == "pdf":
         binary_data = generate_pdf_report(
             results=req.results,
@@ -139,7 +182,7 @@ def export(
             watermark=req.watermark
         )
         media_type = "application/pdf"
-        filename = "Laporan_Hasil_Penelitian_Bab4.pdf"
+        filename = f"OlahData_Bab4_{safe_title}_{today_str}.pdf"
     else:
         raise HTTPException(status_code=400, detail=f"Format ekspor tidak didukung: {req.format}")
 

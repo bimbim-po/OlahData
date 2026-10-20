@@ -145,20 +145,43 @@ export default function PrivasiPage() {
             <li><strong className="text-foreground">Paket Skripsi:</strong> Disimpan selama {thesisRetention} hari kalender (2 tahun) untuk menjamin ketersediaan riwayat hingga sidang dan yudisium selesai.</li>
           </ul>
           <p className="mt-3">
-            Anda memiliki hak mutlak untuk menghapus proyek penelitian, dataset terunggah, maupun akun Anda kapan saja melalui menu Pengaturan. Setelah dihapus oleh Anda, data akan dihapus dari sistem aktif dan dari cadangan sesuai siklus penyimpanan cadangan penyedia.
+            Sesuai amanat Undang-Undang Perlindungan Data Pribadi (UU No. 27 Tahun 2022 / UU PDP), Anda memiliki hak mutlak untuk mengakses, memperbarui, mengekspor (portabilitas data), dan menghapus data proyek penelitian maupun seluruh akun Anda kapan saja melalui menu{' '}
+            <Link href="/app/pengaturan" className="text-primary font-semibold underline">
+              Pengaturan Akun &amp; Privasi
+            </Link>.
           </p>
         </section>
 
         {/* Section 6 */}
-        <section className="space-y-3">
+        <section className="space-y-4">
           <h2 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
-            6. Hubungi Kami
+            6. Identitas Pengendali Data &amp; Kontak Layanan
           </h2>
           <p>
-            Jika Anda memiliki pertanyaan terkait privasi riset atau memerlukan surat verifikasi keamanan data untuk keperluan sidang etik universitas, silakan hubungi tim kami di{' '}
-            <a href="mailto:privasi@olahdata.id" className="text-primary underline">
-              privasi@olahdata.id
-            </a>.
+            Sesuai regulasi UU PDP, rincian identitas Pengendali Data Pribadi OlahData adalah sebagai berikut:
+          </p>
+
+          <div className="rounded-xl border border-dashed border-primary/40 bg-muted/40 p-5 space-y-2.5 text-xs sm:text-sm">
+            <div className="flex items-start gap-2">
+              <span className="font-semibold text-foreground min-w-[150px]">Nama Pengendali:</span>
+              <span className="font-mono text-primary">[ISI: Nama Pemilik / Badan Usaha OlahData]</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="font-semibold text-foreground min-w-[150px]">Alamat Domisili:</span>
+              <span className="font-mono text-primary">[ISI: Alamat Kantor / Domisili Operasional Resmi]</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="font-semibold text-foreground min-w-[150px]">Surel Kontak DPO:</span>
+              <span className="font-mono text-primary">[ISI: Surel Kontak Resmi, mis. privasi@olahdata.id]</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="font-semibold text-foreground min-w-[150px]">Status Registrasi:</span>
+              <span className="font-mono text-primary">[ISI: Tanda Daftar PSE Kominfo / NIB (opsional jika tersedia)]</span>
+            </div>
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            Untuk keperluan surat verifikasi etika riset, kliring data kampus, atau permohonan pemusnahan data fisik, hubungi kontak pengendali di atas.
           </p>
         </section>
       </div>

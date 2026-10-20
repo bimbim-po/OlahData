@@ -24,6 +24,7 @@ import {
   Sliders,
   BarChart3,
   RefreshCw,
+  LifeBuoy,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +34,7 @@ import { PageActions } from '@/components/page-actions';
 import { useToast } from '@/components/ui/toaster';
 import { SUPPORT_EMAIL } from '@/lib/plans';
 import { APP_NAME, APP_VERSION } from '@/lib/constants';
+import { ProblemReportForm } from '@/components/problem-report-form';
 
 interface FAQItem {
   id: string;
@@ -150,6 +152,7 @@ const TOC_SECTIONS = [
   { id: 'glosarium', title: 'Glosarium Istilah' },
   { id: 'kebijakan', title: 'Integritas Ilmiah & Privasi' },
   { id: 'kontak', title: 'Hubungi Bantuan' },
+  { id: 'lapor-masalah', title: 'Lapor Masalah' },
 ];
 
 export default function HelpCenterPage() {
@@ -1041,6 +1044,21 @@ export default function HelpCenterPage() {
                 )}
               </div>
             </div>
+          </section>
+
+          {/* 14. Form Lapor Masalah */}
+          <section id="lapor-masalah" className="scroll-mt-24 space-y-4">
+            <div className="border-b border-border pb-3">
+              <h2 className="font-serif text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                <LifeBuoy className="h-6 w-6 text-primary" />
+                <span>Formulir Lapor Masalah</span>
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Kirim kendala teknis atau pertanyaan langsung ke tim pengembang tanpa mengirimkan data responden Anda.
+              </p>
+            </div>
+
+            <ProblemReportForm diagnosticCode={diagnosticCode} />
           </section>
 
           {/* Navigasi Bawah PageActions */}
