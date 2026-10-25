@@ -72,7 +72,7 @@ export default function ProjectsPage() {
         if (
           wiz.fileData.length > 0 &&
           !wiz.usingSampleData &&
-          (wiz.projectId === p.id || updated.respondentCount === 0)
+          wiz.projectId === p.id
         ) {
           updated = {
             ...updated,

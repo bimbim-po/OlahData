@@ -42,10 +42,36 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: () => {
-    try {
-      localStorage.removeItem('olahdata-session');
-    } catch {
-      // localStorage not available
+    const currentUid = get().user?.id;
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('olahdata-session');
+        localStorage.removeItem('olahdata-projects');
+        localStorage.removeItem('olahdata-analysis-runs');
+        localStorage.removeItem('olahdata_active_project_meta');
+        if (currentUid) {
+          localStorage.removeItem(`olahdata_active_project_meta_${currentUid}`);
+          localStorage.removeItem(`olahdata-projects-${currentUid}`);
+          localStorage.removeItem(`olahdata-analysis-runs-${currentUid}`);
+        }
+        sessionStorage.clear();
+      } catch {
+        // localStorage not available
+      }
+
+      // Reset wizard store in memory agar data responden/variabel tidak bocor ke akun berikutnya
+      import('@/stores/wizard-store')
+        .then(({ useWizardStore }) => {
+          useWizardStore.getState().resetWizard();
+        })
+        .catch(() => {});
+
+      // Sign out dari Supabase
+      import('@/lib/supabase/client')
+        .then(({ getSupabaseBrowserClient }) => {
+          getSupabaseBrowserClient().auth.signOut().catch(() => {});
+        })
+        .catch(() => {});
     }
     set({ user: null, isAuthenticated: false, isLoading: false });
   },

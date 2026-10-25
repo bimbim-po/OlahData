@@ -273,6 +273,7 @@ export async function register(
 }
 
 export async function logout(): Promise<void> {
+  const currentUid = getCurrentUserId();
   const supabase = getSupabaseBrowserClient();
   try {
     await supabase.auth.signOut();
@@ -283,6 +284,14 @@ export async function logout(): Promise<void> {
   if (typeof window !== 'undefined') {
     try {
       localStorage.removeItem('olahdata-session');
+      localStorage.removeItem('olahdata_active_project_meta');
+      localStorage.removeItem('olahdata-projects');
+      localStorage.removeItem('olahdata-analysis-runs');
+      if (currentUid) {
+        localStorage.removeItem(`olahdata_active_project_meta_${currentUid}`);
+        localStorage.removeItem(`olahdata-projects-${currentUid}`);
+        localStorage.removeItem(`olahdata-analysis-runs-${currentUid}`);
+      }
     } catch {
       // Abaikan jika localStorage tidak tersedia
     }
@@ -423,10 +432,35 @@ function enrichProjectWithLocalResults(proj: Project): Project {
   return proj;
 }
 
-function getStoredProjects(): Project[] {
+export function getCurrentUserId(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem('olahdata-session');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.id) return parsed.id;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+export function getUserProjectsKey(userId?: string | null): string {
+  const uid = userId || getCurrentUserId();
+  return uid ? `olahdata-projects-${uid}` : 'olahdata-projects-guest';
+}
+
+export function getUserRunsKey(userId?: string | null): string {
+  const uid = userId || getCurrentUserId();
+  return uid ? `olahdata-analysis-runs-${uid}` : 'olahdata-analysis-runs-guest';
+}
+
+function getStoredProjects(userId?: string | null): Project[] {
   if (typeof window === 'undefined') return [];
   try {
-    const raw = localStorage.getItem('olahdata-projects');
+    const key = getUserProjectsKey(userId);
+    const raw = localStorage.getItem(key);
     if (!raw) {
       return [];
     }
@@ -436,7 +470,7 @@ function getStoredProjects(): Project[] {
       .filter((p) => p && p.id && !DUMMY_PROJECT_IDS.has(p.id))
       .map(enrichProjectWithLocalResults);
     if (realProjects.length !== parsed.length) {
-      localStorage.setItem('olahdata-projects', JSON.stringify(realProjects));
+      localStorage.setItem(key, JSON.stringify(realProjects));
     }
     return realProjects;
   } catch {
@@ -444,13 +478,19 @@ function getStoredProjects(): Project[] {
   }
 }
 
-function saveStoredProjects(projects: Project[]): void {
+function saveStoredProjects(projects: Project[], userId?: string | null): void {
   if (typeof window === 'undefined') return;
   try {
+    const key = getUserProjectsKey(userId);
     const filtered = projects
       .filter((p) => p && p.id && !DUMMY_PROJECT_IDS.has(p.id))
       .map(enrichProjectWithLocalResults);
-    localStorage.setItem('olahdata-projects', JSON.stringify(filtered));
+    localStorage.setItem(key, JSON.stringify(filtered));
+
+    // Bersihkan kunci warisan global agar tidak mencemari sesi lain
+    if (localStorage.getItem('olahdata-projects')) {
+      localStorage.removeItem('olahdata-projects');
+    }
   } catch {
     // ignore
   }
@@ -473,13 +513,19 @@ export interface AnalysisRunLogEntry {
 export function recordAnalysisRun(entry: AnalysisRunLogEntry): void {
   if (typeof window === 'undefined') return;
   try {
-    const raw = localStorage.getItem('olahdata-analysis-runs');
+    const storageKey = getUserRunsKey();
+    const raw = localStorage.getItem(storageKey);
     const existing: AnalysisRunLogEntry[] = raw ? JSON.parse(raw) : [];
     const cleaned = Array.isArray(existing)
       ? existing.filter((r) => r && r.id && !DUMMY_RUN_IDS.has(r.id) && r.id !== entry.id)
       : [];
     const updated = [entry, ...cleaned].slice(0, 50);
-    localStorage.setItem('olahdata-analysis-runs', JSON.stringify(updated));
+    localStorage.setItem(storageKey, JSON.stringify(updated));
+
+    // Bersihkan kunci warisan global
+    if (localStorage.getItem('olahdata-analysis-runs')) {
+      localStorage.removeItem('olahdata-analysis-runs');
+    }
   } catch {
     // ignore
   }
@@ -496,9 +542,10 @@ export async function syncProjectProgress(
     fileName?: string;
   }
 ): Promise<void> {
+  const currentUid = getCurrentUserId();
   if (typeof window !== 'undefined') {
     try {
-      const list = getStoredProjects();
+      const list = getStoredProjects(currentUid);
       const idx = list.findIndex((p) => p.id === projectId);
       const now = new Date().toISOString();
       if (idx >= 0) {
@@ -511,9 +558,9 @@ export async function syncProjectProgress(
           ...(updates.status ? { status: updates.status } : {}),
           updatedAt: now,
         };
-        saveStoredProjects(list);
+        saveStoredProjects(list, currentUid);
       } else if (projectId !== 'sample' && !DUMMY_PROJECT_IDS.has(projectId)) {
-        const activeMetaRaw = localStorage.getItem('olahdata_active_project_meta');
+        const activeMetaRaw = localStorage.getItem(`olahdata_active_project_meta_${currentUid}`) || localStorage.getItem('olahdata_active_project_meta');
         const activeMeta = activeMetaRaw ? JSON.parse(activeMetaRaw) : null;
         const created: Project = {
           id: projectId,
@@ -528,7 +575,7 @@ export async function syncProjectProgress(
           dataVersions: [],
           currentDataVersion: 'dv-1',
         };
-        saveStoredProjects([created, ...list]);
+        saveStoredProjects([created, ...list], currentUid);
       }
     } catch {
       // ignore localStorage errors
@@ -613,6 +660,7 @@ function mapDbProjectToProject(row: DbProjectRow): Project {
 }
 
 export async function getProjects(): Promise<Project[]> {
+  const currentUid = getCurrentUserId();
   try {
     const supabase = getSupabaseBrowserClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -643,7 +691,8 @@ export async function getProjects(): Promise<Project[]> {
         .order('updated_at', { ascending: false });
 
       if (!error && data) {
-        const localList = getStoredProjects();
+        // Ambil hanya cache lokal yang terdaftar untuk user INI
+        const localList = getStoredProjects(user.id);
         const mapped = (data as DbProjectRow[]).map((r) => {
           const base = mapDbProjectToProject(r);
           const localMatch = localList.find((lp) => lp.id === base.id);
@@ -658,10 +707,14 @@ export async function getProjects(): Promise<Project[]> {
           };
           return enrichProjectWithLocalResults(merged);
         });
+
+        // HANYA pertahankan draft offline lokal yang dibuat oleh user ini
         const mappedIds = new Set(mapped.map((m) => m.id));
-        const localOnly = localList.filter((lp) => !mappedIds.has(lp.id));
-        const combined = [...mapped, ...localOnly];
-        saveStoredProjects(combined);
+        const userOfflineDrafts = localList.filter((lp) =>
+          !mappedIds.has(lp.id) && (lp.id.startsWith('project-') || lp.id === 'sample')
+        );
+        const combined = [...mapped, ...userOfflineDrafts];
+        saveStoredProjects(combined, user.id);
         return combined;
       }
     }
@@ -669,19 +722,24 @@ export async function getProjects(): Promise<Project[]> {
     console.warn('[Supabase API] Gagal memuat proyek dari database:', err);
   }
 
-  return getStoredProjects();
+  return getStoredProjects(currentUid);
 }
 
 export async function getProject(id: string): Promise<Project | undefined> {
+  const currentUid = getCurrentUserId();
+
   if (id === 'sample' || id.startsWith('project-sample')) {
-    const storedSample = getStoredProjects().find((p) => p.id === id);
+    const storedSample = getStoredProjects(currentUid).find((p) => p.id === id);
     if (storedSample) return enrichProjectWithLocalResults(storedSample);
     return enrichProjectWithLocalResults({ ...mockProjects[0], id });
   }
 
   try {
     const supabase = getSupabaseBrowserClient();
-    const { data: row, error } = await supabase
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // Query spesifik ke database Supabase dengan RLS ketat
+    const query = supabase
       .from('projects')
       .select(`
         id,
@@ -702,12 +760,18 @@ export async function getProject(id: string): Promise<Project | undefined> {
         )
       `)
       .eq('id', id)
-      .is('archived_at', null)
-      .maybeSingle();
+      .is('archived_at', null);
+
+    // Filter ketat dengan owner_id jika pengguna terautentikasi
+    if (user?.id) {
+      query.eq('owner_id', user.id);
+    }
+
+    const { data: row, error } = await query.maybeSingle();
 
     if (!error && row) {
       const base = mapDbProjectToProject(row as DbProjectRow);
-      const localMatch = getStoredProjects().find((p) => p.id === id);
+      const localMatch = getStoredProjects(user?.id || currentUid).find((p) => p.id === id);
       return enrichProjectWithLocalResults({
         ...base,
         respondentCount: Math.max(base.respondentCount, localMatch?.respondentCount || 0),
@@ -715,16 +779,29 @@ export async function getProject(id: string): Promise<Project | undefined> {
         status: localMatch?.status === 'completed' ? 'completed' : base.status,
       });
     }
+
+    // Jika user terautentikasi tapi proyek tidak ditemukan di database miliknya:
+    // JANGAN izinkan kebocoran dari cache lokal akun lain! Tolak akses (undefined).
+    if (user?.id) {
+      const isLocalOfflineDraft = id.startsWith('project-') || id === 'sample';
+      if (!isLocalOfflineDraft) {
+        console.warn(`[Security RLS] Akses ditolak: Proyek ${id} bukan milik pengguna ${user.id}`);
+        return undefined;
+      }
+    }
   } catch (err) {
     console.warn('[Supabase API] Gagal memuat proyek ID:', id, err);
   }
 
-  const localFound = getStoredProjects().find((p) => p.id === id);
+  // Fallback lokal HANYA untuk draft offline pengguna saat ini
+  const localFound = getStoredProjects(currentUid).find((p) => p.id === id);
   if (localFound) return enrichProjectWithLocalResults(localFound);
 
   if (typeof window !== 'undefined') {
     try {
-      const activeMetaRaw = localStorage.getItem('olahdata_active_project_meta');
+      const activeMetaRaw =
+        localStorage.getItem(`olahdata_active_project_meta_${currentUid}`) ||
+        localStorage.getItem('olahdata_active_project_meta');
       if (activeMetaRaw) {
         const activeMeta = JSON.parse(activeMetaRaw) as Project;
         if (activeMeta && (activeMeta.id === id || id === 'baru')) {
@@ -744,6 +821,7 @@ export async function createProject(
   department: string,
   researchType: string
 ): Promise<Project> {
+  const currentUid = getCurrentUserId();
   try {
     const supabase = getSupabaseBrowserClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -775,10 +853,11 @@ export async function createProject(
           currentDataVersion: '',
         };
 
-        const list = getStoredProjects();
-        saveStoredProjects([created, ...list.filter((p) => p.id !== created.id)]);
+        const list = getStoredProjects(user.id);
+        saveStoredProjects([created, ...list.filter((p) => p.id !== created.id)], user.id);
         if (typeof window !== 'undefined') {
           try {
+            localStorage.setItem(`olahdata_active_project_meta_${user.id}`, JSON.stringify(created));
             localStorage.setItem('olahdata_active_project_meta', JSON.stringify(created));
           } catch {
             // ignore
@@ -803,12 +882,13 @@ export async function createProject(
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     dataVersions: [],
-    currentDataVersion: '',
+    currentDataVersion: 'dv-1',
   };
-  const list = getStoredProjects();
-  saveStoredProjects([newProject, ...list]);
+  const list = getStoredProjects(currentUid);
+  saveStoredProjects([newProject, ...list], currentUid);
   if (typeof window !== 'undefined') {
     try {
+      localStorage.setItem(`olahdata_active_project_meta_${currentUid}`, JSON.stringify(newProject));
       localStorage.setItem('olahdata_active_project_meta', JSON.stringify(newProject));
     } catch {
       // ignore
@@ -818,6 +898,7 @@ export async function createProject(
 }
 
 export async function createSampleProject(): Promise<Project> {
+  const currentUid = getCurrentUserId();
   const title = 'Pengaruh Kualitas Layanan dan Kepuasan terhadap Loyalitas Pelanggan (Data Contoh)';
   const department = 'Manajemen';
   const researchType = 'Regresi Linier Berganda';
@@ -877,8 +958,8 @@ export async function createSampleProject(): Promise<Project> {
           currentDataVersion: datasetRow?.id || `dv-${projectRow.id}-1`,
         };
 
-        const list = getStoredProjects();
-        saveStoredProjects([sampleProject, ...list]);
+        const list = getStoredProjects(user.id);
+        saveStoredProjects([sampleProject, ...list], user.id);
         return sampleProject;
       }
     }
@@ -910,12 +991,13 @@ export async function createSampleProject(): Promise<Project> {
     currentDataVersion: 'dv-sample-1',
   };
 
-  const list = getStoredProjects();
-  saveStoredProjects([fallbackSample, ...list]);
+  const list = getStoredProjects(currentUid);
+  saveStoredProjects([fallbackSample, ...list], currentUid);
   return fallbackSample;
 }
 
 export async function deleteProject(id: string): Promise<void> {
+  const currentUid = getCurrentUserId();
   try {
     const supabase = getSupabaseBrowserClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -931,11 +1013,17 @@ export async function deleteProject(id: string): Promise<void> {
     console.warn('[Supabase API] Gagal mengarsipkan proyek:', err);
   }
 
-  const list = getStoredProjects().filter((p) => p.id !== id);
-  saveStoredProjects(list);
+  const list = getStoredProjects(currentUid).filter((p) => p.id !== id);
+  saveStoredProjects(list, currentUid);
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.removeItem(`olahdata_results_${id}`);
+    } catch {}
+  }
 }
 
 export async function deleteAllProjects(): Promise<void> {
+  const currentUid = getCurrentUserId();
   try {
     const supabase = getSupabaseBrowserClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -950,7 +1038,7 @@ export async function deleteAllProjects(): Promise<void> {
     console.warn('[Supabase API] Gagal mengarsipkan semua proyek:', err);
   }
 
-  saveStoredProjects([]);
+  saveStoredProjects([], currentUid);
 }
 
 // =============================================================================

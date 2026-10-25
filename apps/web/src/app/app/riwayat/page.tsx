@@ -79,17 +79,31 @@ export default function AnalysisHistoryPage() {
         const fetchedProjects = await getProjects().catch(() => []);
         setProjects(fetchedProjects);
 
+        const userProjectIds = new Set(fetchedProjects.map((p) => p.id));
+        userProjectIds.add('sample');
+        userProjectIds.add('project-sample');
+
         let savedRuns: AnalysisRunItem[] = [];
         try {
-          const raw = localStorage.getItem('olahdata-analysis-runs');
+          const currentUid =
+            typeof window !== 'undefined' && localStorage.getItem('olahdata-session')
+              ? JSON.parse(localStorage.getItem('olahdata-session') || '{}')?.id
+              : null;
+          const storageKey = currentUid
+            ? `olahdata-analysis-runs-${currentUid}`
+            : 'olahdata-analysis-runs-guest';
+
+          const raw = localStorage.getItem(storageKey);
           if (raw) {
             const parsed = JSON.parse(raw);
             if (Array.isArray(parsed)) {
-              savedRuns = parsed.filter((r) => r && r.id && !DUMMY_RUN_IDS.has(r.id));
+              savedRuns = parsed.filter(
+                (r) => r && r.id && !DUMMY_RUN_IDS.has(r.id) && userProjectIds.has(r.projectId)
+              );
             }
           }
 
-          // Backfill real runs stored under olahdata_run_* that aren't in the list yet
+          // Backfill real runs yang tersimpan di bawah olahdata_run_* HANYA jika proyeknya milik user saat ini
           const existingIds = new Set(savedRuns.map((r) => r.id));
           for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
@@ -99,32 +113,35 @@ export default function AnalysisHistoryPage() {
                 const runRaw = localStorage.getItem(key);
                 if (runRaw) {
                   const res = JSON.parse(runRaw) as AnalysisResults;
-                  const projMatch = fetchedProjects.find((p) => p.id === res.projectId);
-                  const testLabels: string[] = ['Deskriptif'];
-                  if (res.validity && res.validity.length > 0) testLabels.push('Validitas');
-                  if (res.reliability && res.reliability.length > 0) testLabels.push('Reliabilitas');
-                  if (res.normality && res.normality.length > 0) testLabels.push('Asumsi Klasik');
-                  if (res.regression && res.regression.length > 0) testLabels.push('Regresi');
-                  if (res.correlation && res.correlation.length > 0) testLabels.push('Korelasi');
-                  savedRuns.push({
-                    id: runId,
-                    projectId: res.projectId || 'sample',
-                    projectName:
-                      res.projectTitle ||
-                      projMatch?.title ||
-                      (res.sourceMeta?.fileName
-                        ? `Analisis Data (${res.sourceMeta.fileName})`
-                        : 'Proyek Analisis Skripsi'),
-                    fileName: res.sourceMeta?.fileName || 'dataset_kuesioner.xlsx',
-                    datasetVersion: res.sourceMeta?.version || 1,
-                    datasetKind: res.sourceMeta?.kind || 'original',
-                    tests: testLabels,
-                    status: 'succeeded',
-                    startedAt: res.timestamp || new Date().toISOString(),
-                    durationMs: 2800,
-                    respondentCount: res.respondentCount || 0,
-                  });
-                  existingIds.add(runId);
+                  // Proteksi isolasi: hanya masukkan run jika milik proyek pengguna yang aktif
+                  if (res.projectId && userProjectIds.has(res.projectId)) {
+                    const projMatch = fetchedProjects.find((p) => p.id === res.projectId);
+                    const testLabels: string[] = ['Deskriptif'];
+                    if (res.validity && res.validity.length > 0) testLabels.push('Validitas');
+                    if (res.reliability && res.reliability.length > 0) testLabels.push('Reliabilitas');
+                    if (res.normality && res.normality.length > 0) testLabels.push('Asumsi Klasik');
+                    if (res.regression && res.regression.length > 0) testLabels.push('Regresi');
+                    if (res.correlation && res.correlation.length > 0) testLabels.push('Korelasi');
+                    savedRuns.push({
+                      id: runId,
+                      projectId: res.projectId || 'sample',
+                      projectName:
+                        res.projectTitle ||
+                        projMatch?.title ||
+                        (res.sourceMeta?.fileName
+                          ? `Analisis Data (${res.sourceMeta.fileName})`
+                          : 'Proyek Analisis Skripsi'),
+                      fileName: res.sourceMeta?.fileName || 'dataset_kuesioner.xlsx',
+                      datasetVersion: res.sourceMeta?.version || 1,
+                      datasetKind: res.sourceMeta?.kind || 'original',
+                      tests: testLabels,
+                      status: 'succeeded',
+                      startedAt: res.timestamp || new Date().toISOString(),
+                      durationMs: 2800,
+                      respondentCount: res.respondentCount || 0,
+                    });
+                    existingIds.add(runId);
+                  }
                 }
               }
             }
@@ -133,7 +150,12 @@ export default function AnalysisHistoryPage() {
           savedRuns.sort(
             (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
           );
-          localStorage.setItem('olahdata-analysis-runs', JSON.stringify(savedRuns));
+          localStorage.setItem(storageKey, JSON.stringify(savedRuns));
+
+          // Bersihkan kunci warisan global
+          if (localStorage.getItem('olahdata-analysis-runs')) {
+            localStorage.removeItem('olahdata-analysis-runs');
+          }
         } catch {
           // ignore
         }

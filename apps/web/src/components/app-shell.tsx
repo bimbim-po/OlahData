@@ -126,7 +126,7 @@ export function AppShell({ children }: AppShellProps) {
 
   const handleLogout = () => {
     logout();
-    router.push('/');
+    window.location.href = '/masuk';
   };
 
   const getPlanBadgeLabel = () => {
