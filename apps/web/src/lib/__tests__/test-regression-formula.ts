@@ -5,7 +5,7 @@ function runRegressionFormulaTests() {
 
   const n = mockResults.respondentCount;
   console.log(`Jumlah responden (n): ${n}`);
-  console.assert(n === 120, `Gagal: n harus 120, didapat ${n}`);
+  console.assert(n === 100, `Gagal: n harus 100, didapat ${n}`);
 
   // Menentukan jumlah prediktor k
   const nonConstantPredictors = (mockResults.regression || []).filter(
@@ -18,7 +18,7 @@ function runRegressionFormulaTests() {
   // Derajat kebebasan residual
   const dfRes = n - k - 1;
   console.log(`Derajat kebebasan residual (df_res = n - k - 1): ${dfRes}`);
-  console.assert(dfRes === 117, `Gagal: dfRes harus 117, didapat ${dfRes}`);
+  console.assert(dfRes === 97, `Gagal: dfRes harus 97, didapat ${dfRes}`);
 
   const r2 = mockResults.determination?.rSquare ?? 0;
   const adjR2 = mockResults.determination?.adjustedRSquare ?? 0;

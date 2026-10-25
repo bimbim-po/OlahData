@@ -12,7 +12,8 @@ import {
   Check,
   RotateCcw,
   ShieldCheck,
-  FileDown
+  FileDown,
+  ChevronDown,
 } from 'lucide-react';
 import {
   Dialog,
@@ -27,12 +28,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/toaster';
-import type { AnalysisResults } from '@/lib/api/types';
+import type { AnalysisResults, TestType } from '@/lib/api/types';
+import { exportResult } from '@/lib/api';
 
 interface Chapter4AsyncExportModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   results: AnalysisResults | null;
+  projectId?: string;
   projectTitle?: string;
   onCopyAllTables?: () => void;
   initialFormat?: 'docx' | 'pdf';
@@ -44,10 +47,15 @@ export function Chapter4AsyncExportModal({
   open,
   onOpenChange,
   results,
-  projectTitle = 'Pengaruh Kualitas Layanan dan Kepuasan terhadap Loyalitas Pelanggan',
+  projectId = 'sample',
+  projectTitle,
   onCopyAllTables,
   initialFormat = 'docx',
 }: Chapter4AsyncExportModalProps) {
+  const resolvedProjectTitle =
+    (projectTitle && projectTitle.trim()) ||
+    (results?.projectTitle && results.projectTitle.trim()) ||
+    'Penelitian Skripsi';
   const { toast } = useToast();
   const [format, setFormat] = useState<'docx' | 'pdf'>(initialFormat);
   const [includeDeclaration, setIncludeDeclaration] = useState(true);
@@ -74,71 +82,110 @@ export function Chapter4AsyncExportModal({
   const startAsyncExport = async () => {
     if (!results) return;
     setExportState('preparing');
-    setProgressMsg('Menghubungkan ke layanan statistik OlahData...');
+    setProgressMsg('Menyiapkan naskah Bab 4 berstandar APA 7th...');
     setErrorCode(null);
 
     try {
-      const response = await fetch('/api/ekspor', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          format,
-          projectTitle,
-          includeDeclaration,
-          results,
-          tableId: selectedTableId !== 'all' ? selectedTableId : undefined,
-        }),
-      });
+      // 1. Coba hubungi endpoint backend jika tersedia
+      let blob: Blob | null = null;
+      let outFilename = '';
 
-      if (!response.ok) {
-        throw new Error('Gagal memulai proses ekspor');
-      }
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1800);
 
-      const initData = await response.json();
-      const jobId = initData.jobId;
-      setReadyFilename(initData.filename || `OlahData_Bab4.${format}`);
+        const response = await fetch('/api/ekspor', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            format,
+            projectTitle: resolvedProjectTitle,
+            includeDeclaration,
+            results,
+            tableId: selectedTableId !== 'all' ? selectedTableId : undefined,
+            direct: true,
+          }),
+        });
+        clearTimeout(timeoutId);
 
-      // If already ready immediately
-      if (initData.status === 'ready' && initData.downloadUrl) {
-        setDownloadUrl(initData.downloadUrl);
-        setExportState('ready');
-        return;
-      }
-
-      // Start polling
-      setProgressMsg('Menyusun tabel tiga garis APA 7th & diagram residual...');
-      let elapsed = 0;
-      pollIntervalRef.current = setInterval(async () => {
-        elapsed += 2;
-        if (elapsed > 60) {
-          if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-          setExportState('failed');
-          setErrorCode('TIMEOUT_60S');
-          return;
-        }
-
-        try {
-          const pollRes = await fetch(`/api/ekspor?jobId=${jobId}`);
-          if (pollRes.ok) {
-            const pollData = await pollRes.json();
-            if (pollData.status === 'ready') {
-              if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-              setDownloadUrl(pollData.downloadUrl || `/api/ekspor?jobId=${jobId}&download=1`);
-              setReadyFilename(pollData.filename);
-              setExportState('ready');
-            } else if (pollData.status === 'failed') {
-              if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-              setExportState('failed');
-              setErrorCode(pollData.error || 'EXPORT_FAILED');
+        if (response.ok) {
+          const cType = response.headers.get('content-type') || '';
+          if (cType.includes('application/pdf') || cType.includes('officedocument') || cType.includes('msword') || cType.includes('octet-stream')) {
+            blob = await response.blob();
+            const disp = response.headers.get('content-disposition');
+            if (disp && disp.includes('filename=')) {
+              const m = disp.match(/filename="?([^"]+)"?/);
+              if (m) outFilename = m[1];
             }
           }
-        } catch {
-          // Ignore network glitch during poll
         }
-      }, 1500);
+      } catch {
+        // Backend tidak aktif (misal di Cloudflare Pages static export), otomatis fallback ke generator klien
+      }
+
+      // 2. Generator Deterministik Sisi Klien (Client-Side Fallback)
+      if (!blob) {
+        setProgressMsg('Menyusun tabel tiga garis APA 7th & diagram naskah...');
+
+        const targetFormat = format === 'pdf' ? 'pdf' : 'word';
+        const sectionsToInclude: TestType[] = [
+          'descriptive',
+          'validity',
+          'reliability',
+          'normality',
+          'multicollinearity',
+          'heteroscedasticity',
+          'regression',
+          'correlation',
+          'crosstab',
+          'odds-ratio',
+        ];
+
+        blob = await exportResult(
+          projectId,
+          {
+            format: targetFormat,
+            sections: sectionsToInclude,
+            includeStatement: includeDeclaration,
+            narrativeTone: 'standard',
+            projectTitle: resolvedProjectTitle,
+          },
+          results
+        );
+
+        const ext = format === 'pdf' ? 'pdf' : 'doc';
+        const safeTitle = (resolvedProjectTitle || 'Penelitian')
+          .replace(/[^a-zA-Z0-9]/g, '_')
+          .replace(/_+/g, '_')
+          .slice(0, 35)
+          .replace(/^_|_$/g, '') || 'Penelitian';
+        const now = new Date();
+        const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+        outFilename = `OlahData_Bab4_${safeTitle}_${dateStr}.${ext}`;
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      setDownloadUrl(url);
+      setReadyFilename(outFilename || `OlahData_Bab4.${format === 'pdf' ? 'pdf' : 'doc'}`);
+      setExportState('ready');
+
+      // Otomatis unduh langsung ke browser tanpa perlu klik berulang
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = outFilename || `OlahData_Bab4.${format === 'pdf' ? 'pdf' : 'doc'}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      toast({
+        title: 'Berkas Berhasil Dihasilkan & Diunduh',
+        description: `${outFilename} siap digunakan untuk naskah skripsi Anda.`,
+        variant: 'success',
+      });
     } catch (err: unknown) {
       setExportState('failed');
-      setErrorCode(err instanceof Error ? err.message : 'NETWORK_ERROR');
+      setErrorCode(err instanceof Error ? err.message : 'EXPORT_FAILED');
     }
   };
 
@@ -177,7 +224,10 @@ export function Chapter4AsyncExportModal({
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
-              onClick={() => setFormat('docx')}
+              onClick={() => {
+                setFormat('docx');
+                if (exportState === 'failed' || exportState === 'ready') setExportState('idle');
+              }}
               disabled={exportState === 'preparing'}
               className={cn(
                 'flex items-center gap-3 p-3.5 rounded-xl border text-left transition-all cursor-pointer',
@@ -191,13 +241,16 @@ export function Chapter4AsyncExportModal({
               </div>
               <div>
                 <span className="text-xs font-bold block text-foreground">Microsoft Word (.docx)</span>
-                <span className="text-[11px] text-muted-foreground">Tabel editable &amp; font Times</span>
+                <span className="text-[11px] text-muted-foreground">Tabel editable dan font Times</span>
               </div>
             </button>
 
             <button
               type="button"
-              onClick={() => setFormat('pdf')}
+              onClick={() => {
+                setFormat('pdf');
+                if (exportState === 'failed' || exportState === 'ready') setExportState('idle');
+              }}
               disabled={exportState === 'preparing'}
               className={cn(
                 'flex items-center gap-3 p-3.5 rounded-xl border text-left transition-all cursor-pointer',
@@ -211,7 +264,7 @@ export function Chapter4AsyncExportModal({
               </div>
               <div>
                 <span className="text-xs font-bold block text-foreground">Dokumen PDF (.pdf)</span>
-                <span className="text-[11px] text-muted-foreground">Layout identik &amp; bernomor</span>
+                <span className="text-[11px] text-muted-foreground">Layout identik dan bernomor</span>
               </div>
             </button>
           </div>
@@ -221,29 +274,32 @@ export function Chapter4AsyncExportModal({
             <label className="font-semibold text-foreground block">
               Cakupan Tabel Bab IV:
             </label>
-            <select
-              value={selectedTableId}
-              onChange={(e) => setSelectedTableId(e.target.value)}
-              disabled={exportState === 'preparing'}
-              className="w-full text-xs p-2 rounded-lg border border-border bg-background text-foreground focus:ring-1 focus:ring-primary"
-            >
-              <option value="all">Unduh Bab IV Lengkap (Seluruh Tabel 4.1 s.d. 4.15 &amp; Pembahasan)</option>
-              <option value="4.1">Tabel 4.1 Karakteristik Responden</option>
-              <option value="4.2">Tabel 4.2 Deskriptif Variabel &amp; TCR</option>
-              <option value="4.3">Tabel 4.3 Distribusi Frekuensi per Butir</option>
-              <option value="4.4">Tabel 4.4 Hasil Uji Validitas</option>
-              <option value="4.5">Tabel 4.5 Hasil Uji Reliabilitas</option>
-              <option value="4.6">Tabel 4.6 Hasil Uji Normalitas Residual</option>
-              <option value="4.7">Tabel 4.7 Hasil Uji Multikolinearitas</option>
-              <option value="4.8">Tabel 4.8 Hasil Uji Heteroskedastisitas</option>
-              <option value="4.9">Tabel 4.9 Hasil Uji Durbin-Watson</option>
-              <option value="4.10">Tabel 4.10 Analisis Regresi Linier Berganda</option>
-              <option value="4.11">Tabel 4.11 Keputusan Hipotesis</option>
-              <option value="4.12">Tabel 4.12 Matriks Korelasi</option>
-              <option value="4.13">Tabel 4.13 Uji Beda 2 Kelompok</option>
-              <option value="4.14">Tabel 4.14 Uji Beda 3+ Kelompok</option>
-              <option value="4.15">Tabel 4.15 Uji Chi-Kuadrat</option>
-            </select>
+            <div className="relative">
+              <select
+                value={selectedTableId}
+                onChange={(e) => setSelectedTableId(e.target.value)}
+                disabled={exportState === 'preparing'}
+                className="w-full appearance-none text-xs pl-3 pr-9 py-2.5 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 truncate cursor-pointer"
+              >
+                <option value="all">Unduh Bab IV Lengkap (Seluruh Tabel 4.1 s.d. 4.15 dan Pembahasan)</option>
+                <option value="4.1">Tabel 4.1 Karakteristik Responden</option>
+                <option value="4.2">Tabel 4.2 Deskriptif Variabel dan TCR</option>
+                <option value="4.3">Tabel 4.3 Distribusi Frekuensi per Butir</option>
+                <option value="4.4">Tabel 4.4 Hasil Uji Validitas</option>
+                <option value="4.5">Tabel 4.5 Hasil Uji Reliabilitas</option>
+                <option value="4.6">Tabel 4.6 Hasil Uji Normalitas Residual</option>
+                <option value="4.7">Tabel 4.7 Hasil Uji Multikolinearitas</option>
+                <option value="4.8">Tabel 4.8 Hasil Uji Heteroskedastisitas</option>
+                <option value="4.9">Tabel 4.9 Hasil Uji Durbin-Watson</option>
+                <option value="4.10">Tabel 4.10 Analisis Regresi Linier Berganda</option>
+                <option value="4.11">Tabel 4.11 Keputusan Hipotesis</option>
+                <option value="4.12">Tabel 4.12 Matriks Korelasi</option>
+                <option value="4.13">Tabel 4.13 Uji Beda 2 Kelompok</option>
+                <option value="4.14">Tabel 4.14 Uji Beda 3+ Kelompok</option>
+                <option value="4.15">Tabel 4.15 Uji Chi-Kuadrat</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground shrink-0" />
+            </div>
           </div>
 
           {/* Declaration Checkbox */}

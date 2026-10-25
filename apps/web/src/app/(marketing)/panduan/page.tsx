@@ -105,8 +105,8 @@ export default function PanduanPenggunaanPage() {
   const glossaryItems = [
     {
       term: 'Validitas (Pearson Product Moment)',
-      rule: 'r-hitung > r-tabel (atau Sig. < 0,05)',
-      desc: 'Menguji apakah setiap butir pertanyaan kuesioner benar-benar mengukur konstruk yang hendak diukur. Butir dengan r-hitung di bawah r-tabel dinyatakan gugur (drop) dan tidak diikutsertakan dalam skor total variabel.',
+      rule: 'r-hitung > r-tabel (df = N - 2, α = 0,05)',
+      desc: 'Menguji apakah setiap butir pertanyaan kuesioner benar-benar mengukur konstruk yang hendak diukur. Nilai r-tabel ditentukan berdasarkan derajat kebebasan df = N - 2 dengan taraf signifikansi α = 0,05 dua arah (two-tailed). Misalnya untuk N = 100, df = 98 sehingga r-tabel = 0,1966 ≈ 0,197. Butir dinyatakan valid jika r-hitung > r-tabel dan bernilai positif.',
     },
     {
       term: 'Reliabilitas (Cronbach’s Alpha)',
@@ -115,8 +115,8 @@ export default function PanduanPenggunaanPage() {
     },
     {
       term: 'Uji Normalitas Residual',
-      rule: 'Nilai Sig. Asymp (2-tailed) > 0,05',
-      desc: 'Memastikan residual dari model regresi berdistribusi normal dengan uji Kolmogorov-Smirnov atau Saphiro-Wilk sehingga uji signifikansi F dan t dapat diinterpretasikan secara sahih.',
+      rule: 'Nilai Sig. (p-value) > 0,05',
+      desc: 'Memastikan residual dari model regresi berdistribusi normal dengan uji Shapiro-Wilk atau Kolmogorov-Smirnov. Standar APA 7th mensyaratkan pelaporan nilai statistik uji dan signifikansi. Jika p > 0,05, asumsi normalitas terpenuhi.',
     },
     {
       term: 'Uji Multikolinearitas',
@@ -130,19 +130,19 @@ export default function PanduanPenggunaanPage() {
     },
     {
       term: 'Koefisien Determinasi (R² / R-Square)',
-      rule: 'Rentang nilai 0,000 s.d. 1,000 (0% s.d. 100%)',
+      rule: 'Rentang nilai 0 s.d. 1 (0% s.d. 100%)',
       desc: 'Menunjukkan seberapa besar persentase variasi variabel terikat (Y) yang mampu dijelaskan secara bersama-sama oleh kombinasi variabel bebas (X) dalam penelitian Anda.',
     },
   ];
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 space-y-12">
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 space-y-12 min-w-0 max-w-full">
       {/* Breadcrumb */}
       <Breadcrumb items={[{ label: 'Panduan Penggunaan', href: '/panduan' }]} />
 
       {/* Hero Header */}
-      <div className="space-y-4">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="space-y-4 text-center max-w-3xl mx-auto">
+        <div className="flex flex-wrap items-center justify-center gap-2">
           <Badge variant="mint" className="text-xs font-semibold py-0.5 px-2.5">
             Panduan Resmi
           </Badge>
@@ -158,12 +158,12 @@ export default function PanduanPenggunaanPage() {
           Panduan Penggunaan Meja Kerja {APP_NAME}
         </h1>
 
-        <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-[76ch]">
+        <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-[76ch] mx-auto">
           Pelajari cara mengolah tabulasi data kuesioner skripsi kuantitatif mulai dari penyiapan berkas Excel/CSV hingga menghasilkan tabel Bab 4 berstandar APA 7th Edition dan draf narasi interpretasi akademik yang siap disalin ke naskah skripsi Anda.
         </p>
 
         {/* CTA Buttons */}
-        <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Button asChild size="default" className="font-semibold text-xs sm:text-sm px-5 h-11 min-h-[44px] rounded-[10px] shadow-xs">
             <Link href="/app/proyek/baru?contoh=1">
               <span>Coba Langsung dengan Data Contoh</span>
@@ -182,15 +182,15 @@ export default function PanduanPenggunaanPage() {
 
       {/* Bagian 1: Alur Kerja 5 Langkah */}
       <section className="space-y-6">
-        <div>
-          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary uppercase tracking-wider mb-1">
+        <div className="text-center max-w-2xl mx-auto space-y-1.5">
+          <div className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-primary uppercase tracking-wider">
             <Workflow className="h-3.5 w-3.5" />
             <span>Alur Sistematis</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
             Alur Pengolahan Data 5 Langkah
           </h2>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-[70ch]">
+          <p className="text-xs sm:text-sm text-muted-foreground max-w-[70ch] mx-auto">
             Dirancang agar mahasiswa tingkat akhir dapat menyelesaikan bab hasil penelitian tanpa kerumitan instalasi SPSS atau sintaks kode.
           </p>
         </div>
@@ -234,15 +234,15 @@ export default function PanduanPenggunaanPage() {
 
       {/* Bagian 2: Panduan Format Berkas Excel / CSV */}
       <section className="space-y-6">
-        <div>
-          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary uppercase tracking-wider mb-1">
+        <div className="text-center max-w-2xl mx-auto space-y-1.5">
+          <div className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-primary uppercase tracking-wider">
             <FileSpreadsheet className="h-3.5 w-3.5" />
             <span>Format Tabulasi</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
             Standar Penyiapan Berkas Kuesioner
           </h2>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-[70ch]">
+          <p className="text-xs sm:text-sm text-muted-foreground max-w-[70ch] mx-auto">
             Agar kalkulasi deterministik berjalan lancar, pastikan tabulasi data kuesioner Anda memenuhi standar format berikut:
           </p>
         </div>
@@ -310,10 +310,10 @@ export default function PanduanPenggunaanPage() {
               Ingin melihat contoh struktur tabulasi yang benar?
             </h4>
             <p className="text-xs text-muted-foreground">
-              Unduh templat spreadsheet kuesioner 100 responden dengan 3 variabel bebas &amp; 1 variabel terikat.
+              Unduh templat spreadsheet kuesioner 100 responden dengan 2 variabel bebas dan 1 variabel terikat.
             </p>
           </div>
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 shrink-0">
             <Button asChild size="sm" variant="default" className="font-medium text-xs">
               <a href="/data-contoh/data_kuesioner_pemasaran_100_responden.xlsx" download>
                 <Download className="h-3.5 w-3.5 mr-1.5" />
@@ -331,28 +331,28 @@ export default function PanduanPenggunaanPage() {
 
       {/* Bagian 3: Glosarium Statistik Skripsi */}
       <section className="space-y-6">
-        <div>
-          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary uppercase tracking-wider mb-1">
+        <div className="text-center max-w-2xl mx-auto space-y-1.5">
+          <div className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-primary uppercase tracking-wider">
             <BookOpen className="h-3.5 w-3.5" />
             <span>Kaidah Uji</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
             Glosarium Kriteria Kelulusan Uji Statistik
           </h2>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-[70ch]">
+          <p className="text-xs sm:text-sm text-muted-foreground max-w-[70ch] mx-auto">
             Pedoman interpretasi angka statistik yang lazim digunakan dalam sidang skripsi dan naskah Bab 4:
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 min-w-0">
           {glossaryItems.map((item, idx) => (
-            <Card key={idx} className="border-border bg-card rounded-[14px] shadow-2xs">
+            <Card key={idx} className="border-border bg-card rounded-[14px] shadow-2xs overflow-hidden">
               <CardContent className="p-4 sm:p-5 space-y-2">
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1.5 sm:gap-2">
                   <h3 className="font-bold text-sm sm:text-base text-foreground leading-snug">
                     {item.term}
                   </h3>
-                  <Badge variant="outline" className="text-[11px] font-mono text-primary border-primary/30 shrink-0">
+                  <Badge variant="outline" className="text-[11px] font-mono text-primary border-primary/30 shrink-0 self-start whitespace-normal">
                     {item.rule}
                   </Badge>
                 </div>
@@ -367,25 +367,52 @@ export default function PanduanPenggunaanPage() {
 
       {/* Bagian 4: Tanya Jawab Praktis (FAQ) */}
       <section className="space-y-6">
-        <div>
-          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary uppercase tracking-wider mb-1">
+        <div className="text-center max-w-2xl mx-auto space-y-1.5">
+          <div className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-primary uppercase tracking-wider">
             <HelpCircle className="h-3.5 w-3.5" />
             <span>Tanya Jawab</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
             Pertanyaan Praktis Penggunaan
           </h2>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-[70ch]">
-            Jawaban langsung untuk pertanyaan teknis seputar pengolahan kuesioner:
+          <p className="text-xs sm:text-sm text-muted-foreground max-w-[70ch] mx-auto">
+            Jawaban langsung untuk pertanyaan teknis seputar pengolahan kuesioner dan sidang skripsi:
           </p>
         </div>
 
         <div className="space-y-3">
           <AccordionItem
+            question="Bagaimana aturan penentuan r tabel untuk uji validitas kuesioner?"
+            answer={
+              <p>
+                Nilai r tabel ditentukan menggunakan derajat kebebasan dengan rumus <strong>df = N - 2</strong> pada taraf signifikansi <strong>α = 0,05</strong> dua arah (two-tailed). Sebagai contoh, jika jumlah responden penelitian Anda adalah 100 orang (N = 100), maka df = 98 dan nilai r tabel adalah 0,1966 (dibulatkan menjadi 0,197). Butir pertanyaan dinyatakan valid apabila r hitung lebih besar dari r tabel (r hitung &gt; r tabel) dan bertanda positif.
+              </p>
+            }
+          />
+
+          <AccordionItem
+            question="Mengapa nilai p-value yang sangat kecil dituliskan sebagai &lt; 0,001 bukan 0,000?"
+            answer={
+              <p>
+                Berdasarkan standar penulisan ilmiah internasional APA 7th Edition (American Psychological Association), probabilitas statistik tidak pernah bernilai mutlak nol. Keluaran software statistik yang menampilkan angka &ldquo;0,000&rdquo; sesungguhnya bernilai desimal sangat kecil (misalnya 0,00000076). Standar APA mewajibkan penulisan nilai tersebut sebagai <strong>p &lt; 0,001</strong> untuk mencerminkan ketepatan matematis.
+              </p>
+            }
+          />
+
+          <AccordionItem
             question="Bagaimana jika kuesioner saya memiliki butir yang tidak valid (r hitung < r tabel)?"
             answer={
               <p>
                 Jika ada butir pertanyaan yang gugur, Anda cukup kembali ke Langkah 3 (Petakan Variabel) lalu hapus centang pada butir tersebut. Mesin akan menghitung ulang skor total variabel dan reliabilitas secara otomatis tanpa perlu mengubah berkas kuesioner asli.
+              </p>
+            }
+          />
+
+          <AccordionItem
+            question="Kapan menggunakan uji normalitas Kolmogorov-Smirnov vs Shapiro-Wilk?"
+            answer={
+              <p>
+                Uji <strong>Shapiro-Wilk</strong> lebih sensitif dan sangat dianjurkan untuk sampel kecil hingga sedang (N &lt; 100), sedangkan uji <strong>Kolmogorov-Smirnov</strong> (dengan koreksi Lilliefors) lazim digunakan untuk sampel besar (N &ge; 100). Yang diuji dalam regresi linier adalah normalitas pada nilai <em>unstandardized residual</em> (selisih nilai observasi dengan prediksi), bukan variabel mentahnya. Jika nilai p &gt; 0,05, residual dinyatakan berdistribusi normal.
               </p>
             }
           />
@@ -423,7 +450,7 @@ export default function PanduanPenggunaanPage() {
       <section className="rounded-2xl border border-border bg-card p-6 sm:p-8 space-y-4 shadow-xs">
         <div className="flex items-center gap-2 text-primary font-bold text-sm">
           <ShieldCheck className="h-5 w-5" />
-          <span>Integritas Akademik &amp; Transparansi</span>
+          <span>Integritas Akademik dan Transparansi</span>
         </div>
         <h3 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
           Butuh Pernyataan Penggunaan Alat untuk Lampiran Skripsi?

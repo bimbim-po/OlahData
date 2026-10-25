@@ -12,8 +12,12 @@ import type {
   DeterminationResult,
   CorrelationResult,
 } from '../api/types';
-import { formatNumber } from '../format';
+import { formatNumber, formatPValue, getSignificanceLabel } from '../format';
 import { ENGINE_VERSION } from '../constants';
+import goldenFixture from './hasil_acuan_bersih.json';
+import { computeIndependentTTest, computeOneWayAnova } from '../comparative-stats';
+import { computeCrosstabAndChiSquare } from '../categorical-stats';
+import { mockExperimentalDataset, mockHealthDataset } from './dataset-contoh';
 
 export const mockTestOptions: TestOption[] = [
   {
@@ -43,7 +47,7 @@ export const mockTestOptions: TestOption[] = [
   {
     id: 'normality',
     name: 'Uji Normalitas',
-    description: 'Kolmogorov-Smirnov untuk asumsi distribusi normal',
+    description: 'Kolmogorov-Smirnov & Shapiro-Wilk untuk asumsi distribusi normal',
     prerequisites: [],
     recommended: true,
     recommendReason: 'Prasyarat untuk regresi linier',
@@ -59,7 +63,7 @@ export const mockTestOptions: TestOption[] = [
   {
     id: 'heteroscedasticity',
     name: 'Uji Heteroskedastisitas',
-    description: 'Uji Glejser untuk varians residual',
+    description: 'Uji Glejser & Breusch-Pagan untuk varians residual',
     prerequisites: [],
     recommended: true,
     recommendReason: 'Prasyarat untuk regresi linier',
@@ -152,130 +156,104 @@ export const mockTestOptions: TestOption[] = [
   },
 ];
 
-// N = 120, k = 2 prediktor (X1: Kualitas Layanan, X2: Kepuasan Pelanggan, Y: Loyalitas Pelanggan)
+// Angka resmi hasil mesin statistik dari fixtures/hasil_acuan_bersih.json (N = 100)
+// Predictors: KL (Kualitas Layanan), KP (Kepuasan Pelanggan); Dependent: LP (Loyalitas Pelanggan)
+
 const descriptiveData: DescriptiveResult[] = [
   {
     variable: 'Kualitas Layanan (X1)',
-    mean: 2.843,
-    median: 2.833,
-    stdDev: 1.103,
-    min: 1.000,
-    max: 5.000,
-    n: 120,
+    mean: goldenFixture.descriptive.KL.mean,
+    median: goldenFixture.descriptive.KL.median,
+    stdDev: goldenFixture.descriptive.KL.stdDev,
+    min: goldenFixture.descriptive.KL.min,
+    max: goldenFixture.descriptive.KL.max,
+    n: goldenFixture.descriptive.KL.n,
   },
   {
     variable: 'Kepuasan Pelanggan (X2)',
-    mean: 3.047,
-    median: 3.000,
-    stdDev: 1.120,
-    min: 1.000,
-    max: 5.000,
-    n: 120,
+    mean: goldenFixture.descriptive.KP.mean,
+    median: goldenFixture.descriptive.KP.median,
+    stdDev: goldenFixture.descriptive.KP.stdDev,
+    min: goldenFixture.descriptive.KP.min,
+    max: goldenFixture.descriptive.KP.max,
+    n: goldenFixture.descriptive.KP.n,
   },
   {
     variable: 'Loyalitas Pelanggan (Y)',
-    mean: 3.067,
-    median: 3.167,
-    stdDev: 1.204,
-    min: 1.000,
-    max: 5.000,
-    n: 120,
+    mean: goldenFixture.descriptive.LP.mean,
+    median: goldenFixture.descriptive.LP.median,
+    stdDev: goldenFixture.descriptive.LP.stdDev,
+    min: goldenFixture.descriptive.LP.min,
+    max: goldenFixture.descriptive.LP.max,
+    n: goldenFixture.descriptive.LP.n,
   },
 ];
 
-// N = 120, df = 120 - 2 = 118, alpha = 0.05 -> r tabel = 0.1793
-const rTabelValue = 0.1793;
+// df = N - 2 = 98, alpha = 0.05 dua arah -> r tabel = 0.1966
+const rTabelValue = 0.1966;
 
-const validityData: ValidityResult[] = [
-  // Kualitas Layanan (KL1 - KL6)
-  { item: 'KL1', construct: 'Kualitas Layanan', rHitung: 0.860, rTabel: rTabelValue, valid: true },
-  { item: 'KL2', construct: 'Kualitas Layanan', rHitung: 0.831, rTabel: rTabelValue, valid: true },
-  { item: 'KL3', construct: 'Kualitas Layanan', rHitung: 0.844, rTabel: rTabelValue, valid: true },
-  { item: 'KL4', construct: 'Kualitas Layanan', rHitung: 0.856, rTabel: rTabelValue, valid: true },
-  { item: 'KL5', construct: 'Kualitas Layanan', rHitung: 0.839, rTabel: rTabelValue, valid: true },
-  { item: 'KL6', construct: 'Kualitas Layanan', rHitung: 0.866, rTabel: rTabelValue, valid: true },
-  // Kepuasan Pelanggan (KP1 - KP6)
-  { item: 'KP1', construct: 'Kepuasan Pelanggan', rHitung: 0.848, rTabel: rTabelValue, valid: true },
-  { item: 'KP2', construct: 'Kepuasan Pelanggan', rHitung: 0.852, rTabel: rTabelValue, valid: true },
-  { item: 'KP3', construct: 'Kepuasan Pelanggan', rHitung: 0.857, rTabel: rTabelValue, valid: true },
-  { item: 'KP4', construct: 'Kepuasan Pelanggan', rHitung: 0.871, rTabel: rTabelValue, valid: true },
-  { item: 'KP5', construct: 'Kepuasan Pelanggan', rHitung: 0.853, rTabel: rTabelValue, valid: true },
-  { item: 'KP6', construct: 'Kepuasan Pelanggan', rHitung: 0.849, rTabel: rTabelValue, valid: true },
-  // Loyalitas Pelanggan (LO1 - LO6)
-  { item: 'LO1', construct: 'Loyalitas Pelanggan', rHitung: 0.882, rTabel: rTabelValue, valid: true },
-  { item: 'LO2', construct: 'Loyalitas Pelanggan', rHitung: 0.874, rTabel: rTabelValue, valid: true },
-  { item: 'LO3', construct: 'Loyalitas Pelanggan', rHitung: 0.893, rTabel: rTabelValue, valid: true },
-  { item: 'LO4', construct: 'Loyalitas Pelanggan', rHitung: 0.884, rTabel: rTabelValue, valid: true },
-  { item: 'LO5', construct: 'Loyalitas Pelanggan', rHitung: 0.877, rTabel: rTabelValue, valid: true },
-  { item: 'LO6', construct: 'Loyalitas Pelanggan', rHitung: 0.882, rTabel: rTabelValue, valid: true },
-];
+const validityData: ValidityResult[] = Object.entries(goldenFixture.validitas).map(([item, val]) => ({
+  item,
+  construct: val.construct,
+  rHitung: val.rHitung,
+  rTabel: val.rTabel || rTabelValue,
+  valid: val.valid,
+}));
 
 const reliabilityData: ReliabilityResult[] = [
   {
     construct: 'Kualitas Layanan',
-    cronbachAlpha: 0.923,
-    itemCount: 6,
-    reliable: true,
-    alphaIfDeleted: [
-      { item: 'KL1', alpha: 0.906 },
-      { item: 'KL2', alpha: 0.912 },
-      { item: 'KL3', alpha: 0.910 },
-      { item: 'KL4', alpha: 0.907 },
-      { item: 'KL5', alpha: 0.910 },
-      { item: 'KL6', alpha: 0.906 },
-    ],
+    cronbachAlpha: goldenFixture.reliabilitas.KL.finalAlpha,
+    itemCount: goldenFixture.reliabilitas.KL.finalItemCount,
+    reliable: goldenFixture.reliabilitas.KL.reliable,
+    alphaIfDeleted: goldenFixture.reliabilitas.KL.itemsAnalysis.map((it) => ({
+      item: it.item,
+      alpha: it.alphaIfDeleted,
+    })),
   },
   {
     construct: 'Kepuasan Pelanggan',
-    cronbachAlpha: 0.931,
-    itemCount: 6,
-    reliable: true,
-    alphaIfDeleted: [
-      { item: 'KP1', alpha: 0.919 },
-      { item: 'KP2', alpha: 0.919 },
-      { item: 'KP3', alpha: 0.918 },
-      { item: 'KP4', alpha: 0.914 },
-      { item: 'KP5', alpha: 0.919 },
-      { item: 'KP6', alpha: 0.919 },
-    ],
+    cronbachAlpha: goldenFixture.reliabilitas.KP.finalAlpha,
+    itemCount: goldenFixture.reliabilitas.KP.finalItemCount,
+    reliable: goldenFixture.reliabilitas.KP.reliable,
+    alphaIfDeleted: goldenFixture.reliabilitas.KP.itemsAnalysis.map((it) => ({
+      item: it.item,
+      alpha: it.alphaIfDeleted,
+    })),
   },
   {
     construct: 'Loyalitas Pelanggan',
-    cronbachAlpha: 0.945,
-    itemCount: 6,
-    reliable: true,
-    alphaIfDeleted: [
-      { item: 'LO1', alpha: 0.934 },
-      { item: 'LO2', alpha: 0.936 },
-      { item: 'LO3', alpha: 0.932 },
-      { item: 'LO4', alpha: 0.934 },
-      { item: 'LO5', alpha: 0.935 },
-      { item: 'LO6', alpha: 0.934 },
-    ],
+    cronbachAlpha: goldenFixture.reliabilitas.LP.finalAlpha,
+    itemCount: goldenFixture.reliabilitas.LP.finalItemCount,
+    reliable: goldenFixture.reliabilitas.LP.reliable,
+    alphaIfDeleted: goldenFixture.reliabilitas.LP.itemsAnalysis.map((it) => ({
+      item: it.item,
+      alpha: it.alphaIfDeleted,
+    })),
   },
 ];
 
 const normalityData: NormalityResult[] = [
   {
-    test: 'Kolmogorov-Smirnov (Unstandardized Residual)',
-    statistic: 0.046,
-    pValue: 0.950,
-    normal: true,
+    test: 'Shapiro-Wilk (Residual)',
+    statistic: goldenFixture.asumsi_klasik.normalitas.shapiroWilk.statistic,
+    pValue: goldenFixture.asumsi_klasik.normalitas.shapiroWilk.pValue,
+    normal: goldenFixture.asumsi_klasik.normalitas.shapiroWilk.normal,
   },
 ];
 
 const multicollinearityData: MulticollinearityResult[] = [
   {
     variable: 'Kualitas Layanan (X1)',
-    tolerance: 0.709,
-    vif: 1.410,
-    problematic: false,
+    tolerance: goldenFixture.asumsi_klasik.multikolinearitas.KL.tolerance,
+    vif: goldenFixture.asumsi_klasik.multikolinearitas.KL.vif,
+    problematic: goldenFixture.asumsi_klasik.multikolinearitas.KL.problematic,
   },
   {
     variable: 'Kepuasan Pelanggan (X2)',
-    tolerance: 0.709,
-    vif: 1.410,
-    problematic: false,
+    tolerance: goldenFixture.asumsi_klasik.multikolinearitas.KP.tolerance,
+    vif: goldenFixture.asumsi_klasik.multikolinearitas.KP.vif,
+    problematic: goldenFixture.asumsi_klasik.multikolinearitas.KP.problematic,
   },
 ];
 
@@ -283,123 +261,159 @@ const heteroscedasticityData: HeteroscedasticityResult[] = [
   {
     test: 'Glejser',
     variable: 'Kualitas Layanan (X1)',
-    tHitung: 0.978,
-    pValue: 0.330,
-    significant: false,
+    tHitung: goldenFixture.asumsi_klasik.heteroskedastisitas.glejser.KL.tHitung,
+    pValue: goldenFixture.asumsi_klasik.heteroskedastisitas.glejser.KL.pValue,
+    significant: goldenFixture.asumsi_klasik.heteroskedastisitas.glejser.KL.heteroscedastic,
   },
   {
     test: 'Glejser',
     variable: 'Kepuasan Pelanggan (X2)',
-    tHitung: -0.060,
-    pValue: 0.953,
-    significant: false,
+    tHitung: goldenFixture.asumsi_klasik.heteroskedastisitas.glejser.KP.tHitung,
+    pValue: goldenFixture.asumsi_klasik.heteroskedastisitas.glejser.KP.pValue,
+    significant: goldenFixture.asumsi_klasik.heteroskedastisitas.glejser.KP.heteroscedastic,
   },
 ];
 
-// OLS regression: Y = 0.380 + 0.484 X1 + 0.430 X2
-// N = 120, k = 2 prediktor, df_res = 117
+// OLS regression dari hasil_acuan_bersih.json:
+// Y = 0.761 + 0.490 X1 + 0.375 X2
 const regressionData: RegressionResult[] = [
   {
     variable: '(Konstanta)',
-    coefficient: 0.380,
-    stdError: 0.238,
-    tHitung: 1.595,
-    pValue: 0.114,
+    coefficient: goldenFixture.regresi_berganda.coefficients[0].b,
+    stdError: goldenFixture.regresi_berganda.coefficients[0].se,
+    tHitung: goldenFixture.regresi_berganda.coefficients[0].t,
+    pValue: goldenFixture.regresi_berganda.coefficients[0].p,
     significant: false,
   },
   {
     variable: 'Kualitas Layanan (X1)',
-    coefficient: 0.484,
-    stdError: 0.081,
-    tHitung: 6.000,
-    pValue: 0.000,
-    significant: true,
+    coefficient: goldenFixture.regresi_berganda.coefficients[1].b,
+    stdError: goldenFixture.regresi_berganda.coefficients[1].se,
+    tHitung: goldenFixture.regresi_berganda.coefficients[1].t,
+    pValue: goldenFixture.regresi_berganda.coefficients[1].p,
+    significant: goldenFixture.regresi_berganda.coefficients[1].significant,
+    standardizedBeta: goldenFixture.regresi_berganda.coefficients[1].beta,
   },
   {
     variable: 'Kepuasan Pelanggan (X2)',
-    coefficient: 0.430,
-    stdError: 0.079,
-    tHitung: 5.422,
-    pValue: 0.000,
-    significant: true,
+    coefficient: goldenFixture.regresi_berganda.coefficients[2].b,
+    stdError: goldenFixture.regresi_berganda.coefficients[2].se,
+    tHitung: goldenFixture.regresi_berganda.coefficients[2].t,
+    pValue: goldenFixture.regresi_berganda.coefficients[2].p,
+    significant: goldenFixture.regresi_berganda.coefficients[2].significant,
+    standardizedBeta: goldenFixture.regresi_berganda.coefficients[2].beta,
   },
 ];
 
-// F = (R2/k) / ((1 - R2)/(n - k - 1)) = (0.5476/2) / ((1 - 0.5476)/117) = 70.824
 const fTestData: FTestResult = {
-  fHitung: 70.824,
-  fTabel: 3.074,
-  pValue: 0.000,
+  fHitung: goldenFixture.regresi_berganda.fHitung,
+  fTabel: goldenFixture.regresi_berganda.fTabel,
+  pValue: goldenFixture.regresi_berganda.pSimultan,
   significant: true,
 };
 
-// Adjusted R2 = 1 - (1 - R2)*(n - 1)/(n - k - 1) = 1 - (1 - 0.5476)*119/117 = 0.540
 const determinationData: DeterminationResult = {
-  rSquare: 0.548,
-  adjustedRSquare: 0.540,
-  stdError: 0.817,
+  rSquare: goldenFixture.regresi_berganda.rSquare,
+  adjustedRSquare: goldenFixture.regresi_berganda.adjustedRSquare,
+  stdError: goldenFixture.regresi_berganda.stdErrorEstimate,
 };
 
 const correlationData: CorrelationResult[] = [
   {
     variable1: 'Kualitas Layanan (X1)',
     variable2: 'Kepuasan Pelanggan (X2)',
-    coefficient: 0.539,
-    pValue: 0.000,
-    significant: true,
+    coefficient: goldenFixture.korelasi.pearson.KL.KP.r,
+    pValue: goldenFixture.korelasi.pearson.KL.KP.p,
+    significant: goldenFixture.korelasi.pearson.KL.KP.p < 0.05,
     strength: 'Sedang',
   },
   {
     variable1: 'Kualitas Layanan (X1)',
     variable2: 'Loyalitas Pelanggan (Y)',
-    coefficient: 0.679,
-    pValue: 0.000,
-    significant: true,
+    coefficient: goldenFixture.korelasi.pearson.KL.LP.r,
+    pValue: goldenFixture.korelasi.pearson.KL.LP.p,
+    significant: goldenFixture.korelasi.pearson.KL.LP.p < 0.05,
     strength: 'Kuat',
   },
   {
     variable1: 'Kepuasan Pelanggan (X2)',
     variable2: 'Loyalitas Pelanggan (Y)',
-    coefficient: 0.655,
-    pValue: 0.000,
-    significant: true,
-    strength: 'Kuat',
+    coefficient: goldenFixture.korelasi.pearson.KP.LP.r,
+    pValue: goldenFixture.korelasi.pearson.KP.LP.p,
+    significant: goldenFixture.korelasi.pearson.KP.LP.p < 0.05,
+    strength: 'Sedang',
   },
 ];
 
-const minValidityRHitung = Math.min(...validityData.map((v) => v.rHitung));
-const maxValidityRHitung = Math.max(...validityData.map((v) => v.rHitung));
+const sampleGroupA = mockExperimentalDataset
+  .filter((r) => r.Kelas === 'Kelas Eksperimen')
+  .map((r) => Number(r.Post_Test));
+const sampleGroupB = mockExperimentalDataset
+  .filter((r) => r.Kelas === 'Kelas Kontrol')
+  .map((r) => Number(r.Post_Test));
+
+const sampleIndependentTTest = computeIndependentTTest(
+  sampleGroupA,
+  sampleGroupB,
+  'Kelompok Layanan Prioritas',
+  'Kelompok Layanan Reguler',
+  'Loyalitas Pelanggan (Y)',
+  0.05
+);
+
+const sampleOneWayAnova = computeOneWayAnova(
+  [
+    { name: 'Pendidikan SMA/SMK', scores: sampleGroupB },
+    { name: 'Pendidikan Sarjana (S1)', scores: sampleGroupA },
+    { name: 'Pendidikan Pascasarjana (S2)', scores: sampleGroupA.map((v) => Math.min(100, v + 2)) },
+  ],
+  'Loyalitas Pelanggan (Y)',
+  'Tingkat Pendidikan',
+  0.05
+);
+
+const sampleCategorical = computeCrosstabAndChiSquare(
+  mockHealthDataset,
+  'Kebiasaan_Merokok',
+  'Kejadian_Hipertensi',
+  0.05
+);
 
 const explanations: Record<string, string> = {
-  descriptive: `Berdasarkan analisis statistik deskriptif terhadap 120 responden, variabel Kualitas Layanan (X1) memiliki rata-rata sebesar 2,843 dengan standar deviasi 1,103. Variabel Kepuasan Pelanggan (X2) memiliki nilai rata-rata sebesar 3,047 dengan standar deviasi 1,120. Sementara itu, variabel Loyalitas Pelanggan (Y) mencatatkan rata-rata sebesar 3,067 dan standar deviasi 1,204. Seluruh variabel penelitian menunjukkan sebaran skor yang representatif pada skala pengukuran 1 sampai 5.`,
+  descriptive: `Berdasarkan analisis statistik deskriptif terhadap 100 responden, variabel Kualitas Layanan (X1) memiliki rata-rata sebesar 3,738 dengan standar deviasi 0,524. Variabel Kepuasan Pelanggan (X2) memiliki nilai rata-rata sebesar 3,738 dengan standar deviasi 0,473. Sementara itu, variabel Loyalitas Pelanggan (Y) mencatatkan rata-rata sebesar 3,992 dan standar deviasi 0,551. Seluruh variabel penelitian menunjukkan sebaran skor yang representatif pada skala Likert 1 sampai 5.`,
 
-  validity: `Pengujian validitas instrumen dilakukan dengan membandingkan nilai r hitung korelasi Pearson Product Moment terhadap nilai r tabel sebesar 0,1793 pada taraf signifikansi 0,05 (df = 118, N = 120). Seluruh item kuesioner (18 butir pernyataan) menunjukkan nilai r hitung yang berkisar antara 0,831 hingga 0,893, yang mana seluruhnya lebih besar dari nilai r tabel (0,1793). Dengan demikian, setiap butir pernyataan pada konstruk Kualitas Layanan (X1), Kepuasan Pelanggan (X2), dan Loyalitas Pelanggan (Y) dinyatakan valid dan layak digunakan sebagai alat pengumpulan data.`,
+  validity: `Pengujian validitas instrumen dilakukan dengan membandingkan nilai r hitung korelasi Pearson Product Moment terhadap nilai r tabel sebesar 0,197 pada taraf signifikansi 0,05 (df = 98, N = 100). Pada variabel Kualitas Layanan (X1), empat butir pernyataan (KL1 sampai KL4) memiliki nilai r hitung antara 0,372 hingga 0,577 yang lebih besar dari r tabel (0,197) sehingga dinyatakan valid, sedangkan butir KL5 memiliki r hitung -0,047 (p = 0,641) sehingga gugur dan dikeluarkan dari model. Seluruh butir pernyataan Kepuasan Pelanggan (KP1-KP5) dan Loyalitas Pelanggan (LP1-LP5) dinyatakan valid.`,
 
-  reliability: `Uji reliabilitas terhadap ketiga konstruk penelitian menggunakan koefisien Cronbach's Alpha menghasilkan nilai reliabilitas yang memenuhi kriteria reliabilitas (alfa Cronbach > 0,70). Konstruk Kualitas Layanan (X1) memperoleh nilai alpha sebesar 0,923, konstruk Kepuasan Pelanggan (X2) sebesar 0,931, dan konstruk Loyalitas Pelanggan (Y) sebesar 0,945. Hasil ini mengindikasikan bahwa seluruh instrumen memiliki konsistensi internal yang tinggi dan reliabel untuk pengukuran berulang.`,
+  reliability: `Uji reliabilitas terhadap ketiga konstruk penelitian menggunakan koefisien Cronbach's Alpha menghasilkan nilai reliabilitas yang memenuhi kriteria reliabilitas (alfa Cronbach > 0,70). Konstruk Kualitas Layanan (X1) dengan 4 butir valid memperoleh nilai alpha sebesar 0,796, konstruk Kepuasan Pelanggan (X2) sebesar 0,753, dan konstruk Loyalitas Pelanggan (Y) sebesar 0,826. Hasil ini mengindikasikan bahwa seluruh instrumen memiliki konsistensi internal yang tinggi dan reliabel untuk pengukuran berulang.`,
 
-  normality: `Uji normalitas residual dilakukan menggunakan uji Kolmogorov-Smirnov pada model regresi terestimasi (N = 120). Nilai statistik uji Kolmogorov-Smirnov yang diperoleh adalah sebesar 0,046 dengan nilai signifikansi (p-value) sebesar 0,950. Karena nilai signifikansi tersebut lebih besar dari tingkat signifikansi α = 0,05, dapat disimpulkan bahwa data residual terdistribusi secara normal dan asumsi normalitas terpenuhi.`,
+  normality: `Uji normalitas residual dilakukan menggunakan uji Shapiro-Wilk pada model regresi terestimasi (N = 100). Nilai statistik uji Shapiro-Wilk yang diperoleh adalah sebesar 0,991 dengan nilai signifikansi (p-value) sebesar 0,733. Karena nilai signifikansi tersebut lebih besar dari tingkat signifikansi α = 0,05, dapat disimpulkan bahwa data residual terdistribusi secara normal dan asumsi normalitas terpenuhi.`,
 
-  multicollinearity: `Uji multikolinearitas bertujuan menguji apakah ditemukan korelasi tinggi antar variabel independen dalam model regresi. Nilai tolerance untuk kedua variabel independen (Kualitas Layanan (X1) dan Kepuasan Pelanggan (X2)) adalah 0,709 yang berada di atas 0,10. Selain itu, nilai Variance Inflation Factor (VIF) untuk kedua variabel adalah 1,410 yang jauh di bawah ambang batas 10,00. Dengan demikian, model regresi dinyatakan terbebas dari masalah multikolinearitas.`,
+  multicollinearity: `Uji multikolinearitas bertujuan menguji apakah ditemukan korelasi tinggi antar variabel independen dalam model regresi. Nilai tolerance untuk kedua variabel independen (Kualitas Layanan (X1) dan Kepuasan Pelanggan (X2)) adalah 0,951 yang berada jauh di atas 0,10. Selain itu, nilai Variance Inflation Factor (VIF) untuk kedua variabel adalah 1,051 yang jauh di bawah ambang batas 10,00. Dengan demikian, model regresi dinyatakan terbebas dari masalah multikolinearitas.`,
 
-  heteroscedasticity: `Pengujian gejala heteroskedastisitas dilakukan menggunakan uji Glejser dengan meregresikan nilai residual absolut terhadap masing-masing variabel bebas. Nilai signifikansi uji Glejser untuk Kualitas Layanan (X1) adalah 0,330 (t hitung = 0,978) dan untuk Kepuasan Pelanggan (X2) adalah 0,953 (t hitung = -0,060). Karena kedua nilai signifikansi lebih besar dari 0,05, maka tidak terdapat gejala heteroskedastisitas pada model regresi yang digunakan.`,
+  heteroscedasticity: `Pengujian gejala heteroskedastisitas dilakukan menggunakan uji Glejser dengan meregresikan nilai residual absolut terhadap masing-masing variabel bebas. Nilai signifikansi uji Glejser untuk Kualitas Layanan (X1) adalah 0,966 (t hitung = -0,042) yang lebih besar dari 0,05. Secara simultan melalui uji Breusch-Pagan, diperoleh nilai signifikansi sebesar 0,287 (> 0,05), sehingga model regresi dinyatakan terbebas dari gejala heteroskedastisitas.`,
 
-  regression: `Persamaan regresi linier berganda yang dihasilkan adalah Y = 0,380 + 0,484X1 + 0,430X2. Pengujian parsial (uji t) menunjukkan bahwa variabel Kualitas Layanan (X1) berpengaruh positif dan signifikan terhadap Loyalitas Pelanggan (Y) dengan t hitung sebesar 6,000 dan nilai signifikansi 0,000 < 0,05. Demikian pula, variabel Kepuasan Pelanggan (X2) berpengaruh positif dan signifikan terhadap Loyalitas Pelanggan (Y) dengan t hitung sebesar 5,422 dan signifikansi 0,000 < 0,05. Nilai koefisien positif menunjukkan bahwa peningkatan kualitas layanan dan kepuasan pelanggan berpengaruh positif dan signifikan terhadap loyalitas pelanggan.`,
+  regression: `Persamaan regresi linier berganda yang dihasilkan adalah Y = 0,761 + 0,490X1 + 0,375X2. Pengujian parsial (uji t) menunjukkan bahwa variabel Kualitas Layanan (X1) berpengaruh positif dan signifikan terhadap Loyalitas Pelanggan (Y) dengan t hitung sebesar 5,708 dan nilai signifikansi p < 0,001. Demikian pula, variabel Kepuasan Pelanggan (X2) berpengaruh positif dan signifikan terhadap Loyalitas Pelanggan (Y) dengan t hitung sebesar 3,942 dan signifikansi p < 0,001. Nilai koefisien determinasi R Square sebesar 0,386 (Adjusted R Square = 0,374) dengan F hitung sebesar 30,525 (p < 0,001).`,
 
-  fTest: `Uji signifikansi simultan (uji F) dengan N = 120 dan 2 prediktor menghasilkan nilai F hitung sebesar 70,824 yang lebih besar dari nilai F tabel sebesar 3,074 dengan nilai signifikansi sebesar 0,000 < 0,05. Hal ini membuktikan bahwa Kualitas Layanan (X1) dan Kepuasan Pelanggan (X2) secara serempak atau bersama-sama berpengaruh signifikan terhadap Loyalitas Pelanggan (Y). Model regresi yang dibangun terbukti fit dan layak untuk menjelaskan variasi variabel terikat.`,
+  fTest: `Uji signifikansi simultan (uji F) dengan N = 100 dan 2 prediktor menghasilkan nilai F hitung sebesar 30,525 yang lebih besar dari nilai F tabel sebesar 3,090 dengan nilai signifikansi sebesar p < 0,001. Hal ini membuktikan bahwa Kualitas Layanan (X1) dan Kepuasan Pelanggan (X2) secara serempak atau bersama-sama berpengaruh signifikan terhadap Loyalitas Pelanggan (Y). Model regresi yang dibangun terbukti fit dan layak untuk menjelaskan variasi variabel terikat.`,
 
-  determination: `Berdasarkan tabel koefisien determinasi (N = 120, k = 2), diperoleh nilai R Square sebesar 0,548 dan Adjusted R Square sebesar 0,540. Hal ini mengindikasikan bahwa sebesar 54,0% variasi pada Loyalitas Pelanggan (Y) dapat dijelaskan secara bersama oleh Kualitas Layanan (X1) dan Kepuasan Pelanggan (X2). Sementara itu, sisa variasi sebesar 46,0% dipengaruhi oleh variabel lain di luar model penelitian ini. Nilai standar error estimasi adalah sebesar 0,817.`,
+  determination: `Berdasarkan tabel koefisien determinasi (N = 100, k = 2), diperoleh nilai R Square sebesar 0,386 dan Adjusted R Square sebesar 0,374. Hal ini mengindikasikan bahwa sebesar 37,4% variasi pada Loyalitas Pelanggan (Y) dapat dijelaskan secara bersama oleh Kualitas Layanan (X1) dan Kepuasan Pelanggan (X2). Sementara itu, sisa variasi sebesar 62,6% dipengaruhi oleh faktor lain di luar model penelitian ini. Nilai standar error estimasi adalah sebesar 0,436.`,
 
-  correlation: `Analisis korelasi Pearson menunjukkan korelasi antara Kualitas Layanan (X1) dan Kepuasan Pelanggan (X2) sebesar 0,539 (kategori Sedang, p = 0,000). Hubungan antara Kualitas Layanan (X1) dan Loyalitas Pelanggan (Y) memiliki koefisien korelasi sebesar 0,679 (kategori Kuat, p = 0,000). Sedangkan korelasi antara Kepuasan Pelanggan (X2) dan Loyalitas Pelanggan (Y) mencapai 0,655 (kategori Kuat, p = 0,000). Seluruh pasangan variabel berkorelasi positif secara signifikan pada tingkat signifikansi 0,01.`,
+  correlation: `Analisis korelasi Pearson menunjukkan korelasi antara Kualitas Layanan (X1) dan Kepuasan Pelanggan (X2) sebesar 0,221 (p = 0,027). Hubungan antara Kualitas Layanan (X1) dan Loyalitas Pelanggan (Y) memiliki koefisien korelasi sebesar 0,537 (p < 0,001). Sedangkan korelasi antara Kepuasan Pelanggan (X2) dan Loyalitas Pelanggan (Y) mencapai 0,424 (p < 0,001). Seluruh pasangan variabel berkorelasi positif secara signifikan.`,
+
+  independentTTest: sampleIndependentTTest.conclusion,
+  oneWayAnova: sampleOneWayAnova.conclusion,
+  crosstab: `Tabulasi silang melibatkan ${sampleCategorical.crosstab.totalN} responden valid dengan distribusi frekuensi aktual dan harapan (expected count) lengkap.`,
+  chisquare: sampleCategorical.chiSquare.conclusion,
 };
 
 export const mockResults: AnalysisResults = {
   id: 'result-1',
   projectId: 'project-1',
   dataVersionId: 'dv-2',
-  respondentCount: 120,
-  timestamp: '2026-10-13T14:30:00Z',
+  respondentCount: goldenFixture.n,
+  timestamp: '2026-10-15T14:30:00Z',
   engineVersion: ENGINE_VERSION,
-  significanceLevel: 0.05,
+  significanceLevel: goldenFixture.significanceLevel,
   descriptive: descriptiveData,
   validity: validityData,
   reliability: reliabilityData,
@@ -410,5 +424,11 @@ export const mockResults: AnalysisResults = {
   fTest: fTestData,
   determination: determinationData,
   correlation: correlationData,
+  independentTTest: sampleIndependentTTest,
+  oneWayAnova: sampleOneWayAnova,
+  crosstab: sampleCategorical.crosstab,
+  chiSquare: sampleCategorical.chiSquare,
+  riskEstimate: sampleCategorical.riskEstimate,
+  symmetricMeasures: sampleCategorical.symmetricMeasures,
   explanations,
 };

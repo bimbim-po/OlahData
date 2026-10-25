@@ -7,10 +7,10 @@ export interface PlanEntitlements {
   name: string;
   price: number;
   periodLabel: string;
-  maxActiveProjects: number; // 1 for free, 5 for monthly, Infinity for thesis
-  maxRespondents: number; // 50 for free, 2000 for monthly, 10000 for thesis
-  maxItems: number; // 30 for free, 150 for monthly, 300 for thesis
-  allowedTests: string[]; // ['descriptive', 'validity'] for free, ['*'] for pro
+  maxActiveProjects: number; // 1 for free, 1 for monthly, 3 for thesis
+  maxRespondents: number; // 150 for free, 500 for monthly, 2500 for thesis
+  maxItems: number; // 30 for free, 150 for monthly, Infinity for thesis
+  allowedTests: string[]; // ['descriptive', 'validity', 'reliability'] for free, ['*'] for pro
   allowExportAndCopy: boolean; // false on free for user's own projects
   allowDatasetVersioning: boolean; // false on free, false on monthly (max 1 clean version), true on thesis (unlimited)
   features: string[];
@@ -23,17 +23,18 @@ export const PLAN_ENTITLEMENTS: Record<SubscriptionPlan, PlanEntitlements> = {
     price: 0,
     periodLabel: 'Rp 0',
     maxActiveProjects: 1,
-    maxRespondents: 50,
+    maxRespondents: 150,
     maxItems: 30,
-    allowedTests: ['descriptive', 'validity'],
+    allowedTests: ['descriptive', 'validity', 'reliability'],
     allowExportAndCopy: false,
     allowDatasetVersioning: false,
     features: [
-      '1 proyek buatan sendiri',
-      'Maksimal 50 data responden',
+      '1 proyek aktif',
+      'Hingga 150 data responden (cukup untuk N=100)',
       'Maksimal 30 butir pertanyaan',
-      'Uji Statistik Deskriptif & Validitas Item',
-      'Pratinjau struktur tabel uji hipotesis',
+      'Uji Statistik Deskriptif, Validitas, & Reliabilitas',
+      'Kunci paywall pada Asumsi Klasik & Regresi',
+      'Ekspor ber-watermark (pratinjau)',
     ],
   },
   monthly: {
@@ -41,39 +42,53 @@ export const PLAN_ENTITLEMENTS: Record<SubscriptionPlan, PlanEntitlements> = {
     name: 'Paket Bulanan',
     price: 39000,
     periodLabel: 'Rp 39.000 / 30 hari',
-    maxActiveProjects: 5,
-    maxRespondents: 2000,
+    maxActiveProjects: 1,
+    maxRespondents: 500,
     maxItems: 150,
-    allowedTests: ['*'],
+    allowedTests: [
+      'descriptive',
+      'validity',
+      'reliability',
+      'normality',
+      'multicollinearity',
+      'heteroscedasticity',
+      'regression',
+      'correlation',
+      'ftest',
+      'determination',
+    ],
     allowExportAndCopy: true,
     allowDatasetVersioning: false,
     features: [
-      'Hingga 5 proyek penelitian aktif',
-      'Hingga 2.000 data responden',
+      '1 proyek skripsi aktif (kunci konstruk variabel)',
+      'Maksimal 500 data responden',
       'Hingga 150 butir instrumen pertanyaan',
-      'Seluruh uji statistik (Regresi, Reliabilitas, Asumsi, Komparatif, Kategorik)',
+      'Semua uji statistik dasar & asumsi klasik',
+      'Regresi linier berganda & uji hipotesis',
       'Ekspor Word (.docx) & PDF resmi tanpa watermark',
       'Salin semua tabel standar APA 7th Edition',
     ],
   },
   thesis: {
     tier: 'thesis',
-    name: 'Paket Skripsi',
+    name: 'Paket Skripsi Tuntas',
     price: 99000,
     periodLabel: 'Rp 99.000 / 90 hari',
-    maxActiveProjects: Infinity,
-    maxRespondents: 10000,
-    maxItems: 300,
+    maxActiveProjects: 3,
+    maxRespondents: 2500,
+    maxItems: Infinity,
     allowedTests: ['*'],
     allowExportAndCopy: true,
     allowDatasetVersioning: true,
     features: [
-      'Proyek penelitian tanpa batas (unlimited)',
-      'Hingga 10.000 data responden',
-      'Hingga 300 butir instrumen pertanyaan',
-      'Seluruh uji statistik lengkap & modul eksperimen/kesehatan',
-      'Ekspor Word (.docx), PDF, & Lampiran Output SPSS (.spv/Word)',
-      'Multi-versi pembersihan data & eliminasi outlier tanpa batas',
+      '3 proyek aktif (pilot test, data utama, & revisi sidang)',
+      'Hingga 2.500 data responden',
+      'Instrumen butir pertanyaan tak terbatas',
+      'Semua fitur Paket Bulanan',
+      'Dukungan Uji Mediasi (Sobel/Path) & Moderasi (MRA)',
+      'Fitur "Obat Data" (Auto-Transformasi & Outlier Trimming)',
+      'Ekspor Lampiran Matriks Statistik (Siap Cetak untuk Dospem)',
+      'Multi-versi pembersihan data & jejak hitung tanpa batas',
       'Bekal sidang skripsi (kartu tanya-jawab metodologi dosen)',
     ],
   },
@@ -110,9 +125,17 @@ export function isSampleProject(projectOrId: { id?: string; title?: string } | s
  * Memeriksa apakah suatu pengujian statistik terkunci pada paket pengguna
  */
 export function isTestLockedForPlan(plan: SubscriptionPlan = 'free', testId: string): boolean {
+  const testNorm = testId.toLowerCase();
+
+  // Uji mediasi, moderasi, atau obat data eksklusif di Paket Skripsi Tuntas
+  if (['mediation', 'moderation', 'data_remedy', 'obat_data', 'sobel', 'mra'].includes(testNorm)) {
+    return plan !== 'thesis';
+  }
+
   if (plan === 'monthly' || plan === 'thesis') return false;
-  const freeAllowed = ['descriptive', 'validity'];
-  return !freeAllowed.includes(testId.toLowerCase());
+
+  const freeAllowed = ['descriptive', 'validity', 'reliability'];
+  return !freeAllowed.includes(testNorm);
 }
 
 /**
@@ -183,12 +206,12 @@ export function canPerformOutlierCleaning(
     }
     return {
       allowed: false,
-      reason: 'Paket Bulanan dibatasi maksimal 1 versi data bersih. Upgrade ke Paket Skripsi untuk membuat revisi data tanpa batas.',
+      reason: 'Paket Bulanan dibatasi maksimal 1 versi data bersih. Upgrade ke Paket Skripsi Tuntas untuk membuat revisi data tanpa batas.',
     };
   }
   return {
     allowed: false,
-    reason: 'Fitur One-Click Troubleshooter & Eliminasi Outlier otomatis memerlukan Paket Bulanan atau Paket Skripsi.',
+    reason: 'Fitur "Obat Data" & Eliminasi Outlier otomatis memerlukan Paket Skripsi Tuntas.',
   };
 }
 

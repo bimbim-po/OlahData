@@ -9,6 +9,7 @@ import * as z from 'zod';
 import { ArrowLeft, CheckCircle2, FlaskConical, Zap, HelpCircle, Lock } from 'lucide-react';
 import { createProject, getProjects } from '@/lib/api';
 import type { Project } from '@/lib/api/types';
+import { useWizardStore } from '@/stores/wizard-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -103,6 +104,9 @@ function NewProjectForm() {
         data.researchType
       );
 
+      useWizardStore.getState().resetWizard();
+      useWizardStore.getState().setProjectId(newProject.id);
+
       toast({
         title: 'Proyek berhasil dibuat',
         description: 'Mengarahkan ke lembar analisis data...',
@@ -112,7 +116,11 @@ function NewProjectForm() {
       const targetUrl = isDemo
         ? `/app/proyek/${newProject.id}/analisis?contoh=1`
         : `/app/proyek/${newProject.id}/analisis`;
-      router.push(targetUrl);
+      if (typeof window !== 'undefined') {
+        window.location.href = targetUrl;
+      } else {
+        router.push(targetUrl);
+      }
     } catch {
       toast({
         title: 'Gagal membuat proyek',
@@ -124,19 +132,40 @@ function NewProjectForm() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4">
+    <div className="max-w-2xl mx-auto space-y-5">
       {/* Demo Mode Notice */}
       {isDemo && (
-        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-center justify-between gap-3 text-xs sm:text-sm">
-          <div className="flex items-center gap-2.5">
-            <FlaskConical className="h-4 w-4 text-primary shrink-0" />
-            <p className="text-foreground">
-              <strong className="font-semibold">Ruang Kerja Simulasi Demo:</strong> Anda dapat langsung mencoba seluruh tahapan analisis menggunakan data contoh tanpa perlu mendaftar.
-            </p>
+        <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs sm:text-sm shadow-xs">
+          <div className="flex items-start gap-3">
+            <div className="h-9 w-9 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0 mt-0.5">
+              <FlaskConical className="h-4 w-4" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <strong className="font-semibold text-foreground">Ruang Kerja Simulasi Demo</strong>
+                <Badge variant="mint" className="text-[10px] font-medium">
+                  Data Contoh
+                </Badge>
+              </div>
+              <p className="text-muted-foreground leading-relaxed text-xs">
+                Formulir di bawah sudah terisi contoh judul skripsi, atau Anda dapat langsung melompat ke simulasi data kuesioner N = 120 responden.
+              </p>
+            </div>
           </div>
-          <Badge variant="mint" className="text-[10px] shrink-0 font-medium">
-            Data Contoh
-          </Badge>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.location.href = '/app/proyek/sample/analisis?contoh=1';
+              } else {
+                router.push('/app/proyek/sample/analisis?contoh=1');
+              }
+            }}
+            className="shrink-0 font-semibold rounded-xl min-h-[40px] px-4 cursor-pointer"
+          >
+            Langsung Buka Simulasi
+          </Button>
         </div>
       )}
 

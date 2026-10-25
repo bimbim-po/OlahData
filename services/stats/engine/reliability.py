@@ -57,10 +57,42 @@ def compute_reliability(
         available_items = [it for it in items if it in clean_df.columns]
 
         if len(available_items) < 2:
+            results.append({
+                "construct": construct_name,
+                "code": construct_code,
+                "cronbachAlpha": None,
+                "initialAlpha": None,
+                "finalAlpha": None,
+                "itemCount": len(available_items),
+                "initialItemCount": len(available_items),
+                "finalItemCount": len(available_items),
+                "reliable": False,
+                "alphaThreshold": alpha_threshold,
+                "status": "Tidak dapat dihitung (kurang dari 2 butir)",
+                "note": f"Uji reliabilitas Cronbach's Alpha tidak dapat dihitung karena konstruk '{construct_name}' hanya memiliki {len(available_items)} butir (minimal 2 butir).",
+                "itemsAnalysis": [],
+                "alphaIfDeleted": []
+            })
             continue
 
         item_df = clean_df[available_items].dropna()
         if len(item_df) < 3:
+            results.append({
+                "construct": construct_name,
+                "code": construct_code,
+                "cronbachAlpha": None,
+                "initialAlpha": None,
+                "finalAlpha": None,
+                "itemCount": len(available_items),
+                "initialItemCount": len(available_items),
+                "finalItemCount": len(available_items),
+                "reliable": False,
+                "alphaThreshold": alpha_threshold,
+                "status": "Tidak dapat dihitung (responden valid < 3)",
+                "note": f"Jumlah responden lengkap untuk konstruk '{construct_name}' kurang dari 3.",
+                "itemsAnalysis": [],
+                "alphaIfDeleted": []
+            })
             continue
 
         # Initial Alpha with all items

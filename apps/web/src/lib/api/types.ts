@@ -14,7 +14,28 @@ import type {
   SymmetricMeasuresResult,
 } from '../categorical-stats';
 
+import type {
+  ShapiroWilkResult,
+  LillieforsResult,
+  SkewnessKurtosisResult,
+  CasewiseDiagnosticItem,
+  CasewiseDiagnosticsSummary,
+  WhiteHeteroscedasticityResult,
+  TransformationRecommendation,
+  TransformedVariableResult,
+  SpearmanCorrelationItem,
+} from '../assumption-remedies';
+
 export type {
+  ShapiroWilkResult,
+  LillieforsResult,
+  SkewnessKurtosisResult,
+  CasewiseDiagnosticItem,
+  CasewiseDiagnosticsSummary,
+  WhiteHeteroscedasticityResult,
+  TransformationRecommendation,
+  TransformedVariableResult,
+  SpearmanCorrelationItem,
   PairedTTestResult,
   NGainSummary,
   IndependentTTestResult,
@@ -29,7 +50,7 @@ export type {
 
 export type ProjectStatus = 'draft' | 'analyzing' | 'completed';
 export type IssueSeverity = 'error' | 'warning' | 'info';
-export type VariableRole = 'independent' | 'dependent';
+export type VariableRole = 'independent' | 'dependent' | 'mediator' | 'moderator';
 export type ResearchDesign = 'survey' | 'comparative' | 'categorical';
 export type TestType =
   | 'descriptive'
@@ -51,7 +72,9 @@ export type TestType =
   | 'nonparametric'
   | 'crosstab'
   | 'chisquare'
-  | 'odds-ratio';
+  | 'odds-ratio'
+  | 'mediation'
+  | 'moderation';
 
 export type SubscriptionPlan = 'free' | 'monthly' | 'thesis';
 export type ExportFormat = 'word' | 'pdf' | 'spss-word';
@@ -306,7 +329,10 @@ export interface AnovaResult {
 export interface AnalysisResults {
   id: string;
   projectId: string;
+  projectTitle?: string;
+  department?: string;
   dataVersionId: string;
+  hypotheses?: string[];
   respondentCount: number;
   timestamp: string;
   engineVersion: string;
@@ -341,13 +367,24 @@ export interface AnalysisResults {
   chiSquare?: ChiSquareResult;
   riskEstimate?: RiskEstimateResult;
   symmetricMeasures?: SymmetricMeasuresResult;
+  shapiroWilk?: ShapiroWilkResult;
+  lillieforsNormality?: LillieforsResult;
+  skewnessKurtosis?: SkewnessKurtosisResult;
+  casewiseDiagnostics?: CasewiseDiagnosticsSummary;
+  whiteHetero?: WhiteHeteroscedasticityResult;
+  transformationRecommendations?: TransformationRecommendation[];
+  spearmanConstructMatrix?: SpearmanCorrelationItem[];
+  pathAnalysis?: MediationAnalysisSummary;
+  moderationAnalysis?: ModerationAnalysisSummary;
+  unstandardizedResiduals?: number[];
+  standardizedResiduals?: number[];
   explanations: Record<string, string>;
   sourceMeta?: DatasetSourceMeta;
 }
 
 export interface ColumnRoleInfo {
   name: string;
-  role: 'id' | 'demographic' | 'item' | 'ignored';
+  role: 'id' | 'demographic' | 'item' | 'open_question' | 'ignored';
   dataType: string;
   missingCount: number;
 }
@@ -385,6 +422,7 @@ export interface ExportOptions {
   sections: TestType[];
   includeStatement: boolean;
   narrativeTone?: 'standard' | 'concise' | 'formal';
+  projectTitle?: string;
 }
 
 export interface BillingRecord {
@@ -393,4 +431,160 @@ export interface BillingRecord {
   description: string;
   amount: number;
   status: 'paid' | 'pending' | 'failed';
+}
+
+// =============================================================================
+// ANALISIS JALUR (PATH ANALYSIS) & UJI SOBEL (MEDIASI)
+// =============================================================================
+
+export interface PathCoefficient {
+  path: string; // e.g. 'X1 -> Z'
+  fromVar: string;
+  toVar: string;
+  unstandardizedB: number;
+  se: number;
+  standardizedBeta: number;
+  tStatistic: number;
+  pValue: number;
+  significant: boolean;
+}
+
+export interface PathSubmodelResult {
+  equationName: string; // e.g. 'Sub-struktur 1: Pengaruh X terhadap Z'
+  submodelIndex: number;
+  dependentVar: string;
+  independentVars: string[];
+  constant: {
+    b: number;
+    se: number;
+    t: number;
+    pValue: number;
+  };
+  coefficients: PathCoefficient[];
+  rSquare: number;
+  adjustedRSquare: number;
+  fStatistic: number;
+  fPValue: number;
+  residualError: number; // e = sqrt(1 - R^2)
+}
+
+export interface SobelMediationResult {
+  independentVar: string; // X
+  mediatorVar: string; // Z
+  dependentVar: string; // Y
+  pathA: {
+    b: number; // a
+    se: number; // s_a
+    beta: number;
+    t: number;
+    pValue: number;
+    significant: boolean;
+  };
+  pathB: {
+    b: number; // b
+    se: number; // s_b
+    beta: number;
+    t: number;
+    pValue: number;
+    significant: boolean;
+  };
+  pathCPrime: {
+    b: number; // c'
+    se: number;
+    beta: number;
+    t: number;
+    pValue: number;
+    significant: boolean;
+  };
+  directEffect: number; // standardized beta X -> Y
+  indirectEffect: number; // beta_a * beta_b
+  totalEffect: number; // directEffect + indirectEffect
+  unstandardizedIndirectEffect: number; // a * b
+  unstandardizedTotalEffect: number; // c' + (a * b)
+  sobelSE: number; // sqrt(b^2 * s_a^2 + a^2 * s_b^2)
+  sobelZ: number; // (a * b) / sobelSE
+  sobelPValue: number; // 2 * (1 - Phi(|z|))
+  significant: boolean;
+  mediationType: 'Full Mediation' | 'Partial Mediation' | 'No Mediation';
+  vafRatio: number; // Variance Accounted For: Indirect / Total (0 to 1)
+  conclusion: string;
+}
+
+export interface MediationEffectItem {
+  pathDescription: string;
+  independentVar: string;
+  mediatorVar: string;
+  dependentVar: string;
+  directEffect: number;
+  indirectEffect: number;
+  totalEffect: number;
+  sobelZ: number;
+  sobelP: number;
+  mediationType: 'Full Mediation' | 'Partial Mediation' | 'No Mediation';
+  conclusion: string;
+}
+
+export interface MediationAnalysisSummary {
+  hasMediation: boolean;
+  mediatorCount: number;
+  submodels: PathSubmodelResult[];
+  sobelResults: SobelMediationResult[];
+  effectTable: MediationEffectItem[];
+}
+
+// =============================================================================
+// MODERATED REGRESSION ANALYSIS / MRA (MODERASI)
+// =============================================================================
+
+export interface MraModelSummary {
+  modelNumber: number; // 1 or 2
+  modelName: string;
+  variables: string[];
+  constant: {
+    b: number;
+    se: number;
+    t: number;
+    pValue: number;
+  };
+  coefficients: {
+    variable: string;
+    b: number;
+    se: number;
+    beta: number;
+    t: number;
+    pValue: number;
+    significant: boolean;
+  }[];
+  rSquare: number;
+  adjustedRSquare: number;
+  fStatistic: number;
+  fPValue: number;
+}
+
+export interface ModerationResultItem {
+  independentVar: string; // X
+  moderatorVar: string; // Z
+  dependentVar: string; // Y
+  interactionTermName: string; // e.g. 'X * Z'
+  model1: MraModelSummary;
+  model2: MraModelSummary;
+  rSquareChange: number; // Delta R^2
+  fChange: number; // Delta F
+  fChangePValue: number; // p of Delta F
+  interactionB: number; // b3
+  interactionSE: number;
+  interactionBeta: number;
+  interactionT: number;
+  interactionPValue: number;
+  interactionSignificant: boolean;
+  mainModeratorSignificant: boolean; // p < 0.05 of beta2 (Z)
+  moderatorType: 'Pure Moderator' | 'Quasi Moderator' | 'Predictor Moderator' | 'Homologiser (Bukan Moderasi)';
+  moderationDirection: 'Memperkuat' | 'Memperlemah' | 'Tidak Berpengaruh';
+  conclusion: string;
+}
+
+export interface ModerationAnalysisSummary {
+  hasModeration: boolean;
+  moderatorCount: number;
+  results: ModerationResultItem[];
 }

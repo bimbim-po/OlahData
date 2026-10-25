@@ -63,7 +63,22 @@ export async function POST(request: Request) {
       const supabaseAdmin = getSupabaseAdminClient();
       const { error } = await supabaseAdmin.from('waitlist').insert([payload]);
       if (error) {
-        console.warn('[Waitlist API] Supabase insert warning (table might be created soon):', error.message);
+        // Fallback ke audit_log jika tabel waitlist belum dimigrasi di SQL Editor
+        await supabaseAdmin.from('audit_log').insert([
+          {
+            action: 'WAITLIST_SIGNUP',
+            entity: 'waitlist',
+            meta: {
+              name: payload.name,
+              email: payload.email,
+              phone: payload.phone,
+              university: payload.university,
+              plan: payload.plan,
+              project_id: payload.project_id,
+              notes: payload.notes,
+            },
+          },
+        ]);
       }
     } catch (dbErr) {
       console.warn('[Waitlist API] Supabase admin not configured:', dbErr);

@@ -1,211 +1,233 @@
-import { getSupabaseServerClient, getSupabaseAdminClient } from '../supabase/server';
-import type { Project, AnalysisResults, DataIssue, DatasetRow, Construct, SubscriptionPlan } from '../api/types';
-import { mockProjects } from '../mock/projects';
-import { mockDataset, mockIssues } from '../mock/dataset-contoh';
-import { mockResults } from '../mock/results';
+import type { Project, DatasetRow, AnalysisResults, Construct, ProjectStatus } from '@/lib/api/types';
+import {
+  computeEffectiveN,
+  serverStore,
+  listServerProjectsForUser,
+  getServerProjectSummary,
+  createServerProject,
+  mutateDatasetRowExclusions,
+} from '@/lib/server/sync-engine';
 
-// In-memory persistent cache for resilience when Supabase local container is offline
-class MemoryStore {
-  projects: Map<string, Project> = new Map();
-  datasets: Map<string, { rows: DatasetRow[]; columns: string[]; excludedRows: number[] }> = new Map();
-  runs: Map<string, { id: string; projectId: string; status: string; results?: AnalysisResults }> = new Map();
-  constructs: Map<string, Construct[]> = new Map();
-  plan: SubscriptionPlan = 'free';
+const DEFAULT_SERVER_USER_ID = 'user-authenticated-default';
 
-  constructor() {
-    // Seed initial demo project
-    for (const p of mockProjects) {
-      this.projects.set(p.id, { ...p });
-      this.datasets.set(p.id, {
-        rows: [...mockDataset],
-        columns: Object.keys(mockDataset[0] || {}),
-        excludedRows: p.dataVersions[0]?.removedRows || [],
-      });
-      this.runs.set(`run-${p.id}`, {
-        id: `run-${p.id}`,
-        projectId: p.id,
-        status: 'succeeded',
-        results: { ...mockResults, projectId: p.id },
-      });
-    }
-  }
+function toProjectStatus(status: string): ProjectStatus {
+  if (status === 'completed') return 'completed';
+  if (status === 'running' || status === 'analyzing') return 'analyzing';
+  return 'draft';
 }
 
-const memoryStore = new MemoryStore();
+const constructsMap = new Map<string, Construct[]>();
 
-export async function getProjectsRepo(ownerId = '00000000-0000-0000-0000-000000000001'): Promise<Project[]> {
-  try {
-    const supabase = getSupabaseAdminClient();
-    const { data, error } = await supabase
-      .from('projects')
-      .select('*')
-      .eq('owner_id', ownerId)
-      .is('archived_at', null)
-      .order('updated_at', { ascending: false });
+export async function getProjectsRepo(ownerId: string = DEFAULT_SERVER_USER_ID): Promise<Project[]> {
+  const res = listServerProjectsForUser(ownerId);
+  if (!res.ok) return [];
 
-    if (!error && data && data.length > 0) {
-      return (data as Array<{ id: string; judul: string; prodi?: string; status?: Project['status']; created_at: string; updated_at: string }>).map((d) => ({
-        id: d.id,
-        title: d.judul,
-        department: d.prodi || 'Manajemen',
-        researchType: 'Regresi Linier Berganda',
-        respondentCount: 117,
-        itemCount: 18,
-        status: d.status || 'completed',
-        createdAt: d.created_at,
-        updatedAt: d.updated_at,
-        dataVersions: [
+  return res.data.map((dto) => ({
+    id: dto.id,
+    title: dto.title,
+    department: dto.department,
+    researchType: dto.researchType,
+    respondentCount: dto.respondentCount,
+    itemCount: dto.itemCount,
+    status: toProjectStatus(dto.status),
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
+    dataVersions: dto.dataset.id
+      ? [
           {
-            id: `dv-${d.id}-1`,
-            label: 'Versi Awal',
-            rowCount: 120,
-            columnCount: 21,
-            removedRows: [],
-            createdAt: d.created_at,
+            id: dto.dataset.id,
+            label:
+              dto.dataset.excluded_count > 0
+                ? 'Versi Turunan (Pembersihan)'
+                : 'Versi Awal (Original)',
+            rowCount: dto.dataset.n,
+            columnCount: dto.itemCount,
+            removedRows: dto.dataset.excluded_rows,
+            createdAt: dto.dataset.uploaded_at || dto.createdAt,
           },
-        ],
-        currentDataVersion: `dv-${d.id}-1`,
-      }));
-    }
-  } catch {
-    // Fallback to memory store
-  }
-  return Array.from(memoryStore.projects.values());
+        ]
+      : [],
+    currentDataVersion: dto.dataset.id || '',
+  }));
 }
 
-export async function getProjectByIdRepo(id: string): Promise<Project | undefined> {
-  const projects = await getProjectsRepo();
-  return projects.find((p) => p.id === id) || memoryStore.projects.get(id);
+export async function getProjectByIdRepo(
+  id: string,
+  ownerId: string = DEFAULT_SERVER_USER_ID
+): Promise<Project | null> {
+  const res = getServerProjectSummary(id, ownerId);
+  if (!res.ok) return null;
+
+  const dto = res.data;
+  return {
+    id: dto.id,
+    title: dto.title,
+    department: dto.department,
+    researchType: dto.researchType,
+    respondentCount: dto.respondentCount,
+    itemCount: dto.itemCount,
+    status: toProjectStatus(dto.status),
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
+    dataVersions: dto.dataset.id
+      ? [
+          {
+            id: dto.dataset.id,
+            label:
+              dto.dataset.excluded_count > 0
+                ? 'Versi Turunan (Pembersihan)'
+                : 'Versi Awal (Original)',
+            rowCount: dto.dataset.n,
+            columnCount: dto.itemCount,
+            removedRows: dto.dataset.excluded_rows,
+            createdAt: dto.dataset.uploaded_at || dto.createdAt,
+          },
+        ]
+      : [],
+    currentDataVersion: dto.dataset.id || '',
+  };
 }
 
 export async function createProjectRepo(
   title: string,
   department: string,
   researchType: string,
-  ownerId = '00000000-0000-0000-0000-000000000001'
+  ownerId: string = DEFAULT_SERVER_USER_ID,
+  isSample: boolean = false
 ): Promise<Project> {
-  const id = `project-${Date.now()}`;
-  const now = new Date().toISOString();
-
-  const newProject: Project = {
-    id,
+  const res = createServerProject({
+    ownerId,
     title,
     department,
     researchType,
-    respondentCount: 0,
-    itemCount: 0,
-    status: 'draft',
-    createdAt: now,
-    updatedAt: now,
+    isSample,
+  });
+
+  if (!res.ok) {
+    const err = new Error(res.error.message) as Error & { status?: number; code?: string };
+    err.status = res.error.status;
+    err.code = res.error.code;
+    throw err;
+  }
+
+  const dto = res.data;
+  return {
+    id: dto.id,
+    title: dto.title,
+    department: dto.department,
+    researchType: dto.researchType,
+    respondentCount: dto.respondentCount,
+    itemCount: dto.itemCount,
+    status: toProjectStatus(dto.status),
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
     dataVersions: [],
     currentDataVersion: '',
   };
-
-  try {
-    const supabase = getSupabaseAdminClient();
-    await supabase.from('projects').insert({
-      id,
-      owner_id: ownerId,
-      judul: title,
-      prodi: department,
-      status: 'draft',
-    });
-  } catch {
-    // ignore
-  }
-
-  memoryStore.projects.set(id, newProject);
-  return newProject;
 }
 
-export async function deleteProjectRepo(id: string): Promise<void> {
-  try {
-    const supabase = getSupabaseAdminClient();
-    await supabase.from('projects').update({ archived_at: new Date().toISOString() }).eq('id', id);
-  } catch {
-    // ignore
-  }
-  memoryStore.projects.delete(id);
+export async function deleteProjectRepo(
+  id: string,
+  ownerId: string = DEFAULT_SERVER_USER_ID
+): Promise<boolean> {
+  const existing = serverStore.projects.get(id);
+  if (!existing || existing.ownerId !== ownerId) return false;
+  serverStore.projects.delete(id);
+  return true;
 }
 
-export async function getDatasetRepo(projectId: string): Promise<{ rows: DatasetRow[]; columns: string[] }> {
-  const ds = memoryStore.datasets.get(projectId);
-  if (ds) {
-    return { rows: ds.rows, columns: ds.columns };
+export async function getDatasetRepo(
+  projectId: string
+): Promise<{ rows: DatasetRow[]; columns: string[]; excludedRows: number[]; effectiveN: number }> {
+  const dsId = serverStore.projectLatestDataset.get(projectId);
+  const ds = dsId ? serverStore.datasets.get(dsId) : undefined;
+  if (!ds) {
+    return { rows: [], columns: [], excludedRows: [], effectiveN: 0 };
   }
-  return { rows: [...mockDataset], columns: Object.keys(mockDataset[0] || {}) };
+  const rows = (ds.rows || []) as DatasetRow[];
+  const columns =
+    ds.columnMeta.length > 0
+      ? ds.columnMeta.map((c) => c.name)
+      : Object.keys(rows[0] || {});
+  const effectiveN = computeEffectiveN(ds.rowCount, ds.excludedRows);
+  return {
+    rows,
+    columns,
+    excludedRows: ds.excludedRows,
+    effectiveN,
+  };
 }
 
 export async function saveDerivedDatasetVersionRepo(
-  projectId: string,
-  excludedRows: number[],
-  note = 'Pengecualian baris bermasalah'
-): Promise<{ versionId: string; rowCount: number }> {
-  const base = await getDatasetRepo(projectId);
-  const filtered = base.rows.filter((_, idx) => !excludedRows.includes(idx + 1));
-  const versionId = `dv-${Date.now()}`;
-
-  memoryStore.datasets.set(versionId, {
-    rows: filtered,
-    columns: base.columns,
-    excludedRows,
+  datasetId: string,
+  rowsToRemove: number[],
+  reason: string,
+  ownerId: string = DEFAULT_SERVER_USER_ID
+): Promise<{ versionId: string; rowCount: number; excludedCount: number }> {
+  const res = mutateDatasetRowExclusions({
+    datasetId,
+    ownerId,
+    action: 'exclude',
+    rowIndices: rowsToRemove,
+    reason,
   });
 
-  const proj = memoryStore.projects.get(projectId);
-  if (proj) {
-    proj.dataVersions.push({
-      id: versionId,
-      label: `Versi Bersih (${note})`,
-      rowCount: filtered.length,
-      columnCount: base.columns.length,
-      removedRows: excludedRows,
-      createdAt: new Date().toISOString(),
-    });
-    proj.currentDataVersion = versionId;
-    proj.respondentCount = filtered.length;
+  if (!res.ok) {
+    const err = new Error(res.error.message) as Error & { status?: number; code?: string };
+    err.status = res.error.status;
+    err.code = res.error.code;
+    throw err;
   }
 
-  return { versionId, rowCount: filtered.length };
+  return {
+    versionId: res.data.datasetId,
+    rowCount: res.data.n,
+    excludedCount: res.data.excludedCount,
+  };
 }
 
-export async function saveConstructsMappingRepo(projectId: string, constructs: Construct[]): Promise<void> {
-  memoryStore.constructs.set(projectId, constructs);
+export async function saveConstructsMappingRepo(
+  projectId: string,
+  constructs: Construct[]
+): Promise<void> {
+  constructsMap.set(projectId, constructs);
 }
 
 export async function getConstructsMappingRepo(projectId: string): Promise<Construct[]> {
-  return (
-    memoryStore.constructs.get(projectId) || [
-      { id: 'c1', name: 'Kualitas Layanan', items: ['KL1', 'KL2', 'KL3', 'KL4', 'KL5', 'KL6'], role: 'independent' },
-      { id: 'c2', name: 'Kepuasan Pelanggan', items: ['KP1', 'KP2', 'KP3', 'KP4', 'KP5', 'KP6'], role: 'independent' },
-      { id: 'c3', name: 'Loyalitas Pelanggan', items: ['LO1', 'LO2', 'LO3', 'LO4', 'LO5', 'LO6'], role: 'dependent' },
-    ]
-  );
+  return constructsMap.get(projectId) || [];
 }
 
-export async function saveAnalysisRunRepo(runId: string, projectId: string, results: AnalysisResults): Promise<void> {
-  memoryStore.runs.set(runId, {
-    id: runId,
-    projectId,
-    status: 'succeeded',
+export async function saveAnalysisRunRepo(
+  runId: string,
+  _projectId: string,
+  results: AnalysisResults
+): Promise<void> {
+  serverStore.results.set(runId, results);
+}
+
+export async function getAnalysisRunRepo(
+  runId: string
+): Promise<{ id: string; runId: string; projectId: string; status: string; createdAt: string; results: AnalysisResults } | null> {
+  const run = serverStore.runs.get(runId);
+  const results = serverStore.results.get(runId);
+  if (!run || !results) return null;
+  return {
+    id: run.id,
+    runId: run.id,
+    projectId: run.projectId,
+    status: run.status,
+    createdAt: run.startedAt,
     results,
-  });
-  const p = memoryStore.projects.get(projectId);
-  if (p) {
-    p.status = 'completed';
-    p.updatedAt = new Date().toISOString();
-  }
+  };
 }
 
-export async function getAnalysisRunRepo(runId: string): Promise<{ id: string; projectId: string; status: string; results?: AnalysisResults } | undefined> {
-  return memoryStore.runs.get(runId);
-}
+export async function getLatestResultsForProjectRepo(
+  projectId: string
+): Promise<AnalysisResults | null> {
+  const runs = Array.from(serverStore.runs.values())
+    .filter((r) => r.projectId === projectId && r.status === 'succeeded')
+    .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
 
-export async function getLatestResultsForProjectRepo(projectId: string): Promise<AnalysisResults | undefined> {
-  // Find latest run for this project
-  for (const r of Array.from(memoryStore.runs.values()).reverse()) {
-    if (r.projectId === projectId && r.results) {
-      return r.results;
-    }
-  }
-  return { ...mockResults, projectId };
+  if (runs.length === 0) return null;
+  return serverStore.results.get(runs[0].id) || null;
 }

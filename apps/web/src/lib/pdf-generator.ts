@@ -1,9 +1,17 @@
 import type { AnalysisResults, ExportOptions } from './api/types';
 import { formatNumber } from './format';
+import {
+  calculateHistogramData,
+  calculateNormalPPPlotData,
+  type HistogramResidualData,
+  type NormalPPPlotData,
+  formatPlotNumber,
+  niceTicks,
+} from './residual-charts';
 
 /**
  * Pure TypeScript deterministic PDF 1.4 generator.
- * Produces 100% compliant, readable PDF documents without external native dependencies.
+ * Produces 100% compliant, readable academic PDF documents without external native dependencies.
  */
 
 interface PdfTextOptions {
@@ -21,12 +29,68 @@ interface TableColumn {
 }
 
 function escapePdfString(str: string): string {
-  return str
+  if (!str) return '';
+  return String(str)
+    .replace(/\u2014/g, '--')
+    .replace(/\u2013/g, '-')
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/\u2022/g, '*')
+    .replace(/\u2026/g, '...')
+    .replace(/R\u00B2/g, 'R2')
+    .replace(/\u00B2/g, '2')
+    .replace(/\u03B1/g, 'alpha')
+    .replace(/\u03B2/g, 'beta')
+    .replace(/\u2265/g, '>=')
+    .replace(/\u2264/g, '<=')
+    .replace(/\u2260/g, '!=')
+    .replace(/\u00B1/g, '+/-')
     .replace(/\\/g, '\\\\')
     .replace(/\(/g, '\\(')
     .replace(/\)/g, '\\)')
-    // Replace non-ascii chars safely for Type1 WinAnsi/Standard
+    // Replace remaining non-ascii chars safely for Type1 WinAnsi/Standard
     .replace(/[^\x20-\x7E]/g, '?');
+}
+
+/**
+ * Memecah teks sel tabel agar rapi dan tidak saling tumpuk antar kolom
+ */
+function wrapCellText(text: string, maxWidth: number, fontSize: number = 8.5): string[] {
+  if (!text) return ['-'];
+  const cleanStr = String(text).trim();
+  if (!cleanStr) return ['-'];
+
+  const words = cleanStr.split(' ');
+  const maxChars = Math.max(1, Math.floor((maxWidth - 8) / (fontSize * 0.52)));
+  const lines: string[] = [];
+  let currentLine = '';
+
+  for (const w of words) {
+    if ((currentLine + (currentLine ? ' ' : '') + w).length > maxChars) {
+      if (currentLine) {
+        lines.push(currentLine);
+        currentLine = '';
+      }
+      if (w.length > maxChars) {
+        let rem = w;
+        while (rem.length > maxChars) {
+          lines.push(rem.slice(0, maxChars));
+          rem = rem.slice(maxChars);
+        }
+        currentLine = rem;
+      } else {
+        currentLine = w;
+      }
+    } else {
+      currentLine = currentLine ? `${currentLine} ${w}` : w;
+    }
+  }
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines.length > 0 ? lines : ['-'];
 }
 
 export function generateAcademicPdfReport(
@@ -36,12 +100,24 @@ export function generateAcademicPdfReport(
     sections?: string[];
     includeStatement?: boolean;
     watermark?: boolean;
+    notesMap?: Record<string, string>;
   }
 ): Uint8Array {
-  const projectTitle = options.projectTitle || 'Pengaruh Kualitas Layanan dan Kepuasan terhadap Loyalitas Pelanggan';
-  const selectedSections = options.sections || ['descriptive', 'validity', 'reliability', 'normality', 'regression', 'correlation'];
+  const projectTitle = (options.projectTitle || results.projectTitle || '').trim();
+  if (!projectTitle) {
+    throw new Error('Judul penelitian belum diisi. Lengkapi di formulir proyek sebelum mengunduh.');
+  }
+  const selectedSections = options.sections || [
+    'descriptive',
+    'validity',
+    'reliability',
+    'normality',
+    'regression',
+    'correlation',
+  ];
   const includeStatement = options.includeStatement ?? true;
   const isWatermark = options.watermark ?? false;
+  const notesMap = options.notesMap || {};
 
   const PAGE_WIDTH = 595.28; // A4 pt
   const PAGE_HEIGHT = 841.89; // A4 pt
@@ -75,7 +151,6 @@ export function generateAcademicPdfReport(
     const color = opts.color || [0.1, 0.1, 0.1];
     const align = opts.align || 'left';
 
-    // Approximate char width for Helvetica: ~0.55 * size
     const approxWidth = text.length * (size * 0.52);
     let drawX = x;
     if (align === 'center') {
@@ -90,19 +165,33 @@ export function generateAcademicPdfReport(
     );
   }
 
-  function drawLine(x1: number, y1: number, x2: number, y2: number, lineWidth: number = 0.5, color: [number, number, number] = [0, 0, 0]) {
+  function drawLine(
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    lineWidth: number = 0.5,
+    color: [number, number, number] = [0, 0, 0]
+  ) {
     currentPageOps.push(
       `q ${color[0]} ${color[1]} ${color[2]} RG ${lineWidth} w ${x1.toFixed(2)} ${y1.toFixed(2)} m ${x2.toFixed(2)} ${y2.toFixed(2)} l S Q`
     );
   }
 
-  function drawParagraph(text: string, opts: { font?: 'F1' | 'F2' | 'F3'; size?: number; lineHeight?: number; indent?: number } = {}) {
+  function drawParagraph(
+    text: string,
+    opts: {
+      font?: 'F1' | 'F2' | 'F3';
+      size?: number;
+      lineHeight?: number;
+      indent?: number;
+    } = {}
+  ) {
     const size = opts.size || 9.5;
     const lineHeight = opts.lineHeight || 14;
     const indent = opts.indent || 0;
     const font = opts.font || 'F1';
 
-    // Simple word wrapping
     const words = text.split(' ');
     let line = '';
     const maxChars = Math.floor(CONTENT_WIDTH / (size * 0.5));
@@ -128,6 +217,10 @@ export function generateAcademicPdfReport(
     currentY -= 6;
   }
 
+  /**
+   * Menampilkan Tabel Akademik Baku Format APA 3 Garis
+   * Dilengkapi text-wrapping per sel, tinggi baris dinamis, dan pengulangan header jika terpecah antar halaman
+   */
   function drawApaTable(
     tableNum: string,
     title: string,
@@ -135,67 +228,110 @@ export function generateAcademicPdfReport(
     rows: (string | number)[][],
     note?: string
   ) {
-    const headerHeight = 22;
-    const rowHeight = 18;
-    const totalHeight = 40 + headerHeight + rows.length * rowHeight + (note ? 20 : 0);
+    const startX = MARGIN_LEFT;
+    const endX = MARGIN_LEFT + CONTENT_WIDTH;
+    const rowLineHeight = 11;
+    const rowPadding = 6;
 
-    checkSpace(Math.min(totalHeight, 140));
+    // Hitung estimasi tinggi awal untuk judul dan header
+    checkSpace(65);
 
-    // Table Number & Title
+    // Table Number & Title (APA 7th)
     drawText(tableNum, MARGIN_LEFT, currentY, { font: 'F2', size: 10, color: [0.05, 0.05, 0.05] });
     currentY -= 14;
     drawText(title, MARGIN_LEFT, currentY, { font: 'F3', size: 9.5, color: [0.2, 0.2, 0.2] });
     currentY -= 14;
 
-    const startX = MARGIN_LEFT;
-    const endX = MARGIN_LEFT + CONTENT_WIDTH;
+    // Fungsi menggambar header kolom
+    const renderTableHeader = () => {
+      drawLine(startX, currentY, endX, currentY, 1.5, [0, 0, 0]); // Top border 1.5pt
+      currentY -= 4;
 
-    // Top border (1.5pt)
-    drawLine(startX, currentY, endX, currentY, 1.5, [0, 0, 0]);
-    currentY -= 4;
+      let curX = startX;
+      cols.forEach((col) => {
+        const posX =
+          col.align === 'right'
+            ? curX + col.width - 4
+            : col.align === 'center'
+            ? curX + col.width / 2
+            : curX + 4;
 
-    // Header labels
-    let curX = startX;
-    cols.forEach((col) => {
-      const posX = col.align === 'right' ? curX + col.width - 4 : col.align === 'center' ? curX + col.width / 2 : curX + 4;
-      drawText(col.header, posX, currentY - 10, {
-        font: 'F2',
-        size: 8.5,
-        align: col.align || 'left',
-        color: [0, 0, 0],
-      });
-      curX += col.width;
-    });
-    currentY -= 16;
-
-    // Under header border (0.75pt)
-    drawLine(startX, currentY, endX, currentY, 0.75, [0, 0, 0]);
-    currentY -= 2;
-
-    // Data rows
-    rows.forEach((row) => {
-      checkSpace(rowHeight);
-      let rX = startX;
-      row.forEach((cell, cIdx) => {
-        const col = cols[cIdx];
-        if (!col) return;
-        const posX = col.align === 'right' ? rX + col.width - 4 : col.align === 'center' ? rX + col.width / 2 : rX + 4;
-        drawText(String(cell ?? '-'), posX, currentY - 10, {
-          font: 'F1',
+        drawText(col.header, posX, currentY - 10, {
+          font: 'F2',
           size: 8.5,
           align: col.align || 'left',
-          color: [0.1, 0.1, 0.1],
+          color: [0, 0, 0],
         });
+        curX += col.width;
+      });
+      currentY -= 16;
+      drawLine(startX, currentY, endX, currentY, 0.75, [0, 0, 0]); // Under-header border 0.75pt
+      currentY -= 4;
+    };
+
+    renderTableHeader();
+
+    // Gambar Baris Data dengan Text Wrapping & Dynamic Row Height
+    rows.forEach((row) => {
+      const cellLines = row.map((cell, cIdx) => {
+        const col = cols[cIdx];
+        const w = col ? col.width : 60;
+        return wrapCellText(String(cell ?? '-'), w, 8.5);
+      });
+
+      const maxLines = Math.max(...cellLines.map((lines) => lines.length), 1);
+      const actualRowHeight = maxLines * rowLineHeight + rowPadding;
+
+      // Cek apakah muat di halaman saat ini
+      if (currentY - actualRowHeight < MARGIN_BOTTOM + 25) {
+        // Tutup garis bawah tabel halaman saat ini
+        drawLine(startX, currentY, endX, currentY, 0.75, [0, 0, 0]);
+        newPage();
+
+        // Ulangi Header di Halaman Baru
+        drawText(`${tableNum} (Lanjutan)`, MARGIN_LEFT, currentY, {
+          font: 'F3',
+          size: 9,
+          color: [0.25, 0.25, 0.25],
+        });
+        currentY -= 12;
+        renderTableHeader();
+      }
+
+      // Render Isi Sel
+      let rX = startX;
+      cellLines.forEach((lines, cIdx) => {
+        const col = cols[cIdx];
+        if (!col) return;
+
+        const posX =
+          col.align === 'right'
+            ? rX + col.width - 4
+            : col.align === 'center'
+            ? rX + col.width / 2
+            : rX + 4;
+
+        lines.forEach((lineText, lineIdx) => {
+          const lineY = currentY - 9 - lineIdx * rowLineHeight;
+          drawText(lineText, posX, lineY, {
+            font: 'F1',
+            size: 8.5,
+            align: col.align || 'left',
+            color: [0.1, 0.1, 0.1],
+          });
+        });
+
         rX += col.width;
       });
-      currentY -= rowHeight;
+
+      currentY -= actualRowHeight;
     });
 
-    // Bottom table border (1.5pt)
+    // Bottom border (1.5pt)
     drawLine(startX, currentY, endX, currentY, 1.5, [0, 0, 0]);
     currentY -= 12;
 
-    // Note if present
+    // Catatan Kaki Tabel
     if (note) {
       drawText(`Catatan: ${note}`, MARGIN_LEFT, currentY, {
         font: 'F3',
@@ -208,7 +344,45 @@ export function generateAcademicPdfReport(
     currentY -= 8;
   }
 
-  // --- Start Building Document ---
+  /**
+   * Menampilkan Gambar Grafik Format APA 7th Edition
+   * Memastikan nomor gambar, judul, canvas grafik, dan catatan sumber tidak terpisah antar halaman
+   */
+  function drawApaFigure(
+    figNum: string,
+    figTitle: string,
+    figHeight: number,
+    renderContent: (x: number, y: number, w: number, h: number) => void,
+    note?: string
+  ) {
+    const totalRequiredHeight = 32 + figHeight + (note ? 20 : 0);
+    checkSpace(totalRequiredHeight);
+
+    // Label: Gambar 4.1 (Bold 10pt)
+    drawText(figNum, MARGIN_LEFT, currentY, { font: 'F2', size: 10, color: [0.05, 0.05, 0.05] });
+    currentY -= 14;
+
+    // Title: Judul Miring di Baris Berikutnya (APA 7th)
+    drawText(figTitle, MARGIN_LEFT, currentY, { font: 'F3', size: 9.5, color: [0.2, 0.2, 0.2] });
+    currentY -= 12;
+
+    const figWidth = Math.min(CONTENT_WIDTH, 480);
+    const figX = MARGIN_LEFT + (CONTENT_WIDTH - figWidth) / 2;
+    const figY = currentY - figHeight;
+
+    renderContent(figX, figY, figWidth, figHeight);
+
+    currentY -= figHeight + 8;
+
+    if (note) {
+      drawText(note, figX, currentY, { font: 'F3', size: 8, color: [0.3, 0.3, 0.3] });
+      currentY -= 14;
+    }
+
+    currentY -= 12;
+  }
+
+  // --- Mulai Penyusunan Dokumen PDF ---
   newPage();
 
   // Document Title Header
@@ -228,7 +402,7 @@ export function generateAcademicPdfReport(
   });
   currentY -= 14;
 
-  const metaStr = `N = ${results.respondentCount} Responden • Format Baku APA 7th Edition • Engine OlahData`;
+  const metaStr = `N = ${results.respondentCount} Responden • Format Baku APA 7th Edition • OlahData Academic Engine`;
   drawText(metaStr, PAGE_WIDTH / 2, currentY, {
     font: 'F3',
     size: 8.5,
@@ -260,20 +434,26 @@ export function generateAcademicPdfReport(
       formatNumber(r.min, 3),
       formatNumber(r.max, 3),
     ]);
-    drawApaTable('Tabel 4.1', 'Hasil Analisis Statistik Deskriptif Variabel Penelitian', cols, rows, `N = ${results.respondentCount} responden.`);
+    drawApaTable(
+      'Tabel 4.1',
+      'Hasil Analisis Statistik Deskriptif Variabel Penelitian & TCR',
+      cols,
+      rows,
+      `Dihitung dari N = ${results.respondentCount} responden menggunakan skala pengukuran kuesioner.`
+    );
     if (results.explanations?.descriptive) {
       drawParagraph(results.explanations.descriptive, { indent: 20 });
     }
   }
 
-  // 2. UJI VALIDITAS
+  // 2. UJI VALIDITAS INSTRUMEN
   if (selectedSections.includes('validity') && results.validity?.length) {
     const cols: TableColumn[] = [
-      { header: 'Butir Indikator', width: 100, align: 'left' },
-      { header: 'Konstruk Variabel', width: 147, align: 'left' },
+      { header: 'Butir Indikator', width: 95, align: 'left' },
+      { header: 'Konstruk Variabel', width: 152, align: 'left' },
       { header: 'r Hitung', width: 80, align: 'right' },
-      { header: 'r Tabel', width: 80, align: 'right' },
-      { header: 'Status', width: 80, align: 'center' },
+      { header: 'r Tabel (α=0,05)', width: 85, align: 'right' },
+      { header: 'Status Validitas', width: 75, align: 'center' },
     ];
     const rows = results.validity.map((r) => [
       r.item,
@@ -282,7 +462,13 @@ export function generateAcademicPdfReport(
       formatNumber(r.rTabel, 4),
       r.valid ? 'Valid' : 'Gugur',
     ]);
-    drawApaTable('Tabel 4.2', 'Hasil Pengujian Validitas Butir Kuesioner (Pearson Product Moment)', cols, rows, 'Uji dua sisi (two-tailed), signifikansi α = 0,05.');
+    drawApaTable(
+      'Tabel 4.2',
+      'Hasil Pengujian Validitas Butir Kuesioner (Pearson Product Moment)',
+      cols,
+      rows,
+      'Kriteria: r Hitung > r Tabel pada derajat bebas df = N - 2 dengan signifikansi dua sisi α = 0,05.'
+    );
     if (results.explanations?.validity) {
       drawParagraph(results.explanations.validity, { indent: 20 });
     }
@@ -295,7 +481,7 @@ export function generateAcademicPdfReport(
       { header: 'Jumlah Butir', width: 75, align: 'right' },
       { header: "Cronbach's Alpha", width: 95, align: 'right' },
       { header: 'Batas Kritis', width: 70, align: 'right' },
-      { header: 'Status', width: 70, align: 'center' },
+      { header: 'Status Keandalan', width: 70, align: 'center' },
     ];
     const rows = results.reliability.map((r) => [
       r.construct,
@@ -304,19 +490,30 @@ export function generateAcademicPdfReport(
       '0,600',
       r.reliable ? 'Reliabel' : 'Tidak',
     ]);
-    drawApaTable('Tabel 4.3', "Hasil Pengujian Reliabilitas Konstruk (Cronbach's Alpha)", cols, rows, 'Kriteria andal: Cronbach Alpha >= 0,600.');
+    drawApaTable(
+      'Tabel 4.3',
+      "Hasil Pengujian Reliabilitas Konstruk (Cronbach's Alpha)",
+      cols,
+      rows,
+      "Kriteria andal: Nilai Cronbach's Alpha >= 0,600 (Ghozali, 2018)."
+    );
     if (results.explanations?.reliability) {
       drawParagraph(results.explanations.reliability, { indent: 20 });
     }
   }
 
-  // 4. ASUMSI KLASIK
-  if (selectedSections.includes('normality')) {
+  // 4. UJI ASUMSI KLASIK & GRAFIK RESIDUAL
+  if (
+    selectedSections.includes('normality') ||
+    selectedSections.includes('multicollinearity') ||
+    selectedSections.includes('heteroscedasticity')
+  ) {
+    // 4a. Tabel Uji Normalitas K-S
     if (results.normality?.length) {
       const cols: TableColumn[] = [
         { header: 'Uji Normalitas', width: 167, align: 'left' },
-        { header: 'Statistik', width: 80, align: 'right' },
-        { header: 'Asymp. Sig.', width: 80, align: 'right' },
+        { header: 'Statistik Uji', width: 80, align: 'right' },
+        { header: 'Asymp. Sig. (p-val)', width: 80, align: 'right' },
         { header: 'Kriteria (α)', width: 80, align: 'right' },
         { header: 'Kesimpulan', width: 80, align: 'center' },
       ];
@@ -327,32 +524,291 @@ export function generateAcademicPdfReport(
         '0,050',
         r.normal ? 'Normal' : 'Tidak Normal',
       ]);
-      drawApaTable('Tabel 4.4', 'Hasil Uji Normalitas Residual Regresi', cols, rows, 'Residual berdistribusi normal jika Asymp. Sig. > 0,05.');
+      drawApaTable(
+        'Tabel 4.4',
+        'Hasil Uji Normalitas Residual Regresi (Kolmogorov-Smirnov)',
+        cols,
+        rows,
+        'Residual berdistribusi normal jika Asymp. Sig. (2-tailed) > 0,05.'
+      );
     }
 
+    // 4b. GAMBAR 4.1: Histogram Residual & Kurva Normal Teoretis
+    const rawZ =
+      results.standardizedResiduals ||
+      results.unstandardizedResiduals ||
+      [];
+    const histData = calculateHistogramData(rawZ);
+
+    drawApaFigure(
+      'Gambar 4.1',
+      'Histogram Residual dan Kurva Normal Model Regresi',
+      190,
+      (figX, figY, figW, figH) => {
+        // Latar Putih Solid & Border
+        currentPageOps.push(
+          `q 1 1 1 rg 0.85 0.85 0.85 RG 0.75 w ${figX.toFixed(2)} ${figY.toFixed(2)} ${figW.toFixed(2)} ${figH.toFixed(2)} re B Q`
+        );
+
+        if (histData.isConstant || histData.bins.length === 0) {
+          drawText(
+            histData.message || 'Data residual belum tersedia atau bernilai konstan.',
+            figX + figW / 2,
+            figY + figH / 2,
+            { font: 'F3', size: 9, align: 'center', color: [0.4, 0.4, 0.4] }
+          );
+          return;
+        }
+
+        const marginLeft = 50;
+        const marginRight = 25;
+        const marginTop = 25;
+        const marginBottom = 45;
+        const plotW = figW - marginLeft - marginRight;
+        const plotH = figH - marginTop - marginBottom;
+
+        // Nice ticks Y & X
+        const yTicks = niceTicks(0, histData.yAxisMax, 5, { forceZeroMin: true, integerOnly: true });
+        const maxY = yTicks[yTicks.length - 1] || Math.max(1, histData.yAxisMax);
+
+        const xTicks = niceTicks(histData.minZ, histData.maxZ, 6);
+        const minZ = Math.min(histData.minZ, xTicks[0]);
+        const maxZ = Math.max(histData.maxZ, xTicks[xTicks.length - 1]);
+
+        const scaleX = (x: number) =>
+          figX + marginLeft + ((x - minZ) / (maxZ - minZ)) * plotW;
+        const scaleY = (y: number) =>
+          figY + marginBottom + (y / maxY) * plotH;
+
+        // Grid Y
+        yTicks.forEach((tickVal) => {
+          const yPos = scaleY(tickVal);
+          currentPageOps.push(
+            `q 0.9 0.9 0.9 RG 0.5 w ${(figX + marginLeft).toFixed(2)} ${yPos.toFixed(2)} m ${(figX + marginLeft + plotW).toFixed(2)} ${yPos.toFixed(2)} l S Q`
+          );
+          drawText(formatPlotNumber(tickVal, 0), figX + marginLeft - 6, yPos - 3, {
+            font: 'F1',
+            size: 8,
+            align: 'right',
+            color: [0.3, 0.3, 0.3],
+          });
+        });
+
+        // Batang Histogram Riil
+        histData.bins.forEach((bin) => {
+          const x0 = scaleX(bin.x0);
+          const x1 = scaleX(bin.x1);
+          const barW = Math.max(1, x1 - x0 - 1);
+          const barH = (bin.count / maxY) * plotH;
+          const y0 = figY + marginBottom;
+
+          currentPageOps.push(
+            `q 0.85 0.88 0.87 rg 0.08 0.28 0.22 RG 0.8 w ${x0.toFixed(2)} ${y0.toFixed(2)} ${barW.toFixed(2)} ${barH.toFixed(2)} re B Q`
+          );
+        });
+
+        // Kurva Normal Teoretis Terskala
+        if (histData.curvePoints.length > 1) {
+          const curveOps: string[] = [];
+          histData.curvePoints.forEach((pt, idx) => {
+            const cx = scaleX(pt.x);
+            const cy = scaleY(pt.y);
+            curveOps.push(`${cx.toFixed(2)} ${cy.toFixed(2)} ${idx === 0 ? 'm' : 'l'}`);
+          });
+          currentPageOps.push(
+            `q 0.92 0.35 0.05 RG 2 w ${curveOps.join(' ')} S Q`
+          );
+        }
+
+        // Sumbu X & Y
+        currentPageOps.push(
+          `q 0 0 0 RG 1 w ${(figX + marginLeft).toFixed(2)} ${(figY + marginBottom).toFixed(2)} m ${(figX + marginLeft).toFixed(2)} ${(figY + marginBottom + plotH).toFixed(2)} l S Q`
+        );
+        currentPageOps.push(
+          `q 0 0 0 RG 1 w ${(figX + marginLeft).toFixed(2)} ${(figY + marginBottom).toFixed(2)} m ${(figX + marginLeft + plotW).toFixed(2)} ${(figY + marginBottom).toFixed(2)} l S Q`
+        );
+
+        // Ticks X
+        xTicks.forEach((t) => {
+          const xPos = scaleX(t);
+          const label = formatPlotNumber(t, Math.abs(t % 1) > 1e-4 ? 1 : 0);
+          currentPageOps.push(
+            `q 0 0 0 RG 0.75 w ${xPos.toFixed(2)} ${(figY + marginBottom).toFixed(2)} m ${xPos.toFixed(2)} ${(figY + marginBottom - 4).toFixed(2)} l S Q`
+          );
+          drawText(label, xPos, figY + marginBottom - 12, {
+            font: 'F1',
+            size: 8,
+            align: 'center',
+            color: [0.2, 0.2, 0.2],
+          });
+        });
+
+        // Label Sumbu
+        drawText('Regression Standardized Residual', figX + marginLeft + plotW / 2, figY + 12, {
+          font: 'F2',
+          size: 8.5,
+          align: 'center',
+          color: [0, 0, 0],
+        });
+
+        // Legenda Statistik Ringkas 2-Kolom (Tiap Metrik di Baris Sendiri)
+        const legW = 105;
+        const legH = 46;
+        const legX = figX + figW - marginRight - legW - 5;
+        const legY = figY + figH - marginTop - legH + 8;
+        currentPageOps.push(
+          `q 1 1 1 rg 0.6 0.6 0.6 RG 0.5 w ${legX.toFixed(2)} ${legY.toFixed(2)} ${legW} ${legH} re B Q`
+        );
+        drawText('Statistik Residual', legX + 6, legY + legH - 9, { font: 'F2', size: 7.5, color: [0, 0, 0] });
+        // Baris 1: Mean
+        drawText('Mean', legX + 6, legY + legH - 18, { font: 'F1', size: 7, color: [0.3, 0.3, 0.3] });
+        drawText(formatPlotNumber(histData.mean, 2), legX + legW - 6, legY + legH - 18, { font: 'F2', size: 7, align: 'right', color: [0, 0, 0] });
+        // Baris 2: Std. Dev.
+        drawText('Std. Dev.', legX + 6, legY + legH - 27, { font: 'F1', size: 7, color: [0.3, 0.3, 0.3] });
+        drawText(formatPlotNumber(histData.stdDev, 2), legX + legW - 6, legY + legH - 27, { font: 'F2', size: 7, align: 'right', color: [0, 0, 0] });
+        // Baris 3: N
+        drawText('N', legX + 6, legY + legH - 36, { font: 'F1', size: 7, color: [0.3, 0.3, 0.3] });
+        drawText(formatPlotNumber(histData.n, 0), legX + legW - 6, legY + legH - 36, { font: 'F2', size: 7, align: 'right', color: [0, 0, 0] });
+      },
+      'Sumber: Data primer diolah (2026). Dihitung dari standardized residual model regresi OLS.'
+    );
+
+    // 4c. GAMBAR 4.2: Normal P-P Plot of Regression Standardized Residual
+    const ppData = calculateNormalPPPlotData(
+      results.unstandardizedResiduals ||
+      results.standardizedResiduals ||
+      []
+    );
+
+    drawApaFigure(
+      'Gambar 4.2',
+      'Normal P-P Plot of Regression Standardized Residual',
+      210,
+      (figX, figY, figW, figH) => {
+        // Latar Putih Solid & Border
+        currentPageOps.push(
+          `q 1 1 1 rg 0.85 0.85 0.85 RG 0.75 w ${figX.toFixed(2)} ${figY.toFixed(2)} ${figW.toFixed(2)} ${figH.toFixed(2)} re B Q`
+        );
+
+        if (ppData.isConstant || ppData.points.length === 0) {
+          drawText(
+            ppData.message || 'Data residual belum tersedia atau bernilai konstan.',
+            figX + figW / 2,
+            figY + figH / 2,
+            { font: 'F3', size: 9, align: 'center', color: [0.4, 0.4, 0.4] }
+          );
+          return;
+        }
+
+        const plotSize = Math.min(figW - 120, figH - 60);
+        const plotLeft = figX + (figW - plotSize) / 2 + 10;
+        const plotBottom = figY + 36;
+
+        const scaleX = (p: number) => plotLeft + p * plotSize;
+        const scaleY = (p: number) => plotBottom + p * plotSize;
+
+        // Grid & Ticks (0; 0,2; 0,4; 0,6; 0,8; 1,0)
+        [0.0, 0.2, 0.4, 0.6, 0.8, 1.0].forEach((t) => {
+          const x = scaleX(t);
+          const y = scaleY(t);
+          const label = t === 0 ? '0' : t === 1 ? '1,0' : formatPlotNumber(t, 1);
+
+          // Grid Lines
+          currentPageOps.push(
+            `q 0.92 0.92 0.92 RG 0.5 w ${x.toFixed(2)} ${plotBottom.toFixed(2)} m ${x.toFixed(2)} ${(plotBottom + plotSize).toFixed(2)} l S Q`
+          );
+          currentPageOps.push(
+            `q 0.92 0.92 0.92 RG 0.5 w ${plotLeft.toFixed(2)} ${y.toFixed(2)} m ${(plotLeft + plotSize).toFixed(2)} ${y.toFixed(2)} l S Q`
+          );
+
+          // Ticks X
+          currentPageOps.push(
+            `q 0 0 0 RG 0.75 w ${x.toFixed(2)} ${plotBottom.toFixed(2)} m ${x.toFixed(2)} ${(plotBottom - 4).toFixed(2)} l S Q`
+          );
+          drawText(label, x, plotBottom - 12, { font: 'F1', size: 7.5, align: 'center', color: [0.2, 0.2, 0.2] });
+
+          // Ticks Y
+          currentPageOps.push(
+            `q 0 0 0 RG 0.75 w ${plotLeft.toFixed(2)} ${y.toFixed(2)} m ${(plotLeft - 4).toFixed(2)} ${y.toFixed(2)} l S Q`
+          );
+          drawText(label, plotLeft - 6, y - 2.5, { font: 'F1', size: 7.5, align: 'right', color: [0.2, 0.2, 0.2] });
+        });
+
+        // Garis Diagonal Referensi 45 Derajat (0,0) -> (1,1)
+        const x0 = scaleX(0);
+        const y0 = scaleY(0);
+        const x1 = scaleX(1);
+        const y1 = scaleY(1);
+        currentPageOps.push(
+          `q 0.92 0.35 0.05 RG [3 2] 0 d 1.5 w ${x0.toFixed(2)} ${y0.toFixed(2)} m ${x1.toFixed(2)} ${y1.toFixed(2)} l S Q`
+        );
+
+        // Kotak Area Plot 1:1
+        currentPageOps.push(
+          `q 0 0 0 RG 1 w ${plotLeft.toFixed(2)} ${plotBottom.toFixed(2)} ${plotSize.toFixed(2)} ${plotSize.toFixed(2)} re S Q`
+        );
+
+        // Gambar Tepat N Titik Responden Aktual (Lingkaran Vektor)
+        const r = 2.2;
+        const k = 0.55228475 * r;
+        ppData.points.forEach((pt) => {
+          const cx = scaleX(pt.pObserved);
+          const cy = scaleY(pt.pExpected);
+          currentPageOps.push(
+            `q 0.08 0.28 0.22 rg 0 0 0 RG 0.6 w ${cx + r} ${cy} m ${cx + r} ${cy + k} ${cx + k} ${cy + r} ${cx} ${cy + r} c ${cx - k} ${cy + r} ${cx - r} ${cy + k} ${cx - r} ${cy} c ${cx - r} ${cy - k} ${cx - k} ${cy - r} ${cx} ${cy - r} c ${cx + k} ${cy - r} ${cx + r} ${cy - k} ${cx + r} ${cy} c B Q`
+          );
+        });
+
+        // Label Sumbu
+        drawText('Observed Cum Prob', plotLeft + plotSize / 2, figY + 12, {
+          font: 'F2',
+          size: 8.5,
+          align: 'center',
+          color: [0, 0, 0],
+        });
+        drawText('Expected Cum Prob', plotLeft - 22, plotBottom + plotSize / 2, {
+          font: 'F2',
+          size: 8.5,
+          align: 'center',
+          color: [0, 0, 0],
+        });
+      },
+      'Sumber: Data primer diolah (2026). Titik-titik data residual merapat di sekitar garis diagonal 45°.'
+    );
+
+    // 4d. Uji Multikolinearitas (Tabel 4.5)
     if (results.multicollinearity?.length) {
       const cols: TableColumn[] = [
-        { header: 'Variabel Bebas (X)', width: 187, align: 'left' },
-        { header: 'Tolerance', width: 100, align: 'right' },
-        { header: 'VIF', width: 100, align: 'right' },
-        { header: 'Kesimpulan', width: 100, align: 'center' },
+        { header: 'Variabel Bebas (X)', width: 175, align: 'left' },
+        { header: 'Tolerance', width: 95, align: 'right' },
+        { header: 'VIF', width: 95, align: 'right' },
+        { header: 'Batas Kritis', width: 62, align: 'right' },
+        { header: 'Kesimpulan', width: 60, align: 'center' },
       ];
       const rows = results.multicollinearity.map((r) => [
         r.variable,
         formatNumber(r.tolerance, 3),
         formatNumber(r.vif, 3),
+        '< 10,00',
         !r.problematic ? 'Bebas Multikol' : 'Bermasalah',
       ]);
-      drawApaTable('Tabel 4.5', 'Hasil Uji Multikolinearitas (Tolerance & VIF)', cols, rows, 'Bebas multikolinearitas jika Tolerance > 0,10 dan VIF < 10,00.');
+      drawApaTable(
+        'Tabel 4.5',
+        'Hasil Uji Multikolinearitas (Tolerance & VIF)',
+        cols,
+        rows,
+        'Bebas multikolinearitas jika Tolerance > 0,10 dan VIF < 10,00.'
+      );
     }
 
+    // 4e. Uji Heteroskedastisitas (Tabel 4.6 - Lebar Kolom Dioptimalkan)
     if (results.heteroscedasticity?.length) {
       const cols: TableColumn[] = [
-        { header: 'Variabel Bebas (X)', width: 167, align: 'left' },
-        { header: 't Hitung', width: 80, align: 'right' },
-        { header: 'Sig. (p-value)', width: 80, align: 'right' },
-        { header: 'Kriteria', width: 80, align: 'right' },
-        { header: 'Kesimpulan', width: 80, align: 'center' },
+        { header: 'Variabel Bebas (X)', width: 175, align: 'left' },
+        { header: 't Hitung', width: 70, align: 'right' },
+        { header: 'Sig. (p-val)', width: 68, align: 'right' },
+        { header: 'Kriteria (α)', width: 68, align: 'right' },
+        { header: 'Kesimpulan', width: 106, align: 'center' },
       ];
       const rows = results.heteroscedasticity.map((r) => [
         r.variable,
@@ -361,7 +817,65 @@ export function generateAcademicPdfReport(
         '> 0,050',
         !r.significant ? 'Bebas Heteroskedastisitas' : 'Gejala Hetero',
       ]);
-      drawApaTable('Tabel 4.6', 'Hasil Uji Heteroskedastisitas (Uji Glejser)', cols, rows, 'Bebas heteroskedastisitas jika nilai Sig. > 0,05.');
+      drawApaTable(
+        'Tabel 4.6',
+        'Hasil Uji Heteroskedastisitas (Uji Glejser)',
+        cols,
+        rows,
+        'Bebas heteroskedastisitas jika nilai Sig. > 0,05.'
+      );
+    }
+
+    // 4f. Uji Autokorelasi Durbin-Watson (Tabel 4.6b jika tersedia)
+    if (results.durbinWatson) {
+      const dwCols: TableColumn[] = [
+        { header: 'Statistik d', width: 95, align: 'right' },
+        { header: 'dL', width: 95, align: 'right' },
+        { header: 'dU', width: 95, align: 'right' },
+        { header: '4 - dU', width: 95, align: 'right' },
+        { header: 'Kesimpulan', width: 107, align: 'center' },
+      ];
+      const dwRows = [[
+        formatNumber(results.durbinWatson.dwStatistic, 4),
+        formatNumber(results.durbinWatson.dL, 4),
+        formatNumber(results.durbinWatson.dU, 4),
+        formatNumber(4 - results.durbinWatson.dU, 4),
+        results.durbinWatson.conclusion,
+      ]];
+      drawApaTable(
+        'Tabel 4.6b',
+        'Hasil Pengujian Autokorelasi (Durbin-Watson)',
+        dwCols,
+        dwRows,
+        'Kriteria: Bebas autokorelasi jika dU < d < 4 - dU.'
+      );
+    }
+
+    // 4g. Uji Linearitas ANOVA (Tabel 4.6c jika tersedia)
+    if (results.linearity && results.linearity.length > 0) {
+      const linCols: TableColumn[] = [
+        { header: 'Hubungan Variabel', width: 155, align: 'left' },
+        { header: 'F Deviation', width: 65, align: 'right' },
+        { header: 'Sig. Deviation', width: 65, align: 'right' },
+        { header: 'F Linearity', width: 65, align: 'right' },
+        { header: 'Sig. Linearity', width: 65, align: 'right' },
+        { header: 'Status', width: 72, align: 'center' },
+      ];
+      const linRows = results.linearity.map((l) => [
+        `${l.independentVar} -> ${l.dependentVar}`,
+        formatNumber(l.fDeviation, 3),
+        formatNumber(l.sigDeviation, 3),
+        formatNumber(l.fLinearity, 3),
+        formatNumber(l.sigLinearity, 3),
+        l.isLinear ? 'Linier' : 'Tidak Linier',
+      ]);
+      drawApaTable(
+        'Tabel 4.6c',
+        'Hasil Uji Linearitas (Deviation from Linearity ANOVA)',
+        linCols,
+        linRows,
+        'Hubungan dinyatakan linier jika Sig. Deviation from Linearity > 0,05.'
+      );
     }
   }
 
@@ -372,7 +886,7 @@ export function generateAcademicPdfReport(
       { header: 'Koefisien (B)', width: 80, align: 'right' },
       { header: 'Std Error', width: 80, align: 'right' },
       { header: 't Hitung', width: 80, align: 'right' },
-      { header: 'Sig.', width: 80, align: 'right' },
+      { header: 'Sig. (p-val)', width: 80, align: 'right' },
     ];
     const rows = results.regression.map((r) => [
       r.variable,
@@ -388,7 +902,7 @@ export function generateAcademicPdfReport(
         { header: 'Model Uji', width: 167, align: 'left' },
         { header: 'F Hitung', width: 80, align: 'right' },
         { header: 'F Tabel', width: 80, align: 'right' },
-        { header: 'Sig.', width: 80, align: 'right' },
+        { header: 'Sig. (p-val)', width: 80, align: 'right' },
         { header: 'Signifikansi', width: 80, align: 'center' },
       ];
       const fRows = [[
@@ -403,7 +917,7 @@ export function generateAcademicPdfReport(
 
     if (results.determination) {
       const rCols: TableColumn[] = [
-        { header: 'Model', width: 120, align: 'left' },
+        { header: 'Model Regresi', width: 120, align: 'left' },
         { header: 'R Square (R²)', width: 110, align: 'right' },
         { header: 'Adjusted R²', width: 110, align: 'right' },
         { header: 'Kontribusi (%)', width: 147, align: 'right' },
@@ -444,7 +958,22 @@ export function generateAcademicPdfReport(
     }
   }
 
-  // 7. PERNYATAAN PENGGUNAAN ALAT
+  // 7. CATATAN PEMBAHASAN & KAJIAN TEORI PENELITI (JIKA ADA)
+  const noteEntries = Object.entries(notesMap).filter(([, val]) => val && val.trim().length > 0);
+  if (noteEntries.length > 0) {
+    checkSpace(90);
+    drawText('Catatan Pembahasan & Kajian Teori Peneliti', MARGIN_LEFT, currentY, {
+      font: 'F2',
+      size: 10.5,
+      color: [0.08, 0.28, 0.22],
+    });
+    currentY -= 14;
+    for (const [secKey, noteVal] of noteEntries) {
+      drawParagraph(`[${secKey}] ${noteVal.trim()}`, { indent: 12 });
+    }
+  }
+
+  // 8. PERNYATAAN PENGGUNAAN ALAT
   if (includeStatement) {
     checkSpace(100);
     drawText('Lampiran: Pernyataan Penggunaan Alat Bantu Analisis', MARGIN_LEFT, currentY, {
@@ -459,12 +988,12 @@ export function generateAcademicPdfReport(
     );
   }
 
-  // Finish last page
+  // Selesaikan Halaman Terakhir
   if (currentPageOps.length > 0) {
     pages.push(currentPageOps);
   }
 
-  // Add Footers & Watermark to each page
+  // Tambahkan Header Kaki & Watermark di Tiap Halaman
   const totalPages = pages.length;
   pages.forEach((pOps, pIdx) => {
     const pageNumText = `Halaman ${pIdx + 1} dari ${totalPages}`;
@@ -486,15 +1015,7 @@ export function generateAcademicPdfReport(
     }
   });
 
-  // --- Compile PDF Structure ---
-  // Objects:
-  // 1: Catalog
-  // 2: Pages
-  // 3: Font Helvetica
-  // 4: Font Helvetica-Bold
-  // 5: Font Helvetica-Oblique
-  // Pages and Contents follow:
-  // For page i: Page obj is (6 + i*2), Content obj is (7 + i*2)
+  // --- Kompilasi Struktur Objek PDF 1.4 ---
   const objects: string[] = [];
 
   // Obj 1: Catalog
@@ -527,12 +1048,12 @@ export function generateAcademicPdfReport(
     );
   });
 
-  // Calculate byte offsets and construct xref
+  // Hitung offset byte dan bentuk tabel xref
   const header = `%PDF-1.4\n%\xe2\xe3\xcf\xd3\n`;
   const encoder = new TextEncoder();
   let currentOffset = encoder.encode(header).length;
 
-  const offsets: number[] = [0]; // obj 0 is free
+  const offsets: number[] = [0];
   objects.forEach((objStr) => {
     offsets.push(currentOffset);
     currentOffset += encoder.encode(objStr).length;

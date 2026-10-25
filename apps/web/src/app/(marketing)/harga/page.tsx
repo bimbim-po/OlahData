@@ -19,7 +19,7 @@ export default function HargaPage() {
     },
     {
       q: 'Berapa batasan kuota responden pada setiap paket?',
-      a: 'Paket Bulanan mendukung hingga 5 proyek dan 100.000 responden. Paket Skripsi mendukung 1 proyek aktif dengan responden batas wajar dan riwayat versi dataset.',
+      a: 'Paket Coba Gratis mendukung hingga 150 responden. Paket Bulanan mendukung 1 proyek skripsi aktif dengan maksimal 500 responden. Paket Skripsi Tuntas mendukung 3 proyek aktif (pilot test, data utama, dan revisi) hingga 2.500 responden.',
     },
     {
       q: 'Apakah data saya hilang jika masa aktif habis?',
@@ -28,19 +28,19 @@ export default function HargaPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8 space-y-10">
+    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16 lg:px-8 space-y-14 sm:space-y-20">
       {/* Breadcrumb */}
       <Breadcrumb items={[{ label: 'Pilihan Harga', href: '/harga' }]} />
 
       {/* Title & Disclaimer */}
-      <div className="text-center max-w-2xl mx-auto space-y-2.5">
-        <div className="inline-flex items-center gap-1.5 border border-border bg-muted/60 px-2 py-0.5 text-xs text-foreground font-medium rounded-xs">
+      <div className="text-center max-w-3xl mx-auto">
+        <div className="inline-flex items-center gap-1.5 border border-border bg-muted/60 px-3 py-1 text-xs text-primary font-semibold uppercase tracking-wider rounded-full mb-3">
           Investasi Skripsi
         </div>
-        <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-foreground">
           Pilihan Paket Meja Kerja
         </h1>
-        <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+        <p className="mt-3 md:mt-4 text-sm sm:text-base text-muted-foreground leading-relaxed">
           Pilih akses yang sesuai dengan tahapan penyusunan skripsi Anda. Akses terjangkau untuk ketenangan dan kelancaran persiapan sidang skripsi Anda.
         </p>
       </div>
@@ -49,25 +49,25 @@ export default function HargaPage() {
       <PricingCards showDisclaimer={true} />
 
       {/* Campus Contact Row */}
-      <div className="rounded-md border border-border bg-card p-5 sm:p-6 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
-          <div className="flex items-start gap-3.5">
-            <div className="rounded-xs bg-muted p-2.5 text-primary shrink-0 border border-border">
+      <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-xs">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-start gap-4">
+            <div className="rounded-xl bg-primary/10 p-3 text-primary shrink-0 border border-primary/20">
               <Building2 className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-foreground">
+              <h3 className="text-base sm:text-lg font-bold text-foreground">
                 {INSTITUTION_PLAN.name}
               </h3>
-              <p className="mt-1 text-xs text-muted-foreground max-w-2xl leading-relaxed">
+              <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground max-w-2xl leading-relaxed">
                 {INSTITUTION_PLAN.description} Kami menyediakan lisensi laboratorium komputer kampus, lokakarya metodologi kuantitatif, dan akun institusi terpusat.
               </p>
             </div>
           </div>
           <div className="shrink-0">
-            <Button asChild variant="outline" size="sm" className="gap-2 w-full md:w-auto font-medium text-xs">
+            <Button asChild variant="outline" size="default" className="gap-2 w-full md:w-auto font-semibold text-xs sm:text-sm rounded-xl min-h-[44px] px-5">
               <a href={INSTITUTION_PLAN.contactHref}>
-                <Mail className="h-3.5 w-3.5" />
+                <Mail className="h-4 w-4" />
                 <span>{INSTITUTION_PLAN.ctaText}</span>
               </a>
             </Button>
@@ -76,43 +76,46 @@ export default function HargaPage() {
       </div>
 
       {/* Comparison Table Section */}
-      <div className="space-y-4">
-        <div className="text-center max-w-xl mx-auto">
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+      <div className="space-y-8">
+        <div className="text-center max-w-2xl mx-auto">
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-3">
+            Matriks Fitur
+          </p>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
             Perbandingan Rinci Fitur
           </h2>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
             Periksa detail batasan dan cakupan setiap paket untuk memilih yang paling sesuai dengan kebutuhan Anda.
           </p>
         </div>
 
         {/* Desktop View: Full Matrix Table */}
-        <div className="hidden md:block overflow-x-auto rounded-md border border-border bg-card shadow-xs">
-          <table className="w-full text-left border-collapse text-xs font-sans">
+        <div className="hidden md:block overflow-x-auto rounded-2xl border border-border bg-card shadow-xs">
+          <table className="w-full text-left border-collapse text-xs sm:text-sm font-sans">
             <thead>
               <tr className="border-b border-border bg-muted/40 font-semibold text-foreground">
-                <th scope="col" className="py-3 px-4 w-1/2">Fitur Analisis</th>
-                <th scope="col" className="py-3 px-3 text-center w-1/6">Coba Gratis</th>
-                <th scope="col" className="py-3 px-3 text-center w-1/6 bg-accent text-primary">Bulanan</th>
-                <th scope="col" className="py-3 px-3 text-center w-1/6">Paket Skripsi</th>
+                <th scope="col" className="py-4 px-5 w-1/2">Fitur Analisis</th>
+                <th scope="col" className="py-4 px-4 text-center w-1/6">Coba Gratis</th>
+                <th scope="col" className="py-4 px-4 text-center w-1/6">Bulanan</th>
+                <th scope="col" className="py-4 px-4 text-center w-1/6 bg-primary/10 text-primary font-bold">Paket Skripsi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
               {COMPARISON_SECTIONS.map((section, sIdx) => (
                 <React.Fragment key={sIdx}>
-                  <tr className="bg-muted/20 font-bold text-[11px] uppercase tracking-wider text-muted-foreground">
-                    <td colSpan={4} className="py-2.5 px-4">
+                  <tr className="bg-muted/25 font-bold text-[11px] uppercase tracking-wider text-muted-foreground">
+                    <td colSpan={4} className="py-3 px-5">
                       {section.category}
                     </td>
                   </tr>
                   {section.items.map((item, iIdx) => (
                     <tr key={iIdx} className="hover:bg-muted/15 transition-colors">
-                      <td className="py-2.5 px-4 font-medium text-foreground">
+                      <td className="py-3 px-5 font-medium text-foreground">
                         {item.name}
                       </td>
 
                       {/* Coba Gratis */}
-                      <td className="py-2.5 px-3 text-center text-xs text-muted-foreground">
+                      <td className="py-3 px-4 text-center text-xs text-muted-foreground">
                         {typeof item.free === 'boolean' ? (
                           item.free ? (
                             <span className="inline-flex items-center justify-center">
@@ -134,7 +137,7 @@ export default function HargaPage() {
                       </td>
 
                       {/* Bulanan */}
-                      <td className="py-2.5 px-3 text-center text-xs bg-accent/40 font-medium text-foreground">
+                      <td className="py-3 px-4 text-center text-xs text-muted-foreground">
                         {typeof item.monthly === 'boolean' ? (
                           item.monthly ? (
                             <span className="inline-flex items-center justify-center">
@@ -156,7 +159,7 @@ export default function HargaPage() {
                       </td>
 
                       {/* Paket Skripsi */}
-                      <td className="py-2.5 px-3 text-center text-xs text-muted-foreground">
+                      <td className="py-3 px-4 text-center text-xs bg-primary/5 font-semibold text-foreground">
                         {typeof item.thesis === 'boolean' ? (
                           item.thesis ? (
                             <span className="inline-flex items-center justify-center">
@@ -248,18 +251,23 @@ export default function HargaPage() {
       </div>
 
       {/* Pricing Mini FAQ */}
-      <div className="max-w-2xl mx-auto space-y-4 pt-2">
-        <h2 className="text-lg sm:text-xl font-bold text-foreground text-center">
-          Pertanyaan Seputar Transaksi
-        </h2>
-        <div className="space-y-2">
+      <div className="max-w-3xl mx-auto space-y-6 pt-4">
+        <div className="text-center">
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-2">
+            Tanya Jawab
+          </p>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+            Pertanyaan Seputar Transaksi dan Kuota
+          </h2>
+        </div>
+        <div className="space-y-3">
           {pricingFaq.map((faq, i) => (
-            <Card key={i} className="border-border bg-card rounded-xs">
-              <CardContent className="p-4 space-y-1">
-                <h3 className="text-xs sm:text-sm font-semibold text-foreground">
+            <Card key={i} className="border-border bg-card rounded-2xl shadow-xs">
+              <CardContent className="p-5 sm:p-6 space-y-1.5">
+                <h3 className="text-sm sm:text-base font-bold text-foreground">
                   {faq.q}
                 </h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                   {faq.a}
                 </p>
               </CardContent>

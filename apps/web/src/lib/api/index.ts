@@ -21,10 +21,19 @@ import { mockResults, mockTestOptions } from '../mock/results';
 import {
   buildWordTableHtml,
   buildWordDocumentContent,
+  buildApaFigureHtml,
   buildSpssAppendixWordDocumentContent,
 } from '../word-table';
 import { formatNumber } from '../format';
 import { generateAcademicPdfReport } from '../pdf-generator';
+import {
+  calculateHistogramData,
+  calculateNormalPPPlotData,
+  generateHistogramSvgString,
+  generateNormalPPPlotSvgString,
+  convertSvgToPngBase64,
+} from '../residual-charts';
+
 
 // =============================================================================
 // 1. AUTENTIKASI (SUPABASE AUTH + PROFILES)
@@ -32,12 +41,20 @@ import { generateAcademicPdfReport } from '../pdf-generator';
 
 export async function login(email: string, password: string): Promise<User> {
   const supabase = getSupabaseBrowserClient();
+  const cleanEmail = email.trim().toLowerCase();
+
   const { data, error } = await supabase.auth.signInWithPassword({
-    email,
+    email: cleanEmail,
     password,
   });
 
   if (error) {
+    if (error.message.includes('Invalid login credentials')) {
+      throw new Error('Email atau kata sandi salah. Silakan periksa kembali akun Anda.');
+    }
+    if (error.message.includes('Email not confirmed')) {
+      throw new Error('Alamat email belum dikonfirmasi. Silakan buka tautan di kotak masuk email Anda atau gunakan Lupa Sandi.');
+    }
     throw new Error(error.message || 'Gagal masuk. Periksa email dan kata sandi Anda.');
   }
 
@@ -55,7 +72,7 @@ export async function login(email: string, password: string): Promise<User> {
   const user: User = {
     id: data.user.id,
     name: profile?.nama || data.user.user_metadata?.nama || data.user.user_metadata?.full_name || 'Mahasiswa',
-    email: data.user.email || email,
+    email: data.user.email || cleanEmail,
     university: profile?.kampus || data.user.user_metadata?.kampus || data.user.user_metadata?.university || 'Universitas Indonesia',
     department: profile?.prodi || data.user.user_metadata?.prodi || 'Manajemen',
     plan: (profile?.plan as SubscriptionPlan) || 'free',
@@ -80,8 +97,67 @@ export async function register(
   university: string
 ): Promise<User> {
   const supabase = getSupabaseBrowserClient();
+  const cleanEmail = email.trim().toLowerCase();
+
+  // 1. Coba registrasi instan lewat endpoint serverless untuk bypass rate limit email & auto-confirm
+  try {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        email: cleanEmail,
+        password,
+        university,
+      }),
+    });
+
+    const resJson = await res.json().catch(() => null);
+
+    if (resJson && !res.ok) {
+      throw new Error(resJson.error || 'Pendaftaran gagal. Silakan coba kembali.');
+    }
+
+    if (res.ok && resJson?.success) {
+      // Login langsung di browser client setelah akun terbuat di auth server
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password,
+      });
+
+      if (!loginError && loginData?.user) {
+        const user: User = {
+          id: loginData.user.id,
+          name: name.trim() || 'Mahasiswa',
+          email: cleanEmail,
+          university: university.trim() || 'Universitas',
+          department: 'Manajemen',
+          plan: 'free',
+          createdAt: new Date().toISOString(),
+        };
+
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('olahdata-session', JSON.stringify(user));
+          } catch {
+            // ignore
+          }
+        }
+        return user;
+      }
+    }
+  } catch (err: unknown) {
+    // Jika galat validasi bisnis (misal email sudah terdaftar), lemparkan ke user
+    if (err instanceof Error && err.message.includes('sudah terdaftar')) {
+      throw err;
+    }
+    // Jika endpoint /api/auth/register tidak merespons (mis. offline), fallback ke client signUp
+    console.warn('[Register] Serverless register fallback to client signUp:', err);
+  }
+
+  // 2. Fallback standard client signUp
   const { data, error } = await supabase.auth.signUp({
-    email,
+    email: cleanEmail,
     password,
     options: {
       data: {
@@ -95,6 +171,12 @@ export async function register(
   });
 
   if (error) {
+    if (error.message.includes('rate limit')) {
+      throw new Error('Batas pengiriman email autentikasi terlampaui. Silakan coba lagi dalam beberapa menit.');
+    }
+    if (error.message.includes('already registered')) {
+      throw new Error('Alamat email ini sudah terdaftar. Silakan langsung masuk ke akun Anda.');
+    }
     throw new Error(error.message || 'Pendaftaran gagal. Silakan coba kembali.');
   }
 
@@ -105,7 +187,7 @@ export async function register(
   const user: User = {
     id: data.user.id,
     name,
-    email,
+    email: cleanEmail,
     university,
     department: 'Manajemen',
     plan: 'free',
@@ -181,26 +263,231 @@ export async function getSession(): Promise<User | null> {
 // 2. CADANGAN LOKAL & FALLBACK (UNTUK MODE DEMO / OFFLINE)
 // =============================================================================
 
+const DUMMY_PROJECT_IDS = new Set(['project-1', 'project-2', 'project-3']);
+const DUMMY_RUN_IDS = new Set(['run-2026-001', 'run-2026-002', 'run-2026-003', 'run-2026-004']);
+
+/**
+ * Prinsip S2: Fungsi kanonik perhitungan N efektif = row_count - excluded_count.
+ */
+export function computeEffectiveN(
+  rowCount: number,
+  excludedRowsOrCount?: number | readonly number[] | null
+): number {
+  const safeRowCount = Number.isFinite(rowCount) ? Math.max(0, Math.floor(rowCount)) : 0;
+  if (safeRowCount === 0) return 0;
+  if (typeof excludedRowsOrCount === 'number') {
+    return Math.max(0, safeRowCount - Math.max(0, Math.floor(excludedRowsOrCount)));
+  }
+  if (Array.isArray(excludedRowsOrCount)) {
+    const valid = new Set<number>();
+    for (const r of excludedRowsOrCount) {
+      const idx = Number(r);
+      if (Number.isInteger(idx) && idx >= 0 && idx < safeRowCount) valid.add(idx);
+    }
+    return Math.max(0, safeRowCount - valid.size);
+  }
+  return safeRowCount;
+}
+
+export async function getProjectNotesMap(projectId: string): Promise<Record<string, string>> {
+  const notesMap: Record<string, string> = {};
+  if (typeof window !== 'undefined') {
+    try {
+      const prefix = `olahdata_theory_note_${projectId}_`;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(prefix) && !key.endsWith('__version')) {
+          const sectionKey = key.slice(prefix.length);
+          const val = localStorage.getItem(key);
+          if (val && val.trim()) {
+            notesMap[sectionKey] = val.trim();
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  try {
+    const supabase = getSupabaseBrowserClient();
+    const { data, error } = await supabase
+      .from('notes')
+      .select('section_id, text')
+      .eq('project_id', projectId);
+    if (!error && Array.isArray(data)) {
+      for (const row of data) {
+        if (row.section_id && typeof row.text === 'string' && row.text.trim()) {
+          notesMap[row.section_id] = row.text.trim();
+        }
+      }
+    }
+  } catch {
+    // ignore offline/network errors
+  }
+
+  return notesMap;
+}
+
+function enrichProjectWithLocalResults(proj: Project): Project {
+  if (typeof window === 'undefined') return proj;
+  try {
+    const savedResRaw = localStorage.getItem(`olahdata_results_${proj.id}`);
+    if (savedResRaw) {
+      const savedRes = JSON.parse(savedResRaw) as AnalysisResults;
+      const respondentCount = savedRes.respondentCount || proj.respondentCount || 0;
+      const itemCount =
+        savedRes.sourceMeta?.columnCount ||
+        savedRes.validity?.length ||
+        proj.itemCount ||
+        0;
+      return {
+        ...proj,
+        title: savedRes.projectTitle && !DUMMY_PROJECT_IDS.has(proj.id) ? savedRes.projectTitle : proj.title,
+        respondentCount,
+        itemCount,
+        status: 'completed',
+        updatedAt: savedRes.timestamp || proj.updatedAt,
+      };
+    }
+  } catch {
+    // ignore parse errors
+  }
+  return proj;
+}
+
 function getStoredProjects(): Project[] {
-  if (typeof window === 'undefined') return [...mockProjects];
+  if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem('olahdata-projects');
     if (!raw) {
-      localStorage.setItem('olahdata-projects', JSON.stringify(mockProjects));
-      return [...mockProjects];
+      return [];
     }
-    return JSON.parse(raw) as Project[];
+    const parsed = JSON.parse(raw) as Project[];
+    if (!Array.isArray(parsed)) return [];
+    const realProjects = parsed
+      .filter((p) => p && p.id && !DUMMY_PROJECT_IDS.has(p.id))
+      .map(enrichProjectWithLocalResults);
+    if (realProjects.length !== parsed.length) {
+      localStorage.setItem('olahdata-projects', JSON.stringify(realProjects));
+    }
+    return realProjects;
   } catch {
-    return [...mockProjects];
+    return [];
   }
 }
 
 function saveStoredProjects(projects: Project[]): void {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem('olahdata-projects', JSON.stringify(projects));
+    const filtered = projects
+      .filter((p) => p && p.id && !DUMMY_PROJECT_IDS.has(p.id))
+      .map(enrichProjectWithLocalResults);
+    localStorage.setItem('olahdata-projects', JSON.stringify(filtered));
   } catch {
     // ignore
+  }
+}
+
+export interface AnalysisRunLogEntry {
+  id: string;
+  projectId: string;
+  projectName: string;
+  fileName: string;
+  datasetVersion: number;
+  datasetKind: 'original' | 'derived';
+  tests: string[];
+  status: 'succeeded' | 'running' | 'failed';
+  startedAt: string;
+  durationMs: number;
+  respondentCount: number;
+}
+
+export function recordAnalysisRun(entry: AnalysisRunLogEntry): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const raw = localStorage.getItem('olahdata-analysis-runs');
+    const existing: AnalysisRunLogEntry[] = raw ? JSON.parse(raw) : [];
+    const cleaned = Array.isArray(existing)
+      ? existing.filter((r) => r && r.id && !DUMMY_RUN_IDS.has(r.id) && r.id !== entry.id)
+      : [];
+    const updated = [entry, ...cleaned].slice(0, 50);
+    localStorage.setItem('olahdata-analysis-runs', JSON.stringify(updated));
+  } catch {
+    // ignore
+  }
+}
+
+export async function syncProjectProgress(
+  projectId: string,
+  updates: {
+    title?: string;
+    department?: string;
+    respondentCount?: number;
+    itemCount?: number;
+    status?: ProjectStatus;
+    fileName?: string;
+  }
+): Promise<void> {
+  if (typeof window !== 'undefined') {
+    try {
+      const list = getStoredProjects();
+      const idx = list.findIndex((p) => p.id === projectId);
+      const now = new Date().toISOString();
+      if (idx >= 0) {
+        list[idx] = {
+          ...list[idx],
+          ...(updates.title ? { title: updates.title } : {}),
+          ...(updates.department ? { department: updates.department } : {}),
+          ...(updates.respondentCount !== undefined ? { respondentCount: updates.respondentCount } : {}),
+          ...(updates.itemCount !== undefined ? { itemCount: updates.itemCount } : {}),
+          ...(updates.status ? { status: updates.status } : {}),
+          updatedAt: now,
+        };
+        saveStoredProjects(list);
+      } else if (projectId !== 'sample' && !DUMMY_PROJECT_IDS.has(projectId)) {
+        const activeMetaRaw = localStorage.getItem('olahdata_active_project_meta');
+        const activeMeta = activeMetaRaw ? JSON.parse(activeMetaRaw) : null;
+        const created: Project = {
+          id: projectId,
+          title: updates.title || activeMeta?.title || 'Proyek Penelitian Skripsi',
+          department: updates.department || activeMeta?.department || 'Umum',
+          researchType: activeMeta?.researchType || 'Regresi Linier Berganda',
+          respondentCount: updates.respondentCount ?? 0,
+          itemCount: updates.itemCount ?? 0,
+          status: updates.status || 'completed',
+          createdAt: now,
+          updatedAt: now,
+          dataVersions: [],
+          currentDataVersion: 'dv-1',
+        };
+        saveStoredProjects([created, ...list]);
+      }
+    } catch {
+      // ignore localStorage errors
+    }
+  }
+
+  if (projectId === 'sample' || projectId.startsWith('project-')) return;
+
+  try {
+    const supabase = getSupabaseBrowserClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const dbUpdates: Record<string, unknown> = {
+        updated_at: new Date().toISOString(),
+      };
+      if (updates.title) dbUpdates.judul = updates.title;
+      if (updates.department) dbUpdates.prodi = updates.department;
+      if (updates.status) dbUpdates.status = updates.status;
+      await supabase
+        .from('projects')
+        .update(dbUpdates)
+        .eq('id', projectId)
+        .eq('owner_id', user.id);
+    }
+  } catch {
+    // ignore network errors
   }
 }
 
@@ -232,20 +519,23 @@ function mapDbProjectToProject(row: DbProjectRow): Project {
   const dataVersions: DataVersion[] = rawDatasets.map((ds) => ({
     id: ds.id,
     label: ds.kind === 'derived' ? `Versi ${ds.version} (Pembersihan)` : `Versi ${ds.version} (Awal)`,
-    rowCount: ds.n_rows || 0,
+    rowCount: computeEffectiveN(ds.n_rows || 0, ds.excluded_rows || []),
     columnCount: ds.n_cols || 0,
     removedRows: ds.excluded_rows || [],
     createdAt: ds.created_at,
   }));
 
   const latest = rawDatasets[rawDatasets.length - 1];
+  const effectiveN = latest
+    ? computeEffectiveN(latest.n_rows || 0, latest.excluded_rows || [])
+    : 0;
 
   return {
     id: row.id,
     title: row.judul,
     department: row.prodi || 'Manajemen',
     researchType: 'Regresi Linier Berganda',
-    respondentCount: latest?.n_rows || 0,
+    respondentCount: effectiveN,
     itemCount: latest?.n_cols || 0,
     status: (row.status as ProjectStatus) || 'draft',
     createdAt: row.created_at,
@@ -286,9 +576,26 @@ export async function getProjects(): Promise<Project[]> {
         .order('updated_at', { ascending: false });
 
       if (!error && data) {
-        const mapped = (data as DbProjectRow[]).map(mapDbProjectToProject);
-        saveStoredProjects(mapped);
-        return mapped;
+        const localList = getStoredProjects();
+        const mapped = (data as DbProjectRow[]).map((r) => {
+          const base = mapDbProjectToProject(r);
+          const localMatch = localList.find((lp) => lp.id === base.id);
+          const merged: Project = {
+            ...base,
+            title: localMatch?.title || base.title,
+            department: localMatch?.department || base.department,
+            researchType: localMatch?.researchType || base.researchType,
+            respondentCount: Math.max(base.respondentCount, localMatch?.respondentCount || 0),
+            itemCount: Math.max(base.itemCount, localMatch?.itemCount || 0),
+            status: localMatch?.status === 'completed' ? 'completed' : base.status,
+          };
+          return enrichProjectWithLocalResults(merged);
+        });
+        const mappedIds = new Set(mapped.map((m) => m.id));
+        const localOnly = localList.filter((lp) => !mappedIds.has(lp.id));
+        const combined = [...mapped, ...localOnly];
+        saveStoredProjects(combined);
+        return combined;
       }
     }
   } catch (err) {
@@ -300,7 +607,9 @@ export async function getProjects(): Promise<Project[]> {
 
 export async function getProject(id: string): Promise<Project | undefined> {
   if (id === 'sample' || id.startsWith('project-sample')) {
-    return getStoredProjects().find((p) => p.id === id) || mockProjects[0];
+    const storedSample = getStoredProjects().find((p) => p.id === id);
+    if (storedSample) return enrichProjectWithLocalResults(storedSample);
+    return enrichProjectWithLocalResults({ ...mockProjects[0], id });
   }
 
   try {
@@ -330,13 +639,37 @@ export async function getProject(id: string): Promise<Project | undefined> {
       .maybeSingle();
 
     if (!error && row) {
-      return mapDbProjectToProject(row as DbProjectRow);
+      const base = mapDbProjectToProject(row as DbProjectRow);
+      const localMatch = getStoredProjects().find((p) => p.id === id);
+      return enrichProjectWithLocalResults({
+        ...base,
+        respondentCount: Math.max(base.respondentCount, localMatch?.respondentCount || 0),
+        itemCount: Math.max(base.itemCount, localMatch?.itemCount || 0),
+        status: localMatch?.status === 'completed' ? 'completed' : base.status,
+      });
     }
   } catch (err) {
     console.warn('[Supabase API] Gagal memuat proyek ID:', id, err);
   }
 
-  return getStoredProjects().find((p) => p.id === id);
+  const localFound = getStoredProjects().find((p) => p.id === id);
+  if (localFound) return enrichProjectWithLocalResults(localFound);
+
+  if (typeof window !== 'undefined') {
+    try {
+      const activeMetaRaw = localStorage.getItem('olahdata_active_project_meta');
+      if (activeMetaRaw) {
+        const activeMeta = JSON.parse(activeMetaRaw) as Project;
+        if (activeMeta && (activeMeta.id === id || id === 'baru')) {
+          return enrichProjectWithLocalResults(activeMeta);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return undefined;
 }
 
 export async function createProject(
@@ -377,6 +710,13 @@ export async function createProject(
 
         const list = getStoredProjects();
         saveStoredProjects([created, ...list.filter((p) => p.id !== created.id)]);
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('olahdata_active_project_meta', JSON.stringify(created));
+          } catch {
+            // ignore
+          }
+        }
         return created;
       }
     }
@@ -400,6 +740,13 @@ export async function createProject(
   };
   const list = getStoredProjects();
   saveStoredProjects([newProject, ...list]);
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('olahdata_active_project_meta', JSON.stringify(newProject));
+    } catch {
+      // ignore
+    }
+  }
   return newProject;
 }
 
@@ -695,9 +1042,49 @@ export async function exportResult(
   options: ExportOptions,
   customResults?: AnalysisResults
 ): Promise<Blob> {
-  const project = await getProject(projectId).catch(() => null);
-  const projectTitle = project?.title || 'Analisis Data Skripsi';
   const results = customResults || (await getResult(projectId));
+  const project = await getProject(projectId).catch(() => null);
+  let activeMetaTitle: string | undefined;
+  if (typeof window !== 'undefined') {
+    try {
+      const metaRaw = localStorage.getItem('olahdata_active_project_meta');
+      if (metaRaw) {
+        const parsed = JSON.parse(metaRaw);
+        if (parsed?.title) activeMetaTitle = parsed.title;
+      }
+    } catch {
+      // ignore
+    }
+  }
+  const isSample =
+    projectId === 'sample' ||
+    projectId.startsWith('project-sample') ||
+    Boolean(project?.title?.includes('(Data Contoh)'));
+  const demoDefaultTitle = 'Pengaruh Kualitas Layanan dan Kepuasan terhadap Loyalitas Pelanggan';
+
+  const isGenericOptionTitle =
+    !options.projectTitle ||
+    options.projectTitle === 'Analisis Skripsi' ||
+    options.projectTitle === 'Penelitian Skripsi' ||
+    options.projectTitle === 'Analisis Data Skripsi' ||
+    (!isSample && options.projectTitle === demoDefaultTitle);
+
+  const candidateTitle = (
+    (!isGenericOptionTitle ? options.projectTitle : undefined) ||
+    (project && !DUMMY_PROJECT_IDS.has(project.id) && project.id !== 'sample' ? project.title : undefined) ||
+    (results?.projectTitle && (isSample || results.projectTitle !== demoDefaultTitle)
+      ? results.projectTitle
+      : undefined) ||
+    activeMetaTitle ||
+    (isSample ? project?.title || demoDefaultTitle : '')
+  )?.trim();
+
+  if (!candidateTitle || (!isSample && candidateTitle.toLowerCase() === demoDefaultTitle.toLowerCase())) {
+    throw new Error('Judul penelitian belum diisi. Lengkapi di formulir proyek sebelum mengunduh.');
+  }
+
+  const projectTitle = candidateTitle;
+  const notesMap = await getProjectNotesMap(projectId);
 
   if (options.format === 'pdf') {
     const pdfBytes = generateAcademicPdfReport(results, {
@@ -705,6 +1092,7 @@ export async function exportResult(
       sections: options.sections,
       includeStatement: options.includeStatement,
       watermark: false,
+      notesMap,
     });
     return new Blob([pdfBytes as unknown as BlobPart], { type: 'application/pdf' });
   }
@@ -716,6 +1104,7 @@ export async function exportResult(
 
   if (options.format === 'word') {
     const tone = options.narrativeTone || 'standard';
+    const wordImages: { id: string; base64Data: string; contentType?: string }[] = [];
     const formatNarrative = (text: string) => {
       if (!text) return '';
       if (tone === 'concise') {
@@ -854,6 +1243,43 @@ export async function exportResult(
       options.sections.includes('multicollinearity') ||
       options.sections.includes('heteroscedasticity')
     ) {
+      // Render Gambar 4.1 dan Gambar 4.2 format APA 7th Edition
+      let fig4_1Html = '';
+      let fig4_2Html = '';
+      if (options.sections.includes('normality')) {
+        const rawZ = results.standardizedResiduals || results.unstandardizedResiduals || [];
+        const histData = calculateHistogramData(rawZ);
+        const ppData = calculateNormalPPPlotData(results.unstandardizedResiduals || results.standardizedResiduals || []);
+
+        const histSvg = generateHistogramSvgString(histData, 'print', 600, 360);
+        const ppSvg = generateNormalPPPlotSvgString(ppData, 'print', 420);
+
+        try {
+          const [histPng, ppPng] = await Promise.all([
+            convertSvgToPngBase64(histSvg, 600, 360, 2),
+            convertSvgToPngBase64(ppSvg, 420, 420, 2),
+          ]);
+          wordImages.push({ id: 'gambar4_1.png', base64Data: histPng, contentType: 'image/png' });
+          wordImages.push({ id: 'gambar4_2.png', base64Data: ppPng, contentType: 'image/png' });
+        } catch (err) {
+          console.warn('Gagal merender grafik PNG untuk Word:', err);
+        }
+
+        fig4_1Html = buildApaFigureHtml(
+          'Gambar 4.1',
+          'Histogram Residual dan Kurva Normal Model Regresi',
+          'gambar4_1.png',
+          'Sumber: Data primer diolah (2026). Dihitung dari standardized residual OLS.'
+        );
+
+        fig4_2Html = buildApaFigureHtml(
+          'Gambar 4.2',
+          'Normal P-P Plot of Regression Standardized Residual',
+          'gambar4_2.png',
+          'Sumber: Data primer diolah (2026). Titik observasi merapat di sepanjang garis diagonal 45°.'
+        );
+      }
+
       const normTable = buildWordTableHtml({
         tableNumber: 'Tabel 4.4',
         title: 'Hasil Uji Normalitas Residual (Kolmogorov-Smirnov)',
@@ -972,7 +1398,7 @@ export async function exportResult(
       const narrativeHtml = `<p>${narrativeText}</p>`;
       sections.push({
         title: '4. Uji Asumsi Klasik',
-        contentHtml: normTable + multiTable + heteroTable + (dwTable ? `<br/>${dwTable}` : '') + (linTable ? `<br/>${linTable}` : '') + narrativeHtml,
+        contentHtml: normTable + (fig4_1Html ? `<br/>${fig4_1Html}` : '') + (fig4_2Html ? `<br/>${fig4_2Html}` : '') + '<br/>' + multiTable + '<br/>' + heteroTable + (dwTable ? `<br/>${dwTable}` : '') + (linTable ? `<br/>${linTable}` : '') + narrativeHtml,
       });
     }
 
@@ -1273,7 +1699,10 @@ export async function exportResult(
       });
     }
 
-    const docHtml = buildWordDocumentContent(projectTitle, sections);
+    const docHtml = buildWordDocumentContent(projectTitle, sections, {
+      respondentCount: results.respondentCount,
+      notesMap,
+    }, wordImages);
     return new Blob([docHtml], { type: 'application/msword;charset=utf-8' });
   }
 
@@ -1283,6 +1712,7 @@ export async function exportResult(
     sections: options.sections,
     includeStatement: options.includeStatement,
     watermark: false,
+    notesMap,
   });
   return new Blob([pdfBytes as unknown as BlobPart], { type: 'application/pdf' });
 }

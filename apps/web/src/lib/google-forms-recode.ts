@@ -181,12 +181,14 @@ export function detectMetadataAndPiiColumns(
     const clean = col.trim().toLowerCase();
     if (/^(timestamp|cap[\s_]?waktu|waktu|date|tanggal|waktu[\s_]?pengisian)$/i.test(clean)) {
       results.push({ column: col, role: 'ignored', reason: 'Cap waktu otomatis Google Forms' });
-    } else if (/^(nama|name|nama[\s_]?lengkap|email|alamat[\s_]?email|email[\s_]?address|username)$/i.test(clean)) {
+    } else if (/^(nama|name|nama[\s_]?lengkap|full[\s_]?name|email|alamat[\s_]?email|email[\s_]?address|username|surel)$/i.test(clean)) {
       results.push({ column: col, role: 'ignored', reason: 'Data pribadi responden (PII)' });
-    } else if (/^(nim|npm|nisn|nik|no[\s_]?hp|nomor[\s_]?telepon|no[\s_]?wa|nomor[\s_]?whatsapp)$/i.test(clean)) {
-      results.push({ column: col, role: 'ignored', reason: 'Identitas / Kontak responden' });
-    } else if (/^(no|nomor|id|no\.|nomor[\s_]?responden)$/i.test(clean)) {
-      results.push({ column: col, role: 'id', reason: 'Nomor indeks responden' });
+    } else if (/^(no[\s_]?hp|nomor[\s_]?telepon|no[\s_]?wa|nomor[\s_]?whatsapp|telepon|phone)$/i.test(clean)) {
+      results.push({ column: col, role: 'ignored', reason: 'Kontak responden (PII)' });
+    } else if (/^(skor|score|total[\s_]?score|total[\s_]?skor|nilai[\s_]?kuis|point|points|poin)$/i.test(clean)) {
+      results.push({ column: col, role: 'ignored', reason: 'Nilai kuis / Skor kontinu Google Forms' });
+    } else if (/^(no|nomor|id|no\.|nomor[\s_]?responden|id[\s_]?responden|nim|npm|nisn|nik)$/i.test(clean)) {
+      results.push({ column: col, role: 'id', reason: 'ID Responden' });
     }
   });
 

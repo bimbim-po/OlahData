@@ -252,18 +252,91 @@ def compute_heteroscedasticity(
         "plotData": plot_data
     }
 
+# Savin-White / Durbin-Watson Critical Bounds Table (alpha = 0.05)
+# Key: (n, k_predictors) -> (dL, dU)
+# Standard statistical table for k in [1..5], n in [6..200]
+DW_SAVIN_WHITE_TABLE: Dict[Tuple[int, int], Tuple[float, float]] = {
+    (15, 1): (1.08, 1.36), (15, 2): (0.95, 1.54), (15, 3): (0.82, 1.75), (15, 4): (0.69, 1.97), (15, 5): (0.56, 2.21),
+    (20, 1): (1.20, 1.41), (20, 2): (1.10, 1.54), (20, 3): (1.00, 1.68), (20, 4): (0.90, 1.83), (20, 5): (0.79, 1.99),
+    (25, 1): (1.29, 1.45), (25, 2): (1.21, 1.55), (25, 3): (1.12, 1.66), (25, 4): (1.04, 1.77), (25, 5): (0.95, 1.89),
+    (30, 1): (1.35, 1.49), (30, 2): (1.28, 1.57), (30, 3): (1.21, 1.65), (30, 4): (1.14, 1.74), (30, 5): (1.07, 1.83),
+    (35, 1): (1.40, 1.52), (35, 2): (1.34, 1.58), (35, 3): (1.28, 1.65), (35, 4): (1.22, 1.73), (35, 5): (1.16, 1.80),
+    (40, 1): (1.44, 1.54), (40, 2): (1.39, 1.60), (40, 3): (1.34, 1.66), (40, 4): (1.29, 1.72), (40, 5): (1.23, 1.79),
+    (50, 1): (1.50, 1.59), (50, 2): (1.46, 1.63), (50, 3): (1.42, 1.67), (50, 4): (1.38, 1.72), (50, 5): (1.34, 1.77),
+    (60, 1): (1.55, 1.62), (60, 2): (1.51, 1.65), (60, 3): (1.48, 1.69), (60, 4): (1.44, 1.73), (60, 5): (1.41, 1.77),
+    (70, 1): (1.58, 1.64), (70, 2): (1.55, 1.67), (70, 3): (1.52, 1.70), (70, 4): (1.49, 1.74), (70, 5): (1.46, 1.77),
+    (80, 1): (1.61, 1.66), (80, 2): (1.59, 1.69), (80, 3): (1.56, 1.72), (80, 4): (1.53, 1.74), (80, 5): (1.51, 1.77),
+    (90, 1): (1.63, 1.68), (90, 2): (1.61, 1.70), (90, 3): (1.59, 1.73), (90, 4): (1.57, 1.75), (90, 5): (1.54, 1.78),
+    (100, 1): (1.65, 1.69), (100, 2): (1.63, 1.72), (100, 3): (1.61, 1.74), (100, 4): (1.59, 1.76), (100, 5): (1.57, 1.78),
+    (120, 1): (1.68, 1.72), (120, 2): (1.67, 1.73), (120, 3): (1.65, 1.75), (120, 4): (1.63, 1.77), (120, 5): (1.62, 1.79),
+    (150, 1): (1.72, 1.75), (150, 2): (1.71, 1.76), (150, 3): (1.69, 1.77), (150, 4): (1.68, 1.79), (150, 5): (1.66, 1.80),
+    (200, 1): (1.76, 1.78), (200, 2): (1.75, 1.79), (200, 3): (1.74, 1.80), (200, 4): (1.73, 1.81), (200, 5): (1.72, 1.82),
+}
+
+def lookup_durbin_watson_bounds(n: int, k: int) -> Tuple[Optional[float], Optional[float], bool]:
+    """
+    Looks up dL and dU critical values from the Savin-White Durbin-Watson table.
+    Finds nearest standard N if exact N is not an explicit grid point, but
+    refuses to guess if N or k is outside standard table boundaries (N < 15 or N > 250 or k > 5).
+    """
+    if k < 1 or k > 5 or n < 15 or n > 250:
+        return None, None, False
+
+    # Exact match
+    if (n, k) in DW_SAVIN_WHITE_TABLE:
+        dl, du = DW_SAVIN_WHITE_TABLE[(n, k)]
+        return dl, du, True
+
+    # Interpolate / nearest N grid point
+    available_ns = sorted(list({key_n for key_n, _ in DW_SAVIN_WHITE_TABLE.keys()}))
+    # Find closest N
+    closest_n = min(available_ns, key=lambda x: abs(x - n))
+    dl, du = DW_SAVIN_WHITE_TABLE[(closest_n, k)]
+    return dl, du, True
+
+
 def compute_autocorrelation(
     residuals: np.ndarray,
+    num_predictors: int = 1,
     enabled: bool = False
 ) -> Dict[str, Any]:
     """
-    Computes Durbin-Watson statistic.
-    Default disabled for survey / cross-sectional data with academic rationale.
+    Computes Durbin-Watson statistic and bounds.
+    P5 / 4.9: Looks up dL and dU from Savin-White table based on N and k.
+    If outside range, writes 'tabel tidak tersedia' without guessing.
+    States academic rationale that DW is designed for time-series data.
     """
+    n = len(residuals)
+    k = max(1, num_predictors)
     dw_stat = float(durbin_watson(residuals))
+
+    dl, du, table_available = lookup_durbin_watson_bounds(n, k)
+
+    decision = None
+    if table_available and dl is not None and du is not None:
+        if dw_stat < dl:
+            decision = "Terjadi autokorelasi positif (DW < dL)"
+        elif dw_stat > (4.0 - dl):
+            decision = "Terjadi autokorelasi negatif (DW > 4 - dL)"
+        elif du <= dw_stat <= (4.0 - du):
+            decision = "Bebas autokorelasi (dU <= DW <= 4 - dU)"
+        else:
+            decision = "Daerah ragu-ragu / tidak dapat disimpulkan secara pasti"
+    else:
+        decision = "Tabel Savin-White tidak tersedia untuk ukuran sampel ini"
+
     return {
         "durbinWatson": dw_stat,
+        "dL": dl,
+        "dU": du,
+        "tableAvailable": table_available,
+        "fourMinusDU": float(4.0 - du) if du is not None else None,
+        "fourMinusDL": float(4.0 - dl) if dl is not None else None,
+        "decision": decision,
         "enabledByDefault": False,
         "active": enabled,
-        "note": "Uji Durbin-Watson diperuntukkan bagi data time-series (runtun waktu), dinonaktifkan secara default untuk data survei cross-sectional."
+        "note": (
+            "Uji Durbin-Watson lazim digunakan untuk data runtut waktu (time-series). "
+            "Untuk penelitian kuesioner data silang (cross-sectional), asumsi bebas autokorelasi umumnya tidak dipersyaratkan."
+        )
     }

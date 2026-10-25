@@ -274,7 +274,7 @@ export function TraceabilityPanel({
           <>
             <div>Metode: Pearson Product Moment</div>
             <div>Taraf signifikansi: α = 0,05 (uji dua arah)</div>
-            <div>Kategori kekuatan: Sugiyono &amp; Schober</div>
+            <div>Kategori kekuatan: Sugiyono dan Schober</div>
           </>
         );
 
@@ -301,7 +301,7 @@ export function TraceabilityPanel({
           <div className="flex items-center gap-2">
             <FileCheck2 className="h-4 w-4 text-primary" />
             <h3 className="text-[15px] font-semibold text-foreground tracking-tight">
-              Pusat Audit &amp; Sidang
+              Pusat Audit dan Sidang
             </h3>
           </div>
           <div className="flex items-center gap-2">
@@ -349,7 +349,7 @@ export function TraceabilityPanel({
             )}
           >
             <Sliders className="w-3.5 h-3.5" />
-            <span>Rumus &amp; Jejak Hitung</span>
+            <span>Rumus dan Jejak Hitung</span>
           </button>
           <button
             type="button"

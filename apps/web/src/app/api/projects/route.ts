@@ -1,41 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getProjectsRepo, createProjectRepo } from '@/lib/db/repo';
+import {
+  listServerProjectsForUser,
+  createServerProject,
+  NO_STORE_HEADERS,
+} from '@/lib/server/sync-engine';
+import { resolveRequestUserId } from '@/lib/server/request-auth';
 
-export async function GET() {
-  try {
-    const projects = await getProjectsRepo();
-    return NextResponse.json(projects);
-  } catch {
+export const dynamic = 'force-dynamic';
+
+export async function GET(req: NextRequest) {
+  const userId = resolveRequestUserId(req);
+  const res = listServerProjectsForUser(userId);
+
+  if (!res.ok) {
     return NextResponse.json(
-      { code: 'INTERNAL_ERROR', message: 'Gagal memuat daftar proyek penelitian.' },
-      { status: 500 }
+      { code: res.error.code, message: res.error.message },
+      { status: res.error.status, headers: NO_STORE_HEADERS }
     );
   }
+
+  return NextResponse.json(res.data, {
+    status: 200,
+    headers: NO_STORE_HEADERS,
+  });
 }
 
 export async function POST(req: NextRequest) {
+  const userId = resolveRequestUserId(req);
+
   try {
     const body = await req.json();
-    const { title, department, researchType } = body;
+    const { id, title, department, researchType, isSample } = body || {};
 
-    if (!title || typeof title !== 'string' || !title.trim()) {
+    const res = createServerProject({
+      id,
+      ownerId: userId,
+      title,
+      department: department || 'Program Studi Umum',
+      researchType: researchType || 'Regresi Linier Berganda',
+      isSample: Boolean(isSample),
+    });
+
+    if (!res.ok) {
       return NextResponse.json(
-        { code: 'VALIDATION_ERROR', message: 'Judul penelitian wajib diisi.' },
-        { status: 400 }
+        { code: res.error.code, message: res.error.message },
+        { status: res.error.status, headers: NO_STORE_HEADERS }
       );
     }
 
-    const project = await createProjectRepo(
-      title.trim(),
-      department || 'Program Studi Umum',
-      researchType || 'Regresi Linier Berganda'
-    );
-
-    return NextResponse.json(project, { status: 201 });
+    return NextResponse.json(res.data, {
+      status: 201,
+      headers: NO_STORE_HEADERS,
+    });
   } catch {
     return NextResponse.json(
-      { code: 'BAD_REQUEST', message: 'Format data permintaan tidak valid.' },
-      { status: 400 }
+      { code: 'BAD_REQUEST', message: 'Format data permintaan proyek tidak valid.' },
+      { status: 400, headers: NO_STORE_HEADERS }
     );
   }
 }

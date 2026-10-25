@@ -64,10 +64,11 @@ function MasukForm() {
         variant: 'success',
       });
       router.push(lanjut);
-    } catch {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Terjadi kendala saat memproses login. Silakan periksa kredensial Anda.';
       toast({
         title: 'Gagal masuk',
-        description: 'Terjadi kendala saat memproses login. Silakan periksa kredensial Anda.',
+        description: msg,
         variant: 'error',
       });
     } finally {
@@ -193,7 +194,7 @@ function MasukForm() {
             Belum punya akun atau ingin langsung mencoba?
           </p>
           <p className="text-xs text-muted-foreground">
-            Jalankan uji validitas, reliabilitas, &amp; regresi langsung dengan data kuesioner contoh tanpa perlu login.
+            Jalankan uji validitas, reliabilitas, dan regresi langsung dengan data kuesioner contoh tanpa perlu login.
           </p>
         </div>
         <Button asChild variant="outline" size="sm" className="whitespace-nowrap shrink-0 text-xs font-semibold border-primary/30 hover:bg-primary/10">

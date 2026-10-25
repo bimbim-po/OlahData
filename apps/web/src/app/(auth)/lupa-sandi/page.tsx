@@ -29,7 +29,7 @@ export default function LupaSandiPage() {
     try {
       const supabase = getSupabaseBrowserClient();
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      const redirectUrl = `${origin}/auth/callback?next=/reset-sandi`;
+      const redirectUrl = `${origin}/reset-sandi`;
 
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
         redirectTo: redirectUrl,
@@ -82,12 +82,31 @@ export default function LupaSandiPage() {
                   Kami telah mengirimkan petunjuk pemulihan kata sandi ke <strong className="text-foreground">{email}</strong>. Silakan periksa folder kotak masuk atau spam Anda.
                 </p>
               </div>
-              <Button asChild className="w-full font-semibold min-h-[44px]">
-                <Link href="/masuk">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  <span>Kembali ke Halaman Masuk</span>
-                </Link>
-              </Button>
+
+              <div className="p-3 rounded-lg border border-primary/20 bg-primary/5 text-left text-xs space-y-1">
+                <p className="font-semibold text-foreground flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-primary" />
+                  Petunjuk Akses Pemulihan:
+                </p>
+                <p className="text-muted-foreground text-[11px] leading-relaxed">
+                  Klik tautan &quot;Reset Password&quot; di email. Jika peramban Anda dialihkan ke localhost atau tautan tidak terbuka, buka halaman Buat Sandi Baru di bawah dan tempel tautan dari peramban tersebut.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Button asChild className="w-full font-semibold min-h-[44px]">
+                  <Link href="/reset-sandi">
+                    <span>Buka Halaman Buat Sandi Baru</span>
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="w-full font-semibold min-h-[44px]">
+                  <Link href="/masuk">
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    <span>Kembali ke Halaman Masuk</span>
+                  </Link>
+                </Button>
+              </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">

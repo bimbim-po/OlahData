@@ -14,6 +14,7 @@ import {
   Copy,
   Mail,
   ChevronDown,
+  ChevronRight,
   Timer,
   ArrowRight,
   ShieldCheck,
@@ -138,6 +139,88 @@ const GLOSSARY_TERMS = [
   },
 ];
 
+
+export interface GuideArticle {
+  id: string;
+  title: string;
+  category: string;
+  description: string;
+  keywords: string[];
+}
+
+export const GUIDE_ARTICLES: GuideArticle[] = [
+  {
+    id: 'mulai-cepat',
+    title: 'Mulai Cepat 60 Detik',
+    category: 'Alur Cepat',
+    description: 'Lima langkah ringkas untuk menyelesaikan olah data kuesioner skripsi dari unggah berkas hingga unduh naskah Bab 4.',
+    keywords: ['mulai', 'cepat', 'langkah', 'alur', 'unggah', 'unduh', 'bab 4', 'wizard', 'instan']
+  },
+  {
+    id: 'format-berkas',
+    title: 'Format Berkas Excel & CSV yang Didukung',
+    category: 'Data Primer',
+    description: 'Panduan tata letak spreadsheet kuesioner (.xlsx, .xls, .csv). Baris pertama untuk nama variabel/butir, tanpa spasi ganda, dan data numerik 1-5.',
+    keywords: ['format', 'excel', 'csv', 'xlsx', 'xls', 'google forms', 'kolom', 'baris', 'pembersihan', 'impor', 'unggah']
+  },
+  {
+    id: 'pemetaan-variabel',
+    title: 'Pemetaan Butir Pertanyaan & Variabel',
+    category: 'Konfigurasi',
+    description: 'Cara mengelompokkan butir kuesioner ke dalam variabel independen (X) dan dependen (Y), serta butir berkebalikan (reverse coding).',
+    keywords: ['variabel', 'pemetaan', 'butir', 'konstruk', 'independen', 'dependen', 'reverse', 'negatif', 'skala likert']
+  },
+  {
+    id: 'panduan-hasil',
+    title: 'Memahami Hasil Analisis Bab 4 & Mode Tampilan',
+    category: 'Interpretasi Bab 4',
+    description: 'Penjelasan tata letak tabel APA 7th, narasi akademik Bab 4, interpretasi otomatis, dan perbandingan dengan output IBM SPSS.',
+    keywords: ['bab 4', 'hasil', 'tabel', 'apa 7th', 'spss', 'interpretasi', 'sidang', 'skripsi', 'ekspor', 'word', 'pdf']
+  },
+  {
+    id: 'validitas',
+    title: 'Panduan Uji Validitas (Pearson Product Moment)',
+    category: 'Uji Kuesioner',
+    description: 'Kaidah r hitung > r tabel (derajat bebas df = N - 2, taraf signifikansi 0,05). Cara membaca signifikansi dan tindakan eliminasi butir gugur.',
+    keywords: ['validitas', 'pearson', 'product moment', 'r hitung', 'r tabel', 'gugur', 'valid', 'df', 'eliminasi', 'korelasi']
+  },
+  {
+    id: 'reliabilitas',
+    title: "Panduan Uji Reliabilitas (Cronbach's Alpha)",
+    category: 'Uji Kuesioner',
+    description: "Standar koefisien Cronbach's Alpha > 0,600 atau 0,700 menurut Prof. Imam Ghozali dan Prof. Sugiyono untuk konsistensi internal instrumen.",
+    keywords: ['reliabilitas', 'cronbach', 'alpha', 'konsistensi', 'ghozali', 'sugiyono', 'reliabel', 'instrumen']
+  },
+  {
+    id: 'asumsi-klasik',
+    title: 'Panduan Uji Asumsi Klasik OLS',
+    category: 'Asumsi Regresi',
+    description: 'Uji Normalitas (Kolmogorov-Smirnov / Shapiro-Wilk), Multikolinearitas (VIF & Tolerance), Heteroskedastisitas (Glejser & Scatterplot), dan Autokorelasi (Durbin-Watson).',
+    keywords: ['asumsi klasik', 'normalitas', 'kolmogorov smirnov', 'shapiro wilk', 'multikolinearitas', 'vif', 'tolerance', 'heteroskedastisitas', 'glejser', 'durbin watson', 'autokorelasi']
+  },
+  {
+    id: 'regresi',
+    title: 'Panduan Regresi Linier Berganda & Uji Hipotesis',
+    category: 'Uji Hipotesis',
+    description: 'Uji parsial t (t hitung vs t tabel, Sig < 0,05), Uji simultan F (F hitung vs F tabel), dan Koefisien Determinasi (R Square & Adjusted R Square).',
+    keywords: ['regresi', 'regresi linier', 'uji t', 'uji f', 'r square', 'adjusted r square', 'koefisien', 'hipotesis', 'parsial', 'simultan']
+  },
+  {
+    id: 'pemecahan-masalah',
+    title: 'Pemecahan Masalah Umum (Troubleshooting)',
+    category: 'Solusi Kendala',
+    description: 'Solusi praktis ketika data residual tidak normal, butir kuesioner tidak valid/gugur, multikolinearitas tinggi, atau heteroskedastisitas.',
+    keywords: ['masalah', 'solusi', 'troubleshooting', 'tidak normal', 'gugur', 'outlier', 'transformasi', 'log10', 'winsorizing', 'remedial']
+  },
+  {
+    id: 'kebijakan',
+    title: 'Integritas Ilmiah, Privasi & Pernyataan AI',
+    category: 'Etika Akademik',
+    description: 'Pedoman transparansi penggunaan alat bantu statistik, kepatuhan PDP Indonesia, enkripsi data primer, dan lampiran resmi bebas rekayasa data.',
+    keywords: ['etika', 'integritas', 'privasi', 'pdp', 'enkripsi', 'sidang', 'plagiasi', 'pernyataan']
+  }
+];
+
 const TOC_SECTIONS = [
   { id: 'mulai-cepat', title: 'Mulai Cepat 60 Detik' },
   { id: 'format-berkas', title: 'Format Berkas & Kuesioner' },
@@ -192,6 +275,18 @@ export default function HelpCenterPage() {
     );
   }, [searchQuery]);
 
+  const filteredArticles = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return GUIDE_ARTICLES;
+    return GUIDE_ARTICLES.filter(
+      (art) =>
+        art.title.toLowerCase().includes(q) ||
+        art.category.toLowerCase().includes(q) ||
+        art.description.toLowerCase().includes(q) ||
+        art.keywords.some((kw) => kw.includes(q))
+    );
+  }, [searchQuery]);
+
   const filteredGlossary = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return GLOSSARY_TERMS;
@@ -200,12 +295,12 @@ export default function HelpCenterPage() {
     );
   }, [searchQuery]);
 
-  const isContactConfigured = SUPPORT_EMAIL && SUPPORT_EMAIL !== '[ISI OLEH PEMILIK]';
+  const isContactConfigured = Boolean(SUPPORT_EMAIL);
   const mailtoHref = isContactConfigured
     ? `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
         `[Bantuan OlahData] Kendala Analisis Skripsi - ${diagnosticCode}`
       )}&body=${encodeURIComponent(
-        `Halo Tim Dukungan OlahData,\n\nSaya mahasiswa pengguna OlahData dan mengalami kendala sebagai berikut:\n\n[Tuliskan deskripsi masalah Anda di sini]\n\n-------------------------\nKode Diagnosa: ${diagnosticCode}\nVersi Aplikasi: ${APP_VERSION}\nPeramban: ${
+        `Halo Tim Dukungan OlahData,\n\nSaya mahasiswa pengguna OlahData dan mengalami kendala sebagai berikut:\n\nSaya ingin berkonsultasi mengenai kendala pengolahan data kuesioner skripsi saya.\n\n-------------------------\nKode Diagnosa: ${diagnosticCode}\nVersi Aplikasi: ${APP_VERSION}\nPeramban: ${
           typeof navigator !== 'undefined' ? navigator.userAgent : ''
         }\n-------------------------`
       )}`
@@ -218,10 +313,10 @@ export default function HelpCenterPage() {
         <div className="max-w-3xl space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-[13px] font-semibold">
             <BookOpen className="h-4 w-4" />
-            <span>Pusat Bantuan &amp; Dokumentasi Mahasiswa</span>
+            <span>Pusat Bantuan dan Dokumentasi Mahasiswa</span>
           </div>
           <h1 className="font-serif text-2xl sm:text-4xl font-bold tracking-tight text-foreground">
-            Panduan Lengkap Olah Data &amp; Penulisan Bab 4
+            Panduan Lengkap Olah Data dan Penulisan Bab 4
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
             Temukan panduan langkah demi langkah, interpretasi hasil uji statistik standar akademik,
@@ -252,7 +347,7 @@ export default function HelpCenterPage() {
             </div>
             {searchQuery && (
               <p className="text-xs text-primary font-medium mt-2">
-                Menampilkan hasil pencarian untuk kata kunci: &quot;{searchQuery}&quot; ({filteredFaqs.length} FAQ, {filteredGlossary.length} istilah)
+                Menampilkan hasil pencarian untuk kata kunci: &quot;{searchQuery}&quot; ({filteredArticles.length} panduan, {filteredFaqs.length} FAQ, {filteredGlossary.length} istilah)
               </p>
             )}
           </div>
@@ -319,6 +414,89 @@ export default function HelpCenterPage() {
 
         {/* Content Articles Area */}
         <div className="space-y-10 min-w-0">
+          {/* Hasil Pencarian Interaktif Panduan */}
+          {searchQuery.trim() !== '' && (
+            <div className="rounded-2xl border-2 border-primary/40 bg-card p-5 sm:p-6 shadow-sm space-y-6">
+              <div className="flex items-center justify-between border-b border-border/80 pb-3">
+                <div className="flex items-center gap-2">
+                  <Search className="w-5 h-5 text-primary" />
+                  <h2 className="text-lg font-bold text-foreground">
+                    Hasil Pencarian Panduan ({filteredArticles.length} Panduan Ditemukan)
+                  </h2>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSearchQuery('')}
+                  className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  Tutup Pencarian
+                </Button>
+              </div>
+
+              {filteredArticles.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filteredArticles.map((art) => (
+                    <div
+                      key={art.id}
+                      className="p-4 rounded-xl border border-border/80 bg-muted/20 hover:bg-muted/40 transition-all flex flex-col justify-between space-y-3"
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[11px] font-semibold text-primary px-2 py-0.5 rounded-full bg-primary/10">
+                            {art.category}
+                          </span>
+                        </div>
+                        <h3 className="font-bold text-sm text-foreground">
+                          {art.title}
+                        </h3>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {art.description}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const target = document.getElementById(art.id);
+                          if (target) {
+                            target.scrollIntoView({ behavior: 'smooth' });
+                          }
+                        }}
+                        className="w-full text-xs font-semibold gap-1.5 cursor-pointer mt-1"
+                      >
+                        <span>Buka Panduan Ini</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-6 text-center space-y-2 bg-muted/20 rounded-xl">
+                  <p className="text-sm font-semibold text-foreground">
+                    Tidak ditemukan panduan dengan kata kunci &quot;{searchQuery}&quot;
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Coba kata kunci populer: validitas, reliabilitas, regresi, outlier, r tabel, excel, spss
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-1.5 pt-2">
+                    {['validitas', 'reliabilitas', 'normalitas', 'regresi', 'r hitung', 'excel'].map((kw) => (
+                      <button
+                        key={kw}
+                        type="button"
+                        onClick={() => setSearchQuery(kw)}
+                        className="px-2.5 py-1 text-xs rounded-full bg-background border border-border text-primary hover:bg-primary/10 cursor-pointer"
+                      >
+                        {kw}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           {/* 1. Mulai Cepat 60 Detik */}
           <section id="mulai-cepat" className="scroll-mt-24 space-y-4">
             <div className="border-b border-border pb-3">
@@ -415,7 +593,7 @@ export default function HelpCenterPage() {
             <div className="border-b border-border pb-3">
               <h2 className="font-serif text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
                 <FileSpreadsheet className="h-6 w-6 text-primary" />
-                <span>Format Berkas &amp; Data Kuesioner</span>
+                <span>Format Berkas dan Data Kuesioner</span>
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
                 Aturan format berkas spreadsheet agar pembacaan kolom dan baris responden 100% akurat.
@@ -426,8 +604,8 @@ export default function HelpCenterPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="p-4 rounded-xl border border-border bg-card space-y-1">
                   <span className="text-xs font-semibold text-muted-foreground uppercase">Format Didukung</span>
-                  <p className="font-bold text-base text-foreground">.CSV, .XLSX, .XLS</p>
-                  <p className="text-xs text-muted-foreground">Ekstensi file spreadsheet standar.</p>
+                  <p className="font-bold text-sm sm:text-base text-foreground">Excel, CSV, XML, dan Google Sheets</p>
+                  <p className="text-xs text-muted-foreground">Berkas .xlsx, .xls, .csv, .xml, atau link Google Sheets.</p>
                 </div>
                 <div className="p-4 rounded-xl border border-border bg-card space-y-1">
                   <span className="text-xs font-semibold text-muted-foreground uppercase">Batas Ukuran</span>
@@ -502,7 +680,7 @@ export default function HelpCenterPage() {
             <div className="border-b border-border pb-3">
               <h2 className="font-serif text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
                 <Sliders className="h-6 w-6 text-primary" />
-                <span>Pemetaan Variabel &amp; Butir Indikator</span>
+                <span>Pemetaan Variabel dan Butir Indikator</span>
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
                 Cara mengelompokkan butir kuesioner ke dalam variabel laten untuk analisis regresi.
@@ -639,7 +817,7 @@ export default function HelpCenterPage() {
               </div>
 
               <div className="p-4 rounded-xl border border-border bg-card space-y-2">
-                <h4 className="font-bold text-foreground">Syarat Data &amp; Kriteria Keputusan</h4>
+                <h4 className="font-bold text-foreground">Syarat Data dan Kriteria Keputusan</h4>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   Data skala Likert (interval). Bandingkan nilai <strong className="text-foreground">r hitung</strong> dengan <strong className="text-foreground">r tabel</strong> pada α = 0,05 (df = N - 2).
                   <br />• <strong>Valid:</strong> r hitung &gt; r tabel dan positif.
@@ -686,7 +864,7 @@ export default function HelpCenterPage() {
               <div className="p-4 rounded-xl border border-border bg-card space-y-2">
                 <h4 className="font-bold text-foreground">Ambang Batas Keputusan</h4>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Standar baku (Nunnally &amp; Bernstein, 1994):
+                  Standar baku (Nunnally dan Bernstein, 1994):
                   <br />• <strong>Alfa Cronbach &gt; 0,70:</strong> Sangat Reliabel / Handal.
                   <br />• <strong>Alfa Cronbach 0,60 – 0,70:</strong> Cukup Reliabel (penelitian eksploratif).
                   <br />• <strong>Alfa Cronbach &lt; 0,60:</strong> Tidak Reliabel.
@@ -736,7 +914,7 @@ export default function HelpCenterPage() {
               <div className="p-4 rounded-xl border border-border bg-card space-y-2">
                 <div className="flex items-center justify-between">
                   <h4 className="font-bold text-foreground">B. Uji Multikolinearitas</h4>
-                  <Badge variant="outline">VIF &amp; Tolerance</Badge>
+                  <Badge variant="outline">VIF dan Tolerance</Badge>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   Menguji apakah terdapat korelasi sempurna antar variabel bebas (X).
@@ -942,7 +1120,7 @@ export default function HelpCenterPage() {
             <div className="border-b border-border pb-3">
               <h2 className="font-serif text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
                 <ShieldCheck className="h-6 w-6 text-primary" />
-                <span>Integritas Ilmiah &amp; Privasi Data</span>
+                <span>Integritas Ilmiah dan Privasi Data</span>
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
                 Komitmen etika akademik dan perlindungan privasi data kuesioner mahasiswa.
@@ -973,7 +1151,7 @@ export default function HelpCenterPage() {
                 </Link>
                 <span className="text-border">•</span>
                 <Link href="/syarat" className="text-primary hover:underline font-medium inline-flex items-center gap-1">
-                  <span>Syarat &amp; Ketentuan</span>
+                  <span>Syarat dan Ketentuan</span>
                   <ExternalLink className="h-3 w-3" />
                 </Link>
                 <span className="text-border">•</span>

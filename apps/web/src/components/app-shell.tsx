@@ -194,7 +194,7 @@ export function AppShell({ children }: AppShellProps) {
             Proyek
           </Link>
           <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          <span className="font-semibold text-foreground truncate">Pemetaan &amp; Analisis</span>
+          <span className="font-semibold text-foreground truncate">Pemetaan dan Analisis</span>
         </div>
       );
     }
@@ -238,7 +238,7 @@ export function AppShell({ children }: AppShellProps) {
             Proyek
           </Link>
           <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          <span className="font-semibold text-foreground truncate">Langganan &amp; Kuota</span>
+          <span className="font-semibold text-foreground truncate">Langganan dan Kuota</span>
         </div>
       );
     }
@@ -438,7 +438,7 @@ export function AppShell({ children }: AppShellProps) {
                 <DropdownMenuItem asChild>
                   <Link href="/app/langganan" className="flex items-center gap-2 w-full cursor-pointer">
                     <CreditCard className="h-4 w-4 text-amber-500" />
-                    <span>Langganan &amp; Kuota</span>
+                    <span>Langganan dan Kuota</span>
                   </Link>
                 </DropdownMenuItem>
               )}
@@ -554,7 +554,7 @@ export function AppShell({ children }: AppShellProps) {
                 <DropdownMenuItem asChild>
                   <Link href="/app/langganan" className="flex items-center gap-2 w-full">
                     <CreditCard className="h-4 w-4 text-amber-500" />
-                    <span>Langganan &amp; Kuota ({getPlanBadgeLabel()})</span>
+                    <span>Langganan dan Kuota ({getPlanBadgeLabel()})</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>

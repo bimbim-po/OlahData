@@ -63,6 +63,7 @@ export function DataSourcePanel({ meta, projectId, className }: DataSourcePanelP
   const itemCount = columnsList.filter((c) => c.role === 'item').length;
   const demoCount = columnsList.filter((c) => c.role === 'demographic').length;
   const idCount = columnsList.filter((c) => c.role === 'id').length;
+  const openCount = columnsList.filter((c) => c.role === 'open_question').length;
 
   const shortenedHash = meta.sha256
     ? `${meta.sha256.slice(0, 8)}...${meta.sha256.slice(-8)}`
@@ -79,7 +80,7 @@ export function DataSourcePanel({ meta, projectId, className }: DataSourcePanelP
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-semibold text-[15px] sm:text-base text-foreground">
-                Sumber Data &amp; Integritas Matriks
+                Sumber Data dan Integritas Matriks
               </h3>
               <Badge variant="outline" className="text-[13px] bg-background min-h-[24px]">
                 {meta.kind === 'derived' ? 'Data Turunan (Derived)' : 'Data Asli (Original)'}
@@ -182,7 +183,7 @@ export function DataSourcePanel({ meta, projectId, className }: DataSourcePanelP
 
         {/* Kolom 3: Responden & Kolom */}
         <div className="space-y-1">
-          <span className="text-muted-foreground block text-[13px]">Responden &amp; Kolom</span>
+          <span className="text-muted-foreground block text-[13px]">Responden dan Kolom</span>
           <span className="font-semibold text-foreground block tabular-nums text-[13px]">
             {formatNumber(meta.rowCount)} responden • {meta.columnCount} kolom
           </span>
@@ -263,7 +264,7 @@ export function DataSourcePanel({ meta, projectId, className }: DataSourcePanelP
             className="w-full px-4 sm:px-5 py-3 flex items-center justify-between text-[13px] font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors cursor-pointer min-h-[44px]"
           >
             <span>
-              Daftar Peran Kolom ({columnsList.length} kolom: {itemCount} butir instrumen{demoCount > 0 ? `, ${demoCount} demografi` : ''}{idCount > 0 ? `, ${idCount} ID` : ''})
+              Daftar Peran Kolom ({columnsList.length} kolom: {itemCount} butir instrumen{demoCount > 0 ? `, ${demoCount} demografi` : ''}{openCount > 0 ? `, ${openCount} pertanyaan terbuka` : ''}{idCount > 0 ? `, ${idCount} ID` : ''})
             </span>
             {isColumnsExpanded ? (
               <ChevronUp className="w-4 h-4" />
@@ -290,6 +291,8 @@ export function DataSourcePanel({ meta, projectId, className }: DataSourcePanelP
                       roleBadge = <Badge variant="pine" className="text-[13px] min-h-[24px]">Butir Instrumen</Badge>;
                     } else if (c.role === 'id') {
                       roleBadge = <Badge variant="outline" className="text-[13px] min-h-[24px]">ID Responden</Badge>;
+                    } else if (c.role === 'open_question') {
+                      roleBadge = <Badge variant="outline" className="text-[13px] min-h-[24px] border-sky-500/40 text-sky-600 dark:text-sky-300 bg-sky-500/10 font-sans font-semibold">Pertanyaan Terbuka</Badge>;
                     } else if (c.role === 'demographic') {
                       roleBadge = <Badge variant="amber" className="text-[13px] min-h-[24px]">Demografi</Badge>;
                     }

@@ -29,7 +29,9 @@ export type DefenseTestKey =
   | 'oneway-anova'
   | 'nonparametric'
   | 'chisquare'
-  | 'odds-ratio';
+  | 'odds-ratio'
+  | 'mediation'
+  | 'moderation';
 
 interface QuestionItem {
   id: string;
@@ -75,6 +77,18 @@ interface ThesisDefenseCompanionProps {
     minExpectedCount?: number;
     cellsLessThan5Count?: number;
     cellsLessThan5Percent?: number;
+    sobelZ?: number;
+    sobelP?: number;
+    indirectEffect?: number;
+    directEffect?: number;
+    totalEffect?: number;
+    vafRatio?: number;
+    mediationType?: string;
+    deltaR2?: number;
+    fChange?: number;
+    interactionP?: number;
+    moderatorType?: string;
+    moderationDirection?: string;
   };
   className?: string;
 }
@@ -119,6 +133,18 @@ export function ThesisDefenseCompanion({
     minExpectedCount = 23.5,
     cellsLessThan5Count = 0,
     cellsLessThan5Percent = 0,
+    sobelZ = 2.934,
+    sobelP = 0.003,
+    indirectEffect = 0.499,
+    directEffect = 0.489,
+    totalEffect = 0.988,
+    vafRatio = 50.5,
+    mediationType = 'Partial Mediation',
+    deltaR2 = 0.0467,
+    fChange = 8.45,
+    interactionP = 0.004,
+    moderatorType = 'Quasi Moderator',
+    moderationDirection = 'Memperkuat',
   } = dataMetrics;
 
   const getQuestions = (): QuestionItem[] => {
@@ -347,6 +373,80 @@ export function ThesisDefenseCompanion({
               title: 'Modern Epidemiology (3rd Edition)',
               year: '2008',
               note: 'Lippincott Williams & Wilkins, Bab Measures of Effect and Association, Halaman 51-68.',
+            },
+          },
+        ];
+
+      case 'mediation':
+        return [
+          {
+            id: 'med-1',
+            question: 'Mengapa Anda menggunakan Uji Sobel untuk menguji efek mediasi dan apa kesimpulannya?',
+            answer: `Izin menjawab Bapak/Ibu Dosen Penguji, Uji Sobel (Sobel Test) digunakan untuk menguji signifikansi formal pengaruh tidak langsung (indirect effect) variabel bebas ke variabel terikat melalui variabel mediasi. Dari hasil perhitungan, diperoleh nilai z-hitung Sobel sebesar ${sobelZ.toFixed(3)} dengan p-value = ${sobelP < 0.001 ? '< 0,001' : sobelP.toFixed(4)}. Karena nilai |z| > 1,96 dan p < 0,05, maka hipotesis mediasi diterima secara signifikan. Model ini tergolong '${mediationType}' dengan dekomposisi pengaruh tidak langsung sebesar ${indirectEffect.toFixed(3)} dan pengaruh total ${totalEffect.toFixed(3)}.`,
+            citation: {
+              author: 'Baron, R. M., & Kenny, D. A.',
+              title: 'The moderator-mediator variable distinction in social psychological research',
+              year: '1986',
+              note: 'Journal of Personality and Social Psychology, 51(6), 1173-1182.',
+            },
+          },
+          {
+            id: 'med-2',
+            question: 'Apa perbedaan antara Full Mediation (Mediasi Penuh) dan Partial Mediation (Mediasi Parsial)?',
+            answer: `Izin menjelaskan Bapak/Ibu, Full Mediation terjadi apabila setelah variabel mediasi dimasukkan ke dalam model, pengaruh langsung variabel bebas ke terikat (koefisien c') menjadi tidak signifikan atau mendekati nol. Artinya pengaruh X ke Y sepenuhnya dialirkan melalui perantara variabel mediasi. Sedangkan Partial Mediation terjadi jika pengaruh langsung X ke Y tetap signifikan meskipun mediator disertakan, yang menunjukkan variabel mediasi menyerap sebagian pengaruh tetapi X masih tetap memiliki kontribusi langsung yang signifikan.`,
+            citation: {
+              author: 'Prof. Dr. Imam Ghozali, M.Com., Ph.D., Ak.',
+              title: 'Aplikasi Analisis Multivariate dengan Program IBM SPSS 25',
+              year: '2018',
+              note: 'Badan Penerbit Universitas Diponegoro Semarang, Bab Analisis Jalur dan Uji Mediasi Sobel.',
+            },
+          },
+          {
+            id: 'med-3',
+            question: 'Bagaimana cara menghitung dan menginterpretasikan Variance Accounted For (VAF) pada mediasi?',
+            answer: `Izin menjelaskan, VAF mengukur seberapa besar porsi pengaruh tidak langsung relatif terhadap pengaruh total: VAF = (Indirect Effect / Total Effect) × 100%. Pada penelitian ini diperoleh VAF sebesar ${vafRatio.toFixed(1)}%. Menurut Hair et al. (2017), jika VAF > 80% maka terjadi Full Mediation, antara 20% - 80% membuktikan Partial Mediation, dan jika < 20% disimpulkan hampir tidak ada efek mediasi.`,
+            citation: {
+              author: 'Hair, J. F., Hult, G. T. M., Ringle, C. M., & Sarstedt, M.',
+              title: 'A Primer on Partial Least Squares Structural Equation Modeling (PLS-SEM)',
+              year: '2017',
+              note: 'SAGE Publications, Bab Evaluation of Mediation Effects & VAF Interpretation.',
+            },
+          },
+        ];
+
+      case 'moderation':
+        return [
+          {
+            id: 'mod-1',
+            question: 'Mengapa Anda menggunakan metode Moderated Regression Analysis (MRA) untuk uji moderasi?',
+            answer: `Izin menjawab Bapak/Ibu Dosen Penguji, Moderated Regression Analysis (MRA) atau regresi hierarkis bertingkat digunakan untuk membuktikan secara empiris apakah variabel moderasi memperkuat atau memperlemah hubungan prediktor. Model 1 mengestimasi efek utama (X dan Z), kemudian Model 2 menambahkan perkalian suku interaksi (X × Z). Hasil menunjukkan penambahan interaksi menghasilkan kenaikan koefisien determinasi Delta R² sebesar ${deltaR2.toFixed(4)} dengan F-change ${fChange.toFixed(3)} (p = ${interactionP < 0.001 ? '< 0,001' : interactionP.toFixed(4)}), yang membuktikan peran moderasi secara signifikan.`,
+            citation: {
+              author: 'Sharma, S., Durand, R. M., & Gur-Arie, O.',
+              title: 'Identification and analysis of moderator variables',
+              year: '1981',
+              note: 'Journal of Marketing Research, 18(3), 291-300.',
+            },
+          },
+          {
+            id: 'mod-2',
+            question: 'Bagaimana Anda mengklasifikasikan tipe variabel moderasi (Pure vs Quasi Moderator)?',
+            answer: `Izin menjelaskan, menurut klasifikasi Sharma et al. (1981) dan Prof. Imam Ghozali (2018): Quasi Moderator (Moderasi Semu) terjadi apabila variabel Z bertindak sekaligus sebagai prediktor independen langsung (koefisien b2 signifikan) dan suku interaksinya (b3) juga signifikan. Sementara Pure Moderator (Moderasi Murni) terjadi apabila variabel Z TIDAK berpengaruh langsung terhadap Y (b2 tidak signifikan), namun interaksinya (b3) terbukti signifikan mempengaruhi Y. Pada data ini, tipe yang diperoleh adalah '${moderatorType}'.`,
+            citation: {
+              author: 'Prof. Dr. Imam Ghozali, M.Com., Ph.D., Ak.',
+              title: 'Model Persamaan Struktural Konsep dan Aplikasi dengan Program AMOS & SPSS',
+              year: '2018',
+              note: 'Badan Penerbit Universitas Diponegoro Semarang, Bab Moderated Regression Analysis (MRA).',
+            },
+          },
+          {
+            id: 'mod-3',
+            question: 'Apakah arah pengaruh moderasi ini memperkuat atau memperlemah hubungan utama?',
+            answer: `Izin menjelaskan, arah moderasi ditentukan dari tanda koefisien regresi suku interaksi (b3). Karena bernilai ${moderationDirection === 'Memperkuat' ? 'positif' : 'negatif'}, maka variabel moderasi ini berfungsi '${moderationDirection}' hubungan pengaruh antara variabel bebas terhadap variabel terikat.`,
+            citation: {
+              author: 'Aiken, L. S., & West, S. G.',
+              title: 'Multiple Regression: Testing and Interpreting Interactions',
+              year: '1991',
+              note: 'SAGE Publications, Newbury Park, CA.',
             },
           },
         ];

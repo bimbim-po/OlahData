@@ -23,7 +23,7 @@ interface WizardState {
   removedRows: number[];
   dataVersion: number;
   reverseItems: string[];
-  columnRoles: Record<string, 'id' | 'demographic' | 'item' | 'ignored'>;
+  columnRoles: Record<string, 'id' | 'demographic' | 'item' | 'open_question' | 'ignored'>;
 
   // Research Design
   researchDesign: 'survey' | 'comparative' | 'categorical';
@@ -71,7 +71,7 @@ interface WizardState {
   removeRowsByNumbers: (rowNumbers: number[]) => void;
   setReverseItems: (items: string[]) => void;
   toggleReverseItem: (item: string) => void;
-  setColumnRole: (col: string, role: 'id' | 'demographic' | 'item' | 'ignored') => void;
+  setColumnRole: (col: string, role: 'id' | 'demographic' | 'item' | 'open_question' | 'ignored') => void;
   setResearchDesign: (design: 'survey' | 'comparative' | 'categorical') => void;
   setComparativeMapping: (mapping: {
     preCol?: string | null;
@@ -114,7 +114,7 @@ const initialState = {
   removedRows: [],
   dataVersion: 1,
   reverseItems: [] as string[],
-  columnRoles: {} as Record<string, 'id' | 'demographic' | 'item' | 'ignored'>,
+  columnRoles: {} as Record<string, 'id' | 'demographic' | 'item' | 'open_question' | 'ignored'>,
   researchDesign: 'survey' as const,
   preCol: null,
   postCol: null,
@@ -156,7 +156,7 @@ export const useWizardStore = create<WizardState>((set, get) => ({
     const dsId = `ds-${Date.now()}`;
     const runId = `run-${Date.now()}`;
 
-    const defaultRoles: Record<string, 'id' | 'demographic' | 'item' | 'ignored'> = {};
+    const defaultRoles: Record<string, 'id' | 'demographic' | 'item' | 'open_question' | 'ignored'> = {};
     if (meta?.columns) {
       meta.columns.forEach((c) => {
         defaultRoles[c.name] = c.role;
@@ -168,12 +168,15 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       piiDetections.forEach((d) => piiMap.set(d.column, d.role));
 
       columns.forEach((c) => {
+        const clean = c.trim().toLowerCase();
         if (piiMap.has(c)) {
           defaultRoles[c] = piiMap.get(c)!;
-        } else if (/^(jenis[\s_]?kelamin|gender|usia|umur|pendidikan|pekerjaan|penghasilan|jurusan|semester|angkatan)$/i.test(c.trim())) {
+        } else if (/^(jenis[\s_]?kelamin|gender|jk|usia|umur|pendidikan|pekerjaan|profesi|penghasilan|gaji|jurusan|prodi|program[\s_]?studi|fakultas|semester|angkatan|kelas|ipk|status|domisili)$/i.test(clean)) {
           defaultRoles[c] = 'demographic';
-        } else if (c.toLowerCase() === 'no' || c.toLowerCase() === 'id') {
+        } else if (/^(no|id|nomor|nim|npm|nik|nisn)$/i.test(clean)) {
           defaultRoles[c] = 'id';
+        } else if (/^(saran|kritik|masukan|pendapat|alasan|komentar|uraian|ceritakan|catatan|feedback|tanggapan|opini)$/i.test(clean) || clean.endsWith('?')) {
+          defaultRoles[c] = 'open_question';
         } else {
           defaultRoles[c] = 'item';
         }
@@ -253,6 +256,7 @@ export const useWizardStore = create<WizardState>((set, get) => ({
         fileData: state.fileData.filter((_, i) => i !== index),
         issues: state.issues.filter((issue) => issue.row !== rowNumber),
         datasetMeta: updatedMeta,
+        currentResults: null,
       };
     }),
 
@@ -280,6 +284,7 @@ export const useWizardStore = create<WizardState>((set, get) => ({
         fileData: newRows,
         issues: state.issues.filter((issue) => !issue.row || !rowNumbersSet.has(issue.row)),
         datasetMeta: updatedMeta,
+        currentResults: null,
       };
     }),
 
@@ -346,6 +351,7 @@ export const useWizardStore = create<WizardState>((set, get) => ({
         constructs: updatedConstructs,
         dataVersion: state.dataVersion + 1,
         datasetMeta: updatedMeta,
+        currentResults: null,
       };
     });
   },
@@ -382,13 +388,14 @@ export const useWizardStore = create<WizardState>((set, get) => ({
         fileData: updatedFileData,
         dataVersion: state.dataVersion + 1,
         datasetMeta: updatedMeta,
+        currentResults: null,
       };
     });
   },
 
-  setConstructs: (constructs) => set({ constructs }),
+  setConstructs: (constructs) => set({ constructs, currentResults: null }),
 
-  setCalculationMethod: (method) => set({ calculationMethod: method }),
+  setCalculationMethod: (method) => set({ calculationMethod: method, currentResults: null }),
 
   setResearchTitle: (researchTitle) => set({ researchTitle }),
 

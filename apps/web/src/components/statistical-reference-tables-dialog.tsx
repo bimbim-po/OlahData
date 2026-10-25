@@ -474,7 +474,7 @@ export function StatisticalReferenceTablesDialog({
         <div className="p-4 sm:p-5 border-t border-border bg-card flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 self-start sm:self-auto">
             <Info className="w-3.5 h-3.5 shrink-0 text-primary" />
-            <span>Tabel diturunkan secara deterministik menggunakan inverse distribusi Student&apos;s t &amp; Fisher F.</span>
+            <span>Tabel diturunkan secara deterministik menggunakan inverse distribusi Student&apos;s t dan Fisher F.</span>
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">

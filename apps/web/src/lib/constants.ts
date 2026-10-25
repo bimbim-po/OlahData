@@ -19,7 +19,7 @@ export const COLORS = {
 
 export const FILE_LIMITS = {
   maxSizeMB: 5,
-  allowedExtensions: ['.xlsx', '.xls', '.csv'] as const,
+  allowedExtensions: ['.xlsx', '.xls', '.csv', '.xml'] as const,
   maxRows: 10000,
   maxColumns: 100,
 } as const;

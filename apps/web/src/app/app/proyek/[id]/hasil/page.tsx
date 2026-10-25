@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   TrendingUp,
   GitCompare,
+  GitFork,
   Info,
   Calendar,
   Building,
@@ -67,12 +68,15 @@ import { useWizardStore } from '@/stores/wizard-store';
 import { cn } from '@/lib/utils';
 import { formatNumber, formatDateTime } from '@/lib/format';
 import { getProject, getResult, exportResult } from '@/lib/api';
-import { buildWordTableHtml, copyHtmlAndText, copyWordTable } from '@/lib/word-table';
+import { buildWordTableHtml, copyHtmlAndText, copyWordTable, buildFullThesisAppendixHtml } from '@/lib/word-table';
 import { SpssOutputViewer } from '@/components/spss-output-viewer';
+import { ThesisRawAppendixViewer } from '@/components/thesis-raw-appendix-viewer';
 import { ThesisDefenseCompanion } from '@/components/thesis-defense-companion';
 import { ProResultBlur } from '@/components/pro-result-blur';
 import { usePlanGate, isSampleProject } from '@/lib/entitlements';
 import { computeDeterministicStats } from '@/lib/stats-engine';
+import { mockDataset } from '@/lib/mock/dataset-contoh';
+import type { Construct } from '@/lib/api/types';
 import type {
   PairedTTestResult,
   NGainSummary,
@@ -147,7 +151,13 @@ export default function HasilPage() {
   const router = useRouter();
 
   // Ambil ID proyek dari params atau pathname (aman untuk SPA fallback & static export)
-  const [projectId, setProjectId] = useState<string>('sample');
+  const [projectId, setProjectId] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const match = window.location.pathname.match(/\/app\/proyek\/([^/]+)/);
+      if (match && match[1]) return match[1];
+    }
+    return (params?.id as string) || 'sample';
+  });
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -183,15 +193,40 @@ export default function HasilPage() {
   const [chapter4ExportFormat, setChapter4ExportFormat] = useState<'docx' | 'pdf'>('docx');
 
   const toggleOptionalTable = (tableId: string) => {
-    setEnabledOptionalTables((prev) =>
-      prev.includes(tableId) ? prev.filter((id) => id !== tableId) : [...prev, tableId]
-    );
+    setEnabledOptionalTables((prev) => {
+      const isAdding = !prev.includes(tableId);
+      if (isAdding) {
+        if (tableId === 'tabel_4_12_korelasi') setActiveTab('correlation');
+        if (tableId === 'tabel_4_13_uji_beda_2') setActiveTab('independent-ttest');
+        if (tableId === 'tabel_4_14_uji_beda_3') setActiveTab('oneway-anova');
+        if (tableId === 'tabel_4_15_chi_kuadrat') setActiveTab('crosstab');
+        if (tableId === 'tabel_4_9_dw') setActiveTab('assumptions');
+      }
+      return isAdding ? [...prev, tableId] : prev.filter((id) => id !== tableId);
+    });
   };
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const isDemoParam = searchParams?.get('contoh') === '1';
-  const isSample = isSampleProject(projectId) || isSampleProject(project) || isDemoParam;
-  const { isFree, canExport, openUpgradeModal } = usePlanGate(projectId, isSample);
+  const isCustomRunOnSampleRoute = Boolean(
+    results?.projectTitle &&
+      !results.projectTitle.includes('Pengaruh Kualitas Layanan dan Kepuasan') &&
+      !isDemoParam
+  );
+  const isSample =
+    !isCustomRunOnSampleRoute &&
+    (isSampleProject(projectId) || isSampleProject(project) || isDemoParam);
+  const { isFree, isPro, isThesis, canExport, openUpgradeModal } = usePlanGate(projectId, isSample);
+
+  const effectiveProjectTitle = useMemo(() => {
+    if (results?.projectTitle && results.projectTitle.trim()) {
+      return results.projectTitle.trim();
+    }
+    if (project?.title) {
+      return project.title;
+    }
+    return 'Skripsi Penelitian';
+  }, [results?.projectTitle, project?.title]);
 
   const handleResetDemo = () => {
     if (typeof window !== 'undefined') {
@@ -212,44 +247,114 @@ export default function HasilPage() {
     });
   };
 
-  const handleEliminateInvalidItems = () => {
-    if (!results || !results.validity) return;
-    const invalidItems = results.validity.filter((v) => !v.valid).map((v) => v.item);
-    if (invalidItems.length === 0) return;
+  const [excludedItems, setExcludedItems] = useState<string[]>([]);
+  const [excludedOutlierRows, setExcludedOutlierRows] = useState<number[]>([]);
+  const baseConstructsRef = React.useRef<Construct[]>([]);
+
+  // Helper untuk mendapatkan susunan konstruk dasar awal
+  const getInitialConstructs = (): Construct[] => {
+    const storeConstructs = useWizardStore.getState().constructs;
+    if (storeConstructs && storeConstructs.length > 0) {
+      return storeConstructs;
+    }
+    if (results?.validity && results.validity.length > 0) {
+      const map = new Map<string, string[]>();
+      results.validity.forEach((v) => {
+        const list = map.get(v.construct) || [];
+        if (!list.includes(v.item)) list.push(v.item);
+        map.set(v.construct, list);
+      });
+      const entries = Array.from(map.entries());
+      return entries.map(([name, items], idx) => ({
+        id: `c-${idx + 1}`,
+        name,
+        role: idx === entries.length - 1 ? 'dependent' : 'independent',
+        items,
+      }));
+    }
+    return [
+      { id: 'c-1', name: 'Kualitas Layanan (X1)', role: 'independent', items: ['KL1', 'KL2', 'KL3', 'KL4', 'KL5'] },
+      { id: 'c-2', name: 'Kepuasan Pelanggan (X2)', role: 'independent', items: ['KP1', 'KP2', 'KP3', 'KP4', 'KP5'] },
+      { id: 'c-3', name: 'Loyalitas Pelanggan (Y)', role: 'dependent', items: ['LP1', 'LP2', 'LP3', 'LP4', 'LP5'] },
+    ];
+  };
+
+  useEffect(() => {
+    if (results && baseConstructsRef.current.length === 0) {
+      baseConstructsRef.current = getInitialConstructs();
+    }
+  }, [results]);
+
+  // Real-time toggle satu butir kuesioner (<200ms recalculation secepat jamovi)
+  const handleToggleItem = (item: string, shouldInclude: boolean) => {
+    const nextExcluded = shouldInclude
+      ? excludedItems.filter((i) => i !== item)
+      : [...new Set([...excludedItems, item])];
+    setExcludedItems(nextExcluded);
+
+    if (baseConstructsRef.current.length === 0) {
+      baseConstructsRef.current = getInitialConstructs();
+    }
+    const base = baseConstructsRef.current;
+    const updatedConstructs = base
+      .map((c) => ({
+        ...c,
+        items: c.items.filter((it) => !nextExcluded.includes(it)),
+      }))
+      .filter((c) => c.items.length > 0);
 
     const store = useWizardStore.getState();
-    store.eliminateInvalidItems(invalidItems);
-    const updatedState = useWizardStore.getState();
+    const rawRows = store.fileData.length > 0 ? store.fileData : mockDataset;
+    const activeRows = excludedOutlierRows.length > 0
+      ? rawRows.filter((r, idx) => {
+          const no = typeof r.No === 'number' ? r.No : idx + 1;
+          return !excludedOutlierRows.includes(no);
+        })
+      : rawRows;
 
+    const t0 = performance.now();
     const newResults = computeDeterministicStats({
-      rows: updatedState.fileData,
-      constructs: updatedState.constructs,
-      selectedTests: updatedState.selectedTests,
-      reverseItems: updatedState.reverseItems,
-      calculationMethod: updatedState.calculationMethod,
-      datasetMeta: updatedState.datasetMeta || undefined,
-      researchDesign: updatedState.researchDesign,
-      preCol: updatedState.preCol,
-      postCol: updatedState.postCol,
-      groupCol: updatedState.groupCol,
-      scoreCol: updatedState.scoreCol,
-      idealMaxScore: updatedState.idealMaxScore,
+      rows: activeRows,
+      constructs: updatedConstructs,
+      selectedTests:
+        store.selectedTests.length > 0
+          ? store.selectedTests
+          : [
+              'descriptive',
+              'validity',
+              'reliability',
+              'normality',
+              'multicollinearity',
+              'heteroscedasticity',
+              'regression',
+            ],
+      reverseItems: store.reverseItems,
+      calculationMethod: store.calculationMethod,
+      datasetMeta: store.datasetMeta || undefined,
+      researchDesign: store.researchDesign,
+      preCol: store.preCol,
+      postCol: store.postCol,
+      groupCol: store.groupCol,
+      scoreCol: store.scoreCol,
+      idealMaxScore: store.idealMaxScore,
       projectId,
-      dataVersionId: `dv-${updatedState.dataVersion}`,
+      dataVersionId: `dv-${store.dataVersion + 1}`,
     });
+    const elapsed = Math.max(1, Math.round(performance.now() - t0));
 
     store.setCurrentResults(newResults);
     setResults(newResults);
+
     toast({
-      title: 'Versi Revisi Berhasil Dibuat!',
-      description: `${invalidItems.length} butir gugur (${invalidItems.join(', ')}) berhasil dieliminasi dan seluruh analisis dihitung ulang secara otomatis.`,
+      title: shouldInclude ? `Butir ${item} Disertakan Kembali` : `Butir ${item} Berhasil Digugurkan (Drop Item)`,
+      description: `Validitas, reliabilitas, asumsi klasik, dan regresi dihitung ulang secara real-time (${elapsed}ms).`,
       variant: 'success',
     });
   };
 
-  const handleEliminateOutliers = (rowNumbers: number[]) => {
-    if (rowNumbers.length === 0) return;
-    if (isFree) {
+  // Real-time toggle responden outlier individual (<200ms recalculation)
+  const handleToggleOutlierRow = (rowNumber: number, shouldExclude: boolean) => {
+    if (isFree && !isSample) {
       openUpgradeModal({
         plan: 'monthly',
         reason: 'Pembersihan Outlier & Normalisasi Data Otomatis',
@@ -257,12 +362,86 @@ export default function HasilPage() {
       return;
     }
 
-    const store = useWizardStore.getState();
-    store.eliminateOutliers(rowNumbers);
-    const updatedState = useWizardStore.getState();
+    const nextExcluded = shouldExclude
+      ? [...new Set([...excludedOutlierRows, rowNumber])]
+      : excludedOutlierRows.filter((no) => no !== rowNumber);
+    setExcludedOutlierRows(nextExcluded);
 
+    const store = useWizardStore.getState();
+    const rawRows = store.fileData.length > 0 ? store.fileData : mockDataset;
+    const activeRows = nextExcluded.length > 0
+      ? rawRows.filter((r, idx) => {
+          const no = typeof r.No === 'number' ? r.No : idx + 1;
+          return !nextExcluded.includes(no);
+        })
+      : rawRows;
+
+    if (baseConstructsRef.current.length === 0) {
+      baseConstructsRef.current = getInitialConstructs();
+    }
+    const base = baseConstructsRef.current;
+    const updatedConstructs = base
+      .map((c) => ({
+        ...c,
+        items: c.items.filter((it) => !excludedItems.includes(it)),
+      }))
+      .filter((c) => c.items.length > 0);
+
+    const t0 = performance.now();
     const newResults = computeDeterministicStats({
-      rows: updatedState.fileData,
+      rows: activeRows,
+      constructs: updatedConstructs,
+      selectedTests:
+        store.selectedTests.length > 0
+          ? store.selectedTests
+          : [
+              'descriptive',
+              'validity',
+              'reliability',
+              'normality',
+              'multicollinearity',
+              'heteroscedasticity',
+              'regression',
+            ],
+      reverseItems: store.reverseItems,
+      calculationMethod: store.calculationMethod,
+      datasetMeta: store.datasetMeta || undefined,
+      researchDesign: store.researchDesign,
+      preCol: store.preCol,
+      postCol: store.postCol,
+      groupCol: store.groupCol,
+      scoreCol: store.scoreCol,
+      idealMaxScore: store.idealMaxScore,
+      projectId,
+      dataVersionId: `dv-${store.dataVersion + 1}`,
+    });
+    const elapsed = Math.max(1, Math.round(performance.now() - t0));
+
+    store.setCurrentResults(newResults);
+    setResults(newResults);
+
+    toast({
+      title: shouldExclude ? `Responden #${rowNumber} Dikecualikan` : `Responden #${rowNumber} Disertakan Kembali`,
+      description: `Normalitas residual dan model regresi dihitung ulang secara real-time (${elapsed}ms).`,
+      variant: 'success',
+    });
+  };
+
+  const handleEliminateInvalidItems = () => {
+    if (!results || !results.validity) return;
+    const invalidItems = results.validity.filter((v) => !v.valid).map((v) => v.item);
+    if (invalidItems.length === 0) return;
+
+    setExcludedItems((prev) => [...new Set([...prev, ...invalidItems])]);
+
+    const store = useWizardStore.getState();
+    store.eliminateInvalidItems(invalidItems);
+    const updatedState = useWizardStore.getState();
+    const effectiveRows = updatedState.fileData.length > 0 ? updatedState.fileData : mockDataset;
+
+    const t0 = performance.now();
+    const newResults = computeDeterministicStats({
+      rows: effectiveRows,
       constructs: updatedState.constructs,
       selectedTests: updatedState.selectedTests,
       reverseItems: updatedState.reverseItems,
@@ -277,15 +456,89 @@ export default function HasilPage() {
       projectId,
       dataVersionId: `dv-${updatedState.dataVersion}`,
     });
+    const elapsed = Math.max(1, Math.round(performance.now() - t0));
+
+    store.setCurrentResults(newResults);
+    setResults(newResults);
+    toast({
+      title: 'Versi Revisi Berhasil Dibuat!',
+      description: `${invalidItems.length} butir gugur (${invalidItems.join(', ')}) berhasil dieliminasi dan seluruh analisis dihitung ulang secara otomatis (${elapsed}ms).`,
+      variant: 'success',
+    });
+  };
+
+  const handleEliminateOutliers = (rowNumbers: number[]) => {
+    if (rowNumbers.length === 0) return;
+    if (isFree && !isSample) {
+      openUpgradeModal({
+        plan: 'monthly',
+        reason: 'Pembersihan Outlier & Normalisasi Data Otomatis',
+      });
+      return;
+    }
+
+    setExcludedOutlierRows((prev) => [...new Set([...prev, ...rowNumbers])]);
+
+    const store = useWizardStore.getState();
+    store.eliminateOutliers(rowNumbers);
+    const updatedState = useWizardStore.getState();
+    const effectiveRows = updatedState.fileData.length > 0 ? updatedState.fileData : mockDataset;
+
+    const t0 = performance.now();
+    const newResults = computeDeterministicStats({
+      rows: effectiveRows,
+      constructs: updatedState.constructs,
+      selectedTests: updatedState.selectedTests,
+      reverseItems: updatedState.reverseItems,
+      calculationMethod: updatedState.calculationMethod,
+      datasetMeta: updatedState.datasetMeta || undefined,
+      researchDesign: updatedState.researchDesign,
+      preCol: updatedState.preCol,
+      postCol: updatedState.postCol,
+      groupCol: updatedState.groupCol,
+      scoreCol: updatedState.scoreCol,
+      idealMaxScore: updatedState.idealMaxScore,
+      projectId,
+      dataVersionId: `dv-${updatedState.dataVersion}`,
+    });
+    const elapsed = Math.max(1, Math.round(performance.now() - t0));
 
     store.setCurrentResults(newResults);
     setResults(newResults);
     toast({
       title: 'Responden Outlier Berhasil Dikecualikan!',
-      description: `${rowNumbers.length} responden outlier residual (|Z| > 2,5) dieksklusi dan model analisis dihitung ulang (versi baru dibuat).`,
+      description: `${rowNumbers.length} responden outlier residual (|Z| > 2,5) dieksklusi dan model analisis dihitung ulang secara real-time (${elapsed}ms).`,
       variant: 'success',
     });
   };
+
+  // Data validitas lengkap yang menyertakan indikasi item yang didrop secara visual
+  const displayedValidity = useMemo(() => {
+    if (!results?.validity) return [];
+    const base = baseConstructsRef.current.length > 0 ? baseConstructsRef.current : getInitialConstructs();
+    const currentMap = new Map(results.validity.map((v) => [v.item, v]));
+    const list: (ValidityResult & { isExcluded?: boolean })[] = [];
+
+    base.forEach((c) => {
+      c.items.forEach((item) => {
+        const isExcluded = excludedItems.includes(item);
+        const active = currentMap.get(item);
+        if (active && !isExcluded) {
+          list.push({ ...active, isExcluded: false });
+        } else {
+          list.push({
+            item,
+            construct: c.name,
+            rHitung: active ? active.rHitung : 0,
+            rTabel: active ? active.rTabel : (results.validity?.[0]?.rTabel || 0.1966),
+            valid: false,
+            isExcluded: true,
+          });
+        }
+      });
+    });
+    return list;
+  }, [results?.validity, excludedItems]);
 
   const computedTabs = useMemo<TabItem[]>(() => {
     if (!results) return TABS_LIST;
@@ -297,6 +550,7 @@ export default function HasilPage() {
       if (results.descriptive && results.descriptive.length > 0) {
         tabs.unshift({ id: 'descriptive', label: 'Deskriptif', icon: BarChart3 });
       }
+      tabs.push({ id: 'appendix', label: 'Lembar Lampiran Skripsi (Siap Cetak)', icon: BookOpen });
       return tabs;
     }
 
@@ -304,37 +558,51 @@ export default function HasilPage() {
       const tabs: TabItem[] = [
         { id: 'descriptive', label: 'Deskriptif', icon: BarChart3 },
       ];
+      if (results.validity && results.validity.length > 0) {
+        tabs.push({ id: 'validity', label: 'Validitas', icon: CheckSquare });
+      }
+      if (results.reliability && results.reliability.length > 0) {
+        tabs.push({ id: 'reliability', label: 'Reliabilitas', icon: Layers });
+      }
       if (results.pairedTTest || results.nGain) {
         tabs.push({ id: 'paired-ttest', label: 'Paired t-Test & N-Gain', icon: GitCompare });
       }
-      if (results.independentTTest) {
+      if (results.independentTTest || enabledOptionalTables.includes('tabel_4_13_uji_beda_2')) {
         tabs.push({ id: 'independent-ttest', label: 'Independent t-Test', icon: GitCompare });
       }
-      if (results.oneWayAnova) {
+      if (results.oneWayAnova || enabledOptionalTables.includes('tabel_4_14_uji_beda_3')) {
         tabs.push({ id: 'oneway-anova', label: 'One-Way ANOVA', icon: Layers });
       }
       if (results.nonParametric) {
         tabs.push({ id: 'nonparametric', label: 'Uji Non-Parametrik', icon: ShieldCheck });
       }
+      if (results.regression && results.regression.length > 0) {
+        tabs.push({ id: 'regression', label: 'Regresi Linier', icon: TrendingUp });
+      }
+      tabs.push({ id: 'appendix', label: 'Lembar Lampiran Skripsi (Siap Cetak)', icon: BookOpen });
       return tabs;
     }
 
     const tabs: TabItem[] = [...TABS_LIST];
-    if (results.crosstab || results.chiSquare || enabledOptionalTables.includes('tabel_4_15_chi_kuadrat')) {
+    if (enabledOptionalTables.includes('tabel_4_15_chi_kuadrat')) {
       tabs.push({ id: 'crosstab', label: 'Tabulasi Silang & Chi-Square', icon: TableIcon });
     }
     if (results.pairedTTest || results.nGain) {
       tabs.push({ id: 'paired-ttest', label: 'Paired t-Test & N-Gain', icon: GitCompare });
     }
-    if (results.independentTTest || enabledOptionalTables.includes('tabel_4_13_uji_beda_2')) {
+    if (enabledOptionalTables.includes('tabel_4_13_uji_beda_2')) {
       tabs.push({ id: 'independent-ttest', label: 'Independent t-Test', icon: GitCompare });
     }
-    if (results.oneWayAnova || enabledOptionalTables.includes('tabel_4_14_uji_beda_3')) {
+    if (enabledOptionalTables.includes('tabel_4_14_uji_beda_3')) {
       tabs.push({ id: 'oneway-anova', label: 'One-Way ANOVA', icon: Layers });
     }
-    if (results.nonParametric) {
-      tabs.push({ id: 'nonparametric', label: 'Uji Non-Parametrik', icon: ShieldCheck });
+    if (results.pathAnalysis?.hasMediation) {
+      tabs.push({ id: 'mediation', label: 'Uji Mediasi (Sobel)', icon: GitFork });
     }
+    if (results.moderationAnalysis?.hasModeration) {
+      tabs.push({ id: 'moderation', label: 'Uji Moderasi (MRA)', icon: SlidersHorizontal });
+    }
+    tabs.push({ id: 'appendix', label: 'Lembar Lampiran Skripsi (Siap Cetak)', icon: BookOpen });
     return tabs;
   }, [results, enabledOptionalTables]);
 
@@ -384,7 +652,16 @@ export default function HasilPage() {
       ]);
 
       const finalRes = activeResults || apiRes;
-      setProject(projData || null);
+      if (finalRes?.projectTitle && projData && projData.id === 'sample') {
+        setProject({
+          ...projData,
+          title: finalRes.projectTitle,
+          department: finalRes.department || projData.department,
+          respondentCount: finalRes.respondentCount || projData.respondentCount,
+        });
+      } else {
+        setProject(projData || null);
+      }
       setResults(finalRes);
       if (finalRes?.researchDesign === 'categorical') {
         setActiveTab('crosstab');
@@ -500,6 +777,9 @@ export default function HasilPage() {
     'oneway-anova': 'One-Way ANOVA & Post-Hoc Tukey',
     nonparametric: 'Uji Non-Parametrik Alternatif',
     crosstab: 'Tabulasi Silang, Chi-Square, & Odds Ratio',
+    mediation: 'Uji Mediasi & Analisis Jalur (Sobel)',
+    moderation: 'Uji Moderasi (Moderated Regression Analysis)',
+    appendix: 'Lembar Lampiran Skripsi (Format Matriks Audit Akademik)',
   };
 
   // Navigasi Sebelumnya & Berikutnya antar-tab dinamis
@@ -526,13 +806,14 @@ export default function HasilPage() {
           format: 'word',
           sections: ['descriptive', 'validity', 'reliability', 'regression'],
           includeStatement: true,
+          projectTitle: effectiveProjectTitle,
         },
         results
       );
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Hasil_Bab4_${project?.title?.replace(/\s+/g, '_') || 'Skripsi'}.docx`;
+      a.download = `Hasil_Bab4_${effectiveProjectTitle.replace(/\s+/g, '_') || 'Skripsi'}.docx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -571,13 +852,14 @@ export default function HasilPage() {
           format: 'pdf',
           sections: ['descriptive', 'validity', 'reliability', 'regression'],
           includeStatement: true,
+          projectTitle: effectiveProjectTitle,
         },
         results
       );
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Hasil_Bab4_${project?.title?.replace(/\s+/g, '_') || 'Skripsi'}.pdf`;
+      a.download = `Hasil_Bab4_${effectiveProjectTitle.replace(/\s+/g, '_') || 'Skripsi'}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -683,7 +965,7 @@ export default function HasilPage() {
           tableNumber: 'Tabel 4.4',
           title: 'Hasil Pengujian Validitas Instrumen Kuesioner (Pearson Product Moment)',
           note: `Derajat bebas df = N - 2 = ${results.respondentCount - 2}, taraf signifikansi α = 0,05 (r tabel = ${results.validity[0]?.rTabel ? formatNumber(results.validity[0].rTabel, 4) : '0,1816'}). Kriteria: r hitung > r tabel.`,
-          columns: validityCols.map((c) => ({ header: c.header, align: c.align })),
+          columns: validityCols.filter((c) => c.key !== 'toggle').map((c) => ({ header: c.header, align: c.align })),
           rows: results.validity.map((r) => [
             r.item,
             r.construct,
@@ -1089,7 +1371,7 @@ export default function HasilPage() {
           tableNumber: 'Tabel 4.4',
           title: 'Hasil Pengujian Validitas Instrumen Kuesioner (Pearson Product Moment)',
           note: `Derajat bebas df = N - 2 = ${results.respondentCount - 2}, taraf signifikansi α = 0,05.`,
-          columns: validityCols.map((c) => ({ header: c.header, align: c.align })),
+          columns: validityCols.filter((c) => c.key !== 'toggle').map((c) => ({ header: c.header, align: c.align })),
           rows: (results.validity || []).map((r) => [
             r.item,
             r.construct,
@@ -1364,6 +1646,109 @@ export default function HasilPage() {
         }
 
         tableHtml = parts.join('<br/><br/>');
+      } else if (activeTab === 'mediation' && results.pathAnalysis) {
+        const pa = results.pathAnalysis;
+        const parts: string[] = [];
+
+        pa.submodels.forEach((sm, idx) => {
+          parts.push(buildWordTableHtml({
+            tableNumber: `Tabel 4.13${String.fromCharCode(97 + idx)}`,
+            title: `Analisis Jalur ${sm.equationName} (Variabel Terikat: ${sm.dependentVar})`,
+            note: `R² = ${formatNumber(sm.rSquare, 3)}, F = ${formatNumber(sm.fStatistic, 3)} (p = ${formatNumber(sm.fPValue, 4)}), Error e = ${formatNumber(sm.residualError, 3)}.`,
+            columns: [
+              { header: 'Jalur / Prediktor', align: 'left' },
+              { header: 'B (Unstand.)', align: 'right' },
+              { header: 'Std. Error', align: 'right' },
+              { header: 'Beta (Stand.)', align: 'right' },
+              { header: 't-hitung', align: 'right' },
+              { header: 'Sig. (p)', align: 'right' },
+              { header: 'Keterangan', align: 'center' },
+            ],
+            rows: sm.coefficients.map((c) => [
+              c.fromVar,
+              formatNumber(c.unstandardizedB, 3),
+              formatNumber(c.se, 3),
+              formatNumber(c.standardizedBeta, 3),
+              formatNumber(c.tStatistic, 3),
+              formatNumber(c.pValue, 4),
+              c.significant ? 'Signifikan' : 'Tidak',
+            ]),
+          }));
+        });
+
+        parts.push(buildWordTableHtml({
+          tableNumber: 'Tabel 4.14',
+          title: 'Dekomposisi Pengaruh dan Pengujian Hipotesis Mediasi (Uji Sobel)',
+          note: 'Formula Uji Sobel: z = (a*b) / sqrt(b²*sa² + a²*sb²). Kriteria: |z| > 1,96 (p < 0,05).',
+          columns: [
+            { header: 'Jalur Mediasi', align: 'left' },
+            { header: 'Pengaruh Langsung (Direct)', align: 'right' },
+            { header: 'Pengaruh Tidak Langsung (Indirect)', align: 'right' },
+            { header: 'Pengaruh Total', align: 'right' },
+            { header: 'Sobel z', align: 'right' },
+            { header: 'p-value', align: 'right' },
+            { header: 'VAF (%)', align: 'right' },
+            { header: 'Kesimpulan Mediasi', align: 'center' },
+          ],
+          rows: pa.sobelResults.map((st) => [
+            `${st.independentVar} → ${st.mediatorVar} → ${st.dependentVar}`,
+            formatNumber(st.directEffect, 3),
+            formatNumber(st.indirectEffect, 3),
+            formatNumber(st.totalEffect, 3),
+            formatNumber(st.sobelZ, 3),
+            formatNumber(st.sobelPValue, 4),
+            `${formatNumber(st.vafRatio * 100, 1)}%`,
+            st.mediationType,
+          ]),
+        }));
+
+        tableHtml = parts.join('<br/><br/>');
+      } else if (activeTab === 'moderation' && results.moderationAnalysis) {
+        const ma = results.moderationAnalysis;
+        const parts: string[] = [];
+
+        ma.results.forEach((mod, mIdx) => {
+          parts.push(buildWordTableHtml({
+            tableNumber: `Tabel 4.15${String.fromCharCode(97 + mIdx)}`,
+            title: `Hasil Moderated Regression Analysis (MRA): ${mod.independentVar} terhadap ${mod.dependentVar} dimoderasi ${mod.moderatorVar}`,
+            note: `Model 1 R² = ${formatNumber(mod.model1.rSquare, 3)}; Model 2 R² = ${formatNumber(mod.model2.rSquare, 3)}, Delta R² = ${formatNumber(mod.rSquareChange, 4)}, F-Change = ${formatNumber(mod.fChange, 3)} (p = ${formatNumber(mod.fChangePValue, 4)}). Tipe Moderasi: ${mod.moderatorType} (${mod.moderationDirection}).`,
+            columns: [
+              { header: 'Model / Prediktor', align: 'left' },
+              { header: 'B (Unstand.)', align: 'right' },
+              { header: 'Std. Error', align: 'right' },
+              { header: 'Beta (Stand.)', align: 'right' },
+              { header: 't-hitung', align: 'right' },
+              { header: 'Sig. (p)', align: 'right' },
+              { header: 'Status', align: 'center' },
+            ],
+            rows: [
+              ['-- Model 1 (Efek Utama) --', '', '', '', '', '', ''],
+              ...mod.model1.coefficients.map((c) => [
+                c.variable,
+                formatNumber(c.b, 3),
+                formatNumber(c.se, 3),
+                formatNumber(c.beta, 3),
+                formatNumber(c.t, 3),
+                formatNumber(c.pValue, 4),
+                c.significant ? 'Signifikan' : 'Tidak',
+              ]),
+              ['-- Model 2 (Suku Interaksi) --', '', '', '', '', '', ''],
+              ...mod.model2.coefficients.map((c) => [
+                c.variable,
+                formatNumber(c.b, 3),
+                formatNumber(c.se, 3),
+                formatNumber(c.beta, 3),
+                formatNumber(c.t, 3),
+                formatNumber(c.pValue, 4),
+                c.significant ? 'Signifikan' : 'Tidak',
+              ]),
+            ],
+          }));
+        });
+
+        tableHtml = parts.join('<br/><br/>');
+      } else if (activeTab === 'appendix') {
+        tableHtml = buildFullThesisAppendixHtml(project?.title || 'Skripsi', results);
       }
 
       if (tableHtml) {
@@ -1745,29 +2130,90 @@ export default function HasilPage() {
     },
   ];
 
-  // 2. Validitas
-  const validityCols: ColumnDef<ValidityResult>[] = [
+  // 2. Validitas (dengan Real-Time Checkbox Toggle Drop Item)
+  const validityCols: ColumnDef<ValidityResult & { isExcluded?: boolean }>[] = [
+    {
+      key: 'toggle',
+      header: 'Sertakan',
+      align: 'center',
+      render: (r) => {
+        const isExcluded = Boolean(r.isExcluded || excludedItems.includes(r.item));
+        return (
+          <div
+            className="flex items-center justify-center gap-1.5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <input
+              type="checkbox"
+              checked={!isExcluded}
+              onChange={(e) => handleToggleItem(r.item, e.target.checked)}
+              className="h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer accent-primary"
+              title={
+                !isExcluded
+                  ? `Klik untuk drop/gugurkan butir ${r.item}`
+                  : `Klik untuk menyertakan kembali butir ${r.item}`
+              }
+              aria-label={`Sertakan butir ${r.item}`}
+            />
+            <span
+              className={cn(
+                'text-[11px] font-medium hidden sm:inline',
+                isExcluded ? 'text-destructive line-through' : 'text-foreground'
+              )}
+            >
+              {!isExcluded ? 'Aktif' : 'Drop'}
+            </span>
+          </div>
+        );
+      },
+      getValue: (r) => (r.isExcluded || excludedItems.includes(r.item) ? 'Drop' : 'Aktif'),
+    },
     {
       key: 'item',
       header: 'Butir Indikator',
       className: 'font-semibold font-mono',
+      render: (r) => (
+        <span className={cn(r.isExcluded ? 'line-through text-muted-foreground' : 'text-foreground')}>
+          {r.item}
+        </span>
+      ),
       getValue: (r) => r.item,
     },
     {
       key: 'construct',
       header: 'Konstruk Variabel',
+      render: (r) => (
+        <span className={cn(r.isExcluded ? 'text-muted-foreground' : 'text-foreground')}>
+          {r.construct}
+        </span>
+      ),
       getValue: (r) => r.construct,
     },
     {
       key: 'rHitung',
       header: 'r Hitung',
       align: 'right',
-      getValue: (r) => formatNumber(r.rHitung, 3),
+      render: (r) => (
+        <span
+          className={cn(
+            'font-mono tabular-nums',
+            r.isExcluded ? 'text-muted-foreground line-through' : 'text-foreground'
+          )}
+        >
+          {r.isExcluded ? '-' : formatNumber(r.rHitung, 3)}
+        </span>
+      ),
+      getValue: (r) => (r.isExcluded ? '-' : formatNumber(r.rHitung, 3)),
     },
     {
       key: 'rTabel',
       header: 'r Tabel (α=0,05)',
       align: 'right',
+      render: (r) => (
+        <span className="font-mono tabular-nums text-muted-foreground">
+          {formatNumber(r.rTabel, 4)}
+        </span>
+      ),
       getValue: (r) => formatNumber(r.rTabel, 4),
     },
     {
@@ -1776,13 +2222,13 @@ export default function HasilPage() {
       align: 'center',
       render: (r) => (
         <Badge
-          variant={r.valid ? 'pine' : 'destructive'}
-          className="text-[13px] px-2.5 py-0.5 min-h-[24px]"
+          variant={r.isExcluded ? 'secondary' : r.valid ? 'pine' : 'destructive'}
+          className="text-[12px] px-2 py-0.5 min-h-[22px]"
         >
-          {r.valid ? 'Valid' : 'Gugur'}
+          {r.isExcluded ? 'Didrop' : r.valid ? 'Valid' : 'Gugur'}
         </Badge>
       ),
-      getValue: (r) => (r.valid ? 'Valid' : 'Gugur'),
+      getValue: (r) => (r.isExcluded ? 'Didrop' : r.valid ? 'Valid' : 'Gugur'),
     },
   ];
 
@@ -2879,7 +3325,7 @@ export default function HasilPage() {
   return (
     <div className="space-y-6 max-w-full min-w-0">
       {/* Sticky Header Meja Kerja Hasil */}
-      <div className="sticky top-16 z-20 bg-background/95 backdrop-blur-md pb-4 pt-3 sm:pt-4 border-b border-border/80 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="sticky top-16 z-20 bg-background/95 backdrop-blur-md pb-4 pt-3 sm:pt-4 border-b border-border/80 flex flex-col min-[1200px]:flex-row min-[1200px]:items-center min-[1200px]:justify-between gap-4">
         <div className="space-y-1.5 min-w-0 flex-1">
           {/* Breadcrumb Nav */}
           <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
@@ -2889,9 +3335,9 @@ export default function HasilPage() {
             <ChevronRight className="h-3 w-3 shrink-0" />
             <span
               className="text-foreground font-medium truncate max-w-[200px] sm:max-w-[320px]"
-              title={project?.title || 'Skripsi Saya'}
+              title={effectiveProjectTitle}
             >
-              {project?.title || 'Skripsi Saya'}
+              {effectiveProjectTitle}
             </span>
             <ChevronRight className="h-3 w-3 shrink-0" />
             <span className="text-primary font-semibold">Hasil Bab 4</span>
@@ -2900,7 +3346,7 @@ export default function HasilPage() {
           {/* Heading & Metadata */}
           <div className="flex items-center gap-2.5 flex-wrap">
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground font-serif">
-              Hasil Analisis &amp; Pembahasan Bab 4
+              Hasil Analisis dan Pembahasan Bab 4
             </h1>
             <Badge variant="outline" className="text-xs bg-muted/50 font-mono py-0.5">
               N = {results.respondentCount} responden
@@ -2939,29 +3385,50 @@ export default function HasilPage() {
 
           {/* Tombol Utama: Unduh Bab 4 (Word) */}
           <Button
+            type="button"
             size="sm"
+            disabled={!results || chapter4ModalOpen || (!isSample && !effectiveProjectTitle.trim())}
+            aria-disabled={!results || chapter4ModalOpen || (!isSample && !effectiveProjectTitle.trim())}
             onClick={() => {
+              if (!isSample && (!effectiveProjectTitle.trim() || effectiveProjectTitle === 'Pengaruh Kualitas Layanan dan Kepuasan terhadap Loyalitas Pelanggan')) {
+                toast({
+                  title: 'Judul Penelitian Belum Diisi',
+                  description: 'Judul penelitian belum diisi. Lengkapi di formulir proyek sebelum mengunduh.',
+                  variant: 'error',
+                });
+                return;
+              }
               setChapter4ExportFormat('docx');
               setChapter4ModalOpen(true);
             }}
-            className="text-[13px] min-h-[44px] px-4 gap-2 font-semibold shadow-xs touch-manipulation cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl"
-            title="Unduh draf naskah Bab 4 format Microsoft Word (.docx) dengan tabel APA 7th asli"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[40px] !whitespace-nowrap rounded-lg text-[13px] font-semibold shadow-xs touch-manipulation cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50 disabled:cursor-not-allowed shrink-0 select-none"
+            title={
+              !isSample && !effectiveProjectTitle.trim()
+                ? 'Judul penelitian belum diisi. Lengkapi di formulir proyek sebelum mengunduh.'
+                : chapter4ModalOpen
+                ? 'Menyiapkan dokumen...'
+                : 'Unduh draf naskah Bab 4 format Microsoft Word (.docx) dengan tabel APA 7th asli'
+            }
           >
-            <FileDown className="h-4 w-4" />
-            <span>Unduh Bab 4 (Word)</span>
+            <FileDown className="h-4 w-4 shrink-0" />
+            <span className="shrink-0">
+              {chapter4ModalOpen ? 'Menyiapkan dokumen...' : 'Unduh Bab 4 (Word)'}
+            </span>
           </Button>
 
           {/* Dropdown Menu: Unduh Lainnya & Salin Semua */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
+                type="button"
                 variant="outline"
                 size="sm"
-                className="text-[13px] min-h-[44px] px-3.5 gap-1.5 touch-manipulation cursor-pointer rounded-xl font-medium border-border hover:bg-muted"
+                aria-haspopup="menu"
+                className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 min-h-[40px] !whitespace-nowrap rounded-lg border border-border hover:bg-muted text-[13px] font-medium touch-manipulation cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary shrink-0 select-none"
                 aria-label="Menu unduh lainnya"
               >
-                <span>Unduh Lainnya</span>
-                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="shrink-0">Unduh Lainnya</span>
+                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-60 p-1.5 rounded-xl">
@@ -3008,7 +3475,7 @@ export default function HasilPage() {
                 className="gap-2.5 cursor-pointer text-xs py-2 text-muted-foreground"
               >
                 <SlidersHorizontal className="h-4 w-4" />
-                <span>Opsi Ekspor Lanjutan &amp; Lampiran</span>
+                <span>Opsi Ekspor Lanjutan dan Lampiran</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -3140,10 +3607,11 @@ export default function HasilPage() {
             isLocked={isFree && !isSample}
             isSample={isSample}
             testName="Lampiran Output SPSS Klasik"
-            reason="Tampilan lembar output klasik SPSS (.spv/tabel pivot) lengkap dengan seluruh tabel komparatif dan regresi tersedia pada Paket Bulanan &amp; Paket Skripsi."
+            reason="Tampilan lembar output klasik SPSS (.spv/tabel pivot) lengkap dengan seluruh tabel komparatif dan regresi tersedia pada Paket Bulanan dan Paket Skripsi."
           >
-            <SpssOutputViewer
+            <ThesisRawAppendixViewer
               results={results}
+              project={project}
               onHoverNumber={setHighlightedNumber}
               highlightedValue={highlightedNumber}
             />
@@ -3203,7 +3671,7 @@ export default function HasilPage() {
                       Tabel 4.1
                     </span>
                     <h3 className="text-sm font-semibold text-foreground">
-                      Karakteristik &amp; Demografi Responden
+                      Karakteristik dan Demografi Responden
                     </h3>
                     <p className="text-xs text-muted-foreground">
                       Kolom demografi kuesioner (seperti Jenis Kelamin, Usia, Pendidikan) dirangkum otomatis pada bagian ini saat file kuesioner memuat data profil responden.
@@ -3330,7 +3798,7 @@ export default function HasilPage() {
                       className="bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shrink-0 rounded-lg min-h-[38px] shadow-sm cursor-pointer"
                     >
                       <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-                      Eliminasi Butir Gugur &amp; Hitung Ulang (Buat Versi Baru)
+                      Eliminasi Butir Gugur dan Hitung Ulang (Buat Versi Baru)
                     </Button>
                   </div>
                 )}
@@ -3338,9 +3806,9 @@ export default function HasilPage() {
                 <ResultTable
                   tableNumber="Tabel 4.4"
                   title="Hasil Pengujian Validitas Instrumen Kuesioner (Pearson Product Moment)"
-                  note={`Derajat bebas df = N - 2 = ${results.respondentCount - 2}, taraf signifikansi α = 0,05 (r tabel = ${results.validity?.[0]?.rTabel ? formatNumber(results.validity[0].rTabel, 4) : '0,1816'}). Kriteria: r hitung > r tabel = Valid.`}
-                  columns={validityCols}
-                  data={results.validity || []}
+                  note={`Derajat bebas df = N - 2 = ${results.respondentCount - 2}, taraf signifikansi α = 0,05 (r tabel = ${results.validity?.[0]?.rTabel ? formatNumber(results.validity[0].rTabel, 4) : '0,1816'}). Kriteria: r hitung > r tabel = Valid. Toggle centang 'Sertakan' untuk drop/sertakan butir seketika (<200ms).`}
+                  columns={validityCols as any}
+                  data={displayedValidity}
                   rowKey={(r) => r.item}
                   highlightedValue={highlightedNumber}
                 />
@@ -3459,7 +3927,7 @@ export default function HasilPage() {
                       <div className="p-3.5 rounded-lg bg-background border border-border space-y-2.5">
                         <div className="flex items-center justify-between">
                           <span className="font-semibold text-xs text-foreground">
-                            1. Deteksi &amp; Eliminasi Outlier Residual
+                            1. Deteksi dan Eliminasi Outlier Residual
                           </span>
                           <Badge variant="outline" className="text-[10px] font-mono">
                             |Z_res| &gt; 2,5
@@ -3467,28 +3935,83 @@ export default function HasilPage() {
                         </div>
                         <p className="text-[11px] text-muted-foreground">
                           {results.residualOutliers && results.residualOutliers.totalOutliers > 0
-                            ? `Ditemukan ${results.residualOutliers.totalOutliers} responden dengan residual ekstrim (Baris: ${results.residualOutliers.outliers.map((o) => o.rowNumber).join(', ')}). Estimasi nilai Sig. normalitas baru: ~${formatNumber(results.residualOutliers.estimatedNormalSigIfRemoved, 3)}.`
+                            ? `Ditemukan ${results.residualOutliers.totalOutliers} responden dengan residual ekstrim (|Z| > 2,5). Centang kotak responden di bawah untuk mengecualikannya secara individual atau gunakan tombol serentak:`
                             : 'Tidak terdeteksi outlier residual ekstrim (|Z| > 2,5). Model residual relatif stabil.'}
                         </p>
                         {results.residualOutliers && results.residualOutliers.totalOutliers > 0 && (
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() =>
-                              handleEliminateOutliers(
-                                results.residualOutliers!.outliers.map((o) => o.rowNumber)
-                              )
-                            }
-                            className="w-full text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-md cursor-pointer font-medium flex items-center justify-center gap-1.5"
-                          >
-                            {isFree && <Lock className="w-3.5 h-3.5" />}
-                            Kecualikan {results.residualOutliers.totalOutliers} Responden Outlier &amp; Jalankan Ulang
-                            {isFree && (
-                              <Badge variant="outline" className="text-[10px] text-white border-white/40 ml-1 py-0">
-                                Pro
-                              </Badge>
-                            )}
-                          </Button>
+                          <>
+                            <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                              {results.residualOutliers.outliers.map((outlier) => {
+                                const isExcluded = excludedOutlierRows.includes(outlier.rowNumber);
+                                return (
+                                  <label
+                                    key={outlier.rowNumber}
+                                    className={cn(
+                                      'flex items-center justify-between p-2 rounded-lg border text-xs cursor-pointer transition-colors',
+                                      isExcluded
+                                        ? 'bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200'
+                                        : 'bg-muted/40 border-border hover:bg-muted/70 text-foreground'
+                                    )}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <input
+                                        type="checkbox"
+                                        checked={isExcluded}
+                                        onChange={(e) =>
+                                          handleToggleOutlierRow(outlier.rowNumber, e.target.checked)
+                                        }
+                                        className="h-3.5 w-3.5 rounded border-border text-amber-600 focus:ring-amber-500 cursor-pointer accent-amber-600"
+                                        aria-label={`Kecualikan responden nomor ${outlier.rowNumber}`}
+                                      />
+                                      <span className="font-mono font-medium">
+                                        Responden #{outlier.rowNumber}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 font-mono text-[11px]">
+                                      <span className="text-muted-foreground">Z:</span>
+                                      <span
+                                        className={cn(
+                                          'font-semibold',
+                                          Math.abs(outlier.zResidual) > 2.5
+                                            ? 'text-destructive'
+                                            : 'text-foreground'
+                                        )}
+                                      >
+                                        {outlier.zResidual.toFixed(3)}
+                                      </span>
+                                      <Badge
+                                        variant={isExcluded ? 'destructive' : 'outline'}
+                                        className="text-[9px] py-0 px-1"
+                                      >
+                                        {isExcluded ? 'Eksklusi' : 'Aktif'}
+                                      </Badge>
+                                    </div>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() =>
+                                handleEliminateOutliers(
+                                  results.residualOutliers!.outliers.map((o) => o.rowNumber)
+                                )
+                              }
+                              className="w-full text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-md cursor-pointer font-medium flex items-center justify-center gap-1.5"
+                            >
+                              {isFree && !isSample && <Lock className="w-3.5 h-3.5" />}
+                              Kecualikan Semua ({results.residualOutliers.totalOutliers}) Responden Outlier
+                              {isFree && !isSample && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] text-white border-white/40 ml-1 py-0"
+                                >
+                                  Pro
+                                </Badge>
+                              )}
+                            </Button>
+                          </>
                         )}
                       </div>
 
@@ -3499,7 +4022,7 @@ export default function HasilPage() {
                             2. Peralihan Uji Heteroskedastisitas Sah
                           </span>
                           <Badge variant="outline" className="text-[10px]">
-                            Park &amp; Spearman
+                            Park dan Spearman
                           </Badge>
                         </div>
                         <p className="text-[11px] text-muted-foreground">
@@ -3569,6 +4092,8 @@ export default function HasilPage() {
                   <AcademicResidualPlots
                     n={results.respondentCount}
                     isNormal={results.normality?.[0]?.normal ?? true}
+                    unstandardizedResiduals={results.unstandardizedResiduals}
+                    standardizedResiduals={results.standardizedResiduals}
                   />
 
                   <Chapter4InterpretationCard
@@ -3922,7 +4447,7 @@ export default function HasilPage() {
                         Ringkasan Model Regresi (Model Summary)
                       </span>
                       <h4 className="font-semibold text-sm text-foreground">
-                        Statistik Kelayakan &amp; Kebaikan Model (Goodness of Fit)
+                        Statistik Kelayakan dan Kebaikan Model (Goodness of Fit)
                       </h4>
                     </div>
 
@@ -4030,7 +4555,7 @@ export default function HasilPage() {
                     <div className="space-y-4 pt-6 border-t border-border">
                       <div className="border-b border-border pb-2">
                         <h3 className="font-serif text-lg font-bold text-foreground">
-                          Pembuktian &amp; Keputusan Hipotesis Penelitian
+                          Pembuktian dan Keputusan Hipotesis Penelitian
                         </h3>
                       </div>
 
@@ -4240,7 +4765,7 @@ export default function HasilPage() {
                   testName="Independent Sample t-Test & Uji Homogenitas Levene"
                   reason="Uji homogenitas Levene, nilai t-hitung kelompok bebas, dan draf pembahasan Bab 4 lengkap tersedia pada Paket Bulanan & Paket Skripsi."
                 >
-                  {results.independentTTest && (
+                  {results.independentTTest ? (
                     <div className="space-y-6">
                       {/* Ringkasan Statistik Kelompok */}
                       <div className="space-y-2">
@@ -4303,6 +4828,13 @@ export default function HasilPage() {
                         }}
                       />
                     </div>
+                  ) : (
+                    <div className="p-8 rounded-2xl border border-border bg-card text-center space-y-2">
+                      <h4 className="text-base font-bold text-foreground">Kolom Pengelompokan 2 Kategori Belum Terdeteksi</h4>
+                      <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                        Tambahkan kolom profil demografi (misal: Jenis Kelamin atau Kelas) pada berkas kuesioner Anda atau pilih kolom kelompok pada Langkah 3 untuk menampilkan Independent Sample t-Test.
+                      </p>
+                    </div>
                   )}
                 </ProResultBlur>
               </TabsContent>
@@ -4315,7 +4847,7 @@ export default function HasilPage() {
                   testName="One-Way ANOVA & Uji Lanjutan Post-Hoc"
                   reason="Nilai F-hitung ANOVA, taraf signifikansi p-value, dan perbandingan berganda Post-Hoc Tukey HSD tersedia pada Paket Bulanan & Paket Skripsi."
                 >
-                  {results.oneWayAnova && (
+                  {results.oneWayAnova ? (
                     <div className="space-y-6">
                       <ResultTable
                         tableNumber="Tabel 4.14"
@@ -4423,6 +4955,13 @@ export default function HasilPage() {
                         }}
                       />
                     </div>
+                  ) : (
+                    <div className="p-8 rounded-2xl border border-border bg-card text-center space-y-2">
+                      <h4 className="text-base font-bold text-foreground">Kolom Pengelompokan Multi-Kategori Belum Terdeteksi</h4>
+                      <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                        Tambahkan kolom profil demografi dengan 3 atau lebih kategori (misal: Pendidikan atau Usia) pada berkas kuesioner Anda untuk menampilkan One-Way ANOVA dan Post-Hoc Tukey HSD.
+                      </p>
+                    </div>
                   )}
                 </ProResultBlur>
               </TabsContent>
@@ -4477,7 +5016,7 @@ export default function HasilPage() {
                   testName="Tabulasi Silang, Chi-Square, & Odds Ratio"
                   reason="Uji Pearson Chi-Square, Fisher's Exact Test, Continuity Correction, dan estimasi risiko Odds Ratio (OR) 95% CI tersedia pada Paket Bulanan & Paket Skripsi."
                 >
-                  {results.crosstab && results.chiSquare && (
+                  {results.crosstab && results.chiSquare ? (
                   <div className="space-y-6">
                     {/* APA 7th Matriks Tabulasi Silang */}
                     <div className="rounded-2xl border border-border bg-card p-5 shadow-xs space-y-4">
@@ -4771,13 +5310,523 @@ export default function HasilPage() {
                       />
                     </div>
                   </div>
+                ) : (
+                  <div className="p-8 rounded-2xl border border-border bg-card text-center space-y-2">
+                    <h4 className="text-base font-bold text-foreground">Pasangan Variabel Kategorik Belum Terdeteksi</h4>
+                    <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                      Tambahkan minimal 2 kolom kategorik/demografi (misal: Jenis Kelamin dan Pendidikan) pada berkas kuesioner Anda untuk menampilkan Tabulasi Silang dan Uji Chi-Square.
+                    </p>
+                  </div>
                 )}
                 </ProResultBlur>
               </TabsContent>
+
+            {/* 12. UJI MEDIASI (ANALISIS JALUR & UJI SOBEL) */}
+            <TabsContent value="mediation" className="space-y-6 mt-4">
+              <ProResultBlur
+                isLocked={!isThesis && !isSample}
+                isSample={isSample}
+                testName="Uji Mediasi & Analisis Jalur (Sobel)"
+                reason="Fitur Analisis Jalur (Path Analysis) dan Uji Signifikansi Mediasi Sobel merupakan fitur eksklusif Paket Skripsi Tuntas."
+              >
+                {results.pathAnalysis && results.pathAnalysis.hasMediation && (
+                  <div className="space-y-6">
+                    {/* Header Ringkasan Mediasi & Badges */}
+                    <div className="rounded-2xl border border-purple-500/30 bg-purple-500/5 p-5 shadow-xs space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                            <GitFork className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h3 className="text-base font-bold text-foreground">
+                              Analisis Jalur (Path Analysis) dan Uji Mediasi Sobel
+                            </h3>
+                            <p className="text-xs text-muted-foreground">
+                              Pengujian signifikansi efek tidak langsung (indirect effect) variabel perantara
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {results.pathAnalysis.sobelResults[0] && (
+                            <>
+                              <Badge
+                                variant={results.pathAnalysis.sobelResults[0].significant ? 'pine' : 'secondary'}
+                                className="text-xs font-semibold px-2.5 py-1"
+                              >
+                                {results.pathAnalysis.sobelResults[0].significant ? 'Mediasi Signifikan' : 'Tidak Signifikan'}
+                              </Badge>
+                              <Badge
+                                className={cn(
+                                  'text-xs font-semibold px-2.5 py-1 text-white',
+                                  results.pathAnalysis.sobelResults[0].mediationType === 'Full Mediation'
+                                    ? 'bg-purple-600 border-purple-700'
+                                    : results.pathAnalysis.sobelResults[0].mediationType === 'Partial Mediation'
+                                    ? 'bg-sky-600 border-sky-700'
+                                    : 'bg-muted-foreground/60'
+                                )}
+                              >
+                                {results.pathAnalysis.sobelResults[0].mediationType}
+                              </Badge>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Info Jalur */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
+                        <div className="p-3 rounded-xl bg-card border border-border/80">
+                          <span className="text-[11px] text-muted-foreground block">Variabel Bebas (X)</span>
+                          <span className="font-semibold text-foreground text-sm">
+                            {results.pathAnalysis.sobelResults.map((s) => s.independentVar).filter((v, i, a) => a.indexOf(v) === i).join(', ')}
+                          </span>
+                        </div>
+                        <div className="p-3 rounded-xl bg-card border border-border/80">
+                          <span className="text-[11px] text-muted-foreground block">Variabel Mediasi (Z / M)</span>
+                          <span className="font-semibold text-purple-700 dark:text-purple-400 text-sm">
+                            {results.pathAnalysis.sobelResults.map((s) => s.mediatorVar).filter((v, i, a) => a.indexOf(v) === i).join(', ')}
+                          </span>
+                        </div>
+                        <div className="p-3 rounded-xl bg-card border border-border/80">
+                          <span className="text-[11px] text-muted-foreground block">Variabel Terikat (Y)</span>
+                          <span className="font-semibold text-emerald-700 dark:text-emerald-400 text-sm">
+                            {results.pathAnalysis.sobelResults[0]?.dependentVar || '-'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Tabel 4.13: Hasil Estimasi Koefisien Analisis Jalur */}
+                    <div className="space-y-4">
+                      {results.pathAnalysis.submodels.map((sm, smIdx) => (
+                        <div key={sm.equationName} className="rounded-2xl border border-border bg-card p-5 shadow-xs space-y-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/80 pb-3">
+                            <div>
+                              <span className="text-xs font-bold text-primary font-mono uppercase tracking-wider block">
+                                Tabel 4.13{String.fromCharCode(97 + smIdx)} (Format APA 7th Edition)
+                              </span>
+                              <h3 className="text-base font-bold text-foreground font-serif">
+                                Estimasi Koefisien Jalur: {sm.equationName} (Dependen: {sm.dependentVar})
+                              </h3>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs font-mono">
+                              <Badge variant="outline">R² = {formatNumber(sm.rSquare, 3)}</Badge>
+                              <Badge variant="outline">F = {formatNumber(sm.fStatistic, 3)} (p = {formatNumber(sm.fPValue, 4)})</Badge>
+                              <Badge variant="outline">e = {formatNumber(sm.residualError, 3)}</Badge>
+                            </div>
+                          </div>
+
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-xs border-collapse">
+                              <thead>
+                                <tr className="border-b-2 border-foreground/80 text-muted-foreground">
+                                  <th className="py-2.5 px-3 text-left font-semibold">Jalur / Prediktor</th>
+                                  <th className="py-2.5 px-3 text-right font-semibold">B (Unstandardized)</th>
+                                  <th className="py-2.5 px-3 text-right font-semibold">Std. Error</th>
+                                  <th className="py-2.5 px-3 text-right font-semibold">Beta (&beta;)</th>
+                                  <th className="py-2.5 px-3 text-right font-semibold">t-hitung</th>
+                                  <th className="py-2.5 px-3 text-right font-semibold">Sig. (p)</th>
+                                  <th className="py-2.5 px-3 text-center font-semibold">Keputusan</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {sm.coefficients.map((c) => (
+                                  <tr key={c.path} className="border-b border-border/60 hover:bg-muted/40 transition-colors">
+                                    <td className="py-2.5 px-3 font-medium text-foreground">{c.fromVar}</td>
+                                    <td className="py-2.5 px-3 text-right font-mono tabular-nums">{formatNumber(c.unstandardizedB, 3)}</td>
+                                    <td className="py-2.5 px-3 text-right font-mono tabular-nums">{formatNumber(c.se, 3)}</td>
+                                    <td className="py-2.5 px-3 text-right font-mono tabular-nums font-semibold">{formatNumber(c.standardizedBeta, 3)}</td>
+                                    <td className="py-2.5 px-3 text-right font-mono tabular-nums">{formatNumber(c.tStatistic, 3)}</td>
+                                    <td className="py-2.5 px-3 text-right font-mono tabular-nums">
+                                      <span className={c.significant ? 'font-bold text-primary' : 'text-muted-foreground'}>
+                                        {formatNumber(c.pValue, 4)}
+                                      </span>
+                                    </td>
+                                    <td className="py-2.5 px-3 text-center">
+                                      <Badge variant={c.significant ? 'pine' : 'secondary'} className="text-[11px]">
+                                        {c.significant ? 'Signifikan' : 'Tidak Signifikan'}
+                                      </Badge>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          <div className="text-[11px] text-muted-foreground pt-1 border-t border-border/40 flex flex-wrap items-center justify-between gap-2">
+                            <span>
+                              Catatan: Derajat residual path error e{smIdx + 1} = &radic;(1 - R&sup2;) = {formatNumber(sm.residualError, 3)}. Taraf signifikansi &alpha; = 0,05.
+                            </span>
+                            <span className="font-mono">
+                              Persamaan: {sm.dependentVar} = {sm.coefficients.map((c) => `${formatNumber(c.standardizedBeta, 3)} (${c.fromVar})`).join(' + ')} + e{smIdx + 1}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Tabel 4.14: Dekomposisi Efek & Uji Sobel */}
+                    <div className="rounded-2xl border border-border bg-card p-5 shadow-xs space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/80 pb-3">
+                        <div>
+                          <span className="text-xs font-bold text-primary font-mono uppercase tracking-wider block">
+                            Tabel 4.14 (Format APA 7th Edition)
+                          </span>
+                          <h3 className="text-base font-bold text-foreground font-serif">
+                            Dekomposisi Pengaruh dan Uji Signifikansi Mediasi (Sobel Test)
+                          </h3>
+                        </div>
+                        <Badge variant="outline" className="font-mono text-xs">
+                          Metode Sobel (1982) dan Baron &amp; Kenny (1986)
+                        </Badge>
+                      </div>
+
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs border-collapse">
+                          <thead>
+                            <tr className="border-b-2 border-foreground/80 text-muted-foreground">
+                              <th className="py-2.5 px-3 text-left font-semibold">Jalur Pengujian</th>
+                              <th className="py-2.5 px-3 text-right font-semibold">Pengaruh Langsung (c&apos;)</th>
+                              <th className="py-2.5 px-3 text-right font-semibold">Pengaruh Tidak Langsung (a&times;b)</th>
+                              <th className="py-2.5 px-3 text-right font-semibold">Pengaruh Total</th>
+                              <th className="py-2.5 px-3 text-right font-semibold">Sobel z-hitung</th>
+                              <th className="py-2.5 px-3 text-right font-semibold">p-value (2-tailed)</th>
+                              <th className="py-2.5 px-3 text-right font-semibold">VAF Ratio</th>
+                              <th className="py-2.5 px-3 text-center font-semibold">Tipe Mediasi</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {results.pathAnalysis.sobelResults.map((st) => (
+                              <tr key={`${st.independentVar}-${st.mediatorVar}`} className="border-b border-border/60 hover:bg-muted/40 transition-colors">
+                                <td className="py-2.5 px-3 font-medium text-foreground">
+                                  {st.independentVar} &rarr; <span className="text-purple-600 dark:text-purple-400 font-semibold">{st.mediatorVar}</span> &rarr; {st.dependentVar}
+                                </td>
+                                <td className="py-2.5 px-3 text-right font-mono tabular-nums">{formatNumber(st.directEffect, 3)}</td>
+                                <td className="py-2.5 px-3 text-right font-mono tabular-nums font-semibold text-primary">{formatNumber(st.indirectEffect, 3)}</td>
+                                <td className="py-2.5 px-3 text-right font-mono tabular-nums">{formatNumber(st.totalEffect, 3)}</td>
+                                <td className="py-2.5 px-3 text-right font-mono tabular-nums font-bold">
+                                  {formatNumber(st.sobelZ, 3)}
+                                </td>
+                                <td className="py-2.5 px-3 text-right font-mono tabular-nums">
+                                  <span className={st.significant ? 'font-bold text-primary' : 'text-muted-foreground'}>
+                                    {formatNumber(st.sobelPValue, 4)}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-3 text-right font-mono tabular-nums">{formatNumber(st.vafRatio * 100, 1)}%</td>
+                                <td className="py-2.5 px-3 text-center">
+                                  <Badge
+                                    variant={st.significant ? 'pine' : 'secondary'}
+                                    className="text-[11px]"
+                                  >
+                                    {st.mediationType}
+                                  </Badge>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className="text-[11px] text-muted-foreground pt-1 border-t border-border/40 leading-relaxed">
+                        Rumus Uji Sobel: z = (a &times; b) / &radic;(b&sup2;s_a&sup2; + a&sup2;s_b&sup2;). Kriteria pengujian: jika nilai |z| &gt; 1,96 pada taraf &alpha; = 0,05, disimpulkan bahwa variabel mediasi secara signifikan memediasi hubungan antara variabel bebas dan terikat. Kriteria VAF: &gt; 80% Full Mediation, 20% - 80% Partial Mediation, &lt; 20% No Mediation (Hair et al., 2017).
+                      </div>
+                    </div>
+
+                    {/* Draf Narasi Akademik Bab 4 */}
+                    {results.explanations.pathAnalysis && (
+                      <Chapter4InterpretationCard
+                        tableNumber="Tabel 4.13 dan 4.14"
+                        intinya={results.pathAnalysis.sobelResults[0]?.conclusion || 'Pengujian mediasi menunjukkan pengaruh tidak langsung yang signifikan.'}
+                        interpretation={results.explanations.pathAnalysis}
+                        guidingQuestions={[
+                          'Apakah koefisien regresi jalur a (X -> Z) dan jalur b (Z -> Y) keduanya signifikan pada taraf 5%?',
+                          'Berapa nilai statistik z-hitung Uji Sobel dan apakah p-value < 0,05?',
+                          'Apakah model terbukti sebagai mediasi penuh (Full Mediation) atau mediasi parsial (Partial Mediation)?',
+                        ]}
+                        onHoverNumber={setHighlightedNumber}
+                        activeNumber={highlightedNumber}
+                      />
+                    )}
+
+                    {/* Bekal Sidang Skripsi: Tanya Jawab Penguji */}
+                    <ThesisDefenseCompanion
+                      testType="mediation"
+                      dataMetrics={{
+                        n: results.respondentCount,
+                        sobelZ: results.pathAnalysis.sobelResults[0]?.sobelZ,
+                        sobelP: results.pathAnalysis.sobelResults[0]?.sobelPValue,
+                        indirectEffect: results.pathAnalysis.sobelResults[0]?.indirectEffect,
+                        directEffect: results.pathAnalysis.sobelResults[0]?.directEffect,
+                        totalEffect: results.pathAnalysis.sobelResults[0]?.totalEffect,
+                        vafRatio: (results.pathAnalysis.sobelResults[0]?.vafRatio || 0) * 100,
+                        mediationType: results.pathAnalysis.sobelResults[0]?.mediationType,
+                      }}
+                    />
+                  </div>
+                )}
+              </ProResultBlur>
+            </TabsContent>
+
+            {/* 13. UJI MODERASI (MODERATED REGRESSION ANALYSIS / MRA) */}
+            <TabsContent value="moderation" className="space-y-6 mt-4">
+              <ProResultBlur
+                isLocked={!isThesis && !isSample}
+                isSample={isSample}
+                testName="Uji Moderasi (Moderated Regression Analysis)"
+                reason="Fitur Moderated Regression Analysis (MRA) hierarkis dan tipologi variabel pemoderasi merupakan fitur eksklusif Paket Skripsi Tuntas."
+              >
+                {results.moderationAnalysis && results.moderationAnalysis.hasModeration && (
+                  <div className="space-y-6">
+                    {/* Header Ringkasan Moderasi & Badges */}
+                    <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5 shadow-xs space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                            <SlidersHorizontal className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h3 className="text-base font-bold text-foreground">
+                              Moderated Regression Analysis (MRA)
+                            </h3>
+                            <p className="text-xs text-muted-foreground">
+                              Pengujian signifikansi efek interaksi dan tipologi moderasi (Sharma et al., 1981)
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {results.moderationAnalysis.results[0] && (
+                            <>
+                              <Badge
+                                variant={results.moderationAnalysis.results[0].interactionSignificant ? 'pine' : 'secondary'}
+                                className="text-xs font-semibold px-2.5 py-1"
+                              >
+                                {results.moderationAnalysis.results[0].interactionSignificant ? 'Moderasi Signifikan' : 'Tidak Signifikan'}
+                              </Badge>
+                              <Badge
+                                className={cn(
+                                  'text-xs font-semibold px-2.5 py-1 text-white',
+                                  results.moderationAnalysis.results[0].moderatorType === 'Pure Moderator'
+                                    ? 'bg-amber-600 border-amber-700'
+                                    : results.moderationAnalysis.results[0].moderatorType === 'Quasi Moderator'
+                                    ? 'bg-orange-600 border-orange-700'
+                                    : 'bg-muted-foreground/60'
+                                )}
+                              >
+                                {results.moderationAnalysis.results[0].moderatorType}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs font-semibold px-2.5 py-1">
+                                {results.moderationAnalysis.results[0].moderationDirection}
+                              </Badge>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Info Model Moderasi */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
+                        <div className="p-3 rounded-xl bg-card border border-border/80">
+                          <span className="text-[11px] text-muted-foreground block">Variabel Bebas (X)</span>
+                          <span className="font-semibold text-foreground text-sm">
+                            {results.moderationAnalysis.results.map((r) => r.independentVar).filter((v, i, a) => a.indexOf(v) === i).join(', ')}
+                          </span>
+                        </div>
+                        <div className="p-3 rounded-xl bg-card border border-border/80">
+                          <span className="text-[11px] text-muted-foreground block">Variabel Moderasi (Mod)</span>
+                          <span className="font-semibold text-amber-700 dark:text-amber-400 text-sm">
+                            {results.moderationAnalysis.results.map((r) => r.moderatorVar).filter((v, i, a) => a.indexOf(v) === i).join(', ')}
+                          </span>
+                        </div>
+                        <div className="p-3 rounded-xl bg-card border border-border/80">
+                          <span className="text-[11px] text-muted-foreground block">Variabel Terikat (Y)</span>
+                          <span className="font-semibold text-emerald-700 dark:text-emerald-400 text-sm">
+                            {results.moderationAnalysis.results[0]?.dependentVar || '-'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Tabel 4.15: Hasil Hierarchical MRA (Model 1 vs Model 2) */}
+                    {results.moderationAnalysis.results.map((mod, mIdx) => (
+                      <div key={`${mod.independentVar}-${mod.moderatorVar}`} className="rounded-2xl border border-border bg-card p-5 shadow-xs space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/80 pb-3">
+                          <div>
+                            <span className="text-xs font-bold text-primary font-mono uppercase tracking-wider block">
+                              Tabel 4.15${String.fromCharCode(97 + mIdx)} (Format APA 7th Edition)
+                            </span>
+                            <h3 className="text-base font-bold text-foreground font-serif">
+                              Hasil Moderated Regression Analysis: Pengaruh {mod.independentVar} terhadap {mod.dependentVar} yang Dimoderasi {mod.moderatorVar}
+                            </h3>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs font-mono">
+                            <Badge variant="outline">&Delta;R² = {formatNumber(mod.rSquareChange, 4)}</Badge>
+                            <Badge variant="outline">F-change = {formatNumber(mod.fChange, 3)} (p = {formatNumber(mod.fChangePValue, 4)})</Badge>
+                          </div>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs border-collapse">
+                            <thead>
+                              <tr className="border-b-2 border-foreground/80 text-muted-foreground">
+                                <th className="py-2.5 px-3 text-left font-semibold">Model / Prediktor</th>
+                                <th className="py-2.5 px-3 text-right font-semibold">B (Unstandardized)</th>
+                                <th className="py-2.5 px-3 text-right font-semibold">Std. Error</th>
+                                <th className="py-2.5 px-3 text-right font-semibold">Beta (&beta;)</th>
+                                <th className="py-2.5 px-3 text-right font-semibold">t-hitung</th>
+                                <th className="py-2.5 px-3 text-right font-semibold">Sig. (p)</th>
+                                <th className="py-2.5 px-3 text-center font-semibold">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {/* Subheader Model 1 */}
+                              <tr className="bg-muted/40 font-semibold border-t border-b border-border/80">
+                                <td colSpan={7} className="py-2 px-3 text-foreground">
+                                  Model 1: Efek Utama (R² = {formatNumber(mod.model1.rSquare, 3)}, F = {formatNumber(mod.model1.fStatistic, 3)}, p = {formatNumber(mod.model1.fPValue, 4)})
+                                </td>
+                              </tr>
+                              {mod.model1.coefficients.map((c) => (
+                                <tr key={`m1-${c.variable}`} className="border-b border-border/60 hover:bg-muted/30 transition-colors">
+                                  <td className="py-2.5 px-3 font-medium text-foreground">{c.variable}</td>
+                                  <td className="py-2.5 px-3 text-right font-mono tabular-nums">{formatNumber(c.b, 3)}</td>
+                                  <td className="py-2.5 px-3 text-right font-mono tabular-nums">{formatNumber(c.se, 3)}</td>
+                                  <td className="py-2.5 px-3 text-right font-mono tabular-nums font-semibold">{formatNumber(c.beta, 3)}</td>
+                                  <td className="py-2.5 px-3 text-right font-mono tabular-nums">{formatNumber(c.t, 3)}</td>
+                                  <td className="py-2.5 px-3 text-right font-mono tabular-nums">
+                                    <span className={c.significant ? 'font-bold text-primary' : 'text-muted-foreground'}>
+                                      {formatNumber(c.pValue, 4)}
+                                    </span>
+                                  </td>
+                                  <td className="py-2.5 px-3 text-center">
+                                    <Badge variant={c.significant ? 'pine' : 'secondary'} className="text-[11px]">
+                                      {c.significant ? 'Signifikan' : 'Tidak Signifikan'}
+                                    </Badge>
+                                  </td>
+                                </tr>
+                              ))}
+
+                              {/* Subheader Model 2 */}
+                              <tr className="bg-muted/40 font-semibold border-t border-b border-border/80">
+                                <td colSpan={7} className="py-2 px-3 text-foreground">
+                                  Model 2: Efek Interaksi (R² = {formatNumber(mod.model2.rSquare, 3)}, F = {formatNumber(mod.model2.fStatistic, 3)}, &Delta;R² = {formatNumber(mod.rSquareChange, 4)})
+                                </td>
+                              </tr>
+                              {mod.model2.coefficients.map((c) => {
+                                const isInteraction = c.variable.includes('×') || c.variable.includes('*');
+                                return (
+                                  <tr
+                                    key={`m2-${c.variable}`}
+                                    className={cn(
+                                      'border-b border-border/60 transition-colors',
+                                      isInteraction ? 'bg-amber-500/10 dark:bg-amber-500/5 font-semibold' : 'hover:bg-muted/30'
+                                    )}
+                                  >
+                                    <td className="py-2.5 px-3 font-medium text-foreground flex items-center gap-1.5">
+                                      {c.variable}
+                                      {isInteraction && (
+                                        <Badge className="text-[10px] bg-amber-600 text-white border-amber-700 py-0 px-1.5">
+                                          Suku Interaksi
+                                        </Badge>
+                                      )}
+                                    </td>
+                                    <td className="py-2.5 px-3 text-right font-mono tabular-nums">{formatNumber(c.b, 3)}</td>
+                                    <td className="py-2.5 px-3 text-right font-mono tabular-nums">{formatNumber(c.se, 3)}</td>
+                                    <td className="py-2.5 px-3 text-right font-mono tabular-nums font-semibold">{formatNumber(c.beta, 3)}</td>
+                                    <td className="py-2.5 px-3 text-right font-mono tabular-nums">{formatNumber(c.t, 3)}</td>
+                                    <td className="py-2.5 px-3 text-right font-mono tabular-nums">
+                                      <span className={c.significant ? 'font-bold text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}>
+                                        {formatNumber(c.pValue, 4)}
+                                      </span>
+                                    </td>
+                                    <td className="py-2.5 px-3 text-center">
+                                      <Badge variant={c.significant ? 'pine' : 'secondary'} className="text-[11px]">
+                                        {c.significant ? 'Signifikan' : 'Tidak Signifikan'}
+                                      </Badge>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Tipologi Moderasi Sharma et al. Box */}
+                        <div className="p-4 rounded-xl bg-card border border-border/80 space-y-2">
+                          <h4 className="font-semibold text-xs text-foreground flex items-center gap-1.5">
+                            <HelpCircle className="w-4 h-4 text-primary" />
+                            Klasifikasi Tipologi Moderasi (Sharma, Durand, &amp; Gur-Arie, 1981):
+                          </h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-[11px]">
+                            <div className={cn('p-2.5 rounded-lg border', mod.moderatorType === 'Pure Moderator' ? 'border-primary bg-primary/10 font-semibold' : 'border-border/60 bg-muted/20 text-muted-foreground')}>
+                              <span className="block font-bold text-foreground">1. Pure Moderator</span>
+                              <span>Z tidak berpengaruh langsung, tapi suku interaksi signifikan.</span>
+                            </div>
+                            <div className={cn('p-2.5 rounded-lg border', mod.moderatorType === 'Quasi Moderator' ? 'border-primary bg-primary/10 font-semibold' : 'border-border/60 bg-muted/20 text-muted-foreground')}>
+                              <span className="block font-bold text-foreground">2. Quasi Moderator</span>
+                              <span>Z berpengaruh langsung, DAN suku interaksi juga signifikan.</span>
+                            </div>
+                            <div className={cn('p-2.5 rounded-lg border', mod.moderatorType === 'Predictor Moderator' ? 'border-primary bg-primary/10 font-semibold' : 'border-border/60 bg-muted/20 text-muted-foreground')}>
+                              <span className="block font-bold text-foreground">3. Predictor Moderator</span>
+                              <span>Z berpengaruh langsung, tapi interaksi TIDAK signifikan.</span>
+                            </div>
+                            <div className={cn('p-2.5 rounded-lg border', mod.moderatorType === 'Homologiser (Bukan Moderasi)' ? 'border-primary bg-primary/10 font-semibold' : 'border-border/60 bg-muted/20 text-muted-foreground')}>
+                              <span className="block font-bold text-foreground">4. Homologiser</span>
+                              <span>Baik Z maupun suku interaksi tidak berpengaruh signifikan.</span>
+                            </div>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground pt-1">
+                            Kesimpulan: Variabel <span className="font-semibold text-foreground">{mod.moderatorVar}</span> terbukti berperan sebagai <span className="font-semibold text-primary">{mod.moderatorType}</span> yang berfungsi <span className="font-semibold text-foreground">{mod.moderationDirection.toLowerCase()}</span> pengaruh {mod.independentVar} terhadap {mod.dependentVar}.
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Draf Narasi Akademik Bab 4 */}
+                    {results.explanations.moderationAnalysis && (
+                      <Chapter4InterpretationCard
+                        tableNumber="Tabel 4.15"
+                        intinya={results.moderationAnalysis.results[0]?.conclusion || 'Pengujian moderasi MRA menunjukkan penambahan suku interaksi yang signifikan.'}
+                        interpretation={results.explanations.moderationAnalysis}
+                        guidingQuestions={[
+                          'Apakah penambahan suku interaksi (X × Z) menghasilkan kenaikan koefisien determinasi (Delta R²) yang signifikan?',
+                          'Apakah p-value koefisien interaksi lebih kecil dari 0,05?',
+                          'Bagaimana klasifikasi variabel moderasi berdasarkan tipologi Sharma et al. (1981)?',
+                        ]}
+                        onHoverNumber={setHighlightedNumber}
+                        activeNumber={highlightedNumber}
+                      />
+                    )}
+
+                    {/* Bekal Sidang Skripsi: Tanya Jawab Penguji */}
+                    <ThesisDefenseCompanion
+                      testType="moderation"
+                      dataMetrics={{
+                        n: results.respondentCount,
+                        deltaR2: results.moderationAnalysis.results[0]?.rSquareChange,
+                        fChange: results.moderationAnalysis.results[0]?.fChange,
+                        interactionP: results.moderationAnalysis.results[0]?.interactionPValue,
+                        moderatorType: results.moderationAnalysis.results[0]?.moderatorType,
+                        moderationDirection: results.moderationAnalysis.results[0]?.moderationDirection === 'Memperkuat' ? 'Memperkuat' : 'Memperlemah',
+                      }}
+                    />
+                  </div>
+                )}
+              </ProResultBlur>
+            </TabsContent>
+
+            {/* 14. LEMBAR LAMPIRAN SKRIPSI LENGKAP (SIAP CETAK) */}
+            <TabsContent value="appendix" className="space-y-6 mt-4">
+              <ThesisRawAppendixViewer
+                results={results}
+                project={project}
+                onHoverNumber={setHighlightedNumber}
+                highlightedValue={highlightedNumber}
+              />
+            </TabsContent>
             </Tabs>
 
           {/* Tombol Navigasi Antar-Uji: Sebelumnya & Berikutnya */}
-          <div className="flex items-center justify-between pt-6 mt-8 border-t border-border/80 gap-3 flex-wrap">
+          <div className="flex items-center justify-between pt-6 sm:pt-8 pb-8 mt-10 sm:mt-12 border-t border-border/80 gap-4 flex-wrap">
             {prevTabKey ? (
               <Button
                 type="button"
@@ -4834,7 +5883,7 @@ export default function HasilPage() {
             <GraduationCap className="h-5 w-5 text-primary shrink-0 mt-0.5" />
             <div className="space-y-1.5 max-w-[68ch]">
               <h4 className="font-semibold text-foreground text-sm">
-                Panduan Sidang &amp; Penyusunan Bab 4 Skripsi
+                Panduan Sidang dan Penyusunan Bab 4 Skripsi
               </h4>
               <p className="text-muted-foreground leading-relaxed text-[13px]">
                 Hasil pengolahan data dan narasi di atas disusun secara deterministik mengikuti kaidah penulisan skripsi baku. Jika dosen pembimbing menanyakan keabsahan data, tunjukkan kode verifikasi hash pada panel Jejak Hitung.
@@ -4862,7 +5911,7 @@ export default function HasilPage() {
             engineVersion={results.engineVersion}
             onDownloadStatement={() => setExportOpen(true)}
             results={results}
-            projectTitle={project?.title}
+            projectTitle={effectiveProjectTitle}
           />
 
           {/* Banner Pernyataan Etika Penggunaan Alat */}
@@ -4880,7 +5929,7 @@ export default function HasilPage() {
               onClick={() => setExportOpen(true)}
               className="w-full justify-center gap-1.5 text-[13px] min-h-[40px] text-foreground hover:bg-muted font-medium rounded-lg touch-manipulation cursor-pointer"
             >
-              <span>Buka Opsi Ekspor &amp; Etika</span>
+              <span>Buka Opsi Ekspor dan Etika</span>
             </Button>
           </div>
         </aside>
@@ -4892,13 +5941,13 @@ export default function HasilPage() {
         prevHref={`/app/proyek/${projectId}/analisis`}
         prevLabel="Kembali ke Pengaturan Analisis"
         nextHref="/app"
-        nextLabel="Selesai &amp; Buka Daftar Proyek"
+        nextLabel="Selesai dan Buka Daftar Proyek"
       />
 
       {/* Export Dialog */}
       <ExportDialog
         projectId={projectId}
-        projectTitle={project?.title}
+        projectTitle={effectiveProjectTitle}
         open={exportOpen}
         onOpenChange={setExportOpen}
         results={results}
@@ -4925,7 +5974,8 @@ export default function HasilPage() {
         open={chapter4ModalOpen}
         onOpenChange={setChapter4ModalOpen}
         results={results}
-        projectTitle={project?.title}
+        projectId={projectId}
+        projectTitle={effectiveProjectTitle}
         onCopyAllTables={handleCopyAllTables}
         initialFormat={chapter4ExportFormat}
       />

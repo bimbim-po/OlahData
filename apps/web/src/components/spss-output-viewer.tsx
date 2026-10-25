@@ -92,7 +92,7 @@ export function SpssOutputViewer({
         <div id="spss-reliability" className="space-y-6">
           <div className="flex items-center justify-between border-b border-zinc-300 pb-1">
             <h3 className="font-bold text-sm text-slate-900 uppercase tracking-wider">
-              Scale: Reliability (Uji Reliabilitas &amp; Item-Total)
+              Scale: Reliability (Uji Reliabilitas dan Item-Total)
             </h3>
             <Button
               variant="ghost"
@@ -882,7 +882,7 @@ export function SpssOutputViewer({
                 </thead>
                 <tbody>
                   <tr className="hover:bg-zinc-50">
-                    <td className="border border-zinc-900 p-1.5">{results.pairedTTest.preVar} &amp; {results.pairedTTest.postVar}</td>
+                    <td className="border border-zinc-900 p-1.5">{results.pairedTTest.preVar} dan {results.pairedTTest.postVar}</td>
                     <td className="border border-zinc-900 p-1.5 text-right">{results.pairedTTest.n}</td>
                     <td className="border border-zinc-900 p-1.5 text-right">{formatNumber(results.pairedTTest.correlation, 3)}</td>
                     <td className="border border-zinc-900 p-1.5 text-right">{formatNumber(results.pairedTTest.sigCorrelation, 3)}</td>

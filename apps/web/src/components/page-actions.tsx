@@ -37,7 +37,7 @@ export function PageActions({
     <nav
       aria-label="Navigasi Halaman"
       className={cn(
-        'mt-10 sm:mt-12 pt-6 sm:pt-8 border-t border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4',
+        'mt-10 sm:mt-12 pt-6 sm:pt-8 pb-6 sm:pb-8 border-t border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4',
         className
       )}
     >

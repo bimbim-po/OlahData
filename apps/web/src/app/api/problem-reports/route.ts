@@ -58,7 +58,17 @@ export async function POST(req: NextRequest) {
     try {
       const supabaseAdmin = getSupabaseAdminClient();
       if (supabaseAdmin) {
-        await supabaseAdmin.from('problem_reports').insert([reportRecord]);
+        const { error } = await supabaseAdmin.from('problem_reports').insert([reportRecord]);
+        if (error) {
+          // Fallback ke audit_log jika tabel problem_reports belum dimigrasi di SQL Editor
+          await supabaseAdmin.from('audit_log').insert([
+            {
+              action: 'PROBLEM_REPORT_SUBMITTED',
+              entity: 'problem_reports',
+              meta: reportRecord,
+            },
+          ]);
+        }
       }
     } catch (dbErr) {
       // Abaikan galat database eksternal bila tabel belum termigrasi di lingkungan lokal/demo

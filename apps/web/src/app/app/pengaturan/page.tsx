@@ -261,7 +261,7 @@ export default function SettingsPage() {
       {/* Page Header */}
       <div>
         <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-          Pengaturan Akun &amp; Preferensi
+          Pengaturan Akun dan Preferensi
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
           Kelola profil mahasiswa, batas kuota paket, preferensi tema tampilan, dan manajemen data.
@@ -398,7 +398,7 @@ export default function SettingsPage() {
                   }
                   className="gap-1.5 font-semibold cursor-pointer"
                 >
-                  <span>Pilihan Paket &amp; Upgrade</span>
+                  <span>Pilihan Paket dan Upgrade</span>
                   <Zap className="h-3.5 w-3.5 text-amber-500" />
                 </Button>
               </div>
@@ -608,7 +608,7 @@ export default function SettingsPage() {
               <div className="flex items-center gap-2 text-destructive">
                 <AlertTriangle className="h-5 w-5" />
                 <CardTitle className="font-serif text-xl font-bold">
-                  Area Bahaya: Manajemen Data &amp; Akun
+                  Area Bahaya: Manajemen Data dan Akun
                 </CardTitle>
               </div>
               <CardDescription className="text-xs sm:text-sm text-muted-foreground">
@@ -621,7 +621,7 @@ export default function SettingsPage() {
               <div className="rounded-lg border border-border p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <h4 className="font-semibold text-sm text-foreground">
-                    Hapus Semua Proyek &amp; Analisis
+                    Hapus Semua Proyek dan Analisis
                   </h4>
                   <p className="text-xs text-muted-foreground mt-1 max-w-lg leading-relaxed">
                     Menghapus seluruh daftar proyek, dataset tersimpan, riwayat versi pembersihan, dan hasil hitung Bab 4. Akun profil Anda tetap aktif.
@@ -644,7 +644,7 @@ export default function SettingsPage() {
                 <div>
                   <h4 className="font-semibold text-sm text-destructive flex items-center gap-1.5">
                     <ShieldAlert className="h-4 w-4" />
-                    <span>Tutup &amp; Hapus Akun Mahasiswa Secara Permanen</span>
+                    <span>Tutup dan Hapus Akun Mahasiswa Secara Permanen</span>
                   </h4>
                   <p className="text-xs text-muted-foreground mt-1 max-w-lg leading-relaxed">
                     Menghapus seluruh profil akun, seluruh proyek, riwayat transaksi, dan sesi login secara permanen. Konfirmasi dua langkah diwajibkan.

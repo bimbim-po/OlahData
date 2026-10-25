@@ -160,7 +160,7 @@ export function SiteHeader() {
 
             {isAuthenticated ? (
               <Button asChild size="sm" className="gap-1.5 font-semibold min-h-[40px]">
-                <Link href="/app">
+                <Link prefetch={false} href="/app">
                   <span>Buka Aplikasi</span>
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
@@ -173,14 +173,14 @@ export function SiteHeader() {
                   size="sm"
                   className="font-medium text-foreground min-h-[40px]"
                 >
-                  <Link href="/masuk">Masuk</Link>
+                  <Link prefetch={false} href="/masuk">Masuk</Link>
                 </Button>
                 <Button
                   asChild
                   size="sm"
                   className="font-semibold shadow-xs min-h-[40px]"
                 >
-                  <Link href="/daftar">Daftar gratis</Link>
+                  <Link prefetch={false} href="/daftar">Daftar gratis</Link>
                 </Button>
               </>
             )}
@@ -281,7 +281,7 @@ export function SiteHeader() {
                   className="w-full justify-center min-h-[48px] text-base font-semibold shadow-xs"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <Link href="/app">
+                  <Link prefetch={false} href="/app">
                     <span>Buka Aplikasi</span>
                     <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
                   </Link>
@@ -294,14 +294,14 @@ export function SiteHeader() {
                     className="w-full justify-center min-h-[48px] text-base font-medium"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <Link href="/masuk">Masuk</Link>
+                    <Link prefetch={false} href="/masuk">Masuk</Link>
                   </Button>
                   <Button
                     asChild
                     className="w-full justify-center min-h-[48px] text-base font-semibold shadow-xs"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <Link href="/daftar">Daftar gratis</Link>
+                    <Link prefetch={false} href="/daftar">Daftar gratis</Link>
                   </Button>
                 </>
               )}

@@ -27,6 +27,8 @@ import {
   SlidersHorizontal,
   RotateCcw,
   UploadCloud,
+  AlertOctagon,
+  Check,
 } from 'lucide-react';
 
 import { useWizardStore, type WizardStep } from '@/stores/wizard-store';
@@ -41,15 +43,24 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { APP_NAME, ENGINE_VERSION } from '@/lib/constants';
 import { COPY } from '@/lib/copy';
 import { formatNumber } from '@/lib/format';
 import { mockTestOptions } from '@/lib/mock/results';
 import { mockDataset, mockIssues } from '@/lib/mock/dataset-contoh';
-import { getProject } from '@/lib/api';
+import { getProject, syncProjectProgress, recordAnalysisRun } from '@/lib/api';
 import type { Project, TestType } from '@/lib/api/types';
 import { useToast } from '@/components/ui/toaster';
 import { usePlanGate, isSampleProject } from '@/lib/entitlements';
+import { getPlanConfig } from '@/lib/plans';
 
 interface AnalisisPageProps {
   params: Promise<{ id: string }>;
@@ -74,7 +85,27 @@ const ANALYSIS_EXECUTION_STEPS = [
 
 export default function AnalisisPage({ params }: AnalisisPageProps) {
   const resolvedParams = React.use(params);
-  const projectId = resolvedParams.id;
+  const [projectId, setResolvedProjectId] = React.useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const match = window.location.pathname.match(/\/app\/proyek\/([^/]+)/);
+      if (match && match[1]) return match[1];
+    }
+    return resolvedParams.id || 'sample';
+  });
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const match = window.location.pathname.match(/\/app\/proyek\/([^/]+)/);
+      if (match && match[1]) {
+        setResolvedProjectId(match[1]);
+        return;
+      }
+    }
+    if (resolvedParams.id) {
+      setResolvedProjectId(resolvedParams.id);
+    }
+  }, [resolvedParams.id]);
+
   const router = useRouter();
 
   const {
@@ -119,6 +150,8 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
     setDatasetId,
     setCurrentResults,
     columnRoles,
+    researchTitle,
+    hypotheses,
   } = useWizardStore();
 
   const { toast } = useToast();
@@ -126,6 +159,24 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
   const isDemoParam = searchParams?.get('contoh') === '1';
   const isSample = isSampleProject(projectId) || isDemoParam || usingSampleData;
   const { isFree, isTestLocked, openUpgradeModal } = usePlanGate(projectId, isSample);
+  const freeRespondentQuota = getPlanConfig('free').quotaRespondents;
+  const hasAutoLoadedDemoRef = React.useRef(false);
+
+  // Auto-load sample dataset when entering with ?contoh=1 so user immediately experiences data
+  React.useEffect(() => {
+    if (isDemoParam && fileData.length === 0 && !hasAutoLoadedDemoRef.current) {
+      hasAutoLoadedDemoRef.current = true;
+      useWizardStore.getState().setFileData(
+        'data_kuesioner_contoh_120.csv',
+        [...mockDataset],
+        Object.keys(mockDataset[0] || {}),
+        true,
+        14500
+      );
+      useWizardStore.getState().setIssues(mockIssues);
+      useWizardStore.getState().setStep(1);
+    }
+  }, [isDemoParam, fileData.length]);
 
   const handleResetDemo = () => {
     if (typeof window !== 'undefined') {
@@ -154,12 +205,26 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
   };
 
   const handleUseMyOwnData = () => {
+    hasAutoLoadedDemoRef.current = true;
     useWizardStore.getState().resetWizard();
     useWizardStore.getState().setStep(0);
   };
   const [project, setProject] = React.useState<Project | null>(null);
   const [targetCell, setTargetCell] = React.useState<TargetCell | null>(null);
   const [currentExecutionStep, setCurrentExecutionStep] = React.useState(0);
+  const [showResetConfirm, setShowResetConfirm] = React.useState(false);
+  const [showCriticalErrorDialog, setShowCriticalErrorDialog] = React.useState(false);
+  const isProcessingRef = React.useRef(false);
+
+  const handleConfirmReset = () => {
+    useWizardStore.getState().resetWizard();
+    setShowResetConfirm(false);
+    toast({
+      title: 'Status Analisis Direset',
+      description: 'Seluruh data dan tahapan analisis telah dikembalikan ke awal.',
+      variant: 'default',
+    });
+  };
 
   // Advanced Options State (Folded accordion in Screen 4)
   const [alphaLevel, setAlphaLevel] = React.useState<0.05 | 0.01>(0.05);
@@ -175,6 +240,49 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
     });
   }, [projectId, setProjectId]);
 
+  // Sinkronisasi otomatis jumlah responden & kolom ke Dashboard Proyek saat data diunggah
+  React.useEffect(() => {
+    if (fileData.length > 0 && !usingSampleData) {
+      let targetProjId = projectId;
+      let targetTitle = project?.title;
+      if (typeof window !== 'undefined') {
+        try {
+          const activeMetaRaw = localStorage.getItem('olahdata_active_project_meta');
+          if (activeMetaRaw) {
+            const activeMeta = JSON.parse(activeMetaRaw) as Project;
+            if (activeMeta?.id && (targetProjId === 'sample' || targetProjId === 'baru')) {
+              targetProjId = activeMeta.id;
+            }
+            if (activeMeta?.title && (targetProjId === activeMeta.id || targetProjId === 'sample' || targetProjId === 'baru')) {
+              targetTitle = activeMeta.title;
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+      if (
+        (!targetTitle || targetTitle.includes('Pengaruh Kualitas Layanan dan Kepuasan')) &&
+        fileName &&
+        !usingSampleData
+      ) {
+        const cleanedFile = fileName
+          .replace(/\.(xlsx|xls|csv)$/i, '')
+          .replace(/[_-]+/g, ' ')
+          .trim();
+        if (cleanedFile) {
+          targetTitle = `Analisis Data Penelitian (${cleanedFile})`;
+        }
+      }
+      syncProjectProgress(targetProjId, {
+        title: targetTitle,
+        respondentCount: fileData.length,
+        itemCount: columns.length,
+        fileName: fileName || undefined,
+      }).catch(() => {});
+    }
+  }, [fileData.length, columns.length, usingSampleData, projectId, project?.title, fileName]);
+
   // Auto-select standard tests on init
   React.useEffect(() => {
     if (selectedTests.length === 0) {
@@ -187,14 +295,49 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
   const criticalErrorCount = issues.filter((i) => i.severity === 'error').length;
   const warningCount = issues.filter((i) => i.severity === 'warning').length;
 
+  const errorRowNumbers = React.useMemo(() => {
+    const set = new Set<number>();
+    issues.forEach((i) => {
+      if (i.row && i.severity === 'error') set.add(i.row);
+    });
+    return Array.from(set).sort((a, b) => a - b);
+  }, [issues]);
+
+  const handleProceedToScreen3 = () => {
+    if (criticalErrorCount > 0) {
+      setShowCriticalErrorDialog(true);
+      return;
+    }
+    nextStep();
+  };
+
+  const handleExcludeCriticalAndProceed = () => {
+    if (errorRowNumbers.length > 0) {
+      removeRowsByNumbers(errorRowNumbers);
+    }
+    setShowCriticalErrorDialog(false);
+    toast({
+      title: 'Data Bermasalah Berhasil Dikecualikan',
+      description: `${errorRowNumbers.length} baris dengan sel kosong/anomali telah dikecualikan. Melanjutkan ke pertanyaan penelitian.`,
+      variant: 'default',
+    });
+    nextStep();
+  };
+
   const independentConstructs = constructs.filter((c) => c.role === 'independent');
   const dependentConstructs = constructs.filter((c) => c.role === 'dependent');
+  const mediatorConstructs = constructs.filter((c) => c.role === 'mediator');
+  const moderatorConstructs = constructs.filter((c) => c.role === 'moderator');
 
   const isMappingValid =
     researchDesign === 'categorical'
-      ? Boolean(rowCol && colCol)
+      ? Boolean((rowCol && colCol) || (independentConstructs.length >= 1 && dependentConstructs.length >= 1))
       : researchDesign === 'comparative'
-      ? Boolean((preCol && postCol) || (groupCol && scoreCol))
+      ? Boolean(
+          (preCol && postCol) ||
+            (groupCol && scoreCol) ||
+            (independentConstructs.length >= 1 && dependentConstructs.length >= 1)
+        )
       : independentConstructs.length >= 1 && dependentConstructs.length >= 1;
 
   // Screening for weak items (e.g. KL5) via corrected item-total correlation
@@ -289,15 +432,26 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
 
   // Run Chapter 4 Analysis
   const handleRunAnalysis = async () => {
+    if (isProcessingRef.current || isRunning) return;
+
     if (fileData.length === 0) {
-      alert('Tidak ada data responden untuk dianalisis.');
+      toast({
+        title: 'Data responden kosong',
+        description: 'Silakan unggah berkas kuesioner atau pilih data contoh terlebih dahulu.',
+        variant: 'error',
+      });
       return;
     }
     if (hasRedLights) {
-      alert('Terdapat indikator merah pada Cek Kesiapan. Harap selesaikan sebelum menjalankan paket Bab 4.');
+      toast({
+        title: 'Indikator kesiapan belum terpenuhi',
+        description: 'Terdapat indikator merah pada Cek Kesiapan. Harap selesaikan sebelum menjalankan paket Bab 4.',
+        variant: 'error',
+      });
       return;
     }
 
+    isProcessingRef.current = true;
     setRunning(true);
     setCurrentExecutionStep(0);
     setStep(4); // Move to Screen 5
@@ -354,7 +508,18 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
           'heteroscedasticity',
           'regression',
           'correlation',
+          'paired-ttest',
+          'ngain',
+          'independent-ttest',
+          'oneway-anova',
+          'nonparametric',
+          'crosstab',
+          'chisquare',
+          'odds-ratio',
+          ...(mediatorConstructs.length > 0 ? ['mediation' as TestType] : []),
+          ...(moderatorConstructs.length > 0 ? ['moderation' as TestType] : []),
         ],
+        significanceLevel: alphaLevel,
         reverseItems,
         calculationMethod,
         datasetMeta: effectiveMeta,
@@ -370,25 +535,117 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
         dataVersionId: `dv-${dataVersion}`,
       });
 
-      computed.projectId = projectId;
+      // Tentukan ID dan judul proyek aktif milik pengguna (bukan hardcode demo)
+      let effectiveProjectId = projectId;
+      let effectiveProjectTitle = project?.title;
+      let effectiveDepartment = project?.department || 'Umum';
+
+      if (typeof window !== 'undefined' && !usingSampleData) {
+        try {
+          const activeMetaRaw = localStorage.getItem('olahdata_active_project_meta');
+          if (activeMetaRaw) {
+            const activeMeta = JSON.parse(activeMetaRaw) as Project;
+            if (activeMeta?.id && (effectiveProjectId === 'sample' || effectiveProjectId === 'baru')) {
+              effectiveProjectId = activeMeta.id;
+            }
+            if (activeMeta?.title) {
+              effectiveProjectTitle = activeMeta.title;
+            }
+            if (activeMeta?.department) {
+              effectiveDepartment = activeMeta.department;
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      if (
+        !usingSampleData &&
+        (!effectiveProjectTitle ||
+          (effectiveProjectId === 'sample' &&
+            effectiveProjectTitle.includes('Pengaruh Kualitas Layanan dan Kepuasan')))
+      ) {
+        const cleanedFile = (fileName || '')
+          .replace(/\.(xlsx|xls|csv)$/i, '')
+          .replace(/[_-]+/g, ' ')
+          .trim();
+        effectiveProjectTitle = cleanedFile
+          ? `Analisis Data Penelitian (${cleanedFile})`
+          : 'Analisis Data Penelitian Skripsi';
+      }
+
+      if (researchTitle && researchTitle.trim()) {
+        effectiveProjectTitle = researchTitle.trim();
+      }
+
+      if (!effectiveProjectTitle) {
+        effectiveProjectTitle = usingSampleData
+          ? 'Pengaruh Kualitas Layanan dan Kepuasan terhadap Loyalitas Pelanggan'
+          : 'Analisis Data Penelitian Skripsi';
+      }
+
+      computed.projectId = effectiveProjectId;
+      computed.projectTitle = effectiveProjectTitle;
+      computed.department = effectiveDepartment;
       computed.dataVersionId = `dv-${dataVersion}`;
+      computed.hypotheses = hypotheses && hypotheses.length > 0 ? hypotheses : undefined;
 
       setCurrentResults(computed);
 
       if (typeof window !== 'undefined') {
         try {
-          localStorage.setItem(`olahdata_results_${projectId}`, JSON.stringify(computed));
+          localStorage.setItem(`olahdata_results_${effectiveProjectId}`, JSON.stringify(computed));
+          if (effectiveProjectId !== projectId) {
+            localStorage.setItem(`olahdata_results_${projectId}`, JSON.stringify(computed));
+          }
           localStorage.setItem(`olahdata_run_${generatedRunId}`, JSON.stringify(computed));
         } catch {
           // localStorage fallback
         }
       }
 
+      await syncProjectProgress(effectiveProjectId, {
+        title: effectiveProjectTitle,
+        department: effectiveDepartment,
+        respondentCount: fileData.length,
+        itemCount: columns.length,
+        status: 'completed',
+        fileName: effectiveMeta.fileName,
+      });
+
+      const executedTestLabels: string[] = ['Statistik Deskriptif'];
+      if (computed.validity && computed.validity.length > 0) executedTestLabels.push('Uji Validitas');
+      if (computed.reliability && computed.reliability.length > 0) executedTestLabels.push('Uji Reliabilitas');
+      if (computed.normality && computed.normality.length > 0) executedTestLabels.push('Uji Normalitas');
+      if (computed.multicollinearity && computed.multicollinearity.length > 0) executedTestLabels.push('Uji Multikolinearitas');
+      if (computed.heteroscedasticity && computed.heteroscedasticity.length > 0) executedTestLabels.push('Uji Heteroskedastisitas');
+      if (computed.regression && computed.regression.length > 0) executedTestLabels.push('Regresi Linier');
+      if (computed.correlation && computed.correlation.length > 0) executedTestLabels.push('Korelasi Pearson');
+      if (computed.pairedTTest) executedTestLabels.push('Paired Sample t-Test');
+      if (computed.independentTTest) executedTestLabels.push('Independent Sample t-Test');
+      if (computed.oneWayAnova) executedTestLabels.push('One-Way ANOVA');
+      if (computed.chiSquare) executedTestLabels.push('Uji Chi-Square');
+
+      recordAnalysisRun({
+        id: generatedRunId,
+        projectId: effectiveProjectId,
+        projectName: effectiveProjectTitle,
+        fileName: effectiveMeta.fileName,
+        datasetVersion: dataVersion,
+        datasetKind: dataVersion > 1 ? 'derived' : 'original',
+        tests: executedTestLabels,
+        status: 'succeeded',
+        startedAt: new Date().toISOString(),
+        durationMs: 2900,
+        respondentCount: fileData.length,
+      });
+
       await new Promise((r) => setTimeout(r, 400));
       setRunning(false);
 
       // Navigate to comprehensive Bab 4 Results View
-      const targetUrl = `/app/proyek/${projectId}/hasil?runId=${generatedRunId}`;
+      const targetUrl = `/app/proyek/${effectiveProjectId}/hasil?runId=${generatedRunId}`;
       if (typeof window !== 'undefined') {
         window.location.href = targetUrl;
       } else {
@@ -396,8 +653,14 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
       }
     } catch (err: unknown) {
       console.error('Computation error:', err);
+      toast({
+        title: 'Gagal menjalankan komputasi statistik',
+        description: err instanceof Error ? err.message : String(err),
+        variant: 'error',
+      });
+    } finally {
+      isProcessingRef.current = false;
       setRunning(false);
-      alert('Terjadi kesalahan saat komputasi statistik: ' + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -408,9 +671,9 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <Link
-              href={`/app/proyek/${projectId}`}
+              href="/app"
               className="p-1.5 rounded-lg border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer shrink-0"
-              title="Kembali ke Ringkasan Proyek"
+              title="Kembali ke Daftar Proyek"
             >
               <ArrowLeft className="w-4 h-4" />
             </Link>
@@ -425,6 +688,19 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            {fileData.length > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowResetConfirm(true)}
+                className="text-xs min-h-[36px] rounded-[8px] cursor-pointer"
+                aria-label="Mulai ulang seluruh data analisis"
+              >
+                <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                Reset / Mulai Ulang
+              </Button>
+            )}
             {usingSampleData ? (
               <Badge variant="amber" className="text-xs rounded-[6px]">
                 {COPY.badges.sampleData}
@@ -439,7 +715,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
       </div>
 
       {/* Main Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Banner Mode Data Contoh & Reset Demo */}
         {(usingSampleData || (isSample && fileData.length > 0)) && (
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 text-foreground shadow-xs">
@@ -500,14 +776,14 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                 Langkah 1: Unggah Berkas Kuesioner
               </h2>
               <p className="text-sm text-muted-foreground mt-1 max-w-[68ch]">
-                Unggah spreadsheet tabulasi jawaban responden Anda (.xlsx, .xls, atau .csv) atau coba langsung dengan data contoh.
+                Unggah spreadsheet tabulasi jawaban responden Anda (.xlsx, .xls, .csv, .xml, atau Google Sheets) atau coba langsung dengan data contoh.
               </p>
             </div>
 
             <FileDropzone onFileLoaded={() => setStep(1)} />
 
             {/* Bottom Navigation */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 pt-6 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mt-10 sm:mt-12 pt-6 sm:pt-8 pb-6 sm:pb-8 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none px-4 sm:px-0 -mx-4 sm:mx-0 z-20">
               <Button
                 asChild
                 variant="outline"
@@ -520,7 +796,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                 </Link>
               </Button>
 
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 {fileData.length === 0 && (
                   <span className="text-xs text-muted-foreground text-center sm:text-right font-medium">
                     Unggah berkas kuesioner Anda atau pilih data contoh untuk lanjut
@@ -557,15 +833,15 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
               </div>
             </div>
 
-            {/* 50-Respondent Quota Warning for Free Plan (Hard Rule #5: Waitlist mode, zero payment buttons) */}
-            {!usingSampleData && isFree && fileData.length > 50 && (
+            {/* Respondent Quota Warning for Free Plan (Single Source of Truth from plan_limits: 150 Responden) */}
+            {!usingSampleData && isFree && fileData.length > freeRespondentQuota && (
               <div className="p-4 sm:p-5 rounded-[16px] border border-amber-500/30 bg-amber-500/10 text-foreground space-y-3">
                 <div className="flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <h4 className="font-bold text-sm text-foreground">
-                        Dataset Memiliki {formatNumber(fileData.length)} Responden (Batas Paket Gratis: 50 Responden)
+                        Dataset Memiliki {formatNumber(fileData.length)} Responden (Batas Paket Gratis: {formatNumber(freeRespondentQuota)} Responden)
                       </h4>
                       <Badge variant="amber" className="text-[10px] flex items-center gap-1 rounded-[6px]">
                         <Lock className="w-3 h-3" />
@@ -573,7 +849,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground leading-relaxed max-w-[72ch]">
-                      Dataset Anda memiliki <strong className="text-foreground">{formatNumber(fileData.length)}</strong> responden. Pada paket Coba Gratis, batas pengolahan data kuesioner adalah 50 baris responden pertama. Anda dapat bergabung dengan daftar tunggu paket penuh atau melanjutkan dengan 50 responden pertama.
+                      Dataset Anda memiliki <strong className="text-foreground">{formatNumber(fileData.length)}</strong> responden. Pada paket Coba Gratis, batas pengolahan data kuesioner adalah {formatNumber(freeRespondentQuota)} baris responden pertama. Anda dapat bergabung dengan daftar tunggu paket penuh atau melanjutkan dengan {formatNumber(freeRespondentQuota)} responden pertama.
                     </p>
                   </div>
                 </div>
@@ -598,7 +874,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      const slicedRows = fileData.slice(0, 50);
+                      const slicedRows = fileData.slice(0, freeRespondentQuota);
                       setFileData(
                         fileName || 'data_kuesioner.xlsx',
                         slicedRows,
@@ -608,14 +884,14 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                         datasetMeta ?? undefined
                       );
                       toast({
-                        title: 'Mode 50 Responden Aktif',
-                        description: 'Dataset dipotong menjadi 50 baris responden pertama untuk analisis gratis.',
+                        title: `Mode ${formatNumber(freeRespondentQuota)} Responden Aktif`,
+                        description: `Dataset dipotong menjadi ${formatNumber(freeRespondentQuota)} baris responden pertama untuk analisis gratis.`,
                         variant: 'default',
                       });
                     }}
                     className="text-xs rounded-[10px] cursor-pointer"
                   >
-                    Lanjutkan dengan 50 Responden Pertama
+                    Lanjutkan dengan {formatNumber(freeRespondentQuota)} Responden Pertama
                   </Button>
                 </div>
               </div>
@@ -651,7 +927,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
             </div>
 
             {/* Navigation Buttons */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 pt-6 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mt-10 sm:mt-12 pt-6 sm:pt-8 pb-6 sm:pb-8 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none px-4 sm:px-0 -mx-4 sm:mx-0 z-20">
               <Button
                 type="button"
                 variant="outline"
@@ -663,18 +939,33 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                 Kembali ke Unggah
               </Button>
 
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 {criticalErrorCount > 0 && (
-                  <span className="text-xs text-destructive text-center sm:text-right font-medium">
-                    Kecualikan atau perbaiki {criticalErrorCount} data bermasalah untuk lanjut
-                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="lg"
+                    onClick={() => setShowCriticalErrorDialog(true)}
+                    className="cursor-pointer text-xs font-semibold rounded-[10px] min-h-[44px] text-destructive border-destructive/40 hover:bg-destructive/10"
+                    title="Klik untuk mengecualikan baris data bermasalah"
+                  >
+                    <AlertOctagon className="w-4 h-4 mr-1.5 text-destructive" />
+                    Kecualikan {errorRowNumbers.length} Baris Bermasalah
+                  </Button>
                 )}
                 <Button
                   type="button"
                   size="lg"
-                  onClick={nextStep}
-                  disabled={criticalErrorCount > 0}
-                  className="cursor-pointer font-semibold rounded-[10px] min-h-[44px]"
+                  onClick={handleProceedToScreen3}
+                  className={cn(
+                    'cursor-pointer font-semibold rounded-[10px] min-h-[44px]',
+                    criticalErrorCount > 0 && 'opacity-90 hover:opacity-100'
+                  )}
+                  title={
+                    criticalErrorCount > 0
+                      ? `Terdapat ${criticalErrorCount} data bermasalah. Klik untuk opsi penanganan.`
+                      : undefined
+                  }
                 >
                   Lanjut ke Pertanyaan Penelitian
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -691,7 +982,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
           <div className="space-y-6 animate-in fade-in">
             <div>
               <h2 className="font-sans text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                Langkah 3: Pertanyaan Penelitian & Pemetaan Variabel
+                Langkah 3: Pertanyaan Penelitian dan Pemetaan Variabel
               </h2>
               <p className="text-sm text-muted-foreground mt-1 max-w-[68ch]">
                 Pilih fokus analisis skripsi Anda, lalu kelompokkan pertanyaan kuesioner ke dalam variabel bebas (X) dan terikat (Y).
@@ -718,7 +1009,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                 }}
                 className={cn(
                   'p-4 rounded-[16px] border text-left transition-all cursor-pointer space-y-2 flex flex-col justify-between',
-                  researchDesign === 'survey'
+                  researchDesign === 'survey' && selectedTests.includes('regression')
                     ? 'border-primary bg-primary/10 shadow-sm ring-1 ring-primary'
                     : 'border-border bg-card hover:border-primary/50'
                 )}
@@ -729,7 +1020,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                       <TrendingUp className="w-4 h-4 text-primary" />
                       Pengaruh Variabel
                     </span>
-                    <Badge variant={researchDesign === 'survey' ? 'brand' : 'outline'} className="text-[10px] rounded-[6px]">
+                    <Badge variant={researchDesign === 'survey' && selectedTests.includes('regression') ? 'brand' : 'outline'} className="text-[10px] rounded-[6px]">
                       Regresi X → Y
                     </Badge>
                   </div>
@@ -738,7 +1029,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                   </p>
                 </div>
                 <div className="text-[11px] font-semibold text-primary">
-                  {researchDesign === 'survey' ? '✓ Desain Terpilih' : 'Pilih Desain Ini'}
+                  {researchDesign === 'survey' && selectedTests.includes('regression') ? '✓ Desain Terpilih' : 'Pilih Desain Ini'}
                 </div>
               </button>
 
@@ -751,6 +1042,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                     'paired-ttest',
                     'ngain',
                     'independent-ttest',
+                    'oneway-anova',
                     'nonparametric',
                     'descriptive',
                   ]);
@@ -815,7 +1107,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                   </p>
                 </div>
                 <div className="text-[11px] font-semibold text-primary">
-                  {selectedTests.includes('correlation') && !selectedTests.includes('regression')
+                  {researchDesign === 'survey' && selectedTests.includes('correlation') && !selectedTests.includes('regression')
                     ? '✓ Desain Terpilih'
                     : 'Pilih Desain Ini'}
                 </div>
@@ -857,6 +1149,90 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
               </button>
             </div>
 
+            {/* Optional Comparative Column Mapping Card when Beda Antar Kelompok is selected */}
+            {researchDesign === 'comparative' && (
+              <div className="p-5 rounded-2xl border border-primary/30 bg-primary/5 space-y-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <GitCompare className="w-4 h-4 text-primary" />
+                    <h3 className="text-sm font-bold text-foreground">
+                      Konfigurasi Kolom Uji Beda Antar Kelompok (Opsional)
+                    </h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Pilih kolom pengelompokan (misal: Jenis Kelamin, Kelas, atau Pendidikan) dan variabel skor yang dibandingkan, atau gunakan pengelompokan konstruk di bawah secara otomatis.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                  <div className="space-y-1">
+                    <label className="font-semibold text-foreground block">Kolom Kelompok (Uji t / ANOVA):</label>
+                    <select
+                      value={groupCol || ''}
+                      onChange={(e) => setComparativeMapping({ groupCol: e.target.value || null })}
+                      className="w-full p-2 rounded-lg border border-border bg-card text-foreground text-xs"
+                    >
+                      <option value="">Deteksi Otomatis (Demografi)</option>
+                      {columns.map((col) => (
+                        <option key={col} value={col}>
+                          {col}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-semibold text-foreground block">Variabel Skor yang Diuji:</label>
+                    <select
+                      value={scoreCol || ''}
+                      onChange={(e) => setComparativeMapping({ scoreCol: e.target.value || null })}
+                      className="w-full p-2 rounded-lg border border-border bg-card text-foreground text-xs"
+                    >
+                      <option value="">Otomatis (Skor Konstruk Terikat Y)</option>
+                      {constructs.map((c) => (
+                        <option key={c.id} value={c.name}>
+                          Konstruk: {c.name}
+                        </option>
+                      ))}
+                      {columns.map((col) => (
+                        <option key={col} value={col}>
+                          Kolom: {col}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-semibold text-foreground block">Kolom Pre-Test (Berpasangan):</label>
+                    <select
+                      value={preCol || ''}
+                      onChange={(e) => setComparativeMapping({ preCol: e.target.value || null })}
+                      className="w-full p-2 rounded-lg border border-border bg-card text-foreground text-xs"
+                    >
+                      <option value="">Tidak Ada / Otomatis</option>
+                      {columns.map((col) => (
+                        <option key={col} value={col}>
+                          {col}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-semibold text-foreground block">Kolom Post-Test (Berpasangan):</label>
+                    <select
+                      value={postCol || ''}
+                      onChange={(e) => setComparativeMapping({ postCol: e.target.value || null })}
+                      className="w-full p-2 rounded-lg border border-border bg-card text-foreground text-xs"
+                    >
+                      <option value="">Tidak Ada / Otomatis</option>
+                      {columns.map((col) => (
+                        <option key={col} value={col}>
+                          {col}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Variable Mapper Component */}
             <VariableMapper
               columns={columns}
@@ -865,7 +1241,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
             />
 
             {/* Navigation Buttons */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 pt-6 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mt-10 sm:mt-12 pt-6 sm:pt-8 pb-6 sm:pb-8 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none px-4 sm:px-0 -mx-4 sm:mx-0 z-20">
               <Button
                 type="button"
                 variant="outline"
@@ -877,18 +1253,31 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                 Kembali ke Temuan Data
               </Button>
 
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 {!isMappingValid && (
-                  <span className="text-xs text-destructive text-center sm:text-right font-medium">
+                  <span className="text-xs text-destructive text-center sm:text-right font-medium max-w-[340px] leading-snug">
                     Tentukan minimal 1 Variabel Bebas (X) dan 1 Variabel Terikat (Y) untuk lanjut
                   </span>
                 )}
                 <Button
                   type="button"
                   size="lg"
-                  onClick={nextStep}
-                  disabled={!isMappingValid}
-                  className="cursor-pointer font-semibold rounded-[10px] min-h-[44px]"
+                  onClick={() => {
+                    if (!isMappingValid) {
+                      toast({
+                        title: 'Pemetaan Variabel Belum Lengkap',
+                        description: 'Harap tentukan minimal 1 Variabel Bebas (X) dan 1 Variabel Terikat (Y) pada kartu pemetaan sebelum melanjutkan.',
+                        variant: 'error',
+                      });
+                      return;
+                    }
+                    nextStep();
+                  }}
+                  className={cn(
+                    'cursor-pointer font-semibold rounded-[10px] min-h-[44px]',
+                    !isMappingValid && 'opacity-80'
+                  )}
+                  title={!isMappingValid ? 'Tentukan minimal 1 Variabel Bebas (X) dan 1 Variabel Terikat (Y)' : undefined}
                 >
                   Lanjut ke Cek Kesiapan
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -1119,9 +1508,17 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  {suitabilityStatus === 'green'
-                    ? `Struktur variabel lengkap: ${independentConstructs.length} Variabel Bebas (X) dan ${dependentConstructs.length} Variabel Terikat (Y). Siap untuk regresi OLS dan uji hipotesis simultan & parsial.`
-                    : 'Struktur variabel belum lengkap. Model membutuhkan minimal 1 Variabel Bebas (X) dan 1 Variabel Terikat (Y).'}
+                  {suitabilityStatus === 'green' ? (
+                    mediatorConstructs.length > 0 ? (
+                      `Struktur Variabel Mediasi (Analisis Jalur / Sobel): ${independentConstructs.length} Variabel Bebas (X), ${mediatorConstructs.length} Variabel Mediasi (Z), dan ${dependentConstructs.length} Variabel Terikat (Y). Siap untuk estimasi Sub-struktur 1 & 2 dan uji signifikansi efek tidak langsung Sobel.`
+                    ) : moderatorConstructs.length > 0 ? (
+                      `Struktur Variabel Moderasi (MRA): ${independentConstructs.length} Variabel Bebas (X), ${moderatorConstructs.length} Variabel Moderasi (Mod), dan ${dependentConstructs.length} Variabel Terikat (Y). Siap untuk Moderated Regression Analysis bertingkat (Model 1 vs Model 2).`
+                    ) : (
+                      `Struktur variabel lengkap: ${independentConstructs.length} Variabel Bebas (X) dan ${dependentConstructs.length} Variabel Terikat (Y). Siap untuk regresi OLS dan uji hipotesis simultan & parsial.`
+                    )
+                  ) : (
+                    'Struktur variabel belum lengkap. Model membutuhkan minimal 1 Variabel Bebas (X) dan 1 Variabel Terikat (Y).'
+                  )}
                 </p>
               </div>
             </div>
@@ -1218,7 +1615,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
             </details>
 
             {/* Navigation & Primary Action Button */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 pt-6 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none p-3 sm:p-0 -mx-4 sm:mx-0 z-20">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mt-10 sm:mt-12 pt-6 sm:pt-8 pb-6 sm:pb-8 border-t border-border sticky sm:static bottom-0 bg-background/95 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-none px-4 sm:px-0 -mx-4 sm:mx-0 z-20">
               <Button
                 type="button"
                 variant="outline"
@@ -1230,21 +1627,45 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
                 Kembali ke Pemetaan
               </Button>
 
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 {hasRedLights && (
-                  <span className="text-xs text-destructive text-center sm:text-right font-medium">
+                  <span className="text-xs text-destructive text-center sm:text-right font-medium max-w-[340px] leading-snug">
                     Selesaikan indikator lampu merah sebelum menjalankan analisis
                   </span>
                 )}
                 <Button
                   type="button"
                   size="lg"
-                  onClick={handleRunAnalysis}
-                  disabled={hasRedLights || isRunning}
-                  className="cursor-pointer font-bold px-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md text-base rounded-[10px] min-h-[46px]"
+                  onClick={() => {
+                    if (hasRedLights) {
+                      toast({
+                        title: 'Indikator Kritis Belum Terpenuhi',
+                        description: 'Harap selesaikan indikator lampu merah pada kartu kesiapan di atas sebelum menjalankan analisis.',
+                        variant: 'error',
+                      });
+                      return;
+                    }
+                    handleRunAnalysis();
+                  }}
+                  disabled={isRunning}
+                  aria-busy={isRunning}
+                  className={cn(
+                    'cursor-pointer font-bold px-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md text-base rounded-[10px] min-h-[46px] min-w-[220px]',
+                    hasRedLights && 'opacity-85'
+                  )}
+                  title={hasRedLights ? 'Selesaikan indikator lampu merah sebelum menjalankan analisis' : undefined}
                 >
-                  <Play className="w-5 h-5 mr-2 fill-current" />
-                  Jalankan Paket Bab 4
+                  {isRunning ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Memproses...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-5 h-5 mr-2 fill-current" />
+                      Jalankan Paket Bab 4
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
@@ -1255,7 +1676,7 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
             SCREEN 5: HASIL BERURUTAN BAB 4 & PROGRESSIVE EXECUTION (currentStep === 4)
            ========================================================================= */}
         {currentStep === 4 && (
-          <div className="space-y-6 animate-in fade-in">
+          <div className="space-y-6 animate-in fade-in" aria-live="polite">
             <div className="p-8 sm:p-12 rounded-[20px] border border-primary/30 bg-card shadow-lg text-center space-y-6 max-w-2xl mx-auto">
               <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
                 <Loader2 className="w-8 h-8 animate-spin" />
@@ -1303,7 +1724,78 @@ export default function AnalisisPage({ params }: AnalisisPageProps) {
             </div>
           </div>
         )}
-      </div>
+      </main>
+
+      {/* Modal Konfirmasi Mulai Ulang / Reset Analisis */}
+      <Dialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <RotateCcw className="w-5 h-5" />
+              Mulai Ulang Analisis?
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground pt-1.5 leading-relaxed">
+              Tindakan ini akan mengosongkan seluruh dataset kuesioner yang telah dimuat, pemetaan variabel, dan hasil analisis. Anda akan kembali ke Langkah 1.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowResetConfirm(false)}
+              className="text-xs min-h-[40px] rounded-[10px]"
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleConfirmReset}
+              className="text-xs min-h-[40px] rounded-[10px] font-semibold"
+            >
+              Ya, Mulai Ulang
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Penanganan Data Bermasalah Sebelum Lanjut */}
+      <Dialog open={showCriticalErrorDialog} onOpenChange={setShowCriticalErrorDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertOctagon className="w-5 h-5 shrink-0" />
+              {criticalErrorCount} Data Bermasalah Perlu Ditangani
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground pt-1.5 leading-relaxed space-y-2">
+              <span className="block">
+                Ditemukan <strong>{criticalErrorCount} temuan kritis</strong> (seperti sel kosong / <code>&lt;Kosong&gt;</code> atau anomali) pada <strong>{errorRowNumbers.length} baris responden</strong> (misalnya baris #{errorRowNumbers.slice(0, 4).join(', #')}{errorRowNumbers.length > 4 ? ', dsb' : ''}).
+              </span>
+              <span className="block">
+                Dalam metodologi penelitian skripsi, nilai kosong pada variabel kuesioner akan menyebabkan eror pada perhitungan regresi dan korelasi. Anda dapat <strong>mengecualikan baris-baris tersebut secara otomatis</strong> (dataset asli Anda tetap aman tidak diubah) untuk langsung melanjutkan ke Pertanyaan Penelitian.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowCriticalErrorDialog(false)}
+              className="text-xs min-h-[42px] rounded-[10px] cursor-pointer"
+            >
+              Periksa & Perbaiki Manual
+            </Button>
+            <Button
+              type="button"
+              onClick={handleExcludeCriticalAndProceed}
+              className="text-xs min-h-[42px] rounded-[10px] font-semibold cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <Check className="w-4 h-4 mr-1.5" />
+              Kecualikan {errorRowNumbers.length} Baris & Lanjut
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

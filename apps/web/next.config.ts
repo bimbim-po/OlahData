@@ -43,6 +43,9 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   output: process.env.NEXT_EXPORT === 'true' ? 'export' : undefined,
+  experimental: {
+    agentUpgrade: 'security',
+  },
   async headers() {
     return [
       {

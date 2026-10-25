@@ -134,7 +134,7 @@ export function PernyataanPenggunaanPage() {
           {templateText}
         </div>
         <p className="text-xs text-muted-foreground">
-          Tip: Ganti <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">[NOMOR LAMPIRAN]</code> dengan nomor lampiran aktual di naskah skripsi Anda (misalnya: Lampiran 4 atau Lampiran C).
+          Tip: Sesuaikan nomor lampiran dan identitas penelitian Anda dengan buku pedoman penulisan skripsi perguruan tinggi Anda.
         </p>
       </section>
 

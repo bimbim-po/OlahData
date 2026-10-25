@@ -47,6 +47,21 @@ import {
   computeParkHeteroscedasticity,
 } from './comparative-stats';
 import { computeCrosstabAndChiSquare } from './categorical-stats';
+import {
+  computeShapiroWilk,
+  computeKolmogorovSmirnovLilliefors,
+  computeSkewnessKurtosisZTest,
+  computeCasewiseDiagnostics,
+  computeWhiteHeteroscedasticity,
+  analyzeSkewnessAndRecommend,
+  computeConstructSpearmanMatrix,
+} from './assumption-remedies';
+import {
+  computePathAnalysisAndSobel,
+  computeModeratedRegression,
+  generatePathMediationNarration,
+  generateModerationNarration,
+} from './mediation-moderation';
 import { ENGINE_VERSION } from './constants';
 import { formatNumber } from './format';
 
@@ -75,7 +90,7 @@ export type ConstructDef = Construct;
 
 export interface ColumnRoleInfo {
   name: string;
-  role: 'id' | 'demographic' | 'item' | 'ignored';
+  role: 'id' | 'demographic' | 'item' | 'open_question' | 'ignored';
   dataType: string;
   missingCount: number;
 }
@@ -199,9 +214,31 @@ function computeLinearityTest(
   const ssLinearity = denX > 1e-12 ? (numXY * numXY) / denX : 0;
   const ssDeviation = Math.max(0, ssBetween - ssLinearity);
 
+  // Check if every X value is unique (within-groups df = 0)
+  if (g === n || n - g <= 0) {
+    return {
+      independentVar: xName,
+      dependentVar: yName,
+      ssLinearity: Number(ssLinearity.toFixed(4)),
+      dfLinearity: 1,
+      msLinearity: Number(ssLinearity.toFixed(4)),
+      fLinearity: 0,
+      sigLinearity: 1,
+      ssDeviation: 0,
+      dfDeviation: Math.max(0, g - 2),
+      msDeviation: 0,
+      fDeviation: 0,
+      sigDeviation: 1,
+      ssWithin: 0,
+      dfWithin: 0,
+      msWithin: 0,
+      isLinear: false,
+    };
+  }
+
   const dfLinearity = 1;
   const dfDeviation = Math.max(1, g - 2);
-  const dfWithin = Math.max(1, n - g);
+  const dfWithin = n - g;
 
   const msLinearity = ssLinearity / dfLinearity;
   const msDeviation = ssDeviation / dfDeviation;
@@ -291,13 +328,26 @@ export function computeDeterministicStats(
     throw new Error('Data responden tidak boleh kosong untuk komputasi statistik.');
   }
 
-  // Pre-process items: handle reverse scored items (scale 1-5: 6 - x)
+  // Pre-process items: handle reverse scored items using universal formula:
+  // Skor_Baru = (Skor_Maksimal_Skala + Skor_Minimal_Skala) - Skor_Lama
+  const itemScaleBounds: Record<string, { min: number; max: number }> = {};
+  for (const it of reverseItems) {
+    const vals = rows.map((r) => Number(r[it])).filter((n) => !isNaN(n));
+    const minN = vals.length > 0 ? Math.min(...vals) : 1;
+    const maxN = vals.length > 0 ? Math.max(...vals) : 5;
+    itemScaleBounds[it] = {
+      min: minN >= 1 && minN <= 2 ? 1 : Math.floor(minN),
+      max: maxN >= 4 && maxN <= 5 ? 5 : maxN >= 6 && maxN <= 7 ? 7 : Math.ceil(maxN),
+    };
+  }
+
   const processedRows = rows.map((row) => {
     const copy = { ...row };
     for (const it of reverseItems) {
       const val = Number(copy[it]);
-      if (!isNaN(val) && val >= 1 && val <= 5) {
-        copy[it] = 6 - val;
+      if (!isNaN(val)) {
+        const bounds = itemScaleBounds[it] || { min: 1, max: 5 };
+        copy[it] = bounds.max + bounds.min - val;
       }
     }
     return copy;
@@ -709,6 +759,10 @@ export function computeDeterministicStats(
 
       results.tTabel = tTabel;
       results.fTabel = fTabel;
+      // SPSS Standardized Residuals: Z_resid = e_i / sqrt(MSE), di mana MSE = SSE / (N - k - 1)
+      const zResids: number[] = seEst > 1e-12 ? residuals.map((r) => Number((r / seEst).toFixed(6))) : residuals.map(() => 0);
+      results.unstandardizedResiduals = residuals;
+      results.standardizedResiduals = zResids;
 
       // Standard deviation of Y for Standardized Beta (Beta)
       const sY = Math.sqrt(Math.max(1e-12, ssTot / (n - 1)));
@@ -881,6 +935,27 @@ export function computeDeterministicStats(
             negativeDiff: Number(maxNeg.toFixed(4)),
           },
         ];
+
+        // Alternatif 1: Shapiro-Wilk (Royston Algorithm)
+        try {
+          results.shapiroWilk = computeShapiroWilk(residuals, significanceLevel);
+        } catch {
+          // Safe fallback
+        }
+
+        // Alternatif 2: Kolmogorov-Smirnov dengan Koreksi Lilliefors
+        try {
+          results.lillieforsNormality = computeKolmogorovSmirnovLilliefors(residuals, significanceLevel);
+        } catch {
+          // Safe fallback
+        }
+
+        // Alternatif 3: Rasio Kemiringan & Keruncingan Skewness-Kurtosis (Z-Score)
+        try {
+          results.skewnessKurtosis = computeSkewnessKurtosisZTest(residuals, significanceLevel);
+        } catch {
+          // Safe fallback
+        }
       }
 
       // 5. UJI MULTIKOLINEARITAS (Tolerance & VIF)
@@ -1038,6 +1113,37 @@ export function computeDeterministicStats(
       } catch {
         // Safe fallback
       }
+
+      // TROUBLESHOOTER 3: Uji White Heteroskedastisitas (White Test)
+      try {
+        results.whiteHetero = computeWhiteHeteroscedasticity(yPred, residuals);
+      } catch {
+        // Safe fallback
+      }
+
+      // TROUBLESHOOTER 4: Casewise Diagnostics (|Z| > 3.0 & |Z| > 2.5)
+      try {
+        results.casewiseDiagnostics = computeCasewiseDiagnostics(residuals, yVec, yPred, rows, 3.0);
+      } catch {
+        // Safe fallback
+      }
+
+      // TROUBLESHOOTER 5: Analisis Kemiringan Variabel & Rekomendasi Transformasi Ekonometrika
+      try {
+        const transformRecs = [...indepNames, targetDep]
+          .filter((varName) => constructScores[varName])
+          .map((varName) => analyzeSkewnessAndRecommend(constructScores[varName], varName));
+        results.transformationRecommendations = transformRecs;
+      } catch {
+        // Safe fallback
+      }
+
+      // TROUBLESHOOTER 6: Fallback Matriks Korelasi Non-Parametrik Rank Spearman
+      try {
+        results.spearmanConstructMatrix = computeConstructSpearmanMatrix(constructScores);
+      } catch {
+        // Safe fallback
+      }
     }
   }
 
@@ -1081,9 +1187,13 @@ export function computeDeterministicStats(
       ['paired-ttest', 'independent-ttest', 'oneway-anova', 'ngain', 'nonparametric'].includes(t)
     );
 
-  if (isComparative) {
+  if (opts.researchDesign) {
+    results.researchDesign = opts.researchDesign;
+  } else if (isComparative && !selectedTests.includes('regression') && !selectedTests.includes('validity')) {
     results.researchDesign = 'comparative';
+  }
 
+  if (isComparative) {
     // Auto-detect or use user-specified columns
     const allCols = rows.length > 0 ? Object.keys(rows[0]) : [];
     const preCol =
@@ -1094,14 +1204,46 @@ export function computeDeterministicStats(
       opts.postCol ||
       allCols.find((c) => /^(post[_-\s]?test|sesudah|post)$/i.test(c.trim())) ||
       allCols.find((c) => /post/i.test(c.trim()));
-    const groupCol =
+
+    const countDistinct = (col: string): number => {
+      const s = new Set<string>();
+      for (const r of rows) {
+        const v = String(r[col] ?? '').trim();
+        if (v) s.add(v);
+      }
+      return s.size;
+    };
+
+    const explicitGroupCol =
       opts.groupCol ||
       allCols.find((c) => /^(kelas|kelompok|group|metode|perlakuan)$/i.test(c.trim()));
+
+    const groupCol2 =
+      explicitGroupCol ||
+      demoColCandidates.find((c) => countDistinct(c) === 2) ||
+      demoColCandidates.find((c) => countDistinct(c) >= 2);
+
+    const groupCol3 =
+      (explicitGroupCol && countDistinct(explicitGroupCol) >= 2 ? explicitGroupCol : undefined) ||
+      demoColCandidates.find((c) => countDistinct(c) >= 3) ||
+      demoColCandidates.find((c) => countDistinct(c) >= 2);
+
+    const defaultDepConstruct =
+      constructs.find((c) => c.role === 'dependent')?.name || constructs[0]?.name;
+
     const scoreCol =
       opts.scoreCol ||
       postCol ||
-      allCols.find((c) => /^(skor|nilai|hasil|score)$/i.test(c.trim()));
+      allCols.find((c) => /^(skor|nilai|hasil|score)$/i.test(c.trim())) ||
+      defaultDepConstruct;
     const idealMax = opts.idealMaxScore || 100;
+
+    const getRowScore = (idx: number, colName: string): number => {
+      if (constructScores[colName] && idx < constructScores[colName].length) {
+        return constructScores[colName][idx];
+      }
+      return Number(rows[idx]?.[colName]);
+    };
 
     // Paired Sample t-Test & N-Gain Score
     if (
@@ -1111,9 +1253,9 @@ export function computeDeterministicStats(
     ) {
       const preVals: number[] = [];
       const postVals: number[] = [];
-      for (const row of rows) {
-        const vPre = Number(row[preCol]);
-        const vPost = Number(row[postCol]);
+      for (let i = 0; i < rows.length; i++) {
+        const vPre = getRowScore(i, preCol);
+        const vPost = getRowScore(i, postCol);
         if (!isNaN(vPre) && !isNaN(vPost)) {
           preVals.push(vPre);
           postVals.push(vPost);
@@ -1135,11 +1277,11 @@ export function computeDeterministicStats(
     }
 
     // Independent Sample t-Test
-    if (selectedTests.includes('independent-ttest') && groupCol && scoreCol) {
+    if (selectedTests.includes('independent-ttest') && groupCol2 && scoreCol) {
       const groupMap = new Map<string, number[]>();
-      for (const row of rows) {
-        const grp = String(row[groupCol] || '').trim();
-        const sc = Number(row[scoreCol]);
+      for (let i = 0; i < rows.length; i++) {
+        const grp = String(rows[i][groupCol2] || '').trim();
+        const sc = getRowScore(i, scoreCol);
         if (grp && !isNaN(sc)) {
           if (!groupMap.has(grp)) groupMap.set(grp, []);
           groupMap.get(grp)!.push(sc);
@@ -1164,11 +1306,11 @@ export function computeDeterministicStats(
     }
 
     // One-Way ANOVA
-    if (selectedTests.includes('oneway-anova') && groupCol && scoreCol) {
+    if (selectedTests.includes('oneway-anova') && groupCol3 && scoreCol) {
       const groupsObj: Record<string, number[]> = {};
-      for (const row of rows) {
-        const grp = String(row[groupCol] || '').trim();
-        const sc = Number(row[scoreCol]);
+      for (let i = 0; i < rows.length; i++) {
+        const grp = String(rows[i][groupCol3] || '').trim();
+        const sc = getRowScore(i, scoreCol);
         if (grp && !isNaN(sc)) {
           if (!groupsObj[grp]) groupsObj[grp] = [];
           groupsObj[grp].push(sc);
@@ -1180,22 +1322,23 @@ export function computeDeterministicStats(
         results.oneWayAnova = computeOneWayAnova(
           groupsList,
           scoreCol,
-          groupCol,
+          groupCol3,
           significanceLevel
         );
       }
     }
 
     // Non-Parametric Tests (Manual or Auto-fallback)
+    const activeGroupCol = groupCol2 || groupCol3;
     if (
       selectedTests.includes('nonparametric') ||
       (results.normality && !results.normality[0]?.normal)
     ) {
-      if (groupCol && scoreCol) {
+      if (activeGroupCol && scoreCol) {
         const groupMap = new Map<string, number[]>();
-        for (const row of rows) {
-          const grp = String(row[groupCol] || '').trim();
-          const sc = Number(row[scoreCol]);
+        for (let i = 0; i < rows.length; i++) {
+          const grp = String(rows[i][activeGroupCol] || '').trim();
+          const sc = getRowScore(i, scoreCol);
           if (grp && !isNaN(sc)) {
             if (!groupMap.has(grp)) groupMap.set(grp, []);
             groupMap.get(grp)!.push(sc);
@@ -1212,14 +1355,14 @@ export function computeDeterministicStats(
           );
         } else if (groupKeys.length >= 3) {
           const groupsList = groupKeys.map((k) => ({ name: k, scores: groupMap.get(k)! }));
-          results.nonParametric = computeKruskalWallis(groupsList, scoreCol, groupCol);
+          results.nonParametric = computeKruskalWallis(groupsList, scoreCol, activeGroupCol);
         }
       } else if (preCol && postCol) {
         const preVals: number[] = [];
         const postVals: number[] = [];
-        for (const row of rows) {
-          const vPre = Number(row[preCol]);
-          const vPost = Number(row[postCol]);
+        for (let i = 0; i < rows.length; i++) {
+          const vPre = getRowScore(i, preCol);
+          const vPost = getRowScore(i, postCol);
           if (!isNaN(vPre) && !isNaN(vPost)) {
             preVals.push(vPre);
             postVals.push(vPost);
@@ -1244,9 +1387,11 @@ export function computeDeterministicStats(
     selectedTests.includes('chisquare') ||
     selectedTests.includes('odds-ratio')
   ) {
-    if (rowCol && colCol) {
+    const resolvedRowCol = rowCol || demoColCandidates[0];
+    const resolvedColCol = colCol || demoColCandidates[1];
+    if (resolvedRowCol && resolvedColCol && resolvedRowCol !== resolvedColCol) {
       try {
-        const catRes = computeCrosstabAndChiSquare(rows, rowCol, colCol, significanceLevel);
+        const catRes = computeCrosstabAndChiSquare(rows, resolvedRowCol, resolvedColCol, significanceLevel);
         results.crosstab = catRes.crosstab;
         results.chiSquare = catRes.chiSquare;
         results.riskEstimate = catRes.riskEstimate;
@@ -1257,7 +1402,33 @@ export function computeDeterministicStats(
     }
   }
 
-  // 10. GENERASI NARASI DRAF DENGAN STRICT NUMBER GUARD (NILAI TERHITUNG)
+    // 10. ANALISIS JALUR & UJI SOBEL (MEDIASI)
+  const hasMediator = constructs.some((c) => c.role === 'mediator');
+  if (hasMediator || selectedTests.includes('mediation')) {
+    try {
+      const pathRes = computePathAnalysisAndSobel(constructScores, constructs, significanceLevel);
+      if (pathRes.hasMediation) {
+        results.pathAnalysis = pathRes;
+      }
+    } catch (err) {
+      console.warn('Gagal menghitung Path Analysis / Sobel:', err);
+    }
+  }
+
+  // 11. MODERATED REGRESSION ANALYSIS / MRA (MODERASI)
+  const hasModerator = constructs.some((c) => c.role === 'moderator');
+  if (hasModerator || selectedTests.includes('moderation')) {
+    try {
+      const mraRes = computeModeratedRegression(constructScores, constructs, significanceLevel);
+      if (mraRes.hasModeration) {
+        results.moderationAnalysis = mraRes;
+      }
+    } catch (err) {
+      console.warn('Gagal menghitung MRA / Moderasi:', err);
+    }
+  }
+
+  // 12. GENERASI NARASI DRAF DENGAN STRICT NUMBER GUARD (NILAI TERHITUNG)
   results.explanations = generateDeterministicExplanations(results);
 
   return results;
@@ -1340,7 +1511,16 @@ function generateDeterministicExplanations(res: AnalysisResults): Record<string,
 
   if (res.normality && res.normality.length > 0) {
     const n = res.normality[0];
-    exp.normality = `Uji normalitas residual menggunakan metode Kolmogorov-Smirnov menghasilkan nilai statistik ${formatNumber(n.statistic, 3)} dengan signifikansi (p-value) ${formatNumber(n.pValue, 3)}. Karena p ${n.normal ? '≥ 0,05' : '< 0,05'}, residual model regresi ${n.normal ? 'berdistribusi normal' : 'tidak berdistribusi normal'}.`;
+    let normExp = `Uji normalitas residual menggunakan metode Kolmogorov-Smirnov menghasilkan nilai statistik ${formatNumber(n.statistic, 3)} dengan signifikansi (p-value) ${formatNumber(n.pValue, 3)}. Karena p ${n.normal ? '≥ 0,05' : '< 0,05'}, residual model regresi ${n.normal ? 'berdistribusi normal' : 'tidak berdistribusi normal'}.`;
+    
+    if (!n.normal) {
+      if (res.shapiroWilk && res.shapiroWilk.normal) {
+        normExp += ` Namun, pengujian alternatif menggunakan Shapiro-Wilk (Royston, 1992) membuktikan residual berdistribusi normal (W = ${formatNumber(res.shapiroWilk.statistic, 3)}, Sig. = ${formatNumber(res.shapiroWilk.pValue, 3)} ≥ 0,05).`;
+      } else if (res.skewnessKurtosis && res.skewnessKurtosis.normalAt95) {
+        normExp += ` Namun, evaluasi rasio Z-Score Skewness (${formatNumber(res.skewnessKurtosis.zSkewness, 2)}) dan Kurtosis (${formatNumber(res.skewnessKurtosis.zKurtosis, 2)}) berada dalam batas |Z| ≤ 1,96, membuktikan kurva residual simetris normal (Hair et al., 2010; Ghozali, 2018).`;
+      }
+    }
+    exp.normality = normExp;
   }
 
   if (res.multicollinearity && res.multicollinearity.length > 0) {
@@ -1361,6 +1541,8 @@ function generateDeterministicExplanations(res: AnalysisResults): Record<string,
         altNote = ` Meskipun Uji Glejser menunjukkan gejala heteroskedastisitas pada sebagian variabel, pengujian alternatif yang sah secara metodologis menggunakan Korelasi Rank Spearman (Prof. Imam Ghozali, 2018) menunjukkan seluruh nilai Sig. > 0,05, sehingga model dinyatakan bebas dari heteroskedastisitas tanpa perlu membuang data.`;
       } else if (parkPass) {
         altNote = ` Pengujian alternatif menggunakan Uji Park (Gujarati) menunjukkan seluruh nilai Sig. ln(e²) terhadap variabel bebas > 0,05, mengonfirmasi tidak terdapat masalah heteroskedastisitas pada residual.`;
+      } else if (res.whiteHetero && res.whiteHetero.homoscedastic) {
+        altNote = ` Pengujian alternatif komprehensif menggunakan White Test (Halbert White, 1980) menghasilkan nilai LM = ${formatNumber(res.whiteHetero.lmStatistic, 2)} dengan Sig. = ${formatNumber(res.whiteHetero.pValue, 3)} > 0,05, membuktikan model regresi bebas heteroskedastisitas.`;
       }
     }
 
@@ -1419,6 +1601,14 @@ function generateDeterministicExplanations(res: AnalysisResults): Record<string,
   if (res.riskEstimate) {
     const re = res.riskEstimate;
     exp.oddsRatio = `Analisis estimasi risiko epidemiologi menghasilkan nilai Odds Ratio (OR) sebesar ${formatNumber(re.oddsRatio, 3)} (95% CI: ${formatNumber(re.ciLower, 3)} - ${formatNumber(re.ciUpper, 3)}). ${re.interpretation}`;
+  }
+
+  if (res.pathAnalysis && res.pathAnalysis.hasMediation) {
+    exp.pathAnalysis = generatePathMediationNarration(res.pathAnalysis);
+  }
+
+  if (res.moderationAnalysis && res.moderationAnalysis.hasModeration) {
+    exp.moderationAnalysis = generateModerationNarration(res.moderationAnalysis);
   }
 
   return exp;

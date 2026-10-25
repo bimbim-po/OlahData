@@ -41,19 +41,20 @@ CREATE OR REPLACE VIEW public.v_admin_projects_safe AS
 SELECT 
     p.id AS project_id,
     p.owner_id,
-    p.title,
+    p.judul AS project_title,
     p.created_at,
     p.updated_at,
     p.archived_at,
     prof.nama AS owner_nama,
-    prof.email AS owner_email,
+    u.email AS owner_email,
     prof.kampus AS owner_kampus,
     prof.plan AS owner_plan,
     (SELECT COUNT(*) FROM public.datasets d WHERE d.project_id = p.id) AS total_datasets,
     (SELECT MAX(d.n_rows) FROM public.datasets d WHERE d.project_id = p.id) AS respondent_count,
     (SELECT COUNT(*) FROM public.analysis_runs r WHERE r.project_id = p.id) AS total_runs
 FROM public.projects p
-JOIN public.profiles prof ON prof.id = p.owner_id;
+JOIN public.profiles prof ON prof.id = p.owner_id
+LEFT JOIN auth.users u ON u.id = prof.id;
 
 COMMENT ON VIEW public.v_admin_projects_safe IS 'Tampilan administratif aman: hanya memuat metadata proyek tanpa eksposur data tanggapan responden.';
 
@@ -94,8 +95,10 @@ BEGIN
     -- 2. Masukkan semua berkas ekspor fisik ke antrean pembersihan
     FOR v_exp IN 
         SELECT e.storage_path 
-        FROM public.exports e 
-        WHERE e.user_id = target_user_id AND e.storage_path IS NOT NULL AND e.storage_path != ''
+        FROM public.exports e
+        JOIN public.analysis_runs r ON r.id = e.run_id
+        JOIN public.projects p ON p.id = r.project_id
+        WHERE p.owner_id = target_user_id AND e.storage_path IS NOT NULL AND e.storage_path != ''
     LOOP
         PERFORM public.enqueue_storage_purge('exports', v_exp.storage_path, 'USER_ACCOUNT_DELETED', 0);
         v_enqueued_files := v_enqueued_files + 1;
@@ -103,7 +106,6 @@ BEGIN
 
     -- 3. Hapus data relasional di database (terikat onDelete Cascade dari projects/profiles)
     DELETE FROM public.projects WHERE owner_id = target_user_id;
-    DELETE FROM public.exports WHERE user_id = target_user_id;
     DELETE FROM public.subscriptions WHERE user_id = target_user_id;
     DELETE FROM public.payments WHERE user_id = target_user_id;
     DELETE FROM public.usage_counters WHERE user_id = target_user_id;

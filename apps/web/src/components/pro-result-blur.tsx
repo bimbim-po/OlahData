@@ -67,7 +67,7 @@ export function ProResultBlur({
               Fitur Paket Pro
             </div>
             <h3 className="font-bold text-base text-foreground">
-              Buka Kunci Hasil {testName} &amp; Narasi Bab 4
+              Buka Kunci Hasil {testName} dan Narasi Bab 4
             </h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
               {reason ||
@@ -86,7 +86,7 @@ export function ProResultBlur({
             className="w-full font-semibold rounded-xl min-h-[44px] shadow-sm text-xs sm:text-sm bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
           >
             <Zap className="w-4 h-4 mr-2" />
-            Buka Kunci Hasil &amp; Narasi Lengkap (Mulai Rp 39.000)
+            Buka Kunci Hasil dan Narasi Lengkap (Mulai Rp 39.000)
           </Button>
 
           <p className="text-[11px] text-muted-foreground">

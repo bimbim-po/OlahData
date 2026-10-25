@@ -176,11 +176,16 @@ export function DataPreviewTable({
             cellIssue?.severity === 'error' &&
             (num < 1 || num > 5);
 
+          const isNumeric =
+            typeof rawValue === 'number' ||
+            (typeof rawValue === 'string' && /^-?\d+(?:[.,]\d+)?$/.test(rawValue.trim()));
+
           return (
             <div
               id={`cell-${rowNo}-${colKey}`}
               className={cn(
                 'px-2 py-1 rounded text-xs tabular-nums transition-all',
+                isNumeric ? 'text-right' : 'text-left',
                 isTarget
                   ? isTarget && flashingCell?.severity === 'warning'
                     ? 'ring-2 ring-[var(--color-amber)] bg-[var(--color-amber)]/20 font-bold'

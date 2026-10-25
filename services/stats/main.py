@@ -8,8 +8,10 @@ import pandas as pd
 from config import settings
 from validation import scan_dataset_quality
 from engine.pipeline import run_statistical_analysis
+from engine.ingest import ingest_survey_dataset
 from exporter.docx_export import generate_docx_report
 from exporter.pdf_export import generate_pdf_report
+from fastapi import UploadFile, File, Form
 
 app = FastAPI(
     title="OlahData Statistical Engine",
@@ -83,8 +85,15 @@ class AnalyzeRequest(BaseModel):
     constructs: List[ConstructModel]
     selectedTests: List[str]
     significanceLevel: float = 0.05
+    tails: int = 2
+    dropInvalidItems: bool = False
+    alphaThreshold: float = 0.70
+    scaleMin: int = 1
+    scaleMax: int = 5
+    negativeItems: Optional[List[str]] = None
     projectId: str = "project-1"
     dataVersionId: str = "dv-1"
+    excludedRowsLog: Optional[List[Dict[str, Any]]] = None
 
 class ExportRequest(BaseModel):
     format: str = "docx" # "docx" or "pdf"
@@ -145,13 +154,40 @@ def analyze(
             constructs=constructs_data,
             selected_tests=req.selectedTests,
             significance_level=req.significanceLevel,
+            tails=req.tails,
+            negative_items=req.negativeItems,
+            drop_invalid_items=req.dropInvalidItems,
+            alpha_threshold=req.alphaThreshold,
+            scale_min=req.scaleMin,
+            scale_max=req.scaleMax,
             project_id=req.projectId,
-            data_version_id=req.dataVersionId
+            data_version_id=req.dataVersionId,
+            excluded_rows_log=req.excludedRowsLog
         )
         return results
     except Exception as e:
         logger.error(f"Computation error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Gagal melakukan komputasi statistik: {str(e)}")
+
+@app.post("/ingest")
+async def ingest_file(
+    file: UploadFile = File(...),
+    sheet_name: Optional[str] = Form(None),
+    x_service_key: Optional[str] = Header(None)
+):
+    verify_service_key(x_service_key)
+    file_bytes = await file.read()
+    if len(file_bytes) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Ukuran berkas melebihi batas 10 MB.")
+    try:
+        parsed = ingest_survey_dataset(file_bytes, file.filename or "dataset.csv", sheet_name=sheet_name)
+        # Convert DataFrame to serializable dict of records
+        parsed["cleanedRows"] = parsed["cleanedDf"].to_dict(orient="records")
+        del parsed["cleanedDf"]
+        return parsed
+    except Exception as e:
+        logger.error(f"Ingest error on {file.filename}: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Gagal memproses berkas kuesioner: {str(e)}")
 
 @app.post("/export")
 def export(

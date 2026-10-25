@@ -33,8 +33,22 @@ def compute_regression(
     X_mat = np.column_stack([np.ones(n), x_df.values])
     y_mat = y_series.values
 
-    # Exact OLS coefficients: beta = (X'X)^(-1) X'y
+    # Check for perfect collinearity / rank deficiency
     xtx = X_mat.T @ X_mat
+    rank_xtx = np.linalg.matrix_rank(xtx)
+    if rank_xtx < (k + 1):
+        corr_mat = x_df.corr().abs()
+        for i_c in range(k):
+            for j_c in range(i_c + 1, k):
+                if corr_mat.iloc[i_c, j_c] > 0.999:
+                    c1, c2 = x_df.columns[i_c], x_df.columns[j_c]
+                    raise ValueError(
+                        f"Terdeteksi multikolinearitas sempurna antara variabel '{c1}' dan '{c2}' "
+                        f"(korelasi = 1,00). Model regresi OLS tidak dapat mengestimasi koefisien unik."
+                    )
+        raise ValueError("Matriks prediktor singular: terdeteksi multikolinearitas sempurna antar variabel bebas.")
+
+    # Exact OLS coefficients: beta = (X'X)^(-1) X'y
     xtx_inv = np.linalg.pinv(xtx)
     beta = xtx_inv @ X_mat.T @ y_mat
 
@@ -139,8 +153,27 @@ def compute_regression(
             "decision": hyp_decision
         })
 
+    model_type = "Regresi Linier Sederhana" if k == 1 else "Regresi Linier Berganda"
+
+    # Effective Contribution (SE%) and Relative Contribution (SR%) only for k >= 2
+    se_sr_table: List[Dict[str, Any]] = []
+    if k >= 2 and r2 > 1e-12:
+        for idx, col in enumerate(col_names):
+            beta_i = std_betas[idx + 1]
+            r_xy, _ = stats.pearsonr(x_df[col].values, y_mat)
+            se_i = float(beta_i * r_xy * 100.0)
+            sr_i = float((se_i / (r2 * 100.0)) * 100.0) if r2 > 0 else 0.0
+            se_sr_table.append({
+                "variable": col,
+                "standardizedBeta": beta_i,
+                "correlationY": float(r_xy),
+                "sePercent": se_i,
+                "srPercent": sr_i
+            })
+
     f_decision = "H0 ditolak, hipotesis penelitian didukung" if f_pval < significance_level else "H0 tidak ditolak"
     f_test = {
+        "modelType": model_type,
         "fHitung": f_stat,
         "fTabel": f_tabel,
         "df1": int(k),
@@ -154,12 +187,15 @@ def compute_regression(
     }
 
     determination = {
+        "modelType": model_type,
         "r": r_mult,
         "rSquare": r2,
         "adjustedRSquare": adj_r2,
         "stdError": se_estimate,
         "stdErrorEstimate": se_estimate,
-        "adjR2IdentityCheck": float(adj_r2_identity)
+        "adjR2IdentityCheck": float(adj_r2_identity),
+        "seSrTable": se_sr_table if k >= 2 else None,
+        "seSrNote": "Sumbangan Efektif (SE%) dan Sumbangan Relatif (SR%) hanya berlaku untuk model regresi linier berganda (k >= 2)." if k < 2 else None
     }
 
     anova_table = [

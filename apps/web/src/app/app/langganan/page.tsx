@@ -38,6 +38,11 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/toaster';
 import { PLANS, getPlanConfig } from '@/lib/plans';
+import {
+  loadMidtransSnapScript,
+  createMidtransCheckoutSession,
+  syncPaidPlanToSupabase,
+} from '@/lib/midtrans-snap';
 
 
 const PAYMENT_METHODS = [
@@ -84,36 +89,78 @@ export default function SubscriptionPage() {
   const handleSimulatePayment = async () => {
     try {
       setIsProcessingPayment(true);
-      // Simulate network request
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-
-      // Update user plan
-      updateUser({ plan: selectedPlanId });
-
-      // Add a simulated record to billing history
       const chosenPlan = PLANS.find((p) => p.id === selectedPlanId);
-      if (chosenPlan && chosenPlan.price > 0) {
-        const newRecord: BillingRecord = {
-          id: `bill-${Date.now()}`,
-          date: new Date().toISOString().split('T')[0],
-          description: `Paket ${chosenPlan.name} (Simulasi)`,
-          amount: chosenPlan.price,
-          status: 'paid',
-        };
-        setBillingHistory((prev) => [newRecord, ...prev]);
-      }
 
-      toast({
-        title: 'Pembayaran Simulasi Berhasil!',
-        description: `Paket Anda kini telah ditingkatkan ke "${chosenPlan?.name}".`,
-        variant: 'success',
+      const session = await createMidtransCheckoutSession({
+        plan: selectedPlanId,
+        customerName: user?.name || 'Mahasiswa OlahData',
+        customerEmail: user?.email || 'mahasiswa@olahdata.id',
+        userId: user?.id,
       });
 
-      setIsModalOpen(false);
-    } catch {
+      await loadMidtransSnapScript(session.clientKey, !session.isSandbox);
+
+      const finalizePaid = async (orderId: string) => {
+        updateUser({ plan: selectedPlanId });
+        await syncPaidPlanToSupabase(selectedPlanId, orderId, session.amountIdr);
+        if (chosenPlan && chosenPlan.price > 0) {
+          const newRecord: BillingRecord = {
+            id: orderId,
+            date: new Date().toISOString().split('T')[0],
+            description: `${chosenPlan.name} (Midtrans #${orderId})`,
+            amount: chosenPlan.price,
+            status: 'paid',
+          };
+          setBillingHistory((prev) => [newRecord, ...prev]);
+        }
+        toast({
+          title: 'Pembayaran Midtrans Berhasil!',
+          description: `Paket Anda kini telah ditingkatkan ke "${chosenPlan?.name}".`,
+          variant: 'success',
+        });
+      };
+
+      if (typeof window !== 'undefined' && window.snap) {
+        setIsModalOpen(false);
+        window.snap.pay(session.snapToken, {
+          onSuccess: async (res) => {
+            await finalizePaid(res.order_id || session.invoiceNumber);
+          },
+          onPending: () => {
+            if (chosenPlan && chosenPlan.price > 0) {
+              const pendingRecord: BillingRecord = {
+                id: session.invoiceNumber,
+                date: new Date().toISOString().split('T')[0],
+                description: `${chosenPlan.name} (Midtrans #${session.invoiceNumber})`,
+                amount: chosenPlan.price,
+                status: 'pending',
+              };
+              setBillingHistory((prev) => [pendingRecord, ...prev]);
+            }
+            toast({
+              title: 'Menunggu Pembayaran Midtrans',
+              description: `Tagihan ${session.invoiceNumber} dibuat. Selesaikan pembayaran di Simulator Midtrans Sandbox.`,
+              variant: 'default',
+            });
+          },
+          onError: () => {
+            toast({
+              title: 'Pembayaran Midtrans Gagal',
+              description: 'Transaksi tidak dapat diselesaikan.',
+              variant: 'error',
+            });
+          },
+        });
+      } else {
+        await finalizePaid(session.invoiceNumber);
+        setIsModalOpen(false);
+      }
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : 'Terjadi kesalahan saat menghubungi Midtrans.';
       toast({
-        title: 'Simulasi gagal',
-        description: 'Terjadi kesalahan pada simulasi pembayaran.',
+        title: 'Gagal Memulai Pembayaran',
+        description: msg,
         variant: 'error',
       });
     } finally {
@@ -251,22 +298,20 @@ export default function SubscriptionPage() {
                   }`}
                 />
               </div>
-              {currentPlan.id === 'free' && (
-                <p className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">
-                  Batas kuota proyek gratis tercapai (1 dari {currentPlan.quotaProjects} proyek).
-                </p>
-              )}
+              <p className="text-[11px] text-muted-foreground">
+                Sisa kuota proyek Anda untuk paket ini.
+              </p>
             </div>
 
-            {/* Responden Usage */}
+            {/* Responden Quota */}
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="font-medium text-foreground flex items-center gap-1.5">
                   <Users className="h-4 w-4 text-primary" />
-                  Responden Teranalisis
+                  Maksimal Responden
                 </span>
                 <span className="font-semibold tabular-nums text-foreground">
-                  {formatNumber(120)} Responden
+                  {formatNumber(currentPlan.quotaRespondents)} Responden
                 </span>
               </div>
               <div className="h-2 w-full rounded-full bg-secondary overflow-hidden">
@@ -352,13 +397,13 @@ export default function SubscriptionPage() {
               <DialogTitle className="font-serif text-xl font-bold">
                 Ganti Paket Langganan
               </DialogTitle>
-              {/* Mandatory badge SIMULASI */}
+              {/* Midtrans Sandbox Badge */}
               <Badge variant="warning" className="uppercase font-bold tracking-wider text-[10px]">
-                SIMULASI
+                MIDTRANS SANDBOX
               </Badge>
             </div>
             <DialogDescription className="text-xs sm:text-sm text-muted-foreground text-left mt-1">
-              Ini adalah dialog simulasi pembayaran. Tidak ada kartu kredit atau transaksi uang riil yang akan ditagihkan.
+              Terhubung ke Midtrans Snap Sandbox. Anda dapat menguji pembayaran QRIS, GoPay, dan Virtual Account BCA/Mandiri/BNI menggunakan Simulator Resmi Midtrans.
             </DialogDescription>
           </DialogHeader>
 
@@ -463,10 +508,10 @@ export default function SubscriptionPage() {
               {isProcessingPayment ? (
                 <span className="flex items-center gap-2">
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                  Memproses Simulasi...
+                  Menghubungkan Midtrans...
                 </span>
               ) : (
-                'Konfirmasi Pembayaran Simulasi'
+                'Bayar Sekarang via Midtrans Snap'
               )}
             </Button>
           </DialogFooter>

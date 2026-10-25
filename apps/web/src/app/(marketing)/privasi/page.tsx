@@ -1,9 +1,10 @@
 import * as React from 'react';
 import Link from 'next/link';
-import { Shield, Lock, Trash2, FileCheck, Info, CreditCard, Database, Cookie } from 'lucide-react';
+import { Shield, Lock, Trash2, FileCheck, Info, CreditCard, Database, Cookie, Server } from 'lucide-react';
 import { APP_NAME, BUILD_DATE } from '@/lib/constants';
 import { COPY } from '@/lib/copy';
 import { PLANS } from '@/lib/plans';
+import { LEGAL_CONFIG } from '@/lib/legal-config';
 import { Badge } from '@/components/ui/badge';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { PageActions } from '@/components/page-actions';
@@ -14,7 +15,7 @@ export const metadata = {
   openGraph: {
     title: `Kebijakan Privasi Perlindungan Riset | ${APP_NAME}`,
     description: 'Kebijakan privasi OlahData menjamin keamanan dataset kuesioner responden. Admin hanya melihat metadata dan data riset tidak pernah dijual atau dimanipulasi.',
-    url: 'https://olahdata.id/privasi',
+    url: `${LEGAL_CONFIG.domain}/privasi`,
     siteName: APP_NAME,
     locale: 'id_ID',
     type: 'website',
@@ -31,14 +32,14 @@ export default function PrivasiPage() {
       {/* Breadcrumb */}
       <Breadcrumb items={[{ label: 'Kebijakan Privasi', href: '/privasi' }]} />
 
-      {/* Header with Draft Badge */}
+      {/* Header with Status Badge */}
       <div className="space-y-4 border-b border-border pb-8">
         <div className="flex items-center gap-2">
-          <Badge variant="amber" className="text-xs font-semibold px-2.5 py-0.5">
-            {COPY.badges.draft}
+          <Badge variant="mint" className="text-xs font-semibold px-2.5 py-0.5">
+            Kepatuhan UU PDP No. 27/2022
           </Badge>
           <span className="text-xs text-muted-foreground">
-            Terakhir diperbarui: {BUILD_DATE}
+            Terakhir diperbarui: {LEGAL_CONFIG.effectiveDate}
           </span>
         </div>
         <h1 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
@@ -53,7 +54,7 @@ export default function PrivasiPage() {
         {/* Section 1 */}
         <section className="space-y-3">
           <h2 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
-            1. Prinsip Utama Perlindungan Riset & Data Responden
+            1. Prinsip Utama Perlindungan Riset dan Data Responden
           </h2>
           <p>
             {APP_NAME} menyadari bahwa dataset kuesioner yang Anda unggah merupakan data berharga hasil kerja keras penelitian ilmiah. Prinsip dasar kami meliputi:
@@ -87,25 +88,25 @@ export default function PrivasiPage() {
             <div className="rounded-xl border border-border bg-card p-4">
               <h3 className="font-serif font-bold text-sm text-foreground">a. Informasi Akun Pengguna</h3>
               <p className="text-xs text-muted-foreground mt-1">
-                Nama lengkap, alamat surat elektronik (email), nama perguruan tinggi, dan kredensial kata sandi terenkripsi (salt & hash).
+                Nama lengkap, alamat surat elektronik (email), nama perguruan tinggi, dan kredensial kata sandi terenkripsi (salt dan hash) melalui Supabase Auth.
               </p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4">
-              <h3 className="font-serif font-bold text-sm text-foreground">b. Data Kuesioner & Konfigurasi Proyek</h3>
+              <h3 className="font-serif font-bold text-sm text-foreground">b. Data Kuesioner dan Konfigurasi Proyek</h3>
               <p className="text-xs text-muted-foreground mt-1">
                 Tabel skor kuesioner (berformat .xlsx, .xls, .csv), label variabel/konstruk, serta pilihan uji statistik yang Anda konfigurasi.
               </p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4">
-              <h3 className="font-serif font-bold text-sm text-foreground">c. Data Transaksi Pembayaran</h3>
+              <h3 className="font-serif font-bold text-sm text-foreground">c. Status Langganan dan Daftar Tunggu</h3>
               <p className="text-xs text-muted-foreground mt-1">
-                Seluruh transaksi pembayaran diproses langsung oleh penyedia gerbang pembayaran resmi berlisensi (Midtrans). {APP_NAME} tidak pernah menyimpan nomor kartu kredit/debit, tanggal kedaluwarsa kartu, maupun kode CVV pengguna di peladen kami.
+                Saat ini paket berbayar beroperasi dalam status pra-rilis beta (daftar tunggu/waitlist). Kami tidak memproses kartu kredit atau membebankan tagihan otomatis hingga gerbang pembayaran resmi diaktifkan.
               </p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4">
               <h3 className="font-serif font-bold text-sm text-foreground">d. Cookie dan Analitik Penggunaan</h3>
               <p className="text-xs text-muted-foreground mt-1">
-                Cookie dan analitik yang kami gunakan hanya mencakup metadata penggunaan teknis (seperti sesi login akun aktif dan telemetri kestabilan aplikasi). Kami tidak melacak aktivitas penjelajahan di luar platform ini.
+                Cookie hanya digunakan untuk otentikasi sesi aktif dan preferensi tema tampilan (terang/gelap). Kami tidak melacak aktivitas penjelajahan di luar platform ini.
               </p>
             </div>
           </div>
@@ -114,11 +115,24 @@ export default function PrivasiPage() {
         {/* Section 3 */}
         <section className="space-y-3">
           <h2 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
-            3. Pemrosesan Data & Keamanan Teknis
+            3. Pemrosesan Data, Sub-Prosesor, dan Keamanan Teknis
           </h2>
           <p>
-            Seluruh transmisi data antara peramban web Anda dan peladen kami dilindungi protokol enkripsi mutakhir (TLS 1.3). Penyimpanan data dienkripsi dengan standar AES-256. Validasi data dan perhitungan statistik primer dieksekusi secara deterministik menggunakan mesin algoritma matematika baku guna menjamin kepastian numerik.
+            Seluruh transmisi data antara peramban web Anda dan peladen kami dilindungi protokol enkripsi mutakhir (TLS 1.3). Penyimpanan data dienkripsi dengan standar AES-256. Validasi data dan perhitungan statistik dieksekusi secara deterministik menggunakan mesin algoritma matematika baku guna menjamin kepastian numerik.
           </p>
+
+          <div className="space-y-2.5 pt-2">
+            <h3 className="font-semibold text-xs sm:text-sm text-foreground">Daftar Sub-Prosesor Pihak Ketiga:</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {LEGAL_CONFIG.subprocessors.map((sub, idx) => (
+                <div key={idx} className="rounded-lg border border-border bg-card p-3 space-y-1">
+                  <div className="font-semibold text-xs text-foreground">{sub.name}</div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">{sub.purpose}</p>
+                  <div className="text-[10px] text-primary font-mono">{sub.location}</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
 
         {/* Section 4 */}
@@ -134,7 +148,7 @@ export default function PrivasiPage() {
         {/* Section 5 */}
         <section className="space-y-3">
           <h2 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
-            5. Masa Retensi & Hak Penghapusan Data (Right to Erasure)
+            5. Masa Retensi, Cadangan, dan Hak Penghapusan Data (Right to Erasure)
           </h2>
           <p>
             Masa penyimpanan data proyek dan dataset pada akun Anda diatur berdasarkan ketentuan konfigurasi paket aktif:
@@ -144,10 +158,13 @@ export default function PrivasiPage() {
             <li><strong className="text-foreground">Paket Bulanan:</strong> Disimpan selama {monthlyRetention} hari kalender (1 tahun).</li>
             <li><strong className="text-foreground">Paket Skripsi:</strong> Disimpan selama {thesisRetention} hari kalender (2 tahun) untuk menjamin ketersediaan riwayat hingga sidang dan yudisium selesai.</li>
           </ul>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Wilayah Server: {LEGAL_CONFIG.retentionPolicy.serverRegion}. Cadangan data: {LEGAL_CONFIG.retentionPolicy.backupSchedule}.
+          </p>
           <p className="mt-3">
             Sesuai amanat Undang-Undang Perlindungan Data Pribadi (UU No. 27 Tahun 2022 / UU PDP), Anda memiliki hak mutlak untuk mengakses, memperbarui, mengekspor (portabilitas data), dan menghapus data proyek penelitian maupun seluruh akun Anda kapan saja melalui menu{' '}
             <Link href="/app/pengaturan" className="text-primary font-semibold underline">
-              Pengaturan Akun &amp; Privasi
+              Pengaturan Akun dan Privasi
             </Link>.
           </p>
         </section>
@@ -155,33 +172,33 @@ export default function PrivasiPage() {
         {/* Section 6 */}
         <section className="space-y-4">
           <h2 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
-            6. Identitas Pengendali Data &amp; Kontak Layanan
+            6. Identitas Pengendali Data dan Kontak Layanan
           </h2>
           <p>
-            Sesuai regulasi UU PDP, rincian identitas Pengendali Data Pribadi OlahData adalah sebagai berikut:
+            Sesuai regulasi UU PDP, rincian identitas Pengendali Data Pribadi {APP_NAME} adalah sebagai berikut:
           </p>
 
-          <div className="rounded-xl border border-dashed border-primary/40 bg-muted/40 p-5 space-y-2.5 text-xs sm:text-sm">
+          <div className="rounded-xl border border-primary/20 bg-muted/40 p-5 space-y-2.5 text-xs sm:text-sm">
             <div className="flex items-start gap-2">
               <span className="font-semibold text-foreground min-w-[150px]">Nama Pengendali:</span>
-              <span className="font-mono text-primary">[ISI: Nama Pemilik / Badan Usaha OlahData]</span>
+              <span className="font-medium text-foreground">{LEGAL_CONFIG.companyName} ({LEGAL_CONFIG.operatorName})</span>
             </div>
             <div className="flex items-start gap-2">
               <span className="font-semibold text-foreground min-w-[150px]">Alamat Domisili:</span>
-              <span className="font-mono text-primary">[ISI: Alamat Kantor / Domisili Operasional Resmi]</span>
+              <span className="font-medium text-foreground">{LEGAL_CONFIG.address}</span>
             </div>
             <div className="flex items-start gap-2">
               <span className="font-semibold text-foreground min-w-[150px]">Surel Kontak DPO:</span>
-              <span className="font-mono text-primary">[ISI: Surel Kontak Resmi, mis. privasi@olahdata.id]</span>
+              <span className="font-mono text-primary">{LEGAL_CONFIG.privacyEmail}</span>
             </div>
             <div className="flex items-start gap-2">
-              <span className="font-semibold text-foreground min-w-[150px]">Status Registrasi:</span>
-              <span className="font-mono text-primary">[ISI: Tanda Daftar PSE Kominfo / NIB (opsional jika tersedia)]</span>
+              <span className="font-semibold text-foreground min-w-[150px]">Yurisdiksi dan Regulasi:</span>
+              <span className="font-medium text-foreground">{LEGAL_CONFIG.jurisdiction}</span>
             </div>
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Untuk keperluan surat verifikasi etika riset, kliring data kampus, atau permohonan pemusnahan data fisik, hubungi kontak pengendali di atas.
+            Untuk keperluan surat verifikasi etika riset, kliring data kampus, atau permohonan pemusnahan data, hubungi kontak pengendali di atas.
           </p>
         </section>
       </div>

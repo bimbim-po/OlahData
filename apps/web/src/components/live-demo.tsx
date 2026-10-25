@@ -1,492 +1,560 @@
 'use client';
 
 import * as React from 'react';
-import { Play, RotateCcw, FastForward, CheckCircle2, ShieldCheck, HelpCircle } from 'lucide-react';
+import {
+  RotateCcw,
+  CheckCircle2,
+  ShieldCheck,
+  FileSpreadsheet,
+  FileText,
+  Sparkles,
+  ArrowRight,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { COPY } from '@/lib/copy';
 
-// Sample dataset: 6 respondents x 5 columns Likert 1-5
+// Sample dataset: 6 respondents x 4 columns Likert 1-5 (KL1, KL2, KL3, KL4)
 const RAW_SAMPLE_ROWS = [
-  { resp: 'R001', x1: 4, x2: 5, x3: 4, total: 13 },
-  { resp: 'R002', x1: 3, x2: 3, x3: 3, total: 9 },
-  { resp: 'R003', x1: 5, x2: 5, x3: 5, total: 15 },
-  { resp: 'R004', x1: 4, x2: 4, x3: 4, total: 12 },
-  { resp: 'R005', x1: 5, x2: 4, x3: 5, total: 14 },
-  { resp: 'R006', x1: 3, x2: 4, x3: 3, total: 10 },
+  { resp: 'R001', x1: 4, x2: 4, x3: 4, x4: 4, total: 16 },
+  { resp: 'R002', x1: 3, x2: 4, x3: 4, x4: 4, total: 15 },
+  { resp: 'R003', x1: 5, x2: 5, x3: 5, x4: 5, total: 20 },
+  { resp: 'R004', x1: 4, x2: 4, x3: 4, x4: 3, total: 15 },
+  { resp: 'R005', x1: 4, x2: 3, x3: 4, x4: 4, total: 15 },
+  { resp: 'R006', x1: 3, x2: 4, x3: 3, x4: 4, total: 14 },
 ];
+
+const CYCLE_NUMBERS = ['0,796', '0,753', '0,826'];
 
 export interface LiveDemoProps {
   className?: string;
-  autoPlay?: boolean;
 }
 
-export function LiveDemo({ className, autoPlay = true }: LiveDemoProps) {
-  // Choreography stages:
-  // 0 = Initial (0.0-0.3s)
-  // 1 = Raw questionnaire sheet with highlighter sweep (0.3-1.5s)
-  // 2 = Result table emerges with computed badge (1.5-3.0s)
-  // 3 = Narrative explanation emerges with connected numbers (3.0-4.2s)
-  // 4 = Complete & Interactive (4.2s+)
-  const [stage, setStage] = React.useState<number>(0);
+export function LiveDemo({ className }: LiveDemoProps) {
+  // Tab: 'raw' (Data Mentah) | 'result' (Hasil Tabel APA 7th dan Narasi Bab 4)
+  const [activeTab, setActiveTab] = React.useState<'raw' | 'result'>('result');
   const [hoveredNumber, setHoveredNumber] = React.useState<string | null>(null);
-  const [isInteractive, setIsInteractive] = React.useState<boolean>(false);
+  const [isTransforming, setIsTransforming] = React.useState<boolean>(false);
+  const [isUserInteracting, setIsUserInteracting] = React.useState<boolean>(false);
+  const [inViewport, setInViewport] = React.useState<boolean>(false);
+
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const timerRefs = React.useRef<NodeJS.Timeout[]>([]);
+  const cycleIndexRef = React.useRef<number>(0);
+  const transformTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
-  const clearAllTimers = React.useCallback(() => {
-    timerRefs.current.forEach((t) => clearTimeout(t));
-    timerRefs.current = [];
-  }, []);
-
-  const markSessionComplete = React.useCallback(() => {
-    try {
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('olahdata_demo_played', 'true');
-      }
-    } catch {
-      // Ignore
-    }
-  }, []);
-
-  const startChoreography = React.useCallback(() => {
-    clearAllTimers();
-    setStage(0);
-    setIsInteractive(false);
-    setHoveredNumber(null);
-
-    // Timeline:
-    // 0.3s -> Stage 1: Raw data table + highlight sweep
-    const t1 = setTimeout(() => {
-      setStage(1);
-    }, 300);
-
-    // 1.5s -> Stage 2: Result table emerges
-    const t2 = setTimeout(() => {
-      setStage(2);
-    }, 1500);
-
-    // 3.0s -> Stage 3: Narrative text emerges
-    const t3 = setTimeout(() => {
-      setStage(3);
-    }, 3000);
-
-    // 4.2s -> Stage 4: Interactive end state
-    const t4 = setTimeout(() => {
-      setStage(4);
-      setIsInteractive(true);
-      markSessionComplete();
-    }, 4200);
-
-    timerRefs.current = [t1, t2, t3, t4];
-  }, [clearAllTimers, markSessionComplete]);
-
-  // Check reduced motion & sessionStorage on mount
+  // IntersectionObserver to only run auto-cycle when in viewport
   React.useEffect(() => {
-    // 1. Reduced motion check
-    const prefersReducedMotion =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!containerRef.current) return;
 
-    // 2. SessionStorage check
-    let alreadyPlayed = false;
-    try {
-      if (typeof window !== 'undefined') {
-        alreadyPlayed = sessionStorage.getItem('olahdata_demo_played') === 'true';
-      }
-    } catch {
-      // Ignore sessionStorage access errors (e.g. private mode)
-    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        setInViewport(entry.isIntersecting);
+      },
+      { threshold: 0.25 }
+    );
 
-    if (prefersReducedMotion || alreadyPlayed || !autoPlay) {
-      // Jump straight to interactive state
-      setStage(4);
-      setIsInteractive(true);
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  // Auto-cycle highlight every 2.8 seconds when Tab 2 is active and not interacted by user
+  React.useEffect(() => {
+    if (!inViewport || isUserInteracting || activeTab !== 'result' || isTransforming) {
       return;
     }
 
-    // Set up IntersectionObserver to trigger animation when demo enters viewport
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          startChoreography();
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.2 }
-    );
+    const interval = setInterval(() => {
+      cycleIndexRef.current = (cycleIndexRef.current + 1) % CYCLE_NUMBERS.length;
+      setHoveredNumber(CYCLE_NUMBERS[cycleIndexRef.current]);
+    }, 2800);
 
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
+    return () => clearInterval(interval);
+  }, [inViewport, isUserInteracting, activeTab, isTransforming]);
 
+  // Clean up timers on unmount
+  React.useEffect(() => {
     return () => {
-      observer.disconnect();
-      clearAllTimers();
+      if (transformTimerRef.current) clearTimeout(transformTimerRef.current);
     };
-  }, [autoPlay, startChoreography, clearAllTimers]);
+  }, []);
 
-  const skipToEnd = () => {
-    clearAllTimers();
-    setStage(4);
-    setIsInteractive(true);
-    markSessionComplete();
-  };
+  // Run Transformation Flow Demo: Tab 1 (scan raw data) -> Tab 2 (result table + narrative)
+  const handleRunTransformation = () => {
+    if (transformTimerRef.current) clearTimeout(transformTimerRef.current);
 
-  const handleReplay = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    startChoreography();
+    setIsTransforming(true);
+    setActiveTab('raw');
+    setHoveredNumber(null);
+
+    transformTimerRef.current = setTimeout(() => {
+      setActiveTab('result');
+      setHoveredNumber('0,796');
+      setIsTransforming(false);
+    }, 1300);
   };
 
   const isHighlighted = (num: string) => {
-    return isInteractive && hoveredNumber === num;
+    return hoveredNumber === num;
   };
 
   return (
     <div
       ref={containerRef}
+      onMouseEnter={() => setIsUserInteracting(true)}
+      onMouseLeave={() => {
+        setIsUserInteracting(false);
+        setHoveredNumber(null);
+      }}
       className={cn(
-        'group relative flex flex-col rounded-[16px] border border-border bg-card p-4 sm:p-5 shadow-xs overflow-hidden select-none',
+        'group relative flex flex-col p-5 sm:p-6 lg:p-8 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm bg-white dark:bg-slate-900 transition-all',
         className
       )}
       aria-label="Demo interaktif transformasi data kuesioner menjadi tabel Bab 4"
     >
-      {/* Top Header Bar: Metadata & Skip/Replay controls */}
-      <div className="flex items-center justify-between pb-3 border-b border-border/70 text-xs">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[6px] bg-muted font-medium text-[11px] text-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-            Data contoh: Kuesioner Kepuasan (N=120)
-          </span>
-          <span className="hidden sm:inline-block text-[11px] text-muted-foreground">
-            Skala Likert 1–5
-          </span>
+      {/* Top Header & Segmented Control Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/70 dark:border-slate-800/70">
+        {/* Segmented Control / Stepper Tabs */}
+        <div className="inline-flex p-1 bg-slate-100 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 rounded-xl text-xs font-medium self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('raw');
+              setHoveredNumber(null);
+            }}
+            className={cn(
+              'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer touch-manipulation',
+              activeTab === 'raw'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 shadow-xs border border-slate-200/80 dark:border-slate-800/80'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            )}
+          >
+            <FileSpreadsheet className="h-4 w-4 text-primary" />
+            <span>1. Data Contoh (Excel)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('result');
+              setHoveredNumber('0,796');
+            }}
+            className={cn(
+              'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer touch-manipulation',
+              activeTab === 'result'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 shadow-xs border border-slate-200/80 dark:border-slate-800/80'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            )}
+          >
+            <FileText className="h-4 w-4 text-primary" />
+            <span>2. Tabel APA 7th dan Narasi</span>
+          </button>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          {!isInteractive ? (
-            <button
-              type="button"
-              onClick={skipToEnd}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer touch-manipulation"
-              title="Lewati animasi dan lihat hasil interaktif"
-            >
-              <span>Lewati</span>
-              <FastForward className="h-3 w-3" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleReplay}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer touch-manipulation"
-              title="Putar ulang animasi koreografi"
-            >
-              <RotateCcw className="h-3 w-3" />
-              <span>Putar ulang</span>
-            </button>
-          )}
+        {/* Action Controls: Lihat Alur Transformasi */}
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          <button
+            type="button"
+            onClick={handleRunTransformation}
+            disabled={isTransforming}
+            className={cn(
+              'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer touch-manipulation',
+              isTransforming
+                ? 'bg-primary/10 text-primary border-primary/30 animate-pulse'
+                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60 shadow-xs'
+            )}
+            title="Putar animasi transformasi dari data mentah ke tabel Bab 4"
+          >
+            {isTransforming ? (
+              <>
+                <Sparkles className="h-3.5 w-3.5 text-primary animate-spin" />
+                <span>Memproses Data...</span>
+              </>
+            ) : (
+              <>
+                <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
+                <span>Lihat Alur Transformasi</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
-      {/* Main Choreography Canvas */}
-      <div className="pt-3.5 space-y-4">
-        {/* SECTION 1: Questionnaire Data Sheet (0.3s - 1.5s) */}
-        <div
-          className={cn(
-            'transition-opacity duration-300',
-            stage >= 1 ? 'opacity-100' : 'opacity-80'
-          )}
-        >
-          <div className="flex items-center justify-between mb-1.5 text-[11px]">
-            <span className="font-semibold text-foreground">
-              1. Lembar Tabulasi Responden
-            </span>
-            <span className="text-muted-foreground tabular-nums">
-              Potongan 6 baris × 3 butir pertanyaan
-            </span>
-          </div>
-
-          <div className="overflow-x-auto rounded-[6px] border border-border/70 bg-muted/20">
-            <table className="w-full text-[11px] font-sans border-collapse">
-              <thead>
-                <tr className="border-b border-border/70 bg-muted/50 text-muted-foreground text-left">
-                  <th className="py-1 px-2.5 font-medium">Resp</th>
-                  <th
-                    className={cn(
-                      'py-1 px-2 text-right font-medium transition-colors duration-500',
-                      stage === 1 && 'bg-[#FFE14D]/40 text-[#243044] font-semibold'
-                    )}
-                  >
-                    X1.1
-                  </th>
-                  <th
-                    className={cn(
-                      'py-1 px-2 text-right font-medium transition-colors duration-500',
-                      stage === 1 && 'bg-[#FFE14D]/40 text-[#243044] font-semibold'
-                    )}
-                  >
-                    X1.2
-                  </th>
-                  <th
-                    className={cn(
-                      'py-1 px-2 text-right font-medium transition-colors duration-500',
-                      stage === 1 && 'bg-[#FFE14D]/40 text-[#243044] font-semibold'
-                    )}
-                  >
-                    X1.3
-                  </th>
-                  <th className="py-1 px-2.5 text-right font-medium text-foreground">
-                    Total X1
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="tabular-nums text-foreground/80">
-                {RAW_SAMPLE_ROWS.map((row, idx) => (
-                  <tr
-                    key={row.resp}
-                    className={cn(
-                      'border-b border-border/40 last:border-b-0 transition-colors',
-                      idx % 2 === 1 && 'bg-muted/10'
-                    )}
-                  >
-                    <td className="py-1 px-2.5 text-muted-foreground font-mono">
-                      {row.resp}
-                    </td>
-                    <td
-                      className={cn(
-                        'py-1 px-2 text-right transition-colors duration-500',
-                        stage === 1 && 'bg-[#FFE14D]/30 text-[#243044] font-semibold'
-                      )}
-                    >
-                      {row.x1}
-                    </td>
-                    <td
-                      className={cn(
-                        'py-1 px-2 text-right transition-colors duration-500',
-                        stage === 1 && 'bg-[#FFE14D]/30 text-[#243044] font-semibold'
-                      )}
-                    >
-                      {row.x2}
-                    </td>
-                    <td
-                      className={cn(
-                        'py-1 px-2 text-right transition-colors duration-500',
-                        stage === 1 && 'bg-[#FFE14D]/30 text-[#243044] font-semibold'
-                      )}
-                    >
-                      {row.x3}
-                    </td>
-                    <td className="py-1 px-2.5 text-right font-semibold text-foreground">
-                      {row.total}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* SECTION 2: Result Table (emerges at Stage 2: 1.5s - 3.0s) */}
-        <div
-          className={cn(
-            'transition-all duration-400 ease-out',
-            stage >= 2
-              ? 'opacity-100 translate-y-0'
-              : 'opacity-40 translate-y-1 pointer-events-none'
-          )}
-        >
-          <div className="flex items-center justify-between mb-1.5 text-[11px]">
-            <div className="flex items-center gap-1.5">
-              <h3 className="font-semibold text-foreground text-[11px] inline">
-                2. Tabel 4.8 Hasil Uji Reliabilitas
-              </h3>
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-primary/10 text-primary font-medium text-[10px]">
-                <ShieldCheck className="h-3 w-3" />
-                Dihitung oleh program
+      {/* Main Interactive Canvas: Tab 1 or Tab 2 */}
+      <div className="pt-4 min-h-[320px] flex flex-col justify-between">
+        {activeTab === 'raw' ? (
+          /* TAB 1: DATA MENTAH KUESIONER */
+          <div className="space-y-4 animate-in fade-in duration-200">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-primary" />
+                Cuplikan Tabulasi Responden (Data Mentah)
+              </span>
+              <span className="text-slate-500 dark:text-slate-400 tabular-nums text-xs">
+                Potongan 6 baris × 4 butir (Skala Likert 1–5)
               </span>
             </div>
-            <span className="text-muted-foreground hidden sm:inline-block">
-              Format Baku APA 7th
-            </span>
-          </div>
 
-          <div className="overflow-x-auto rounded-[6px] border border-border/80 bg-card">
-            <table className="w-full text-xs font-sans border-collapse">
-              <thead>
-                <tr className="border-b-2 border-foreground text-[11px] font-semibold text-foreground text-left">
-                  <th className="py-1.5 px-2.5">Konstruk Variabel</th>
-                  <th className="py-1.5 px-2 text-right">Butir</th>
-                  <th className="py-1.5 px-2.5 text-right">Cronbach&apos;s Alpha</th>
-                  <th className="py-1.5 px-2.5 text-center">Simpulan</th>
-                </tr>
-              </thead>
-              <tbody className="tabular-nums text-xs">
-                {/* Row 1: Motivasi / Kualitas Layanan (X1) */}
-                <tr
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-950/30">
+              <table className="w-full text-xs font-sans border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 text-left">
+                    <th className="px-4 py-3 font-medium">Resp ID</th>
+                    <th
+                      className={cn(
+                        'px-4 py-3 text-right font-medium transition-colors duration-300 tabular-nums',
+                        isTransforming && 'bg-[#FFE14D]/40 text-[#243044] font-bold'
+                      )}
+                    >
+                      KL1
+                    </th>
+                    <th
+                      className={cn(
+                        'px-4 py-3 text-right font-medium transition-colors duration-300 tabular-nums',
+                        isTransforming && 'bg-[#FFE14D]/40 text-[#243044] font-bold'
+                      )}
+                    >
+                      KL2
+                    </th>
+                    <th
+                      className={cn(
+                        'px-4 py-3 text-right font-medium transition-colors duration-300 tabular-nums',
+                        isTransforming && 'bg-[#FFE14D]/40 text-[#243044] font-bold'
+                      )}
+                    >
+                      KL3
+                    </th>
+                    <th
+                      className={cn(
+                        'px-4 py-3 text-right font-medium transition-colors duration-300 tabular-nums',
+                        isTransforming && 'bg-[#FFE14D]/40 text-[#243044] font-bold'
+                      )}
+                    >
+                      KL4
+                    </th>
+                    <th className="px-4 py-3 text-right font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
+                      Total Skor
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="tabular-nums text-slate-800 dark:text-slate-200">
+                  {RAW_SAMPLE_ROWS.map((row, idx) => (
+                    <tr
+                      key={row.resp}
+                      className={cn(
+                        'border-b border-slate-200/50 dark:border-slate-800/50 last:border-b-0 transition-colors',
+                        idx % 2 === 1 && 'bg-slate-50/60 dark:bg-slate-900/40',
+                        isTransforming && 'bg-[#FFE14D]/15'
+                      )}
+                    >
+                      <td className="px-4 py-3 text-slate-500 font-mono text-xs">
+                        {row.resp}
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums">{row.x1}</td>
+                      <td className="px-4 py-3 text-right tabular-nums">{row.x2}</td>
+                      <td className="px-4 py-3 text-right tabular-nums">{row.x3}</td>
+                      <td className="px-4 py-3 text-right tabular-nums">{row.x4}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
+                        {row.total}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+              <span className="text-slate-500 dark:text-slate-400">
+                Dihitung dari instrumen kuesioner N=100 mahasiswa tanpa SPSS.
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('result');
+                  setHoveredNumber('0,796');
+                }}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline cursor-pointer"
+              >
+                <span>Lihat Hasil Tabel Bab 4</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* TAB 2: TABEL APA 7TH & DRAF NARASI BAB 4 (DEFAULT ACTIVE) */
+          <div className="space-y-4 animate-in fade-in duration-200">
+            {/* Tabel 4.8 APA 7th */}
+            <div>
+              <div className="flex items-center justify-between mb-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-xs sm:text-sm inline">
+                    Tabel 4.8 Hasil Uji Reliabilitas Instrumen
+                  </h3>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary font-medium text-[11px]">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    Mesin Deterministik
+                  </span>
+                </div>
+                <span className="text-slate-500 dark:text-slate-400 text-xs hidden sm:inline-block">
+                  Format Baku APA 7th Edition
+                </span>
+              </div>
+
+              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <table className="w-full text-xs sm:text-sm font-sans border-collapse">
+                  <thead>
+                    <tr className="border-b-2 border-slate-900 dark:border-slate-100 text-xs font-semibold text-slate-900 dark:text-slate-100 text-left">
+                      <th className="px-4 py-3 text-left">Konstruk Variabel</th>
+                      <th className="px-4 py-3 text-right tabular-nums">Jumlah Butir</th>
+                      <th className="px-4 py-3 text-right tabular-nums">Cronbach&apos;s Alpha</th>
+                      <th className="px-4 py-3 text-center">Simpulan</th>
+                    </tr>
+                  </thead>
+                  <tbody className="tabular-nums text-xs sm:text-sm">
+                    {/* Row 1: Kualitas Layanan (X1) */}
+                    <tr
+                      className={cn(
+                        'border-b border-slate-200/80 dark:border-slate-800/80 transition-colors duration-150',
+                        isHighlighted('0,796') && 'bg-slate-50 dark:bg-slate-800/40'
+                      )}
+                    >
+                      <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100 text-left">
+                        Kualitas Layanan (X1)
+                      </td>
+                      <td className="px-4 py-3 text-right text-slate-500 dark:text-slate-400 tabular-nums">
+                        4
+                      </td>
+                      <td
+                        onClick={() => {
+                          setHoveredNumber(hoveredNumber === '0,796' ? null : '0,796');
+                          setIsUserInteracting(true);
+                        }}
+                        onMouseEnter={() => {
+                          setHoveredNumber('0,796');
+                          setIsUserInteracting(true);
+                        }}
+                        className={cn(
+                          'px-4 py-3 text-right font-semibold transition-all duration-150 cursor-pointer select-text tabular-nums',
+                          isHighlighted('0,796')
+                            ? 'bg-[#FFE14D] text-[#243044] font-bold ring-2 ring-[#FFE14D] rounded-md'
+                            : 'text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800'
+                        )}
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Nilai Cronbach Alpha 0,796. Klik untuk menelusuri penjelasannya"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            setHoveredNumber(hoveredNumber === '0,796' ? null : '0,796');
+                            setIsUserInteracting(true);
+                          }
+                        }}
+                      >
+                        0,796
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#0E4331] bg-[#BFEBD9] px-2.5 py-0.5 rounded-md">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          Reliabel
+                        </span>
+                      </td>
+                    </tr>
+
+                    {/* Row 2: Kepuasan Pelanggan (X2) */}
+                    <tr
+                      className={cn(
+                        'border-b border-slate-200/80 dark:border-slate-800/80 transition-colors duration-150',
+                        isHighlighted('0,753') && 'bg-slate-50 dark:bg-slate-800/40'
+                      )}
+                    >
+                      <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100 text-left">
+                        Kepuasan Pelanggan (X2)
+                      </td>
+                      <td className="px-4 py-3 text-right text-slate-500 dark:text-slate-400 tabular-nums">
+                        5
+                      </td>
+                      <td
+                        onClick={() => {
+                          setHoveredNumber(hoveredNumber === '0,753' ? null : '0,753');
+                          setIsUserInteracting(true);
+                        }}
+                        onMouseEnter={() => {
+                          setHoveredNumber('0,753');
+                          setIsUserInteracting(true);
+                        }}
+                        className={cn(
+                          'px-4 py-3 text-right font-semibold transition-all duration-150 cursor-pointer select-text tabular-nums',
+                          isHighlighted('0,753')
+                            ? 'bg-[#FFE14D] text-[#243044] font-bold ring-2 ring-[#FFE14D] rounded-md'
+                            : 'text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800'
+                        )}
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Nilai Cronbach Alpha 0,753. Klik untuk menelusuri penjelasannya"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            setHoveredNumber(hoveredNumber === '0,753' ? null : '0,753');
+                            setIsUserInteracting(true);
+                          }
+                        }}
+                      >
+                        0,753
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#0E4331] bg-[#BFEBD9] px-2.5 py-0.5 rounded-md">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          Reliabel
+                        </span>
+                      </td>
+                    </tr>
+
+                    {/* Row 3: Loyalitas Pelanggan (Y) */}
+                    <tr
+                      className={cn(
+                        'border-b-2 border-slate-900 dark:border-slate-100 transition-colors duration-150',
+                        isHighlighted('0,826') && 'bg-slate-50 dark:bg-slate-800/40'
+                      )}
+                    >
+                      <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100 text-left">
+                        Loyalitas Pelanggan (Y)
+                      </td>
+                      <td className="px-4 py-3 text-right text-slate-500 dark:text-slate-400 tabular-nums">
+                        5
+                      </td>
+                      <td
+                        onClick={() => {
+                          setHoveredNumber(hoveredNumber === '0,826' ? null : '0,826');
+                          setIsUserInteracting(true);
+                        }}
+                        onMouseEnter={() => {
+                          setHoveredNumber('0,826');
+                          setIsUserInteracting(true);
+                        }}
+                        className={cn(
+                          'px-4 py-3 text-right font-semibold transition-all duration-150 cursor-pointer select-text tabular-nums',
+                          isHighlighted('0,826')
+                            ? 'bg-[#FFE14D] text-[#243044] font-bold ring-2 ring-[#FFE14D] rounded-md'
+                            : 'text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800'
+                        )}
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Nilai Cronbach Alpha 0,826. Klik untuk menelusuri penjelasannya"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            setHoveredNumber(hoveredNumber === '0,826' ? null : '0,826');
+                            setIsUserInteracting(true);
+                          }
+                        }}
+                      >
+                        0,826
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#0E4331] bg-[#BFEBD9] px-2.5 py-0.5 rounded-md">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          Reliabel
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Draf Narasi Interpretasi Bab 4 dengan Angka Bertinta (Leading-8 untuk breathing room antar baris) */}
+            <div className="mt-6 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/50 p-5 sm:p-6 space-y-3 select-text">
+              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 border-b border-slate-200/60 dark:border-slate-800/60 pb-2">
+                <span className="font-semibold text-slate-900 dark:text-slate-100">
+                  Draf interpretasi hasil (kaidah Bab 4):
+                </span>
+                <span className="text-xs tabular-nums">Ambang batas: α &gt; 0,70</span>
+              </div>
+
+              {/* Teks HTML murni dengan leading-8 agar badge baris atas dan bawah tidak bertumpukan */}
+              <p className="text-sm leading-8 text-slate-700 dark:text-slate-300 font-sans select-text">
+                Berdasarkan Tabel 4.8 di atas, variabel Kualitas Layanan (X1) memiliki nilai Cronbach&apos;s Alpha sebesar{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHoveredNumber(hoveredNumber === '0,796' ? null : '0,796');
+                    setIsUserInteracting(true);
+                  }}
+                  onMouseEnter={() => {
+                    setHoveredNumber('0,796');
+                    setIsUserInteracting(true);
+                  }}
                   className={cn(
-                    'border-b border-border/70 transition-all duration-200',
-                    stage >= 2 ? 'opacity-100' : 'opacity-0'
+                    'inline-flex items-center px-2 py-0.5 mx-0.5 rounded-md font-bold tabular-nums border cursor-pointer transition-all duration-150 select-text',
+                    isHighlighted('0,796')
+                      ? 'bg-[#FFE14D] text-[#243044] border-[#FFE14D] ring-2 ring-[#FFE14D]'
+                      : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-primary/60'
                   )}
+                  aria-label="Angka 0,796 tersambung ke sel tabel Cronbach Alpha Kualitas Layanan"
                 >
-                  <td className="py-2 px-2.5 font-medium text-foreground">
-                    Kualitas Layanan (X1)
-                  </td>
-                  <td className="py-2 px-2 text-right text-muted-foreground">
-                    8
-                  </td>
-                  <td
-                    onClick={() => {
-                      if (isInteractive) {
-                        setHoveredNumber(hoveredNumber === '0,874' ? null : '0,874');
-                      }
-                    }}
-                    onMouseEnter={() => isInteractive && setHoveredNumber('0,874')}
-                    onMouseLeave={() => isInteractive && setHoveredNumber(null)}
-                    className={cn(
-                      'py-2 px-2.5 text-right font-semibold transition-all duration-150 cursor-pointer',
-                      (stage === 2 || stage === 3 || isHighlighted('0,874')) &&
-                        'bg-[#FFE14D] text-[#243044] ring-2 ring-[#FFE14D] rounded-[4px]'
-                    )}
-                    role="button"
-                    tabIndex={0}
-                    aria-label="Nilai Cronbach Alpha 0,874. Klik untuk menelusuri penjelasannya"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        setHoveredNumber(hoveredNumber === '0,874' ? null : '0,874');
-                      }
-                    }}
-                  >
-                    0,874
-                  </td>
-                  <td className="py-2 px-2.5 text-center">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0E4331] bg-[#BFEBD9] px-2 py-0.5 rounded-[4px]">
-                      <CheckCircle2 className="h-3 w-3" />
-                      Reliabel
-                    </span>
-                  </td>
-                </tr>
-
-                {/* Row 2: Kepuasan Pelanggan (Y) */}
-                <tr
+                  0,796
+                </button>
+                {', '}variabel Kepuasan Pelanggan (X2) sebesar{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHoveredNumber(hoveredNumber === '0,753' ? null : '0,753');
+                    setIsUserInteracting(true);
+                  }}
+                  onMouseEnter={() => {
+                    setHoveredNumber('0,753');
+                    setIsUserInteracting(true);
+                  }}
                   className={cn(
-                    'border-b-2 border-foreground transition-all duration-200 delay-100',
-                    stage >= 2 ? 'opacity-100' : 'opacity-0'
+                    'inline-flex items-center px-2 py-0.5 mx-0.5 rounded-md font-bold tabular-nums border cursor-pointer transition-all duration-150 select-text',
+                    isHighlighted('0,753')
+                      ? 'bg-[#FFE14D] text-[#243044] border-[#FFE14D] ring-2 ring-[#FFE14D]'
+                      : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-primary/60'
                   )}
+                  aria-label="Angka 0,753 tersambung ke sel tabel Cronbach Alpha Kepuasan"
                 >
-                  <td className="py-2 px-2.5 font-medium text-foreground">
-                    Kepuasan Pelanggan (Y)
-                  </td>
-                  <td className="py-2 px-2 text-right text-muted-foreground">
-                    7
-                  </td>
-                  <td
-                    onClick={() => {
-                      if (isInteractive) {
-                        setHoveredNumber(hoveredNumber === '0,845' ? null : '0,845');
-                      }
-                    }}
-                    onMouseEnter={() => isInteractive && setHoveredNumber('0,845')}
-                    onMouseLeave={() => isInteractive && setHoveredNumber(null)}
-                    className={cn(
-                      'py-2 px-2.5 text-right font-semibold transition-all duration-150 cursor-pointer',
-                      isHighlighted('0,845') &&
-                        'bg-[#FFE14D] text-[#243044] ring-2 ring-[#FFE14D] rounded-[4px]'
-                    )}
-                    role="button"
-                    tabIndex={0}
-                    aria-label="Nilai Cronbach Alpha 0,845. Klik untuk menelusuri penjelasannya"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        setHoveredNumber(hoveredNumber === '0,845' ? null : '0,845');
-                      }
-                    }}
-                  >
-                    0,845
-                  </td>
-                  <td className="py-2 px-2.5 text-center">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0E4331] bg-[#BFEBD9] px-2 py-0.5 rounded-[4px]">
-                      <CheckCircle2 className="h-3 w-3" />
-                      Reliabel
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* SECTION 3: Connected Narrative Explanation (Stage 3: 3.0s - 4.2s) */}
-        <div
-          className={cn(
-            'rounded-[10px] border border-border/90 bg-muted/30 p-3 sm:p-3.5 space-y-1.5 transition-all duration-400 ease-out',
-            stage >= 3
-              ? 'opacity-100 translate-y-0'
-              : 'opacity-40 translate-y-1 pointer-events-none'
-          )}
-        >
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground border-b border-border/50 pb-1">
-            <span className="font-semibold text-foreground">
-              3. Draf interpretasi hasil (kaidah Bab 4):
-            </span>
-            <span className="text-[10px] tabular-nums">Ambang batas: α &gt; 0,70</span>
-          </div>
-
-          <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans">
-            Berdasarkan Tabel 4.8 di atas, variabel Kualitas Layanan (X1) memiliki nilai Cronbach&apos;s Alpha sebesar{' '}
-            <button
-              type="button"
-              onClick={() => {
-                if (isInteractive) {
-                  setHoveredNumber(hoveredNumber === '0,874' ? null : '0,874');
-                }
-              }}
-              onMouseEnter={() => isInteractive && setHoveredNumber('0,874')}
-              onMouseLeave={() => isInteractive && setHoveredNumber(null)}
-              className={cn(
-                'inline-block px-1.5 py-0.5 rounded-[4px] font-bold tabular-nums border cursor-pointer transition-all duration-150',
-                (stage >= 3 || isHighlighted('0,874'))
-                  ? 'bg-[#FFE14D] text-[#243044] border-[#FFE14D] ring-2 ring-[#FFE14D]'
-                  : 'bg-card text-foreground border-border/80'
-              )}
-              aria-label="Angka 0,874 tersambung ke sel tabel Cronbach Alpha Kualitas Layanan"
-            >
-              0,874
-            </button>
-            {' '}dan variabel Kepuasan Pelanggan (Y) sebesar{' '}
-            <button
-              type="button"
-              onClick={() => {
-                if (isInteractive) {
-                  setHoveredNumber(hoveredNumber === '0,845' ? null : '0,845');
-                }
-              }}
-              onMouseEnter={() => isInteractive && setHoveredNumber('0,845')}
-              onMouseLeave={() => isInteractive && setHoveredNumber(null)}
-              className={cn(
-                'inline-block px-1.5 py-0.5 rounded-[4px] font-bold tabular-nums border cursor-pointer transition-all duration-150',
-                isHighlighted('0,845')
-                  ? 'bg-[#FFE14D] text-[#243044] border-[#FFE14D] ring-2 ring-[#FFE14D]'
-                  : 'bg-card text-foreground border-border/80'
-              )}
-              aria-label="Angka 0,845 tersambung ke sel tabel Cronbach Alpha Kepuasan"
-            >
-              0,845
-            </button>
-            {' '}(total 15 butir instrumen). Karena kedua nilai lebih besar dari ambang batas 0,70, seluruh instrumen penelitian dinyatakan memenuhi kriteria reliabilitas.
-          </p>
-        </div>
-
-        {/* SECTION 4: Interactive Cue & Replay (Stage 4: 4.2s+) */}
-        {isInteractive && (
-          <div className="pt-1 flex items-center justify-between text-[11px] text-muted-foreground animate-in fade-in duration-300">
-            <span className="flex items-center gap-1.5 text-foreground font-medium">
-              <span className="inline-block h-2 w-2 rounded-full bg-[#FFE14D] ring-2 ring-[#FFE14D]" />
-              Sentuh angka bersorot kuning untuk melihat sel asalnya di tabel
-            </span>
-            <span className="hidden sm:inline text-[10px] tabular-nums">
-              Jejak hitung aktif
-            </span>
+                  0,753
+                </button>
+                {', dan variabel Loyalitas Pelanggan (Y) sebesar '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHoveredNumber(hoveredNumber === '0,826' ? null : '0,826');
+                    setIsUserInteracting(true);
+                  }}
+                  onMouseEnter={() => {
+                    setHoveredNumber('0,826');
+                    setIsUserInteracting(true);
+                  }}
+                  className={cn(
+                    'inline-flex items-center px-2 py-0.5 mx-0.5 rounded-md font-bold tabular-nums border cursor-pointer transition-all duration-150 select-text',
+                    isHighlighted('0,826')
+                      ? 'bg-[#FFE14D] text-[#243044] border-[#FFE14D] ring-2 ring-[#FFE14D]'
+                      : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-primary/60'
+                  )}
+                  aria-label="Angka 0,826 tersambung ke sel tabel Cronbach Alpha Loyalitas"
+                >
+                  0,826
+                </button>
+                {' '}(total 14 butir instrumen valid). Karena seluruh nilai lebih besar dari ambang batas 0,70, seluruh instrumen penelitian dinyatakan memenuhi kriteria reliabilitas.
+              </p>
+            </div>
           </div>
         )}
+
+        {/* Footer Cue: Active Highlight Tracker */}
+        <div className="pt-4 mt-4 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                'h-2.5 w-2.5 rounded-full transition-colors duration-200',
+                hoveredNumber ? 'bg-[#FFE14D] ring-2 ring-[#FFE14D]/60' : 'bg-primary animate-pulse'
+              )}
+            />
+            <span className="text-slate-800 dark:text-slate-200 font-medium text-xs">
+              {hoveredNumber
+                ? `Menyorot nilai ${hoveredNumber} di tabel dan narasi`
+                : 'Arahkan kursor atau sentuh angka bertinta untuk memeriksa sel asal'}
+            </span>
+          </div>
+          <span className="hidden sm:inline text-xs tabular-nums font-mono text-slate-400">
+            Jejak Hitung Aktif
+          </span>
+        </div>
       </div>
     </div>
   );

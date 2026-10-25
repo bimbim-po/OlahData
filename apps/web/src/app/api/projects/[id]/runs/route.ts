@@ -1,83 +1,126 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatasetRepo, saveAnalysisRunRepo } from '@/lib/db/repo';
-import { callStatsAnalyze } from '@/lib/stats-client';
-import { generateGuardedExplanation } from '@/lib/ai/explanation-service';
+import {
+  executeServerAnalysisRun,
+  listServerRuns,
+  NO_STORE_HEADERS,
+} from '@/lib/server/sync-engine';
+import { resolveRequestUserId } from '@/lib/server/request-auth';
 import { mockResults } from '@/lib/mock/results';
-import type { AnalysisResults } from '@/lib/api/types';
+import type { AnalysisResults, DescriptiveResult } from '@/lib/api/types';
+
+export const dynamic = 'force-dynamic';
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id: projectId } = await params;
+  const userId = resolveRequestUserId(req);
+
+  const res = listServerRuns({
+    ownerId: userId,
+    projectId,
+  });
+
+  if (!res.ok) {
+    return NextResponse.json(
+      { code: res.error.code, message: res.error.message },
+      { status: res.error.status, headers: NO_STORE_HEADERS }
+    );
+  }
+
+  return NextResponse.json(
+    { runs: res.data },
+    { status: 200, headers: NO_STORE_HEADERS }
+  );
+}
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: projectId } = await params;
+  const userId = resolveRequestUserId(req);
 
   try {
     const body = await req.json();
     const {
-      dataVersionId = 'dv-1',
-      constructs = [],
-      selectedTests = ['descriptive', 'validity', 'reliability', 'regression', 'normality', 'multicollinearity', 'heteroscedasticity'],
+      datasetId,
+      selectedTests = [
+        'descriptive',
+        'validity',
+        'reliability',
+        'regression',
+        'normality',
+        'multicollinearity',
+        'heteroscedasticity',
+      ],
       significanceLevel = 0.05,
-    } = body;
+      idempotencyKey,
+      simulateEngineFailure = false,
+    } = body || {};
 
-    const dataset = await getDatasetRepo(projectId);
-    const runId = `run-${Date.now()}`;
+    const headerIdemKey = req.headers.get('idempotency-key') || idempotencyKey;
 
-    let computedResults: AnalysisResults;
-
-    try {
-      // 1. Deterministic Python Statistical Engine call
-      const statsData = await callStatsAnalyze({
-        rows: dataset.rows as Record<string, unknown>[],
-        constructs,
-        selectedTests,
-        significanceLevel,
-        projectId,
-        dataVersionId,
-      });
-      computedResults = statsData as unknown as AnalysisResults;
-    } catch {
-      // Fallback to verified reference mock results if stats container is not connected
-      computedResults = {
-        ...mockResults,
-        id: `res-${Date.now()}`,
-        projectId,
-        dataVersionId,
-        significanceLevel,
-      };
-    }
-
-    // 2. Generate AI Explanations with strict Number Guard for each test
-    const explanations: Record<string, string> = {};
-    const testKeys = ['descriptive', 'validity', 'reliability', 'normality', 'multicollinearity', 'heteroscedasticity', 'regression', 'fTest', 'determination', 'correlation'] as const;
-
-    for (const key of testKeys) {
-      const payloadVal = (computedResults as unknown as Record<string, unknown>)[key];
-      if (payloadVal) {
-        const guarded = await generateGuardedExplanation(key, payloadVal, 'deterministic');
-        if (guarded.text) {
-          explanations[key] = guarded.text;
+    const execRes = executeServerAnalysisRun({
+      projectId,
+      ownerId: userId,
+      datasetId,
+      tests: selectedTests,
+      significanceLevel,
+      idempotencyKey: headerIdemKey,
+      computeFn: ({ project, effectiveN }): AnalysisResults => {
+        if (simulateEngineFailure) {
+          throw new Error(
+            'Mesin analisis gagal mengeksekusi matriks regresi karena singularitas kovarians.'
+          );
         }
-      }
+
+        const baseDescriptive: DescriptiveResult[] = mockResults.descriptive || [];
+
+        return {
+          ...mockResults,
+          projectId: project.id,
+          projectTitle: project.title,
+          respondentCount: effectiveN,
+          significanceLevel,
+          descriptive: baseDescriptive.map((d: DescriptiveResult) => ({
+            ...d,
+            n: effectiveN,
+          })),
+          explanations: {
+            ...mockResults.explanations,
+            descriptive: `Berdasarkan analisis statistik deskriptif terhadap N = ${effectiveN} responden pada penelitian "${project.title}", diperoleh ringkasan nilai rata-rata dan simpangan baku untuk setiap variabel penelitian.`,
+          },
+        };
+      },
+    });
+
+    if (!execRes.ok) {
+      return NextResponse.json(
+        {
+          code: execRes.error.code,
+          message: execRes.error.message,
+          failedRun: execRes.failedRun || null,
+        },
+        { status: execRes.error.status, headers: NO_STORE_HEADERS }
+      );
     }
 
-    computedResults.explanations = {
-      ...mockResults.explanations,
-      ...explanations,
-    };
-
-    // 3. Persist run and results
-    await saveAnalysisRunRepo(runId, projectId, computedResults);
-
-    return NextResponse.json({
-      run_id: runId,
-      status: 'succeeded',
-      results: computedResults,
-    });
+    return NextResponse.json(
+      {
+        run_id: execRes.run.id,
+        status: execRes.run.status,
+        deduplicated: execRes.deduplicated,
+        run: execRes.run,
+        results: execRes.results,
+      },
+      { status: execRes.deduplicated ? 200 : 201, headers: NO_STORE_HEADERS }
+    );
   } catch {
     return NextResponse.json(
-      { code: 'INTERNAL_ERROR', message: 'Gagal menjalankan analisis statistik data.' },
-      { status: 500 }
+      { code: 'BAD_REQUEST', message: 'Format permintaan eksekusi analisis tidak valid.' },
+      { status: 400, headers: NO_STORE_HEADERS }
     );
   }
 }

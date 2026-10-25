@@ -86,13 +86,17 @@ const AVAILABLE_SECTIONS: { id: TestType; label: string; description: string }[]
 
 export function ExportDialog({
   projectId,
-  projectTitle = 'Analisis Skripsi',
+  projectTitle,
   open,
   onOpenChange,
   userPlan: propPlan,
   results,
   onOpenReferenceTables,
 }: ExportDialogProps) {
+  const resolvedProjectTitle =
+    (projectTitle && projectTitle.trim()) ||
+    (results?.projectTitle && results.projectTitle.trim()) ||
+    'Analisis Skripsi';
   const { toast } = useToast();
   const authUser = useAuthStore((s) => s.user);
   const plan = propPlan || authUser?.plan || 'free';
@@ -158,13 +162,14 @@ export function ExportDialog({
           sections: selectedSections,
           includeStatement,
           narrativeTone,
+          projectTitle: resolvedProjectTitle,
         },
         results || undefined
       );
 
       // Trigger browser download
       const ext = targetFormat === 'pdf' ? 'pdf' : 'doc';
-      const cleanTitle = projectTitle.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const cleanTitle = resolvedProjectTitle.replace(/[^a-zA-Z0-9_-]/g, '_');
       const prefix = targetFormat === 'spss-word' ? 'Lampiran_SPSS_' : (targetFormat === 'word' ? 'Naskah_Bab4_APA_' : 'Laporan_Hasil_');
       const filename = `${prefix}${cleanTitle || 'OlahData'}.${ext}`;
 
@@ -316,7 +321,7 @@ export function ExportDialog({
                   </div>
                   <div>
                     <span className="font-semibold text-xs text-foreground block">
-                      Tabel Referensi r, t, &amp; F (Ditandai Stabilo Otomatis)
+                      Tabel Referensi r, t, dan F (Ditandai Stabilo Otomatis)
                     </span>
                     <p className="text-[11px] text-muted-foreground">
                       Baris derajat bebas (df) proyek Anda otomatis disorot kuning untuk lampiran skripsi.
@@ -443,10 +448,10 @@ export function ExportDialog({
                 <ShieldAlert className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <span className="font-semibold block text-amber-900 dark:text-amber-200">
-                    Fitur Ekspor Naskah Word .docx &amp; PDF Memerlukan Paket Aktif
+                    Fitur Ekspor Naskah Word .docx dan PDF Memerlukan Paket Aktif
                   </span>
                   <p className="mt-0.5 leading-relaxed text-muted-foreground">
-                    Dokumen skripsi asli Anda dapat diekspor lengkap tanpa batasan pada Paket Bulanan &amp; Paket Skripsi. Proyek contoh simulasi dapat diuji coba unduh secara gratis.
+                    Dokumen skripsi asli Anda dapat diekspor lengkap tanpa batasan pada Paket Bulanan dan Paket Skripsi. Proyek contoh simulasi dapat diuji coba unduh secara gratis.
                   </p>
                 </div>
               </div>

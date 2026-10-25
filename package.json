@@ -17,6 +17,13 @@
     "gen-types": "node scripts/gen-types.mjs",
     "db:start": "npx supabase start",
     "db:reset": "npx supabase db reset",
-    "db:test": "npx supabase test db"
+    "db:test": "npx supabase test db",
+    "test:verifikasi": "playwright test tests/verifikasi-upgrade.spec.ts",
+    "test:live": "node tests/verifikasi-upgrade.mjs",
+    "test:midtrans": "playwright test tests/midtrans-payment-qa.spec.ts",
+    "test:qa": "tsx tests/qa-audit.spec.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1"
   }
 }

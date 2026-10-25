@@ -25,6 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { generateSafeCsv } from '@/lib/format';
 
 interface AuditLogEntry {
   id: string;
@@ -147,17 +148,17 @@ export default function AdminAuditLogPage() {
 
   function handleExportCsv() {
     const headers = ['ID', 'Admin Email', 'Action', 'Entity', 'Entity ID', 'Reason', 'IP', 'Created At'];
-    const rows = filteredLogs.map((l) => [
-      l.id,
-      l.adminEmail,
-      l.action,
-      l.entity,
-      l.entityId || '',
-      `"${l.reason.replace(/"/g, '""')}"`,
-      l.ip || '',
-      l.createdAt,
-    ]);
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const rows = filteredLogs.map((l) => ({
+      ID: l.id,
+      'Admin Email': l.adminEmail,
+      Action: l.action,
+      Entity: l.entity,
+      'Entity ID': l.entityId || '',
+      Reason: l.reason,
+      IP: l.ip || '',
+      'Created At': l.createdAt,
+    }));
+    const csvContent = generateSafeCsv(headers, rows);
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

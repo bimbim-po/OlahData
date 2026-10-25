@@ -14,6 +14,11 @@ export interface BreadcrumbProps {
 }
 
 export function Breadcrumb({ items, className }: BreadcrumbProps) {
+  // Filter out any undefined, null, or empty string items to prevent empty breadcrumb nodes
+  const validItems = (items || []).filter(
+    (item) => item && typeof item.label === 'string' && item.label.trim().length > 0
+  );
+
   return (
     <nav aria-label="Breadcrumb" className={cn('py-2', className)}>
       <ol className="flex flex-wrap items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
@@ -25,8 +30,8 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
             Beranda
           </Link>
         </li>
-        {items.map((item, index) => {
-          const isLast = index === items.length - 1;
+        {validItems.map((item, index) => {
+          const isLast = index === validItems.length - 1;
           return (
             <React.Fragment key={index}>
               <li aria-hidden="true" className="shrink-0">

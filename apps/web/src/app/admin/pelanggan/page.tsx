@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { CustomerRow } from '@/lib/admin/service';
+import { generateSafeCsv } from '@/lib/format';
 
 const INITIAL_CUSTOMERS: CustomerRow[] = [
   {
@@ -123,26 +124,28 @@ export default function PelangganPage() {
   function exportMetadataCsv() {
     // Generates metadata CSV ONLY (Privacy compliant, NO respondent data)
     const headers = ['ID', 'Nama', 'Email', 'Prodi', 'Kampus', 'Paket', 'Status', 'Tanggal Daftar', 'Total Bayar (Rp)'];
-    const rows = filteredCustomers.map((c) => [
-      c.id,
-      `"${c.nama}"`,
-      c.email,
-      `"${c.prodi}"`,
-      `"${c.kampus}"`,
-      c.plan,
-      c.status,
-      c.createdAt.split('T')[0],
-      c.totalPaid,
-    ]);
+    const rows = filteredCustomers.map((c) => ({
+      ID: c.id,
+      Nama: c.nama,
+      Email: c.email,
+      Prodi: c.prodi,
+      Kampus: c.kampus,
+      Paket: c.plan,
+      Status: c.status,
+      'Tanggal Daftar': c.createdAt.split('T')[0],
+      'Total Bayar (Rp)': c.totalPaid,
+    }));
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const safeCsv = generateSafeCsv(headers, rows);
+    const blob = new Blob([safeCsv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
+    link.href = url;
     link.setAttribute('download', `metadata_pelanggan_olahdata_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 
   return (

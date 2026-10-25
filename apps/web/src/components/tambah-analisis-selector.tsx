@@ -1,8 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { useState } from 'react';
-import { Plus, Check, ChevronDown, Sparkles, HelpCircle, Info } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Plus, Check, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -65,22 +65,44 @@ export function TambahAnalisisSelector({
   className,
 }: TambahAnalisisSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const menuId = 'tambah-analisis-bab4-menu';
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
 
   return (
-    <div className={cn('relative inline-block text-left', className)}>
+    <div ref={containerRef} className={cn('relative inline-block text-left', className)}>
       <Button
+        type="button"
         variant="outline"
         size="sm"
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
+        aria-controls={menuId}
         onClick={() => setIsOpen(!isOpen)}
-        className="min-h-[40px] px-3.5 gap-2 text-[13px] font-semibold border-primary/40 hover:bg-primary/5 text-primary rounded-xl cursor-pointer"
+        className="inline-flex items-center justify-center gap-2 px-3.5 py-2 min-h-[40px] !whitespace-nowrap rounded-lg border border-primary/40 hover:bg-primary/5 text-primary text-[13px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer shrink-0 select-none"
         title="Tampilkan atau sembunyikan tabel analisis tambahan di naskah Bab 4"
       >
-        <Plus className="h-4 w-4" />
-        <span>Tambah Analisis Bab 4</span>
-        <Badge variant="secondary" className="text-[11px] px-1.5 py-0 font-mono">
+        <Plus className="h-4 w-4 shrink-0" />
+        <span className="shrink-0 font-medium">Tambah Analisis Bab 4</span>
+        <Badge variant="secondary" className="text-[11px] px-1.5 py-0 font-mono shrink-0">
           {enabledTableIds.length} aktif
         </Badge>
-        <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', isOpen && 'rotate-180')} />
+        <ChevronDown
+          className={cn(
+            'h-3.5 w-3.5 shrink-0 transition-transform duration-150',
+            isOpen && 'rotate-180'
+          )}
+        />
       </Button>
 
       {isOpen && (
@@ -89,7 +111,12 @@ export function TambahAnalisisSelector({
             className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute right-0 sm:left-0 sm:right-auto mt-2 w-80 sm:w-96 rounded-2xl border border-border bg-card p-3 shadow-xl z-50 space-y-2">
+          <div
+            id={menuId}
+            role="menu"
+            aria-label="Pilih Tabel Analisis Tambahan"
+            className="absolute right-0 sm:left-0 sm:right-auto mt-2 w-80 sm:w-96 rounded-2xl border border-border bg-card p-3 shadow-xl z-50 space-y-2"
+          >
             <div className="px-2 py-1.5 border-b border-border/60">
               <span className="text-xs font-bold text-foreground uppercase tracking-wider block">
                 Pilih Tabel Analisis Tambahan
@@ -106,17 +133,19 @@ export function TambahAnalisisSelector({
                   <button
                     key={t.id}
                     type="button"
+                    role="menuitemcheckbox"
+                    aria-checked={isEnabled}
                     onClick={() => onToggleTable(t.id)}
                     className={cn(
-                      'w-full text-left p-2.5 rounded-xl border transition-all flex items-start justify-between gap-3 cursor-pointer',
+                      'w-full text-left p-2.5 rounded-xl border transition-all flex items-start justify-between gap-3 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                       isEnabled
                         ? 'border-primary/40 bg-primary/5 text-foreground'
                         : 'border-border/60 hover:bg-muted/40 text-muted-foreground'
                     )}
                   >
-                    <div className="space-y-0.5">
+                    <div className="space-y-0.5 pr-2">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[11px] font-bold text-primary">
+                        <span className="text-[11px] font-mono font-bold text-primary">
                           {t.tableNumber}
                         </span>
                         <span className="text-xs font-semibold text-foreground">
@@ -127,13 +156,12 @@ export function TambahAnalisisSelector({
                         {t.description}
                       </p>
                     </div>
-
                     <div
                       className={cn(
                         'w-5 h-5 rounded-md border flex items-center justify-center shrink-0 mt-0.5',
                         isEnabled
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : 'border-border'
+                          ? 'bg-primary border-primary text-primary-foreground'
+                          : 'border-border bg-background'
                       )}
                     >
                       {isEnabled && <Check className="h-3.5 w-3.5" />}
@@ -141,11 +169,6 @@ export function TambahAnalisisSelector({
                   </button>
                 );
               })}
-            </div>
-
-            <div className="pt-2 border-t border-border/50 text-[11px] text-muted-foreground flex items-center justify-center gap-1.5">
-              <Info className="h-3.5 w-3.5 text-primary shrink-0" />
-              <span>Tabel yang dipilih otomatis masuk ke dokumen ekspor Word &amp; PDF.</span>
             </div>
           </div>
         </>

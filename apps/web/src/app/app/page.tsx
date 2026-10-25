@@ -16,9 +16,10 @@ import {
   ArrowRight,
   Clock,
 } from 'lucide-react';
-import { getProjects, deleteProject, createSampleProject } from '@/lib/api';
-import type { Project } from '@/lib/api/types';
+import { getProjects, deleteProject, createSampleProject, computeEffectiveN } from '@/lib/api';
+import type { Project, AnalysisResults } from '@/lib/api/types';
 import { formatDate, formatNumber } from '@/lib/format';
+import { useWizardStore } from '@/stores/wizard-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -39,18 +40,67 @@ export default function ProjectsPage() {
   const { toast } = useToast();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [isCreatingSample, setIsCreatingSample] = useState(false);
 
   const fetchProjects = useCallback(async () => {
+    setLoadError(null);
     try {
       const data = await getProjects();
-      setProjects(data);
-    } catch {
+      const wiz = useWizardStore.getState();
+      const enriched = data.map((p) => {
+        let updated = { ...p };
+        if (typeof window !== 'undefined') {
+          try {
+            const rawRes = localStorage.getItem(`olahdata_results_${p.id}`);
+            if (rawRes) {
+              const parsedRes = JSON.parse(rawRes) as AnalysisResults;
+              updated = {
+                ...updated,
+                title: parsedRes.projectTitle || updated.title,
+                respondentCount: parsedRes.respondentCount || updated.respondentCount,
+                itemCount: parsedRes.sourceMeta?.columnCount || updated.itemCount,
+                status: 'completed',
+              };
+            }
+          } catch {
+            // ignore
+          }
+        }
+        if (
+          wiz.fileData.length > 0 &&
+          !wiz.usingSampleData &&
+          (wiz.projectId === p.id || updated.respondentCount === 0)
+        ) {
+          updated = {
+            ...updated,
+            respondentCount: computeEffectiveN(wiz.fileData.length, wiz.removedRows),
+            itemCount: wiz.columns.length,
+          };
+        }
+        return updated;
+      });
+
+      // Urutkan proyek asli pengguna di atas proyek contoh
+      enriched.sort((a, b) => {
+        const aSample = isSampleProject(a) ? 1 : 0;
+        const bSample = isSampleProject(b) ? 1 : 0;
+        if (aSample !== bSample) return aSample - bSample;
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      });
+
+      setProjects(enriched);
+    } catch (err) {
+      const msg =
+        err instanceof Error && err.message
+          ? err.message
+          : 'Gagal memuat proyek penelitian dari penyimpanan server.';
+      setLoadError(msg);
       toast({
         title: 'Gagal memuat proyek',
-        description: 'Terjadi kesalahan saat mengambil daftar proyek.',
+        description: msg,
         variant: 'error',
       });
     } finally {
@@ -73,6 +123,17 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     fetchProjects();
+    if (typeof window !== 'undefined') {
+      const handleSync = () => {
+        fetchProjects();
+      };
+      window.addEventListener('focus', handleSync);
+      window.addEventListener('storage', handleSync);
+      return () => {
+        window.removeEventListener('focus', handleSync);
+        window.removeEventListener('storage', handleSync);
+      };
+    }
   }, [fetchProjects]);
 
   const filteredProjects = useMemo(() => {
@@ -91,6 +152,24 @@ export default function ProjectsPage() {
     return projects[0];
   }, [projects]);
 
+  const mostRecentMetrics = useMemo(() => {
+    if (!mostRecentProject || typeof window === 'undefined') return null;
+    try {
+      const raw = localStorage.getItem(`olahdata_results_${mostRecentProject.id}`);
+      if (!raw) return null;
+      const res = JSON.parse(raw) as AnalysisResults;
+      const alpha = res.reliability?.[0]?.cronbachAlpha;
+      const rSquare = res.determination?.rSquare;
+      return {
+        respondentCount: res.respondentCount || mostRecentProject.respondentCount,
+        alpha: typeof alpha === 'number' ? formatNumber(alpha, 3) : null,
+        rSquare: typeof rSquare === 'number' ? formatNumber(rSquare, 3) : null,
+      };
+    } catch {
+      return null;
+    }
+  }, [mostRecentProject]);
+
   const otherProjects = useMemo(() => {
     if (searchQuery.trim()) return filteredProjects;
     return projects.slice(1);
@@ -105,7 +184,12 @@ export default function ProjectsPage() {
         description: 'Membuka hasil analisis data contoh...',
         variant: 'success',
       });
-      router.push(`/app/proyek/${sample.id}/hasil`);
+      const targetUrl = `/app/proyek/${sample.id}/hasil`;
+      if (typeof window !== 'undefined') {
+        window.location.href = targetUrl;
+      } else {
+        router.push(targetUrl);
+      }
     } catch {
       toast({
         title: 'Gagal membuat proyek contoh',
@@ -225,6 +309,31 @@ export default function ProjectsPage() {
             ))}
           </div>
         </div>
+      ) : loadError ? (
+        <div
+          role="alert"
+          className="rounded-[16px] border border-destructive/40 bg-destructive/5 p-8 text-center space-y-4"
+        >
+          <div className="space-y-1">
+            <h2 className="text-base font-bold text-foreground">
+              Gagal Memuat Daftar Proyek Penelitian
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto">
+              {loadError}
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setLoading(true);
+              fetchProjects();
+            }}
+            className="min-h-[40px] rounded-[10px]"
+          >
+            Coba Muat Ulang
+          </Button>
+        </div>
       ) : projects.length === 0 ? (
         /* Empty State for New Users */
         <Card className="border-dashed border-2 p-8 sm:p-12 text-center bg-card/60 rounded-[16px]">
@@ -287,29 +396,43 @@ export default function ProjectsPage() {
                     {mostRecentProject.title}
                   </h2>
 
-                  {/* Langkah terakhir & Momen Detail Sapuan Stabilo Halus */}
+                  {/* Ringkasan metrik dinamis dari proyek aktif pengguna */}
                   <div className="text-xs sm:text-sm text-foreground/90 leading-relaxed font-sans pt-0.5">
                     {mostRecentProject.status === 'completed' ? (
                       <p>
-                        Hasil analisis statistik lengkap. Variabel utama memiliki nilai Cronbach&apos;s Alpha{' '}
+                        Hasil analisis statistik selesai untuk{' '}
                         <span className="font-semibold tabular-nums">
-                          0,872
+                          N = {formatNumber(mostRecentMetrics?.respondentCount || mostRecentProject.respondentCount || 0)} responden
                         </span>
-                        {' '}(Reliabel) dan koefisien R²{' '}
-                        <span className="font-semibold tabular-nums">
-                          0,582
-                        </span>
-                        . Siap disalin ke naskah skripsi.
+                        {mostRecentMetrics?.alpha ? (
+                          <>
+                            {' '}dengan Cronbach&apos;s Alpha{' '}
+                            <span className="font-semibold tabular-nums">
+                              {mostRecentMetrics.alpha}
+                            </span>
+                          </>
+                        ) : null}
+                        {mostRecentMetrics?.rSquare ? (
+                          <>
+                            {' '}dan koefisien R²{' '}
+                            <span className="font-semibold tabular-nums">
+                              {mostRecentMetrics.rSquare}
+                            </span>
+                          </>
+                        ) : null}
+                        . Siap disalin dan diunduh ke naskah Bab 4 skripsi.
                       </p>
-                    ) : (
+                    ) : mostRecentProject.respondentCount > 0 ? (
                       <p>
                         Tabulasi kuesioner{' '}
                         <span className="font-semibold tabular-nums">
-                          {mostRecentProject.respondentCount > 0
-                            ? `${formatNumber(mostRecentProject.respondentCount)} responden`
-                            : '120 responden'}
+                          N = {formatNumber(mostRecentProject.respondentCount)} responden
                         </span>
-                        {' '}telah tervalidasi. Siap dipetakan ke konstruk variabel dan diuji.
+                        {' '}telah dimuat. Lanjutkan pemetaan variabel dan jalankan analisis Bab 4.
+                      </p>
+                    ) : (
+                      <p>
+                        Proyek penelitian aktif telah dibuat. Unggah berkas kuesioner (.xlsx/.csv) untuk memulai pengujian statistik Bab 4.
                       </p>
                     )}
                   </div>

@@ -336,7 +336,7 @@ export function ExplanationBox({
                   }}
                   onClick={() => handleSelectNumber(p.rawNumber)}
                   className={cn(
-                    'inline-flex items-center px-1.5 py-0.5 mx-0.5 text-[13px] font-semibold rounded-[4px] transition-all duration-150 tabular-nums cursor-pointer select-none touch-manipulation',
+                    'inline-flex items-center px-1.5 py-0.5 mx-0.5 text-[13px] font-semibold rounded-[4px] transition-all duration-150 tabular-nums cursor-pointer select-text touch-manipulation',
                     'bg-muted/70 text-foreground border border-border/80 hover:bg-[#FFE14D]/40 hover:border-[#FFE14D] hover:text-[#243044]',
                     'focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
                     isMatching &&

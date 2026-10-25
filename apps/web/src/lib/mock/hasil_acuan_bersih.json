@@ -1,0 +1,628 @@
+{
+  "n": 100,
+  "significanceLevel": 0.05,
+  "validitas": {
+    "KL1": {
+      "construct": "Kualitas Layanan",
+      "code": "KL",
+      "rHitung": 0.4709868896598438,
+      "rTabel": 0.19655119558543774,
+      "pValue": 7.599588663451697e-07,
+      "df": 98,
+      "valid": true
+    },
+    "KL2": {
+      "construct": "Kualitas Layanan",
+      "code": "KL",
+      "rHitung": 0.38956390863494833,
+      "rTabel": 0.19655119558543774,
+      "pValue": 6.172320245264027e-05,
+      "df": 98,
+      "valid": true
+    },
+    "KL3": {
+      "construct": "Kualitas Layanan",
+      "code": "KL",
+      "rHitung": 0.37189489425541583,
+      "rTabel": 0.19655119558543774,
+      "pValue": 0.00013908775630850164,
+      "df": 98,
+      "valid": true
+    },
+    "KL4": {
+      "construct": "Kualitas Layanan",
+      "code": "KL",
+      "rHitung": 0.5768832381107398,
+      "rTabel": 0.19655119558543774,
+      "pValue": 3.346133544806075e-10,
+      "df": 98,
+      "valid": true
+    },
+    "KL5": {
+      "construct": "Kualitas Layanan",
+      "code": "KL",
+      "rHitung": -0.04713586875725361,
+      "rTabel": 0.19655119558543774,
+      "pValue": 0.6414363177505127,
+      "df": 98,
+      "valid": false
+    },
+    "KP1": {
+      "construct": "Kepuasan Pelanggan",
+      "code": "KP",
+      "rHitung": 0.6071097081671767,
+      "rTabel": 0.19655119558543774,
+      "pValue": 2.139561933342112e-11,
+      "df": 98,
+      "valid": true
+    },
+    "KP2": {
+      "construct": "Kepuasan Pelanggan",
+      "code": "KP",
+      "rHitung": 0.47664707835546816,
+      "rTabel": 0.19655119558543774,
+      "pValue": 5.355636930961754e-07,
+      "df": 98,
+      "valid": true
+    },
+    "KP3": {
+      "construct": "Kepuasan Pelanggan",
+      "code": "KP",
+      "rHitung": 0.5508555312792573,
+      "rTabel": 0.19655119558543774,
+      "pValue": 2.881579380872274e-09,
+      "df": 98,
+      "valid": true
+    },
+    "KP4": {
+      "construct": "Kepuasan Pelanggan",
+      "code": "KP",
+      "rHitung": 0.4646342373356979,
+      "rTabel": 0.19655119558543774,
+      "pValue": 1.1172409409933597e-06,
+      "df": 98,
+      "valid": true
+    },
+    "KP5": {
+      "construct": "Kepuasan Pelanggan",
+      "code": "KP",
+      "rHitung": 0.4984242728144266,
+      "rTabel": 0.19655119558543774,
+      "pValue": 1.3119873195463762e-07,
+      "df": 98,
+      "valid": true
+    },
+    "LP1": {
+      "construct": "Loyalitas Pelanggan",
+      "code": "LP",
+      "rHitung": 0.6616669147031344,
+      "rTabel": 0.19655119558543774,
+      "pValue": 6.663486396893449e-14,
+      "df": 98,
+      "valid": true
+    },
+    "LP2": {
+      "construct": "Loyalitas Pelanggan",
+      "code": "LP",
+      "rHitung": 0.6191294692351665,
+      "rTabel": 0.19655119558543774,
+      "pValue": 6.600773718759689e-12,
+      "df": 98,
+      "valid": true
+    },
+    "LP3": {
+      "construct": "Loyalitas Pelanggan",
+      "code": "LP",
+      "rHitung": 0.568941118513406,
+      "rTabel": 0.19655119558543774,
+      "pValue": 6.584449085685656e-10,
+      "df": 98,
+      "valid": true
+    },
+    "LP4": {
+      "construct": "Loyalitas Pelanggan",
+      "code": "LP",
+      "rHitung": 0.6336542579320134,
+      "rTabel": 0.19655119558543774,
+      "pValue": 1.488083906468899e-12,
+      "df": 98,
+      "valid": true
+    },
+    "LP5": {
+      "construct": "Loyalitas Pelanggan",
+      "code": "LP",
+      "rHitung": 0.6199501667335245,
+      "rTabel": 0.19655119558543774,
+      "pValue": 6.080324924291138e-12,
+      "df": 98,
+      "valid": true
+    }
+  },
+  "reliabilitas": {
+    "KL": {
+      "construct": "Kualitas Layanan",
+      "initialItemCount": 5,
+      "initialAlpha": 0.49142702848656694,
+      "finalItemCount": 4,
+      "finalAlpha": 0.7963503929461375,
+      "reliable": true,
+      "itemsAnalysis": [
+        {
+          "item": "KL1",
+          "alphaIfDeleted": 0.34094170021018,
+          "correctedItemTotalCorrelation": 0.4709868896598438,
+          "pValue": 7.599588663451697e-07
+        },
+        {
+          "item": "KL2",
+          "alphaIfDeleted": 0.3755001257459017,
+          "correctedItemTotalCorrelation": 0.38956390863494833,
+          "pValue": 6.172320245264027e-05
+        },
+        {
+          "item": "KL3",
+          "alphaIfDeleted": 0.39256453175931627,
+          "correctedItemTotalCorrelation": 0.37189489425541583,
+          "pValue": 0.00013908775630850164
+        },
+        {
+          "item": "KL4",
+          "alphaIfDeleted": 0.2533721468971001,
+          "correctedItemTotalCorrelation": 0.5768832381107398,
+          "pValue": 3.346133544806075e-10
+        },
+        {
+          "item": "KL5",
+          "alphaIfDeleted": 0.7963503929461375,
+          "correctedItemTotalCorrelation": -0.04713586875725361,
+          "pValue": 0.6414363177505127
+        }
+      ]
+    },
+    "KP": {
+      "construct": "Kepuasan Pelanggan",
+      "initialItemCount": 5,
+      "initialAlpha": 0.7534017600607166,
+      "finalItemCount": 5,
+      "finalAlpha": 0.7534017600607166,
+      "reliable": true,
+      "itemsAnalysis": [
+        {
+          "item": "KP1",
+          "alphaIfDeleted": 0.6758236005216216,
+          "correctedItemTotalCorrelation": 0.6071097081671767,
+          "pValue": 2.139561933342112e-11
+        },
+        {
+          "item": "KP2",
+          "alphaIfDeleted": 0.7253889649843712,
+          "correctedItemTotalCorrelation": 0.47664707835546816,
+          "pValue": 5.355636930961754e-07
+        },
+        {
+          "item": "KP3",
+          "alphaIfDeleted": 0.6977777777777777,
+          "correctedItemTotalCorrelation": 0.5508555312792573,
+          "pValue": 2.881579380872274e-09
+        },
+        {
+          "item": "KP4",
+          "alphaIfDeleted": 0.7282955373063111,
+          "correctedItemTotalCorrelation": 0.4646342373356979,
+          "pValue": 1.1172409409933597e-06
+        },
+        {
+          "item": "KP5",
+          "alphaIfDeleted": 0.7168911917098445,
+          "correctedItemTotalCorrelation": 0.4984242728144266,
+          "pValue": 1.3119873195463762e-07
+        }
+      ]
+    },
+    "LP": {
+      "construct": "Loyalitas Pelanggan",
+      "initialItemCount": 5,
+      "initialAlpha": 0.8256410938497551,
+      "finalItemCount": 5,
+      "finalAlpha": 0.8256410938497551,
+      "reliable": true,
+      "itemsAnalysis": [
+        {
+          "item": "LP1",
+          "alphaIfDeleted": 0.7789345434882305,
+          "correctedItemTotalCorrelation": 0.6616669147031344,
+          "pValue": 6.663486396893449e-14
+        },
+        {
+          "item": "LP2",
+          "alphaIfDeleted": 0.7915674583653095,
+          "correctedItemTotalCorrelation": 0.6191294692351665,
+          "pValue": 6.600773718759689e-12
+        },
+        {
+          "item": "LP3",
+          "alphaIfDeleted": 0.8059577559811095,
+          "correctedItemTotalCorrelation": 0.568941118513406,
+          "pValue": 6.584449085685656e-10
+        },
+        {
+          "item": "LP4",
+          "alphaIfDeleted": 0.7873015873015872,
+          "correctedItemTotalCorrelation": 0.6336542579320134,
+          "pValue": 1.488083906468899e-12
+        },
+        {
+          "item": "LP5",
+          "alphaIfDeleted": 0.7912682160679139,
+          "correctedItemTotalCorrelation": 0.6199501667335245,
+          "pValue": 6.080324924291138e-12
+        }
+      ]
+    }
+  },
+  "descriptive": {
+    "KL": {
+      "construct": "Kualitas Layanan",
+      "n": 100,
+      "mean": 3.7375,
+      "median": 3.75,
+      "stdDev": 0.5238925308098826,
+      "min": 2.5,
+      "max": 5.0,
+      "kategori": "Tinggi"
+    },
+    "KP": {
+      "construct": "Kepuasan Pelanggan",
+      "n": 100,
+      "mean": 3.738,
+      "median": 3.8,
+      "stdDev": 0.4728550720801451,
+      "min": 2.8,
+      "max": 5.0,
+      "kategori": "Tinggi"
+    },
+    "LP": {
+      "construct": "Loyalitas Pelanggan",
+      "n": 100,
+      "mean": 3.992,
+      "median": 4.0,
+      "stdDev": 0.5511567266882782,
+      "min": 2.8,
+      "max": 5.0,
+      "kategori": "Tinggi"
+    }
+  },
+  "regresi_berganda": {
+    "r": 0.6215040861838345,
+    "rSquare": 0.38626732914320316,
+    "adjustedRSquare": 0.3736130472698671,
+    "stdErrorEstimate": 0.4362108500174876,
+    "fHitung": 30.524634507874477,
+    "fTabel": 3.0901866751548615,
+    "pSimultan": 5.2118642734910736e-11,
+    "tTabel": 1.9847231860271193,
+    "coefficients": [
+      {
+        "variable": "(Konstanta)",
+        "b": 0.7607733249310522,
+        "se": 0.42501765750493886,
+        "t": 1.7899805137442124,
+        "p": 0.07657726651641661,
+        "beta": 0.0,
+        "significant": false,
+        "label": "Tidak signifikan"
+      },
+      {
+        "variable": "KL",
+        "b": 0.4897746005788579,
+        "se": 0.08580655536656849,
+        "t": 5.70789257867915,
+        "p": 1.2454982289966665e-07,
+        "beta": 0.465546808374124,
+        "significant": true,
+        "label": "Signifikan",
+        "decision": "H0 ditolak, hipotesis penelitian didukung"
+      },
+      {
+        "variable": "KP",
+        "b": 0.37471752418551285,
+        "se": 0.09506805806970105,
+        "t": 3.9415712468932647,
+        "p": 0.00015280298922837332,
+        "beta": 0.3214822088321299,
+        "significant": true,
+        "label": "Signifikan",
+        "decision": "H0 ditolak, hipotesis penelitian didukung"
+      }
+    ],
+    "anova": [
+      {
+        "source": "Regresi",
+        "ss": 11.616449149721035,
+        "df": 2,
+        "ms": 5.8082245748605175,
+        "f": 30.524634507874477,
+        "p": 5.2118642734910736e-11
+      },
+      {
+        "source": "Residual",
+        "ss": 18.457150850278968,
+        "df": 97,
+        "ms": 0.19027990567297906,
+        "f": null,
+        "p": null
+      },
+      {
+        "source": "Total",
+        "ss": 30.073600000000003,
+        "df": 99,
+        "ms": null,
+        "f": null,
+        "p": null
+      }
+    ],
+    "fIdentityCheck": 30.52463450787448,
+    "adjR2IdentityCheck": 0.3736130472698671
+  },
+  "asumsi_klasik": {
+    "normalitas": {
+      "lilliefors": {
+        "statistic": 0.05819379464511337,
+        "pValue": 0.5545987159316579,
+        "normal": true
+      },
+      "shapiroWilk": {
+        "statistic": 0.9908499985103111,
+        "pValue": 0.733059049430621,
+        "normal": true
+      }
+    },
+    "multikolinearitas": {
+      "KL": {
+        "tolerance": 0.951113582204041,
+        "vif": 1.0513991375064513,
+        "problematic": false
+      },
+      "KP": {
+        "tolerance": 0.951113582204041,
+        "vif": 1.0513991375064513,
+        "problematic": false
+      }
+    },
+    "heteroskedastisitas": {
+      "glejser": {
+        "KL": {
+          "tHitung": -0.04222396567739691,
+          "pValue": 0.9664069509925188,
+          "heteroscedastic": false
+        },
+        "KP": {
+          "tHitung": 1.9864373444733816,
+          "pValue": 0.049806334625475346,
+          "heteroscedastic": true
+        }
+      },
+      "breuschPagan": {
+        "statistic": 2.4938977161305553,
+        "pValue": 0.2873802986212534,
+        "homoscedastic": true
+      }
+    },
+    "autokorelasi": {
+      "durbinWatson": 2.3495686222015526,
+      "enabledByDefault": false,
+      "note": "Uji Durbin-Watson diperuntukkan bagi data time-series, dinonaktifkan secara default untuk data cross-sectional survei."
+    }
+  },
+  "korelasi": {
+    "pearson": {
+      "KL": {
+        "KL": {
+          "r": 0.9999999999999998,
+          "p": 0.0,
+          "n": 100
+        },
+        "KP": {
+          "r": 0.22110273131727484,
+          "p": 0.027058987330079446,
+          "n": 100
+        },
+        "LP": {
+          "r": 0.5366274028168325,
+          "p": 8.666385213618098e-09,
+          "n": 100
+        }
+      },
+      "KP": {
+        "KL": {
+          "r": 0.22110273131727487,
+          "p": 0.027058987330079446,
+          "n": 100
+        },
+        "KP": {
+          "r": 0.9999999999999999,
+          "p": 0.0,
+          "n": 100
+        },
+        "LP": {
+          "r": 0.4244158797197006,
+          "p": 1.0790087293102957e-05,
+          "n": 100
+        }
+      },
+      "LP": {
+        "KL": {
+          "r": 0.5366274028168325,
+          "p": 8.666385213618098e-09,
+          "n": 100
+        },
+        "KP": {
+          "r": 0.4244158797197005,
+          "p": 1.0790087293103088e-05,
+          "n": 100
+        },
+        "LP": {
+          "r": 1.0,
+          "p": 0.0,
+          "n": 100
+        }
+      }
+    },
+    "spearman": {
+      "KL": {
+        "KL": {
+          "rho": 0.9999999999999999,
+          "p": 0.0,
+          "n": 100
+        },
+        "KP": {
+          "rho": 0.2487106881866641,
+          "p": 0.012589425303244698,
+          "n": 100
+        },
+        "LP": {
+          "rho": 0.5206637220063163,
+          "p": 2.8097571997986444e-08,
+          "n": 100
+        }
+      },
+      "KP": {
+        "KL": {
+          "rho": 0.2487106881866641,
+          "p": 0.012589425303244698,
+          "n": 100
+        },
+        "KP": {
+          "rho": 0.9999999999999999,
+          "p": 0.0,
+          "n": 100
+        },
+        "LP": {
+          "rho": 0.3913048103085759,
+          "p": 5.6830769932579257e-05,
+          "n": 100
+        }
+      },
+      "LP": {
+        "KL": {
+          "rho": 0.5206637220063163,
+          "p": 2.8097571997986444e-08,
+          "n": 100
+        },
+        "KP": {
+          "rho": 0.3913048103085759,
+          "p": 5.6830769932579257e-05,
+          "n": 100
+        },
+        "LP": {
+          "rho": 1.0,
+          "p": 0.0,
+          "n": 100
+        }
+      }
+    }
+  },
+  "uji_beda": {
+    "duaKelompok": {
+      "groupVar": "Jenis_Kelamin",
+      "valueVar": "LP",
+      "levene": {
+        "stat": 3.883290766968502,
+        "p": 0.05159019398416956,
+        "equalVariance": true
+      },
+      "independentTTest": {
+        "t": -0.07220909014928376,
+        "p": 0.9425826776615189
+      },
+      "welchTTest": {
+        "t": -0.07220909014928376,
+        "p": 0.9425888315211692
+      },
+      "mannWhitney": {
+        "u": 1199.5,
+        "p": 0.728626557329933
+      },
+      "cohensD": -0.014441818029856753
+    },
+    "tigaKelompokPlus": {
+      "groupVar": "Pendidikan",
+      "valueVar": "LP",
+      "levene": {
+        "stat": 0.10844471356205018,
+        "p": 0.8973371224674965
+      },
+      "oneWayAnova": {
+        "f": 0.09334018157083789,
+        "p": 0.9109652947736082,
+        "significant": false
+      },
+      "kruskalWallis": {
+        "h": 0.36761964689571924,
+        "p": 0.8320940335547607
+      },
+      "tukeyHsd": [
+        {
+          "group1": "D3",
+          "group2": "S1",
+          "meanDiff": -0.0083,
+          "pAdj": 0.9979,
+          "lower": -0.3281,
+          "upper": 0.3115,
+          "reject": false
+        },
+        {
+          "group1": "D3",
+          "group2": "S2",
+          "meanDiff": -0.0708,
+          "pAdj": 0.9179,
+          "lower": -0.4982,
+          "upper": 0.3565,
+          "reject": false
+        },
+        {
+          "group1": "S1",
+          "group2": "S2",
+          "meanDiff": -0.0625,
+          "pAdj": 0.9159,
+          "lower": -0.435,
+          "upper": 0.31,
+          "reject": false
+        }
+      ]
+    },
+    "chiSquare": {
+      "rowVar": "Jenis_Kelamin",
+      "colVar": "Kategori_Pengeluaran",
+      "observed": {
+        "Rendah": {
+          "Laki-laki": 25,
+          "Perempuan": 23
+        },
+        "Tinggi": {
+          "Laki-laki": 25,
+          "Perempuan": 27
+        }
+      },
+      "expected": [
+        [
+          24.0,
+          26.0
+        ],
+        [
+          24.0,
+          26.0
+        ]
+      ],
+      "chiSquare": 0.16025641025641024,
+      "df": 1,
+      "pValue": 0.6889205558044605,
+      "yatesChiSquare": 0.04006410256410256,
+      "yatesPValue": 0.8413552991063001,
+      "oddsRatio": 1.173913043478261,
+      "fisherPValue": 0.8414910180685271,
+      "minExpected": 24.0,
+      "cellsLessThan5Percent": 0.0
+    }
+  }
+}

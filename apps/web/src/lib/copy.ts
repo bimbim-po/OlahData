@@ -217,18 +217,18 @@ export const COPY = {
     advice: 'Konsultasikan dengan dosen pembimbing mengenai format lampiran yang berlaku di program studi Anda.',
     template: `PERNYATAAN PENGGUNAAN PERANGKAT LUNAK & INTEGRITAS RISET ILMIAH
 
-Judul Penelitian : [ISI: Judul Skripsi / Tesis Anda]
-Nama Peneliti    : [ISI: Nama Lengkap Peneliti / Mahasiswa]
-NIM / NRP        : [ISI: Nomor Induk Mahasiswa]
-Program Studi    : [ISI: Program Studi dan Fakultas]
-Perguruan Tinggi : [ISI: Nama Perguruan Tinggi / Universitas]
-Dosen Pembimbing : [ISI: Nama Dosen Pembimbing I & II]
+Judul Penelitian : Pengaruh Kualitas Layanan dan Kepuasan terhadap Loyalitas Pelanggan
+Nama Peneliti    : Peneliti / Mahasiswa Penyusun Skripsi
+NIM / NRP        : Nomor Pokok Mahasiswa
+Program Studi    : Program Studi dan Fakultas Terkait
+Perguruan Tinggi : Nama Perguruan Tinggi / Universitas
+Dosen Pembimbing : Dosen Pembimbing Utama dan Pendamping
 
 Dengan ini peneliti menyatakan secara terbuka dan jujur bahwa:
 1. Orisinalitas Data: Seluruh data numerik yang dianalisis bersumber murni dari jawaban responden asli kuesioner penelitian tanpa manipulasi, pengisian otomatis, atau fabrikasi data.
-2. Komputasi Deterministik: Kalkulasi statistik (Validitas Pearson, Reliabilitas Cronbach's Alpha, Asumsi Klasik, dan Regresi OLS) diproses secara deterministik menggunakan perangkat lunak ${APP_NAME} (versi [VERSI]) berbasis modul komputasi ilmiah baku (SciPy, statsmodels, dan pingouin).
-3. Transparansi AI: Draf interpretasi teks disusun dengan bantuan kecerdasan buatan terverifikasi (number guard) dan telah saya periksa, teliti, serta tuliskan kembali menggunakan kalimat saya sendiri.
-4. Lampiran Jejak Hitung: Seluruh nilai tabel r, t, dan F serta jejak verifikasi dataset dilampirkan secara transparan pada Lampiran [NOMOR LAMPIRAN].`,
+2. Komputasi Deterministik: Kalkulasi statistik (Validitas Pearson, Reliabilitas Cronbach's Alpha, Asumsi Klasik, dan Regresi Linier Berganda) diproses secara deterministik menggunakan mesin statistik ${APP_NAME} (versi 2.0.0) berbasis modul komputasi ilmiah baku (SciPy, statsmodels, dan NumPy).
+3. Transparansi AI: Draf interpretasi teks disusun dengan bantuan modul perumusan narasi kaidah Bab 4 terverifikasi (number guard) dan telah saya periksa, cermati, serta tuliskan kembali menggunakan pemahaman mandiri saya sebagai peneliti.
+4. Lampiran Jejak Hitung: Seluruh nilai tabel r, t, dan F serta jejak verifikasi dataset dilampirkan secara transparan pada Lampiran Hasil Analisis Statistik.`,
   },
 
   // Autentikasi
@@ -311,7 +311,7 @@ Dengan ini peneliti menyatakan secara terbuka dan jujur bahwa:
       term: 'Nilai Sig. (p-value)',
       short: 'Peluang hubungan atau pengaruh terjadi murni karena kebetulan.',
       detail: 'Jika Sig. < 0,05, pengaruh dinyatakan signifikan pada tingkat kepercayaan 95%.',
-      example: 'Contoh: Sig. 0,000 jauh lebih kecil dari 0,05, artinya pengaruhnya nyata dan dapat dibuktikan.',
+      example: 'Contoh: Sig. < 0,001 jauh lebih kecil dari 0,05, artinya pengaruhnya nyata dan dapat dibuktikan.',
     },
     rSquare: {
       term: 'Koefisien Determinasi (R²)',

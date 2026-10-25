@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OlahData Motion Graphics Video Ad Studio</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0B1310;
+      color: #F3F4F6;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Glow animations */
+    .glow-emerald {
+      box-shadow: 0 0 35px -5px rgba(16, 185, 129, 0.4);
+    }
+    .glow-orange {
+      box-shadow: 0 0 35px -5px rgba(249, 115, 22, 0.4);
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #111827;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #374151;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between p-3 sm:p-6 select-none">
+
+  <!-- Header -->
+  <header class="w-full max-w-5xl flex items-center justify-between py-2 border-b border-emerald-950/60 pb-4 mb-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-900/40">
+        <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-base sm:text-lg font-extrabold text-white tracking-tight">OlahData Motion Ad Studio</h1>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-mono">60 FPS • 4K READY</span>
+        </div>
+        <p class="text-xs text-gray-400">Generator Iklan Video Motion Graphics Webapp OlahData</p>
+      </div>
+    </div>
+
+    <!-- Aspect Ratio Selector -->
+    <div class="flex items-center gap-1.5 bg-emerald-950/40 border border-emerald-800/40 rounded-xl p-1 text-xs">
+      <button id="btn-aspect-16-9" onclick="setAspectRatio('16:9')" class="px-3 py-1.5 rounded-lg font-semibold bg-emerald-600 text-white transition-all shadow-xs">
+        16:9 (YouTube/Web)
+      </button>
+      <button id="btn-aspect-9-16" onclick="setAspectRatio('9:16')" class="px-3 py-1.5 rounded-lg font-medium text-gray-400 hover:text-white transition-all">
+        9:16 (TikTok/Reels)
+      </button>
+      <button id="btn-aspect-1-1" onclick="setAspectRatio('1:1')" class="px-3 py-1.5 rounded-lg font-medium text-gray-400 hover:text-white transition-all">
+        1:1 (Square)
+      </button>
+    </div>
+  </header>
+
+  <!-- Canvas Stage Wrapper -->
+  <main class="w-full max-w-5xl flex flex-col items-center justify-center flex-1 my-2">
+    <div id="canvas-container" class="relative rounded-2xl overflow-hidden border-2 border-emerald-500/30 bg-[#060D0A] shadow-2xl glow-emerald flex items-center justify-center transition-all duration-300">
+      <canvas id="motionCanvas" class="block"></canvas>
+
+      <!-- Watermark Badge overlay on preview -->
+      <div class="absolute top-4 right-4 px-2.5 py-1 rounded-md bg-black/60 backdrop-blur-md border border-white/10 text-[11px] font-mono font-semibold text-emerald-400 flex items-center gap-1.5 pointer-events-none">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span id="resolutionBadge">1280 x 720</span>
+      </div>
+
+      <!-- Play Overlay when Paused -->
+      <div id="playOverlay" class="absolute inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center cursor-pointer transition-opacity duration-200" onclick="togglePlay()">
+        <div class="w-16 h-16 rounded-full bg-emerald-500/90 text-white flex items-center justify-center shadow-xl shadow-emerald-500/30 hover:scale-110 transition-transform">
+          <svg class="w-8 h-8 translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Timeline & Controls Panel -->
+  <footer class="w-full max-w-5xl bg-gray-900/90 border border-emerald-900/50 rounded-2xl p-4 shadow-xl backdrop-blur-md space-y-3.5 mt-2">
+    <!-- Progress Bar & Time -->
+    <div class="space-y-1.5">
+      <div class="flex items-center justify-between text-xs font-mono text-gray-400">
+        <div class="flex items-center gap-2">
+          <span id="currentTime" class="text-emerald-400 font-bold">00:00.0</span>
+          <span>/</span>
+          <span id="totalTime">00:30.0</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="sceneBadge" class="text-gray-300 font-semibold uppercase tracking-wider text-[11px]">SCENE 1: HOOK & MASALAH</span>
+        </div>
+      </div>
+
+      <!-- Scrubber Track -->
+      <div id="timelineTrack" class="relative w-full h-3 bg-gray-800 rounded-full cursor-pointer overflow-hidden border border-gray-700/60" onclick="seekTimeline(event)">
+        <div id="timelineProgress" class="absolute top-0 left-0 h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full w-0"></div>
+        <!-- Scene Dividers -->
+        <div class="absolute top-0 left-[16.6%] w-0.5 h-full bg-white/20"></div>
+        <div class="absolute top-0 left-[36.6%] w-0.5 h-full bg-white/20"></div>
+        <div class="absolute top-0 left-[56.6%] w-0.5 h-full bg-white/20"></div>
+        <div class="absolute top-0 left-[75.0%] w-0.5 h-full bg-white/20"></div>
+        <div class="absolute top-0 left-[88.3%] w-0.5 h-full bg-white/20"></div>
+      </div>
+    </div>
+
+    <!-- Control Buttons -->
+    <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+      <!-- Playback Controls -->
+      <div class="flex items-center gap-2">
+        <button id="btnPlayPause" onclick="togglePlay()" class="p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-all flex items-center justify-center shadow-md shadow-emerald-950">
+          <svg id="iconPlay" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+          <svg id="iconPause" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+        </button>
+
+        <button onclick="restartVideo()" class="p-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-200 transition-all" title="Ulangi dari Awal">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+        </button>
+
+        <button id="btnAudio" onclick="toggleAudio()" class="p-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-emerald-400 transition-all flex items-center gap-1.5 text-xs font-semibold" title="BGM & Efek Suara Synth">
+          <svg id="iconAudioOn" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
+          <svg id="iconAudioOff" class="w-5 h-5 hidden text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z m12 1l4-4m0 4l-4-4" /></svg>
+          <span id="audioText">BGM ON</span>
+        </button>
+      </div>
+
+      <!-- Scene Quick Jump Pills -->
+      <div class="hidden sm:flex items-center gap-1.5 text-[11px] font-mono">
+        <button onclick="jumpToScene(0)" class="px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-300">1. Hook</button>
+        <button onclick="jumpToScene(5)" class="px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-300">2. Solusi</button>
+        <button onclick="jumpToScene(11)" class="px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-300">3. Hitung</button>
+        <button onclick="jumpToScene(17)" class="px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-300">4. Grafik</button>
+        <button onclick="jumpToScene(22.5)" class="px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-300">5. Bab 4</button>
+        <button onclick="jumpToScene(27)" class="px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-300">6. CTA</button>
+      </div>
+
+      <!-- Record & Download Actions -->
+      <div class="flex items-center gap-2">
+        <button id="btnRecord" onclick="startRecordingVideo()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-red-950 transition-all cursor-pointer">
+          <span class="w-2.5 h-2.5 rounded-full bg-white animate-ping"></span>
+          <span id="btnRecordText">Rekam &amp; Unduh Video (.webm)</span>
+        </button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Script Engine Motion Graphics & Audio Synthesizer -->
+  <script>
+    // --- 1. STATE & KONFIGURASI ENGINE ---
+    const canvas = document.getElementById('motionCanvas');
+    const ctx = canvas.getContext('2d');
+    const TOTAL_DURATION = 30.0; // 30 detik
+    const FPS = 60;
+    const TOTAL_FRAMES = TOTAL_DURATION * FPS;
+
+    let currentAspectRatio = '16:9';
+    let baseWidth = 1280;
+    let baseHeight = 720;
+
+    let currentTimeSec = 0;
+    let isPlaying = true;
+    let lastTimestamp = performance.now();
+    let audioEnabled = true;
+
+    // Web Audio Synthesizer Engine
+    let audioCtx = null;
+    let isBgmPlaying = false;
+    let nextNoteTime = 0;
+    let currentBeat = 0;
+
+    // Recorder State
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let isRecording = false;
+
+    // --- 2. RESIZING & ASPECT RATIO ---
+    function setAspectRatio(ratio) {
+      currentAspectRatio = ratio;
+      document.getElementById('btn-aspect-16-9').className = ratio === '16:9' ? 'px-3 py-1.5 rounded-lg font-semibold bg-emerald-600 text-white transition-all shadow-xs' : 'px-3 py-1.5 rounded-lg font-medium text-gray-400 hover:text-white transition-all';
+      document.getElementById('btn-aspect-9-16').className = ratio === '9:16' ? 'px-3 py-1.5 rounded-lg font-semibold bg-emerald-600 text-white transition-all shadow-xs' : 'px-3 py-1.5 rounded-lg font-medium text-gray-400 hover:text-white transition-all';
+      document.getElementById('btn-aspect-1-1').className = ratio === '1:1' ? 'px-3 py-1.5 rounded-lg font-semibold bg-emerald-600 text-white transition-all shadow-xs' : 'px-3 py-1.5 rounded-lg font-medium text-gray-400 hover:text-white transition-all';
+
+      const container = document.getElementById('canvas-container');
+      if (ratio === '16:9') {
+        baseWidth = 1280;
+        baseHeight = 720;
+        container.style.aspectRatio = '16 / 9';
+        container.style.maxHeight = '65vh';
+        container.style.maxWidth = '100%';
+      } else if (ratio === '9:16') {
+        baseWidth = 720;
+        baseHeight = 1280;
+        container.style.aspectRatio = '9 / 16';
+        container.style.maxHeight = '68vh';
+        container.style.maxWidth = 'calc(68vh * 9 / 16)';
+      } else {
+        baseWidth = 1080;
+        baseHeight = 1080;
+        container.style.aspectRatio = '1 / 1';
+        container.style.maxHeight = '65vh';
+        container.style.maxWidth = '65vh';
+      }
+
+      canvas.width = baseWidth;
+      canvas.height = baseHeight;
+      document.getElementById('resolutionBadge').innerText = `${baseWidth} x ${baseHeight}`;
+    }
+
+    setAspectRatio('16:9');
+
+    // --- 3. WEB AUDIO SYNTHESIZER (MUSIC & SFX BEATS) ---
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playSynthKick(time) {
+      if (!audioCtx || !audioEnabled) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.frequency.setValueAtTime(150, time);
+      osc.frequency.exponentialRampToValueAtTime(32, time + 0.12);
+
+      gain.gain.setValueAtTime(0.7, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.18);
+
+      osc.start(time);
+      osc.stop(time + 0.2);
+    }
+
+    function playSynthSnare(time) {
+      if (!audioCtx || !audioEnabled) return;
+      // White noise buffer
+      const bufferSize = audioCtx.sampleRate * 0.15;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 800;
+
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.4, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.14);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      noise.start(time);
+      noise.stop(time + 0.15);
+    }
+
+    function playSynthHiHat(time) {
+      if (!audioCtx || !audioEnabled) return;
+      const bufferSize = audioCtx.sampleRate * 0.04;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 5000;
+
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.18, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.04);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      noise.start(time);
+      noise.stop(time + 0.05);
+    }
+
+    function playSynthBass(time, freq, dur = 0.25) {
+      if (!audioCtx || !audioEnabled) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq, time);
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(380, time);
+      filter.frequency.exponentialRampToValueAtTime(80, time + dur);
+
+      gain.gain.setValueAtTime(0.35, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start(time);
+      osc.stop(time + dur);
+    }
+
+    function playChimeDing(time) {
+      if (!audioCtx || !audioEnabled) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1046.5, time); // C6
+      osc.frequency.exponentialRampToValueAtTime(1318.5, time + 0.1); // E6
+
+      gain.gain.setValueAtTime(0.5, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.8);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(time);
+      osc.stop(time + 0.85);
+    }
+
+    // Schedule 120 BPM Lo-Fi Beat
+    function scheduleAudioBeats() {
+      if (!audioCtx || !isPlaying || !audioEnabled) return;
+      const tempo = 124; // BPM
+      const secondsPerBeat = 60.0 / tempo;
+      const lookahead = 0.1;
+
+      while (nextNoteTime < audioCtx.currentTime + lookahead) {
+        const beatInMeasure = currentBeat % 16;
+
+        // Kick on 0, 8 (or 0, 6, 10)
+        if (beatInMeasure === 0 || beatInMeasure === 8 || beatInMeasure === 14) {
+          playSynthKick(nextNoteTime);
+        }
+
+        // Snare on 4, 12
+        if (beatInMeasure === 4 || beatInMeasure === 12) {
+          playSynthSnare(nextNoteTime);
+        }
+
+        // Hi-hat on every 2 beats
+        if (beatInMeasure % 2 === 0) {
+          playSynthHiHat(nextNoteTime);
+        }
+
+        // Bassline progression (E -> C -> G -> D)
+        const measure = Math.floor(currentBeat / 16) % 4;
+        const bassFreqs = [82.41, 65.41, 98.00, 73.42]; // E2, C2, G2, D2
+        if (beatInMeasure === 0 || beatInMeasure === 6 || beatInMeasure === 10) {
+          playSynthBass(nextNoteTime, bassFreqs[measure]);
+        }
+
+        nextNoteTime += secondsPerBeat / 4; // 16th notes
+        currentBeat++;
+      }
+    }
+
+    // --- 4. EASING & HELPER MOTION FUNCTIONS ---
+    function easeOutBack(x) {
+      const c1 = 1.70158;
+      const c3 = c1 + 1;
+      return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
+    }
+
+    function easeOutExpo(x) {
+      return x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
+    }
+
+    function easeInOutQuad(x) {
+      return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+    }
+
+    function clamp(val, min, max) {
+      return Math.max(min, Math.min(max, val));
+    }
+
+    // --- 5. RENDER SCENES (30 SECONDS TOTAL) ---
+    // Scene 1: Hook & Masalah (0.0s - 5.0s)
+    function renderScene1(t, w, h) {
+      const p = clamp(t / 5.0, 0, 1);
+      const isVertical = h > w;
+
+      // Dark pulsing background
+      const grad = ctx.createRadialGradient(w/2, h/2, 20, w/2, h/2, w * 0.7);
+      grad.addColorStop(0, '#1A0B0B');
+      grad.addColorStop(1, '#080303');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+
+      // Ambient alert grid
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.08)';
+      ctx.lineWidth = 1;
+      const step = 45;
+      for (let x = 0; x < w; x += step) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+      }
+      for (let y = 0; y < h; y += step) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+
+      // Floating Warning Hexagons / Particles
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.25)';
+      for (let i = 0; i < 12; i++) {
+        const px = (Math.sin(i * 1.5 + t * 2) * 0.4 + 0.5) * w;
+        const py = (Math.cos(i * 2.1 + t * 1.8) * 0.4 + 0.5) * h;
+        const r = 4 + Math.sin(t * 3 + i) * 3;
+        ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2); ctx.fill();
+      }
+
+      // Glitch / Shake Effect
+      let shakeX = 0;
+      let shakeY = 0;
+      if (t > 1.2 && t < 3.8 && Math.random() > 0.6) {
+        shakeX = (Math.random() - 0.5) * 8;
+        shakeY = (Math.random() - 0.5) * 8;
+      }
+
+      ctx.save();
+      ctx.translate(shakeX, shakeY);
+
+      // Warning Badge
+      const badgeY = h * 0.25;
+      ctx.fillStyle = '#DC2626';
+      ctx.beginPath();
+      ctx.roundRect(w/2 - 110, badgeY - 18, 220, 36, 18);
+      ctx.fill();
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 13px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('⚠ ALERT: SKRIPSI DEADLINE', w/2, badgeY + 5);
+
+      // Main Glitch Typography
+      ctx.font = isVertical ? '900 38px "Plus Jakarta Sans"' : '900 52px "Plus Jakarta Sans"';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.textAlign = 'center';
+
+      const line1 = 'MASIH PUSING';
+      const line2 = 'OLAH DATA SPSS?';
+      ctx.fillText(line1, w/2, h * 0.42);
+
+      // Gradient text highlight
+      ctx.fillStyle = '#EF4444';
+      ctx.fillText(line2, w/2, h * 0.52);
+
+      // Pain points bullets
+      const bullets = [
+        '✗ SPSS Error & Output Bertumpuk',
+        '✗ Bingung Rumus Uji Asumsi Klasik',
+        '✗ Takut Ditolak Dosen Saat Sidang!'
+      ];
+
+      ctx.font = isVertical ? '600 18px "Plus Jakarta Sans"' : '600 22px "Plus Jakarta Sans"';
+      ctx.textAlign = 'center';
+
+      bullets.forEach((txt, idx) => {
+        const itemT = clamp((t - 1.5 - idx * 0.5) / 0.4, 0, 1);
+        if (itemT > 0) {
+          const alpha = easeOutExpo(itemT);
+          const yOff = (1 - alpha) * 20;
+          ctx.fillStyle = `rgba(254, 202, 202, ${alpha})`;
+          ctx.fillText(txt, w/2, h * 0.64 + idx * 36 + yOff);
+        }
+      });
+
+      ctx.restore();
+    }
+
+    // Scene 2: Solusi OlahData (5.0s - 11.0s)
+    function renderScene2(t, w, h) {
+      const localT = t - 5.0;
+      const isVertical = h > w;
+
+      // Deep emerald clean backdrop
+      const grad = ctx.createLinearGradient(0, 0, w, h);
+      grad.addColorStop(0, '#042116');
+      grad.addColorStop(1, '#0B3B2B');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+
+      // Glow circle in center
+      const centerGlow = ctx.createRadialGradient(w/2, h * 0.4, 10, w/2, h * 0.4, w * 0.5);
+      centerGlow.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
+      centerGlow.addColorStop(1, 'transparent');
+      ctx.fillStyle = centerGlow;
+      ctx.fillRect(0, 0, w, h);
+
+      // Logo Scale In Animation
+      const logoP = clamp(localT / 0.8, 0, 1);
+      const scale = easeOutBack(logoP);
+
+      ctx.save();
+      ctx.translate(w/2, h * 0.32);
+      ctx.scale(scale, scale);
+
+      // Glow badge icon
+      ctx.fillStyle = '#10B981';
+      ctx.beginPath();
+      ctx.roundRect(-42, -42, 84, 84, 24);
+      ctx.fill();
+
+      // Bolt / Spark SVG
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.moveTo(-6, -24);
+      ctx.lineTo(-20, 4);
+      ctx.lineTo(-4, 4);
+      ctx.lineTo(-8, 24);
+      ctx.lineTo(20, -4);
+      ctx.lineTo(4, -4);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.restore();
+
+      // Title & Subtitle
+      const titleP = clamp((localT - 0.5) / 0.6, 0, 1);
+      const titleAlpha = easeOutExpo(titleP);
+      ctx.save();
+      ctx.globalAlpha = titleAlpha;
+      ctx.textAlign = 'center';
+
+      ctx.font = isVertical ? '900 42px "Plus Jakarta Sans"' : '900 56px "Plus Jakarta Sans"';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillText('Kenalkan: OlahData', w/2, h * 0.50);
+
+      ctx.font = isVertical ? '600 17px "Plus Jakarta Sans"' : '600 22px "Plus Jakarta Sans"';
+      ctx.fillStyle = '#6EE7B7';
+      ctx.fillText('Solusi Cerdas Olah Kuesioner Skripsi Kuantitatif', w/2, h * 0.57);
+
+      // Mockup Card: Drag & Drop Google Forms / Excel
+      const cardP = clamp((localT - 1.2) / 0.7, 0, 1);
+      if (cardP > 0) {
+        const cardAlpha = easeOutBack(cardP);
+        const cardW = isVertical ? w * 0.85 : 560;
+        const cardH = isVertical ? 150 : 130;
+        const cardY = h * 0.66 + (1 - cardAlpha) * 40;
+
+        ctx.fillStyle = 'rgba(6, 78, 59, 0.7)';
+        ctx.strokeStyle = '#10B981';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(w/2 - cardW/2, cardY, cardW, cardH, 18);
+        ctx.fill();
+        ctx.stroke();
+
+        // Icon Excel / Cloud Upload
+        ctx.fillStyle = '#10B981';
+        ctx.beginPath();
+        ctx.arc(w/2 - cardW/2 + 50, cardY + cardH/2, 24, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 15px "JetBrains Mono", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('Tinggal Drag & Drop File', w/2 - cardW/2 + 90, cardY + cardH/2 - 6);
+
+        ctx.font = '400 13px "Plus Jakarta Sans"';
+        ctx.fillStyle = '#A7F3D0';
+        ctx.fillText('Format Excel (.xlsx) atau Google Forms CSV', w/2 - cardW/2 + 90, cardY + cardH/2 + 18);
+      }
+
+      ctx.restore();
+    }
+
+    // Scene 3: Hitung Otomatis 1 Detik Presisi SPSS (11.0s - 17.0s)
+    function renderScene3(t, w, h) {
+      const localT = t - 11.0;
+      const isVertical = h > w;
+
+      // Dark slate background with emerald accents
+      ctx.fillStyle = '#06130E';
+      ctx.fillRect(0, 0, w, h);
+
+      // Header Tag
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 13px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#10B981';
+      ctx.fillText('⚡ 100% DETERMINISTIK & PRESET SPSS', w/2, h * 0.14);
+
+      ctx.font = isVertical ? '900 34px "Plus Jakarta Sans"' : '900 46px "Plus Jakarta Sans"';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillText('Hitung Otomatis Dalam 1 Detik', w/2, h * 0.22);
+
+      // Calculating Ticker
+      const calcProgress = clamp(localT / 2.5, 0, 1);
+      const percentVal = Math.round(calcProgress * 100);
+
+      // 4 Feature Cards (Validitas, Reliabilitas, Asumsi Klasik, Regresi)
+      const features = [
+        { title: 'Uji Validitas', value: 'r-hitung > r-tabel', stat: 'r = 0,812 (Valid)', ok: true },
+        { title: 'Uji Reliabilitas', value: "Cronbach's Alpha", stat: 'α = 0,891 (Reliabel)', ok: true },
+        { title: 'Asumsi Klasik', value: 'Normalitas & Multikol', stat: 'VIF < 2,1 • Sig 0,200', ok: true },
+        { title: 'Uji Hipotesis', value: 'Uji t, Uji F, R-Square', stat: 'R² = 68,4% • Sig < 0,001', ok: true }
+      ];
+
+      const cardGridW = isVertical ? w * 0.9 : 760;
+      const cardW = isVertical ? cardGridW : 360;
+      const cardH = 75;
+      const startX = w/2 - (isVertical ? cardW/2 : 390);
+      const startY = h * 0.32;
+
+      features.forEach((feat, idx) => {
+        const itemT = clamp((localT - 0.4 - idx * 0.3) / 0.4, 0, 1);
+        if (itemT > 0) {
+          const col = isVertical ? 0 : (idx % 2);
+          const row = isVertical ? idx : Math.floor(idx / 2);
+          const cx = startX + col * (cardW + 20);
+          const cy = startY + row * (cardH + 18);
+
+          ctx.fillStyle = 'rgba(17, 34, 27, 0.85)';
+          ctx.strokeStyle = itemT >= 1 ? '#10B981' : '#374151';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.roundRect(cx, cy, cardW, cardH, 14);
+          ctx.fill();
+          ctx.stroke();
+
+          // Check circle
+          ctx.fillStyle = itemT >= 1 ? '#10B981' : '#4B5563';
+          ctx.beginPath();
+          ctx.arc(cx + 28, cy + cardH/2, 13, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#FFFFFF';
+          ctx.font = 'bold 12px "JetBrains Mono"';
+          ctx.textAlign = 'center';
+          ctx.fillText('✓', cx + 28, cy + cardH/2 + 4);
+
+          // Labels
+          ctx.textAlign = 'left';
+          ctx.font = 'bold 14px "Plus Jakarta Sans"';
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillText(feat.title, cx + 52, cy + 30);
+
+          ctx.font = '500 12px "Plus Jakarta Sans"';
+          ctx.fillStyle = '#9CA3AF';
+          ctx.fillText(feat.value, cx + 52, cy + 52);
+
+          // Stat Value Tag
+          ctx.textAlign = 'right';
+          ctx.font = 'bold 12px "JetBrains Mono"';
+          ctx.fillStyle = '#34D399';
+          ctx.fillText(feat.stat, cx + cardW - 16, cy + cardH/2 + 4);
+        }
+      });
+
+      // Bottom Progress Banner
+      const progY = h * 0.82;
+      const barW = isVertical ? w * 0.85 : 500;
+      ctx.fillStyle = 'rgba(31, 41, 55, 0.7)';
+      ctx.beginPath();
+      ctx.roundRect(w/2 - barW/2, progY, barW, 16, 8);
+      ctx.fill();
+
+      ctx.fillStyle = '#10B981';
+      ctx.beginPath();
+      ctx.roundRect(w/2 - barW/2, progY, barW * calcProgress, 16, 8);
+      ctx.fill();
+
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 12px "JetBrains Mono"';
+      ctx.fillStyle = '#A7F3D0';
+      ctx.fillText(`Kalkulasi Deterministic Engine: ${percentVal}%`, w/2, progY + 36);
+    }
+
+    // Scene 4: Visualisasi Grafik Residual SPSS (17.0s - 22.5s)
+    function renderScene4(t, w, h) {
+      const localT = t - 17.0;
+      const isVertical = h > w;
+
+      ctx.fillStyle = '#06110D';
+      ctx.fillRect(0, 0, w, h);
+
+      // Header Tag
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 13px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#F97316';
+      ctx.fillText('📊 GRAFIK ASUMSI RESIDUAL STANDAR SPSS', w/2, h * 0.12);
+
+      ctx.font = isVertical ? '900 32px "Plus Jakarta Sans"' : '900 44px "Plus Jakarta Sans"';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillText('Histogram & Normal P-P Plot', w/2, h * 0.19);
+
+      // Animating Chart Container
+      const chartW = isVertical ? w * 0.88 : 680;
+      const chartH = isVertical ? 320 : 260;
+      const chartX = w/2 - chartW/2;
+      const chartY = h * 0.26;
+
+      ctx.fillStyle = '#0E241B';
+      ctx.strokeStyle = '#10B981';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(chartX, chartY, chartW, chartH, 16);
+      ctx.fill();
+      ctx.stroke();
+
+      // Draw Histogram Bars in Canvas
+      const barCount = 7;
+      const barHeights = [25, 60, 110, 150, 105, 55, 20];
+      const maxH = 150;
+      const barW = (chartW - 160) / barCount;
+      const growT = clamp(localT / 1.2, 0, 1);
+      const easeGrow = easeOutBack(growT);
+
+      barHeights.forEach((bh, i) => {
+        const bx = chartX + 70 + i * barW;
+        const curH = (bh / maxH) * (chartH - 80) * easeGrow;
+        const by = chartY + chartH - 45 - curH;
+
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.45)';
+        ctx.strokeStyle = '#10B981';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(bx + 4, by, barW - 8, curH, 4);
+        ctx.fill();
+        ctx.stroke();
+      });
+
+      // Overlay Bell Curve (Orange Line)
+      if (localT > 0.6) {
+        const curveT = clamp((localT - 0.6) / 1.2, 0, 1);
+        ctx.strokeStyle = '#F97316';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        const pts = 50;
+        for (let i = 0; i <= pts * curveT; i++) {
+          const normX = i / pts;
+          const cx = chartX + 60 + normX * (chartW - 140);
+          const z = (normX - 0.5) * 4;
+          const normalY = Math.exp(-0.5 * z * z);
+          const cy = chartY + chartH - 45 - normalY * (chartH - 85);
+          if (i === 0) ctx.moveTo(cx, cy);
+          else ctx.lineTo(cx, cy);
+        }
+        ctx.stroke();
+      }
+
+      // SPSS Stats Box (Dynamic 2-Column Component Mockup)
+      if (localT > 1.2) {
+        const boxP = clamp((localT - 1.2) / 0.5, 0, 1);
+        const boxAlpha = easeOutExpo(boxP);
+        const sbW = 150;
+        const sbH = 80;
+        const sbX = chartX + chartW - sbW - 16;
+        const sbY = chartY + 16;
+
+        ctx.save();
+        ctx.globalAlpha = boxAlpha;
+        ctx.fillStyle = 'rgba(6, 18, 14, 0.95)';
+        ctx.strokeStyle = '#34D399';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(sbX, sbY, sbW, sbH, 8);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.font = 'bold 11px "Plus Jakarta Sans"';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'left';
+        ctx.fillText('Statistik Residual', sbX + 10, sbY + 18);
+
+        // Row 1: Mean
+        ctx.font = '10.5px "Plus Jakarta Sans"';
+        ctx.fillStyle = '#9CA3AF';
+        ctx.fillText('Mean', sbX + 10, sbY + 36);
+        ctx.font = 'bold 10.5px "JetBrains Mono"';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'right';
+        ctx.fillText('0,00', sbX + sbW - 10, sbY + 36);
+
+        // Row 2: Std. Dev.
+        ctx.textAlign = 'left';
+        ctx.font = '10.5px "Plus Jakarta Sans"';
+        ctx.fillStyle = '#9CA3AF';
+        ctx.fillText('Std. Dev.', sbX + 10, sbY + 52);
+        ctx.font = 'bold 10.5px "JetBrains Mono"';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'right';
+        ctx.fillText('0,99', sbX + sbW - 10, sbY + 52);
+
+        // Row 3: N
+        ctx.textAlign = 'left';
+        ctx.font = '10.5px "Plus Jakarta Sans"';
+        ctx.fillStyle = '#9CA3AF';
+        ctx.fillText('N', sbX + 10, sbY + 68);
+        ctx.font = 'bold 10.5px "JetBrains Mono"';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'right';
+        ctx.fillText('40', sbX + sbW - 10, sbY + 68);
+
+        ctx.restore();
+      }
+
+      // Feature pill tag
+      const pillY = chartY + chartH + 28;
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 13px "Plus Jakarta Sans"';
+      ctx.fillStyle = '#34D399';
+      ctx.fillText('✓ Format Standar APA 7th Edition • Lengkap dengan Nilai Koma Indonesia', w/2, pillY);
+    }
+
+    // Scene 5: Ekspor Bab 4 Word / PDF (22.5s - 27.0s)
+    function renderScene5(t, w, h) {
+      const localT = t - 22.5;
+      const isVertical = h > w;
+
+      ctx.fillStyle = '#051610';
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 13px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#10B981';
+      ctx.fillText('📄 SIAP SIDANG SKRIPSI', w/2, h * 0.12);
+
+      ctx.font = isVertical ? '900 32px "Plus Jakarta Sans"' : '900 44px "Plus Jakarta Sans"';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillText('Ekspor Langsung Naskah Bab 4', w/2, h * 0.20);
+
+      // 3D Paper document mockup
+      const docP = clamp(localT / 0.8, 0, 1);
+      const docScale = easeOutBack(docP);
+      const docW = isVertical ? w * 0.82 : 460;
+      const docH = isVertical ? 240 : 210;
+      const docX = w/2 - docW/2;
+      const docY = h * 0.28;
+
+      ctx.save();
+      ctx.translate(w/2, docY + docH/2);
+      ctx.scale(docScale, docScale);
+      ctx.translate(-w/2, -(docY + docH/2));
+
+      // White paper sheet with APA 3-line table lines
+      ctx.fillStyle = '#FFFFFF';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+      ctx.shadowBlur = 30;
+      ctx.beginPath();
+      ctx.roundRect(docX, docY, docW, docH, 12);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Table Header lines (APA style)
+      ctx.fillStyle = '#111827';
+      ctx.font = 'bold 12px "Times New Roman", serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('Tabel 4.1. Hasil Analisis Regresi Linier Berganda', docX + 24, docY + 34);
+
+      // APA Top Border Line
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(docX + 24, docY + 46);
+      ctx.lineTo(docX + docW - 24, docY + 46);
+      ctx.stroke();
+
+      // Columns
+      ctx.font = 'bold 10px "Times New Roman", serif';
+      ctx.fillText('Variabel', docX + 24, docY + 60);
+      ctx.fillText('B', docX + 160, docY + 60);
+      ctx.fillText('t-Hitung', docX + 240, docY + 60);
+      ctx.fillText('Sig.', docX + 320, docY + 60);
+
+      // APA Mid Line
+      ctx.beginPath();
+      ctx.moveTo(docX + 24, docY + 68);
+      ctx.lineTo(docX + docW - 24, docY + 68);
+      ctx.stroke();
+
+      // Rows
+      ctx.font = '10px "Times New Roman", serif';
+      ctx.fillText('(Constant)', docX + 24, docY + 86);
+      ctx.fillText('12,450', docX + 160, docY + 86);
+      ctx.fillText('4,120', docX + 240, docY + 86);
+      ctx.fillText('0,001', docX + 320, docY + 86);
+
+      ctx.fillText('Kualitas Layanan (X1)', docX + 24, docY + 104);
+      ctx.fillText('0,418', docX + 160, docY + 104);
+      ctx.fillText('3,892', docX + 240, docY + 104);
+      ctx.fillText('0,000', docX + 320, docY + 104);
+
+      // APA Bottom Line
+      ctx.beginPath();
+      ctx.moveTo(docX + 24, docY + 120);
+      ctx.lineTo(docX + docW - 24, docY + 120);
+      ctx.stroke();
+
+      // Narrative text mockup
+      ctx.font = 'italic 9.5px "Times New Roman", serif';
+      ctx.fillStyle = '#374151';
+      ctx.fillText('Berdasarkan hasil regresi, variabel Kualitas Layanan berpengaruh positif', docX + 24, docY + 145);
+      ctx.fillText('dan signifikan terhadap Kepuasan Konsumen (t = 3,892, p < 0,05)...', docX + 24, docY + 162);
+
+      ctx.restore();
+
+      // Download formats badges
+      const badgeY = docY + docH + 34;
+      ctx.textAlign = 'center';
+
+      const b1X = w/2 - 110;
+      ctx.fillStyle = '#2563EB';
+      ctx.beginPath(); ctx.roundRect(b1X - 80, badgeY - 14, 160, 32, 8); ctx.fill();
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 12px "JetBrains Mono"';
+      ctx.fillText('Word (.docx) APA', b1X, badgeY + 6);
+
+      const b2X = w/2 + 110;
+      ctx.fillStyle = '#DC2626';
+      ctx.beginPath(); ctx.roundRect(b2X - 80, badgeY - 14, 160, 32, 8); ctx.fill();
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 12px "JetBrains Mono"';
+      ctx.fillText('PDF Dokumen Siap', b2X, badgeY + 6);
+    }
+
+    // Scene 6: Call to Action (27.0s - 30.0s)
+    function renderScene6(t, w, h) {
+      const localT = t - 27.0;
+      const isVertical = h > w;
+
+      // Radiant emerald energy backdrop
+      const grad = ctx.createRadialGradient(w/2, h/2, 20, w/2, h/2, w * 0.7);
+      grad.addColorStop(0, '#064E3B');
+      grad.addColorStop(0.6, '#022C22');
+      grad.addColorStop(1, '#011913');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+
+      // Shimmering particle stars
+      for (let i = 0; i < 24; i++) {
+        const px = (Math.sin(i * 3 + t * 4) * 0.45 + 0.5) * w;
+        const py = (Math.cos(i * 4 + t * 3) * 0.45 + 0.5) * h;
+        const alpha = Math.abs(Math.sin(t * 5 + i));
+        ctx.fillStyle = `rgba(110, 231, 183, ${alpha * 0.6})`;
+        ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI * 2); ctx.fill();
+      }
+
+      // Main CTA Scale In
+      const p = clamp(localT / 0.8, 0, 1);
+      const scale = easeOutBack(p);
+
+      ctx.save();
+      ctx.translate(w/2, h * 0.38);
+      ctx.scale(scale, scale);
+      ctx.textAlign = 'center';
+
+      ctx.font = isVertical ? '900 36px "Plus Jakarta Sans"' : '900 52px "Plus Jakarta Sans"';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillText('Selesaikan Skripsimu Hari Ini!', 0, 0);
+
+      ctx.font = isVertical ? '600 18px "Plus Jakarta Sans"' : '600 24px "Plus Jakarta Sans"';
+      ctx.fillStyle = '#6EE7B7';
+      ctx.fillText('Tanpa Ribet, Cepat & Bebas Revisi Analisis', 0, 48);
+
+      ctx.restore();
+
+      // CTA Glow Button Mockup
+      const btnP = clamp((localT - 0.4) / 0.6, 0, 1);
+      if (btnP > 0) {
+        const btnScale = easeOutBack(btnP);
+        const btnW = isVertical ? w * 0.85 : 420;
+        const btnH = 64;
+        const btnY = h * 0.60;
+
+        ctx.save();
+        ctx.translate(w/2, btnY + btnH/2);
+        ctx.scale(btnScale, btnScale);
+        ctx.translate(-w/2, -(btnY + btnH/2));
+
+        // Pulsing glow
+        ctx.shadowColor = '#10B981';
+        ctx.shadowBlur = 35 + Math.sin(t * 8) * 10;
+
+        ctx.fillStyle = '#10B981';
+        ctx.beginPath();
+        ctx.roundRect(w/2 - btnW/2, btnY, btnW, btnH, 32);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        ctx.textAlign = 'center';
+        ctx.font = '900 18px "Plus Jakarta Sans"';
+        ctx.fillStyle = '#064E3B';
+        ctx.fillText('COBA SEKARANG GRATIS →', w/2, btnY + 38);
+
+        // URL domain
+        ctx.font = 'bold 15px "JetBrains Mono"';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillText('olah-data.pages.dev', w/2, btnY + 95);
+
+        ctx.restore();
+      }
+    }
+
+    // --- 6. MAIN ANIMATION LOOP ---
+    function renderFrame(timestamp) {
+      if (isPlaying) {
+        const delta = (timestamp - lastTimestamp) / 1000;
+        currentTimeSec += delta;
+
+        if (currentTimeSec >= TOTAL_DURATION) {
+          currentTimeSec = 0; // loop
+          if (audioCtx) nextNoteTime = audioCtx.currentTime;
+          currentBeat = 0;
+        }
+
+        scheduleAudioBeats();
+      }
+      lastTimestamp = timestamp;
+
+      // Update UI
+      updateUI();
+
+      // Select Scene
+      const t = currentTimeSec;
+      const w = canvas.width;
+      const h = canvas.height;
+
+      if (t < 5.0) {
+        renderScene1(t, w, h);
+        document.getElementById('sceneBadge').innerText = 'SCENE 1: HOOK & MASALAH SPSS';
+      } else if (t < 11.0) {
+        renderScene2(t, w, h);
+        document.getElementById('sceneBadge').innerText = 'SCENE 2: SOLUSI OLAHDATA';
+      } else if (t < 17.0) {
+        renderScene3(t, w, h);
+        document.getElementById('sceneBadge').innerText = 'SCENE 3: HITUNG OTOMATIS 1 DETIK';
+      } else if (t < 22.5) {
+        renderScene4(t, w, h);
+        document.getElementById('sceneBadge').innerText = 'SCENE 4: GRAFIK RESIDUAL SPSS APA 7TH';
+      } else if (t < 27.0) {
+        renderScene5(t, w, h);
+        document.getElementById('sceneBadge').innerText = 'SCENE 5: EKSPOR BAB 4 SIAP SIDANG';
+      } else {
+        renderScene6(t, w, h);
+        document.getElementById('sceneBadge').innerText = 'SCENE 6: CALL TO ACTION (CTA)';
+      }
+
+      requestAnimationFrame(renderFrame);
+    }
+
+    requestAnimationFrame(renderFrame);
+
+    // --- 7. PLAYBACK CONTROLS & TIMELINE ---
+    function updateUI() {
+      // Progress bar
+      const pct = (currentTimeSec / TOTAL_DURATION) * 100;
+      document.getElementById('timelineProgress').style.width = `${pct}%`;
+
+      // Time string
+      const mins = Math.floor(currentTimeSec / 60);
+      const secs = Math.floor(currentTimeSec % 60);
+      const dec = Math.floor((currentTimeSec % 1) * 10);
+      document.getElementById('currentTime').innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${dec}`;
+
+      // Play/pause overlay
+      document.getElementById('playOverlay').style.opacity = isPlaying ? '0' : '1';
+      document.getElementById('playOverlay').style.pointerEvents = isPlaying ? 'none' : 'auto';
+      document.getElementById('iconPlay').classList.toggle('hidden', isPlaying);
+      document.getElementById('iconPause').classList.toggle('hidden', !isPlaying);
+    }
+
+    function togglePlay() {
+      initAudio();
+      isPlaying = !isPlaying;
+      if (isPlaying) {
+        lastTimestamp = performance.now();
+        if (audioCtx) nextNoteTime = audioCtx.currentTime;
+      }
+    }
+
+    function restartVideo() {
+      initAudio();
+      currentTimeSec = 0;
+      isPlaying = true;
+      lastTimestamp = performance.now();
+      if (audioCtx) nextNoteTime = audioCtx.currentTime;
+      currentBeat = 0;
+    }
+
+    function jumpToScene(targetSec) {
+      initAudio();
+      currentTimeSec = targetSec;
+      lastTimestamp = performance.now();
+      if (audioCtx) nextNoteTime = audioCtx.currentTime;
+      currentBeat = Math.floor(targetSec * (124 / 60) * 4);
+    }
+
+    function seekTimeline(e) {
+      initAudio();
+      const rect = document.getElementById('timelineTrack').getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const ratio = clamp(clickX / rect.width, 0, 1);
+      currentTimeSec = ratio * TOTAL_DURATION;
+      lastTimestamp = performance.now();
+      if (audioCtx) nextNoteTime = audioCtx.currentTime;
+      currentBeat = Math.floor(currentTimeSec * (124 / 60) * 4);
+    }
+
+    function toggleAudio() {
+      initAudio();
+      audioEnabled = !audioEnabled;
+      document.getElementById('iconAudioOn').classList.toggle('hidden', !audioEnabled);
+      document.getElementById('iconAudioOff').classList.toggle('hidden', !audioEnabled);
+      document.getElementById('audioText').innerText = audioEnabled ? 'BGM ON' : 'BGM OFF';
+    }
+
+    // --- 8. RECORD & EXPORT VIDEO IN BROWSER ---
+    function startRecordingVideo() {
+      initAudio();
+      if (isRecording) return;
+
+      const stream = canvas.captureStream(60); // 60 FPS Canvas stream
+
+      // Create destination for Web Audio mixing into video
+      if (audioCtx && audioEnabled) {
+        try {
+          const dest = audioCtx.createMediaStreamDestination();
+          // Connect synth master to dest
+          // Merge audio tracks
+          const audioTracks = dest.stream.getAudioTracks();
+          if (audioTracks.length > 0) {
+            stream.addTrack(audioTracks[0]);
+          }
+        } catch (err) {
+          console.warn('Audio stream mixing fallback:', err);
+        }
+      }
+
+      recordedChunks = [];
+      const mimeTypes = [
+        'video/webm;codecs=vp9',
+        'video/webm;codecs=vp8',
+        'video/webm',
+        'video/mp4'
+      ];
+
+      let selectedMime = 'video/webm';
+      for (const m of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(m)) {
+          selectedMime = m;
+          break;
+        }
+      }
+
+      mediaRecorder = new MediaRecorder(stream, {
+        mimeType: selectedMime,
+        videoBitsPerSecond: 6000000 // 6 Mbps high quality
+      });
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          recordedChunks.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        isRecording = false;
+        document.getElementById('btnRecordText').innerText = 'Rekam & Unduh Video (.webm)';
+        const blob = new Blob(recordedChunks, { type: selectedMime });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `OlahData_Motion_Graphics_${currentAspectRatio.replace(':', '_')}.webm`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      };
+
+      // Restart from 0 and record for exact 30 seconds
+      currentTimeSec = 0;
+      currentBeat = 0;
+      isPlaying = true;
+      isRecording = true;
+      if (audioCtx) nextNoteTime = audioCtx.currentTime;
+
+      mediaRecorder.start();
+      document.getElementById('btnRecordText').innerText = 'Merekam Video (30 Detik)...';
+
+      // Auto stop after 30 seconds
+      setTimeout(() => {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+          mediaRecorder.stop();
+        }
+      }, (TOTAL_DURATION + 0.5) * 1000);
+    }
+  </script>
+</body>
+</html>

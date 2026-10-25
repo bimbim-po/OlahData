@@ -44,6 +44,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // localStorage not available
     }
     set({ user: updated });
+
+    if (typeof window !== 'undefined' && current.id && !current.id.startsWith('demo')) {
+      import('@/lib/supabase/client').then(({ getSupabaseBrowserClient }) => {
+        const supabase = getSupabaseBrowserClient();
+        const dbUpdate: Record<string, string> = {};
+        if (data.name !== undefined) dbUpdate.nama = data.name;
+        if (data.university !== undefined) dbUpdate.kampus = data.university;
+        if (data.department !== undefined) dbUpdate.prodi = data.department;
+        if (Object.keys(dbUpdate).length > 0) {
+          supabase
+            .from('profiles')
+            .update({ ...dbUpdate, updated_at: new Date().toISOString() })
+            .eq('id', current.id)
+            .then(() => {});
+        }
+      });
+    }
   },
 
   loadSession: () => {

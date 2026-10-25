@@ -96,10 +96,13 @@ def scan_dataset_quality(
             if c not in ignored_columns and pd.api.types.is_numeric_dtype(df[c])
         ]
 
-    # 1. Missing values
-    for col in df.columns:
-        if col in ignored_columns:
-            continue
+    # Target columns for questionnaire items quality checks
+    target_scan_cols = [c for c in item_columns if c in df.columns] if item_columns else [
+        c for c in df.columns if c not in ignored_columns
+    ]
+
+    # 1. Missing values on target Likert items
+    for col in target_scan_cols:
         null_indices = df[df[col].isna() | (df[col] == "")].index
         for idx in null_indices:
             row_num = int(idx) + 1
@@ -116,7 +119,7 @@ def scan_dataset_quality(
             })
             issue_counter += 1
 
-    # 2. Out of scale values on Likert items
+    # 2. Out of scale, non-integer, and unmapped values on Likert items
     for col in item_columns:
         if col not in df.columns:
             continue
@@ -126,8 +129,8 @@ def scan_dataset_quality(
                 continue
             try:
                 num_val = float(val)
+                row_num = int(idx) + 1
                 if num_val < scale_min or num_val > scale_max:
-                    row_num = int(idx) + 1
                     int_val = int(num_val) if num_val.is_integer() else round(num_val, 2)
                     issues.append({
                         "id": f"issue-{issue_counter}",
@@ -139,6 +142,20 @@ def scan_dataset_quality(
                         "column": col,
                         "value": int_val,
                         "action": f"Koreksi ke skala {scale_min}-{scale_max} atau eksklusi baris"
+                    })
+                    issue_counter += 1
+                elif not num_val.is_integer():
+                    # Flag non-integer Likert value
+                    issues.append({
+                        "id": f"issue-{issue_counter}",
+                        "type": "non_integer",
+                        "severity": "warning",
+                        "message": f"Nilai bukan bilangan bulat ({num_val}) pada butir skala Likert {col}",
+                        "description": f"Nilai {num_val} bukan bilangan bulat pada butir {col}",
+                        "row": row_num,
+                        "column": col,
+                        "value": num_val,
+                        "action": "Periksa ketepatan skor butir kuesioner"
                     })
                     issue_counter += 1
             except (ValueError, TypeError):
@@ -155,6 +172,33 @@ def scan_dataset_quality(
                     "action": "Koreksi ke angka numerik atau eksklusi baris"
                 })
                 issue_counter += 1
+
+    # 2b. Check duplicate respondents by identity columns (email, NIM, NIK)
+    id_cols = [c for c in df.columns if any(k in c.lower() for k in ["email", "surel", "nim", "npm", "nik"])]
+    for id_col in id_cols:
+        seen_ids = {}
+        for idx, val in df[id_col].dropna().items():
+            clean_id_val = str(val).strip().lower()
+            if not clean_id_val:
+                continue
+            row_num = int(idx) + 1
+            if clean_id_val in seen_ids:
+                first_r = seen_ids[clean_id_val]
+                issues.append({
+                    "id": f"issue-{issue_counter}",
+                    "type": "duplicate_identity",
+                    "severity": "warning",
+                    "message": f"Responden ganda berdasarkan {id_col}: '{clean_id_val}' sama dengan baris {first_r}",
+                    "description": f"Responden ganda pada kolom identitas {id_col}",
+                    "row": row_num,
+                    "duplicateOfRow": first_r,
+                    "column": id_col,
+                    "value": clean_id_val,
+                    "action": "Eksklusi responden duplikat"
+                })
+                issue_counter += 1
+            else:
+                seen_ids[clean_id_val] = row_num
 
     # 3. Duplicate rows (comparing questionnaire items)
     comparison_cols = [c for c in item_columns if c in df.columns]
@@ -259,6 +303,31 @@ def scan_dataset_quality(
 
     return issues
 
+def validate_exclusion_request(
+    total_n: int,
+    excluded_rows_1indexed: List[int],
+    num_predictors: int = 1,
+    min_absolute: int = 5
+) -> Tuple[bool, Optional[str], int]:
+    """
+    Validates user exclusion requests.
+    Section 3.2: Rejects exclusion if remaining respondents < min (e.g. 5 or num_predictors + 2).
+    Ensures 'exclude all' cannot delete all data.
+    """
+    unique_drops = set(r for r in excluded_rows_1indexed if 1 <= r <= total_n)
+    n_remaining = total_n - len(unique_drops)
+    min_required = max(min_absolute, num_predictors + 2)
+
+    if n_remaining < min_required:
+        msg = (
+            f"Tindakan pengecualian ditolak: sisa responden ({n_remaining}) kurang dari batas minimum "
+            f"yang dibutuhkan untuk analisis ({min_required} responden). "
+            "Sistem melarang penghapusan seluruh atau mayoritas data kuesioner."
+        )
+        return False, msg, n_remaining
+
+    return True, None, n_remaining
+
 def create_derived_dataset(df_raw: pd.DataFrame, excluded_rows_1indexed: List[int]) -> pd.DataFrame:
     """
     Creates a derived dataset by excluding specified 1-indexed rows.
@@ -267,3 +336,23 @@ def create_derived_dataset(df_raw: pd.DataFrame, excluded_rows_1indexed: List[in
     zero_indexed_drops = [r - 1 for r in excluded_rows_1indexed if 1 <= r <= len(df_raw)]
     derived_df = df_raw.drop(index=zero_indexed_drops).reset_index(drop=True)
     return derived_df
+
+def create_derived_dataset_with_log(
+    df_raw: pd.DataFrame,
+    exclusion_records: List[Dict[str, Any]]
+) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+    """
+    Creates derived dataset and logs exact invariant:
+    n_input = n_dipakai + n_dikecualikan
+    """
+    row_drops = [rec["row"] for rec in exclusion_records]
+    derived_df = create_derived_dataset(df_raw, row_drops)
+
+    log = {
+        "nInput": len(df_raw),
+        "nDipakai": len(derived_df),
+        "nDikecualikan": len(set(row_drops)),
+        "invariantHolds": bool(len(df_raw) == len(derived_df) + len(set(row_drops))),
+        "excludedDetails": exclusion_records
+    }
+    return derived_df, log

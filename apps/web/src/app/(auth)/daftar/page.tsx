@@ -84,10 +84,11 @@ function DaftarForm() {
         variant: 'success',
       });
       router.push(lanjut);
-    } catch {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Terjadi kendala saat mendaftarkan akun. Silakan coba lagi.';
       toast({
         title: 'Pendaftaran gagal',
-        description: 'Terjadi kendala saat mendaftarkan akun. Silakan coba lagi.',
+        description: msg,
         variant: 'error',
       });
     } finally {

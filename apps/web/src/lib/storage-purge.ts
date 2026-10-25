@@ -26,8 +26,11 @@ export async function executeStoragePurge(batchSize = 50): Promise<PurgeResult> 
       return result;
     }
 
-    // 1. Ambil antrean pending yang jadwal eksekusinya telah tiba
-    const { data: queueItems, error: fetchErr } = await supabase
+    // 1. Ambil antrean pending yang jadwal eksekusinya telah tiba (dukung skema v2 maupun skema 4-kolom awal)
+    let isLegacySchema = false;
+    let queueItems: Array<{ id: string; bucket_id: string; storage_path: string; attempts?: number }> = [];
+
+    const { data: v2Items, error: fetchErr } = await supabase
       .from('storage_purge_queue')
       .select('id, bucket_id, storage_path, attempts')
       .eq('status', 'pending')
@@ -35,8 +38,26 @@ export async function executeStoragePurge(batchSize = 50): Promise<PurgeResult> 
       .limit(batchSize);
 
     if (fetchErr) {
-      console.error('[StoragePurge] Gagal mengambil antrean:', fetchErr);
-      return result;
+      // Fallback ke skema 4-kolom (id, bucket, path, created_at) jika migrasi 0009 belum dijalankan
+      const { data: legacyItems, error: legacyErr } = await supabase
+        .from('storage_purge_queue')
+        .select('id, bucket, path, created_at')
+        .limit(batchSize);
+
+      if (legacyErr) {
+        console.error('[StoragePurge] Gagal mengambil antrean:', legacyErr);
+        return result;
+      }
+
+      isLegacySchema = true;
+      queueItems = (legacyItems || []).map((item: { id: string | number; bucket: string; path: string }) => ({
+        id: String(item.id),
+        bucket_id: item.bucket,
+        storage_path: item.path,
+        attempts: 0,
+      }));
+    } else {
+      queueItems = v2Items || [];
     }
 
     if (!queueItems || queueItems.length === 0) {
@@ -70,14 +91,21 @@ export async function executeStoragePurge(batchSize = 50): Promise<PurgeResult> 
           throw removeErr;
         }
 
-        // Tandai sukses
-        await supabase
-          .from('storage_purge_queue')
-          .update({
-            status: 'completed',
-            purged_at: new Date().toISOString(),
-          })
-          .in('id', itemIds);
+        // Tandai sukses atau hapus dari antrean legacy
+        if (isLegacySchema) {
+          await supabase
+            .from('storage_purge_queue')
+            .delete()
+            .in('id', itemIds);
+        } else {
+          await supabase
+            .from('storage_purge_queue')
+            .update({
+              status: 'completed',
+              purged_at: new Date().toISOString(),
+            })
+            .in('id', itemIds);
+        }
 
         result.completed += items.length;
       } catch (err: unknown) {
@@ -88,17 +116,19 @@ export async function executeStoragePurge(batchSize = 50): Promise<PurgeResult> 
           result.failed += 1;
           result.errors.push({ id: item.id, error: errMsg });
 
-          const newAttempts = item.attempts + 1;
-          const newStatus = newAttempts >= 3 ? 'failed' : 'pending';
+          if (!isLegacySchema) {
+            const newAttempts = item.attempts + 1;
+            const newStatus = newAttempts >= 3 ? 'failed' : 'pending';
 
-          await supabase
-            .from('storage_purge_queue')
-            .update({
-              status: newStatus,
-              attempts: newAttempts,
-              error_message: errMsg,
-            })
-            .eq('id', item.id);
+            await supabase
+              .from('storage_purge_queue')
+              .update({
+                status: newStatus,
+                attempts: newAttempts,
+                error_message: errMsg,
+              })
+              .eq('id', item.id);
+          }
         }
       }
     }

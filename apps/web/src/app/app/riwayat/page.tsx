@@ -29,7 +29,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog';
 import { PageActions } from '@/components/page-actions';
 import { useToast } from '@/components/ui/toaster';
 import { getProjects } from '@/lib/api';
-import type { Project } from '@/lib/api/types';
+import type { Project, AnalysisResults } from '@/lib/api/types';
 import { formatDate } from '@/lib/format';
 
 export interface AnalysisRunItem {
@@ -37,7 +37,7 @@ export interface AnalysisRunItem {
   projectId: string;
   projectName: string;
   fileName: string;
-  datasetVersion: string;
+  datasetVersion: string | number;
   datasetKind: 'original' | 'derived';
   tests: string[];
   status: 'succeeded' | 'failed' | 'running';
@@ -46,60 +46,12 @@ export interface AnalysisRunItem {
   respondentCount: number;
 }
 
-const DEFAULT_RUNS: AnalysisRunItem[] = [
-  {
-    id: 'run-2026-001',
-    projectId: 'sample',
-    projectName: 'Pengaruh Kualitas Layanan & Kepuasan terhadap Loyalitas',
-    fileName: 'data_kuesioner_pemasaran_100_responden.xlsx',
-    datasetVersion: 'v2 (Pembersihan)',
-    datasetKind: 'derived',
-    tests: ['Deskriptif', 'Validitas', 'Reliabilitas', 'Asumsi Klasik', 'Regresi'],
-    status: 'succeeded',
-    startedAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-    durationMs: 1240,
-    respondentCount: 117,
-  },
-  {
-    id: 'run-2026-002',
-    projectId: 'sample',
-    projectName: 'Pengaruh Kualitas Layanan & Kepuasan terhadap Loyalitas',
-    fileName: 'data_kuesioner_pemasaran_100_responden.xlsx',
-    datasetVersion: 'v1 (Awal)',
-    datasetKind: 'original',
-    tests: ['Deskriptif', 'Validitas', 'Reliabilitas'],
-    status: 'succeeded',
-    startedAt: new Date(Date.now() - 3600000 * 24).toISOString(),
-    durationMs: 980,
-    respondentCount: 120,
-  },
-  {
-    id: 'run-2026-003',
-    projectId: 'project-1',
-    projectName: 'Analisis Pengaruh Beban Kerja terhadap Kinerja Karyawan',
-    fileName: 'kuesioner_sdm_perbankan.xlsx',
-    datasetVersion: 'v1 (Awal)',
-    datasetKind: 'original',
-    tests: ['Deskriptif', 'Validitas'],
-    status: 'succeeded',
-    startedAt: new Date(Date.now() - 3600000 * 48).toISOString(),
-    durationMs: 820,
-    respondentCount: 85,
-  },
-  {
-    id: 'run-2026-004',
-    projectId: 'sample',
-    projectName: 'Pengaruh Kualitas Layanan & Kepuasan terhadap Loyalitas',
-    fileName: 'draft_kuesioner_rusak.csv',
-    datasetVersion: 'v0 (Mentah)',
-    datasetKind: 'original',
-    tests: ['Validitas'],
-    status: 'failed',
-    startedAt: new Date(Date.now() - 3600000 * 72).toISOString(),
-    durationMs: 410,
-    respondentCount: 0,
-  },
-];
+const DUMMY_RUN_IDS = new Set([
+  'run-2026-001',
+  'run-2026-002',
+  'run-2026-003',
+  'run-2026-004',
+]);
 
 export default function AnalysisHistoryPage() {
   const router = useRouter();
@@ -120,7 +72,7 @@ export default function AnalysisHistoryPage() {
   const [runToDelete, setRunToDelete] = useState<AnalysisRunItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Load runs from localStorage or default
+  // Load real runs from localStorage and backfill from olahdata_run_* if needed
   useEffect(() => {
     async function loadData() {
       try {
@@ -131,19 +83,59 @@ export default function AnalysisHistoryPage() {
         try {
           const raw = localStorage.getItem('olahdata-analysis-runs');
           if (raw) {
-            savedRuns = JSON.parse(raw);
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              savedRuns = parsed.filter((r) => r && r.id && !DUMMY_RUN_IDS.has(r.id));
+            }
           }
+
+          // Backfill real runs stored under olahdata_run_* that aren't in the list yet
+          const existingIds = new Set(savedRuns.map((r) => r.id));
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('olahdata_run_')) {
+              const runId = key.replace('olahdata_run_', '');
+              if (!existingIds.has(runId) && !DUMMY_RUN_IDS.has(runId)) {
+                const runRaw = localStorage.getItem(key);
+                if (runRaw) {
+                  const res = JSON.parse(runRaw) as AnalysisResults;
+                  const projMatch = fetchedProjects.find((p) => p.id === res.projectId);
+                  const testLabels: string[] = ['Deskriptif'];
+                  if (res.validity && res.validity.length > 0) testLabels.push('Validitas');
+                  if (res.reliability && res.reliability.length > 0) testLabels.push('Reliabilitas');
+                  if (res.normality && res.normality.length > 0) testLabels.push('Asumsi Klasik');
+                  if (res.regression && res.regression.length > 0) testLabels.push('Regresi');
+                  if (res.correlation && res.correlation.length > 0) testLabels.push('Korelasi');
+                  savedRuns.push({
+                    id: runId,
+                    projectId: res.projectId || 'sample',
+                    projectName:
+                      res.projectTitle ||
+                      projMatch?.title ||
+                      (res.sourceMeta?.fileName
+                        ? `Analisis Data (${res.sourceMeta.fileName})`
+                        : 'Proyek Analisis Skripsi'),
+                    fileName: res.sourceMeta?.fileName || 'dataset_kuesioner.xlsx',
+                    datasetVersion: res.sourceMeta?.version || 1,
+                    datasetKind: res.sourceMeta?.kind || 'original',
+                    tests: testLabels,
+                    status: 'succeeded',
+                    startedAt: res.timestamp || new Date().toISOString(),
+                    durationMs: 2800,
+                    respondentCount: res.respondentCount || 0,
+                  });
+                  existingIds.add(runId);
+                }
+              }
+            }
+          }
+
+          savedRuns.sort(
+            (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
+          );
+          localStorage.setItem('olahdata-analysis-runs', JSON.stringify(savedRuns));
         } catch {
           // ignore
-        }
-
-        if (savedRuns.length === 0) {
-          savedRuns = DEFAULT_RUNS;
-          try {
-            localStorage.setItem('olahdata-analysis-runs', JSON.stringify(DEFAULT_RUNS));
-          } catch {
-            // ignore
-          }
         }
 
         setRuns(savedRuns);
@@ -218,7 +210,7 @@ export default function AnalysisHistoryPage() {
   };
 
   const handleRerun = (run: AnalysisRunItem) => {
-    const newRunId = `run-${Date.now().toString(36)}`;
+    const newRunId = `run-${Date.now()}`;
     const newRun: AnalysisRunItem = {
       ...run,
       id: newRunId,
@@ -226,6 +218,17 @@ export default function AnalysisHistoryPage() {
       status: 'succeeded',
       durationMs: Math.floor(Math.random() * 500) + 750,
     };
+
+    try {
+      const prevRunData =
+        localStorage.getItem(`olahdata_run_${run.id}`) ||
+        localStorage.getItem(`olahdata_results_${run.projectId}`);
+      if (prevRunData) {
+        localStorage.setItem(`olahdata_run_${newRunId}`, prevRunData);
+      }
+    } catch {
+      // ignore
+    }
 
     saveRuns([newRun, ...runs]);
 
@@ -235,17 +238,17 @@ export default function AnalysisHistoryPage() {
       variant: 'success',
     });
 
-    router.push(`/app/proyek/${run.projectId}/hasil?run=${newRunId}`);
+    router.push(`/app/proyek/${run.projectId}/hasil?runId=${newRunId}`);
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6 pb-12 font-sans">
+    <div className="w-full max-w-7xl mx-auto space-y-6 pb-12 font-sans min-w-0 max-w-full overflow-hidden">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-5">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-[13px] font-semibold mb-2">
             <History className="h-4 w-4" />
-            <span>Audit &amp; Catatan Komputasi</span>
+            <span>Audit dan Catatan Komputasi</span>
           </div>
           <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
             Riwayat Analisis Statistik
@@ -369,15 +372,15 @@ export default function AnalysisHistoryPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
-          <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs sm:text-sm border-collapse">
+        <div className="space-y-3 w-full min-w-0 max-w-full overflow-hidden">
+          <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden w-full max-w-full relative">
+            <div className="overflow-x-auto w-full max-w-full relative">
+              <table className="w-full min-w-[650px] text-left text-xs sm:text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-border bg-muted/40 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-                    <th className="py-3 px-4">Proyek &amp; Dataset</th>
+                    <th className="py-3 px-4">Proyek dan Dataset</th>
                     <th className="py-3 px-4">Uji Statistik</th>
-                    <th className="py-3 px-4">Status &amp; Durasi</th>
+                    <th className="py-3 px-4">Status dan Durasi</th>
                     <th className="py-3 px-4">Waktu Eksekusi</th>
                     <th className="py-3 px-4 text-right">Aksi</th>
                   </tr>
@@ -391,7 +394,7 @@ export default function AnalysisHistoryPage() {
                       {/* Proyek & Dataset */}
                       <td className="py-3 px-4 max-w-xs">
                         <Link
-                          href={`/app/proyek/${run.projectId}/hasil?run=${run.id}`}
+                          href={`/app/proyek/${run.projectId}/hasil?runId=${run.id}`}
                           className="font-semibold text-foreground group-hover:text-primary transition-colors block truncate"
                           title={run.projectName}
                         >
@@ -401,7 +404,11 @@ export default function AnalysisHistoryPage() {
                           <FileSpreadsheet className="h-3.5 w-3.5 shrink-0" />
                           <span className="truncate" title={run.fileName}>{run.fileName}</span>
                           <span className="text-border">•</span>
-                          <span className="font-mono text-primary">{run.datasetVersion}</span>
+                          <span className="font-mono text-primary">
+                            {typeof run.datasetVersion === 'number'
+                              ? `v${run.datasetVersion} (${run.datasetKind === 'derived' ? 'Pembersihan' : 'Awal'})`
+                              : run.datasetVersion}
+                          </span>
                           {run.respondentCount > 0 && (
                             <>
                               <span className="text-border">•</span>
@@ -484,7 +491,7 @@ export default function AnalysisHistoryPage() {
                             className="h-8 px-2.5 text-xs text-primary font-semibold hover:bg-primary/10"
                             title="Buka hasil analisis run ini"
                           >
-                            <Link href={`/app/proyek/${run.projectId}/hasil?run=${run.id}`}>
+                            <Link href={`/app/proyek/${run.projectId}/hasil?runId=${run.id}`}>
                               Lihat Hasil
                               <ArrowRight className="h-3.5 w-3.5 ml-1" />
                             </Link>
@@ -496,11 +503,11 @@ export default function AnalysisHistoryPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleRerun(run)}
-                            className="h-8 px-2 text-xs text-foreground hover:bg-muted"
+                            className="h-8 px-2 text-xs text-foreground hover:bg-muted relative"
                             title="Jalankan ulang analisis dengan membuat run baru"
+                            aria-label="Jalankan ulang analisis"
                           >
-                            <Play className="h-3.5 w-3.5" />
-                            <span className="sr-only">Jalankan Ulang</span>
+                            <Play className="h-3.5 w-3.5" aria-hidden="true" />
                           </Button>
 
                           {/* Hapus */}
@@ -509,11 +516,11 @@ export default function AnalysisHistoryPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => setRunToDelete(run)}
-                            className="h-8 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            className="h-8 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive relative"
                             title="Hapus riwayat run ini"
+                            aria-label="Hapus riwayat analisis"
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            <span className="sr-only">Hapus Run</span>
+                            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                           </Button>
                         </div>
                       </td>
