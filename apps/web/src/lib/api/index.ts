@@ -43,6 +43,59 @@ export async function login(email: string, password: string): Promise<User> {
   const supabase = getSupabaseBrowserClient();
   const cleanEmail = email.trim().toLowerCase();
 
+  // 1. Coba otentikasi melalui endpoint same-origin serverless untuk menghindari CORS & browser ad-blocker
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: cleanEmail, password }),
+    });
+
+    const resJson = await res.json().catch(() => null);
+
+    if (resJson && !res.ok) {
+      throw new Error(resJson.error || 'Gagal masuk. Periksa kembali email dan kata sandi Anda.');
+    }
+
+    if (res.ok && resJson?.success && resJson.user) {
+      // Sinkronkan token sesi ke klien Supabase di peramban
+      if (resJson.session?.access_token && resJson.session?.refresh_token) {
+        try {
+          await supabase.auth.setSession({
+            access_token: resJson.session.access_token,
+            refresh_token: resJson.session.refresh_token,
+          });
+        } catch {
+          // ignore
+        }
+      }
+
+      const user: User = resJson.user;
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('olahdata-session', JSON.stringify(user));
+        } catch {
+          // ignore
+        }
+      }
+
+      return user;
+    }
+  } catch (err: unknown) {
+    // Jika galat bisnis dari serverless (misal password salah atau email belum terdaftar), lemparkan langsung ke user
+    if (
+      err instanceof Error &&
+      (err.message.includes('belum terdaftar') ||
+        err.message.includes('Kata sandi salah') ||
+        err.message.includes('percobaan masuk') ||
+        err.message.includes('Gagal masuk'))
+    ) {
+      throw err;
+    }
+    console.warn('[Login] Serverless login fallback to client signIn:', err);
+  }
+
+  // 2. Fallback standard client signInWithPassword bila endpoint serverless tidak merespons
   const { data, error } = await supabase.auth.signInWithPassword({
     email: cleanEmail,
     password,
@@ -50,7 +103,7 @@ export async function login(email: string, password: string): Promise<User> {
 
   if (error) {
     if (error.message.includes('Invalid login credentials')) {
-      throw new Error('Email atau kata sandi salah. Silakan periksa kembali akun Anda.');
+      throw new Error('Kata sandi salah atau akun belum terdaftar. Silakan periksa kembali akun Anda.');
     }
     if (error.message.includes('Email not confirmed')) {
       throw new Error('Alamat email belum dikonfirmasi. Silakan buka tautan di kotak masuk email Anda atau gunakan Lupa Sandi.');
@@ -88,6 +141,20 @@ export async function login(email: string, password: string): Promise<User> {
   }
 
   return user;
+}
+
+export async function resetPasswordDirect(email: string, newPassword: string): Promise<string> {
+  const cleanEmail = email.trim().toLowerCase();
+  const res = await fetch('/api/auth/reset-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: cleanEmail, newPassword }),
+  });
+  const resJson = await res.json().catch(() => null);
+  if (!res.ok || !resJson?.success) {
+    throw new Error(resJson?.error || 'Gagal mengatur ulang kata sandi.');
+  }
+  return resJson.message || 'Kata sandi berhasil diperbarui.';
 }
 
 export async function register(

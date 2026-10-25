@@ -65,6 +65,20 @@ function AppAuthGuard({ children }: { children: React.ReactNode }) {
 
     const isDemoMode = searchParams.get('contoh') === '1';
 
+    // Periksa keberadaan sesi lokal langsung dari localStorage untuk mencegah bouncing
+    let hasLocalSession = false;
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('olahdata-session');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.id) hasLocalSession = true;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
     // Mode demo: buat sesi demo otomatis bila belum ada pengguna
     if (isDemoMode && !user && !isLoading) {
       login({
@@ -79,8 +93,8 @@ function AppAuthGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Bila belum login dan bukan mode demo: arahkan ke /masuk?lanjut=<alamat asal>
-    if (!isLoading && !user && !isDemoMode) {
+    // Bila belum login, tidak ada sesi lokal, dan bukan mode demo: arahkan ke /masuk?lanjut=<alamat asal>
+    if (!isLoading && !user && !hasLocalSession && !isDemoMode) {
       const search = searchParams.toString();
       const returnUrl = search ? `${pathname}?${search}` : pathname;
       router.replace(`/masuk?lanjut=${encodeURIComponent(returnUrl)}`);
@@ -89,7 +103,20 @@ function AppAuthGuard({ children }: { children: React.ReactNode }) {
 
   const isDemoMode = searchParams.get('contoh') === '1';
 
-  if (!ready || (isLoading && !user) || (!user && !isDemoMode)) {
+  let hasLocalSession = false;
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem('olahdata-session');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.id) hasLocalSession = true;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  if (!ready || (isLoading && !user && !hasLocalSession) || (!user && !hasLocalSession && !isDemoMode)) {
     return <AppLayoutSkeleton />;
   }
 

@@ -11,10 +11,26 @@ interface AuthState {
   updateUser: (data: Partial<User>) => void;
 }
 
+function getInitialLocalUser(): User | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const stored = localStorage.getItem('olahdata-session');
+    if (stored) {
+      const parsed = JSON.parse(stored) as User;
+      if (parsed && parsed.id) return parsed;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+const initialUser = getInitialLocalUser();
+
 export const useAuthStore = create<AuthState>((set, get) => ({
-  user: null,
-  isAuthenticated: false,
-  isLoading: true,
+  user: initialUser,
+  isAuthenticated: !!initialUser,
+  isLoading: initialUser ? false : true,
 
   login: (user: User) => {
     try {
@@ -64,14 +80,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   loadSession: () => {
-    try {
-      const stored = localStorage.getItem('olahdata-session');
-      if (stored) {
-        const user = JSON.parse(stored) as User;
-        set({ user, isAuthenticated: true, isLoading: false });
+    let localUser = get().user;
+    if (!localUser && typeof window !== 'undefined') {
+      localUser = getInitialLocalUser();
+      if (localUser) {
+        set({ user: localUser, isAuthenticated: true, isLoading: false });
       }
-    } catch {
-      // ignore
     }
 
     if (typeof window !== 'undefined') {
@@ -81,17 +95,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             if (user) {
               set({ user, isAuthenticated: true, isLoading: false });
             } else {
-              // If no active session on Supabase, keep or clear
-              const stored = localStorage.getItem('olahdata-session');
-              if (!stored) {
-                set({ user: null, isAuthenticated: false, isLoading: false });
+              const currentLocal = getInitialLocalUser();
+              if (currentLocal) {
+                set({ user: currentLocal, isAuthenticated: true, isLoading: false });
               } else {
-                set({ isLoading: false });
+                set({ user: null, isAuthenticated: false, isLoading: false });
               }
             }
           })
           .catch(() => {
-            set({ isLoading: false });
+            const currentLocal = getInitialLocalUser();
+            if (currentLocal) {
+              set({ user: currentLocal, isAuthenticated: true, isLoading: false });
+            } else {
+              set({ isLoading: false });
+            }
           });
       });
     } else {

@@ -63,7 +63,8 @@ function MasukForm() {
         description: `Selamat datang kembali, ${user.name}!`,
         variant: 'success',
       });
-      router.push(lanjut);
+      // Navigasi penuh agar sesi tersinkronisasi bersih tanpa race condition di halaman statis
+      window.location.href = lanjut;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Terjadi kendala saat memproses login. Silakan periksa kredensial Anda.';
       toast({
