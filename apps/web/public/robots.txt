@@ -3,6 +3,7 @@ User-agent: *
 Allow: /
 Disallow: /admin/
 Disallow: /app/akses-ditolak
+Disallow: /api/
 Disallow: /dev/
 
 Sitemap: https://olah-data.pages.dev/sitemap.xml

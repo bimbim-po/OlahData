@@ -19,10 +19,11 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Bab4Preview } from '@/components/bab4-preview';
 import { PricingCards } from '@/components/pricing-cards';
 import { LiveDemo } from '@/components/live-demo';
-import { PageActions } from '@/components/page-actions';
 
 export const metadata: Metadata = {
-  title: 'Olah Data Skripsi Kuantitatif & Buat Bab 4 Otomatis | OlahData',
+  title: {
+    absolute: 'Olah Data Skripsi Kuantitatif & Buat Bab 4 Otomatis | OlahData',
+  },
   description:
     'Aplikasi olah data kuesioner skripsi kuantitatif online tanpa SPSS. Otomatis uji validitas, reliabilitas, asumsi klasik, regresi linier berganda, dan ekspor tabel Bab 4 Word standar skripsi.',
   keywords: [
@@ -40,7 +41,7 @@ export const metadata: Metadata = {
     'skala likert excel',
   ],
   alternates: {
-    canonical: 'https://olah-data.pages.dev/',
+    canonical: 'https://olah-data.pages.dev',
   },
   openGraph: {
     title: 'Olah Data Skripsi Kuantitatif & Buat Bab 4 Otomatis | OlahData',
@@ -50,12 +51,21 @@ export const metadata: Metadata = {
     siteName: APP_NAME,
     locale: 'id_ID',
     type: 'website',
+    images: [
+      {
+        url: 'https://olah-data.pages.dev/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'OlahData - Olah Data Skripsi Kuantitatif & Buat Bab 4 Otomatis',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Olah Data Skripsi Kuantitatif & Buat Bab 4 Otomatis | OlahData',
     description:
       'Aplikasi olah data kuesioner skripsi kuantitatif online tanpa SPSS. Otomatis uji validitas, reliabilitas, asumsi klasik, regresi linier berganda, dan ekspor tabel Bab 4 Word standar skripsi.',
+    images: ['https://olah-data.pages.dev/og-image.png'],
   },
 };
 
@@ -196,8 +206,54 @@ export default function MarketingPage() {
     })),
   };
 
+  const jsonLdHowTo = {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: 'Cara Olah Data Kuesioner Skripsi Kuantitatif dan Membuat Bab 4 Otomatis',
+    description:
+      'Panduan 4 tahapan sistematis mengolah data kuesioner skripsi kuantitatif dari tabulasi mentah hingga draf Bab 4 Word siap sidang.',
+    totalTime: 'PT5M',
+    step: COPY.howItWorks.steps.map((step, idx) => ({
+      '@type': 'HowToStep',
+      position: idx + 1,
+      name: step.title,
+      text: step.description,
+      url: `https://olah-data.pages.dev/#langkah-${step.number}`,
+    })),
+  };
+
+  const jsonLdOrg = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'OlahData',
+    url: 'https://olah-data.pages.dev',
+    logo: 'https://olah-data.pages.dev/logo-192.png',
+    description:
+      'Platform komputasi statistik deterministik untuk pengolahan data kuesioner skripsi kuantitatif mahasiswa di Indonesia.',
+    contactPoint: {
+      '@type': 'ContactPoint',
+      email: 'bantuan@olahdata.id',
+      contactType: 'customer support',
+      areaServed: 'ID',
+      availableLanguage: ['Indonesian'],
+    },
+  };
+
+  const jsonLdBreadcrumbs = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Beranda',
+        item: 'https://olah-data.pages.dev/',
+      },
+    ],
+  };
+
   return (
-    <div className="flex flex-col pb-20">
+    <div className="flex flex-col">
       {/* Schema.org Structured Data for Google Rich Snippets */}
       <script
         type="application/ld+json"
@@ -207,10 +263,22 @@ export default function MarketingPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFaq) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdHowTo) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrg) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdBreadcrumbs) }}
+      />
 
       {/* 1. HERO SECTION: DUA KOLOM DENGAN GAP LEGA & ALIGNMENT OPTIS */}
-      <section className="relative pt-12 pb-20 md:pt-16 md:pb-28 lg:pt-20 lg:pb-32 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+      <section className="relative pt-10 pb-16 md:pt-14 md:pb-20 lg:pt-16 lg:pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           {/* Kolom Kiri: Teks Rata Kiri & Aksi Cepat */}
           <div className="lg:col-span-5 flex flex-col justify-center">
             <div className="inline-flex items-center gap-2 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium rounded-lg w-fit mb-4 shadow-2xs">
@@ -218,32 +286,32 @@ export default function MarketingPage() {
               <span>Meja Kerja Analisis Skripsi Kuantitatif</span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-[2.65rem] font-bold tracking-tight text-slate-900 dark:text-slate-50 leading-[1.15]">
+            <h1 className="text-3xl sm:text-4xl lg:text-[2.65rem] font-bold tracking-tight text-slate-900 dark:text-slate-50 leading-[1.18]">
               <span className="block text-primary text-xl sm:text-2xl font-bold tracking-normal mb-2">
                 Aplikasi Olah Data Skripsi Kuantitatif
               </span>
               {COPY.hero.title}
             </h1>
 
-            <p className="mt-6 text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
+            <p className="mt-5 text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
               {COPY.hero.subtitle}
             </p>
 
-            <div className="mt-8 flex flex-wrap items-center gap-4">
-              <Button asChild size="lg" className="h-12 px-6 text-sm font-semibold rounded-xl shadow-sm">
+            <div className="mt-7 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
+              <Button asChild size="lg" className="h-12 px-6 text-sm font-semibold rounded-xl shadow-sm justify-center">
                 <Link prefetch={false} href="/app/proyek/baru?contoh=1">
                   <span>{COPY.hero.ctaPrimary}</span>
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="h-12 px-6 text-sm font-semibold rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
+              <Button asChild variant="outline" size="lg" className="h-12 px-6 text-sm font-semibold rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs justify-center">
                 <Link prefetch={false} href="/app/proyek/baru">
                   {COPY.hero.ctaSecondary}
                 </Link>
               </Button>
             </div>
 
-            <div className="mt-6 pt-6 border-t border-slate-200/60 dark:border-slate-800/60 flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-500 dark:text-slate-400">
+            <div className="mt-7 pt-6 border-t border-slate-200/80 dark:border-slate-800/80 flex flex-wrap gap-x-6 gap-y-2.5 text-xs text-slate-500 dark:text-slate-400">
               <span className="flex items-center gap-1.5">
                 <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
                 Angka terverifikasi deterministik
@@ -267,21 +335,21 @@ export default function MarketingPage() {
       </section>
 
       {/* 2. ALUR KERJA METODOLOGI (EDITORIAL CHECKLIST) */}
-      <section className="py-20 md:py-28 lg:py-32 border-t border-slate-200/70 dark:border-slate-800/70 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-        {/* Section Title Block: Eyebrow, H2, Subtitle, mb-12/16 */}
-        <div className="mb-12 md:mb-16 max-w-2xl">
-          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary mb-3">
+      <section className="py-16 md:py-20 lg:py-24 border-t border-slate-200/70 dark:border-slate-800/70 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+        {/* Section Title Block: Eyebrow, H2, Subtitle */}
+        <div className="mb-10 md:mb-12 max-w-2xl">
+          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary mb-2.5">
             <span>Sistematika Penelitian</span>
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
             {COPY.howItWorks.title}
           </h2>
-          <p className="mt-3 md:mt-4 text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl">
+          <p className="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl">
             Empat tahapan sistematis dari tabulasi mentah hingga lembar lampiran skripsi siap sidang.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-6 items-stretch">
           {COPY.howItWorks.steps.map((step) => (
             <div
               key={step.number}
@@ -305,16 +373,16 @@ export default function MarketingPage() {
       </section>
 
       {/* 3. CONTOH TABEL BAB 4 DENGAN PENJELASAN (INTERACTIVE DEMO) */}
-      <section id="contoh-hasil" className="py-20 md:py-28 lg:py-32 border-t border-slate-200/70 dark:border-slate-800/70 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full scroll-mt-20">
+      <section id="contoh-hasil" className="py-16 md:py-20 lg:py-24 border-t border-slate-200/70 dark:border-slate-800/70 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full scroll-mt-20">
         {/* Section Title Block */}
-        <div className="mb-12 md:mb-16 max-w-2xl">
-          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary mb-3">
+        <div className="mb-10 md:mb-12 max-w-2xl">
+          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary mb-2.5">
             <span>Standar Jurnal Ilmiah</span>
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
             Format Tabel Bab 4 Siap Salin ke Word
           </h2>
-          <p className="mt-3 md:mt-4 text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl">
+          <p className="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl">
             Tabel jurnal ilmiah standar APA 7th Edition tanpa garis vertikal, dilengkapi interpretasi naratif bahasa Indonesia baku.
           </p>
         </div>
@@ -326,26 +394,26 @@ export default function MarketingPage() {
       </section>
 
       {/* 4. DAFTAR UJI STATISTIK: RESTRUKTURISASI 3 TAHAP ALUR SKRIPSI */}
-      <section className="py-20 md:py-28 lg:py-32 border-t border-slate-200/70 dark:border-slate-800/70 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+      <section className="py-16 md:py-20 lg:py-24 border-t border-slate-200/70 dark:border-slate-800/70 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
         {/* Section Title Block */}
-        <div className="mb-12 md:mb-16 max-w-3xl">
-          <div className="inline-flex items-center gap-1.5 border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary font-semibold rounded-lg mb-3 shadow-2xs">
+        <div className="mb-10 md:mb-12 max-w-3xl">
+          <div className="inline-flex items-center gap-1.5 border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary font-semibold rounded-lg mb-2.5 shadow-2xs">
             <Layers className="h-4 w-4" />
             <span>Urutan Otomatis Sesuai Pedoman Skripsi</span>
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
             12 Uji Statistik Skripsi Lengkap: Validitas, Reliabilitas, Asumsi Klasik, &amp; Regresi
           </h2>
-          <p className="mt-3 md:mt-4 text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl">
+          <p className="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl">
             Seluruh pengujian statistik yang dipersyaratkan dalam skripsi kuantitatif manajemen, psikologi, pendidikan, dan ilmu sosial disusun berurutan mengikuti kaidah metodologi penelitian baku.
           </p>
         </div>
 
-        <div className="space-y-14 md:space-y-16">
+        <div className="space-y-10 md:space-y-12">
           {STATISTICAL_TEST_PHASES.map((phase) => (
-            <div key={phase.phaseNumber} className="space-y-6">
+            <div key={phase.phaseNumber} className="space-y-5">
               {/* Header Tahap */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80 dark:border-slate-800/80">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-slate-200/80 dark:border-slate-800/80">
                 <div className="flex items-center gap-3">
                   <span className="flex items-center justify-center h-7 w-7 rounded-full bg-primary text-primary-foreground text-xs font-bold shrink-0 shadow-xs">
                     {phase.phaseNumber}
@@ -364,12 +432,12 @@ export default function MarketingPage() {
                 </Badge>
               </div>
 
-              {/* Cards Grid Uji Statistik (gap-6 untuk kartu kecil) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+              {/* Cards Grid Uji Statistik */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6 items-stretch">
                 {phase.tests.map((test, index) => (
                   <Card
                     key={index}
-                    className="p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 shadow-xs h-full flex flex-col justify-between hover:border-primary/50 transition-colors"
+                    className="p-5 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 shadow-xs h-full flex flex-col justify-between hover:border-primary/50 transition-colors"
                   >
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-2">
@@ -394,8 +462,8 @@ export default function MarketingPage() {
       </section>
 
       {/* 5. YANG TIDAK KAMI LAKUKAN (KOMITMEN INTEGRITAS AKADEMIK) */}
-      <section className="py-20 md:py-28 lg:py-32 border-t border-slate-200/70 dark:border-slate-800/70 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-        <div className="max-w-5xl mx-auto rounded-3xl border border-[#F7B3AF] dark:border-red-900/60 bg-[#FDEEED]/40 dark:bg-red-950/20 p-8 sm:p-12 space-y-8 shadow-xs">
+      <section className="py-16 md:py-20 lg:py-24 border-t border-slate-200/70 dark:border-slate-800/70 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+        <div className="max-w-5xl mx-auto rounded-3xl border border-[#F7B3AF] dark:border-red-900/60 bg-[#FDEEED]/40 dark:bg-red-950/20 p-6 sm:p-10 lg:p-12 space-y-7 shadow-xs">
           <div className="flex items-start gap-4">
             <ShieldAlert className="h-6 w-6 text-[#E8574F] shrink-0 mt-1" />
             <div>
@@ -411,12 +479,12 @@ export default function MarketingPage() {
             </div>
           </div>
 
-          {/* Large Cards Grid (gap-8) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch pt-2">
+          {/* Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 items-stretch pt-1">
             {COPY.notDoing.items.map((item, idx) => (
               <div
                 key={idx}
-                className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 p-6 sm:p-8 flex flex-col justify-between h-full shadow-xs"
+                className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 p-6 flex flex-col justify-between h-full shadow-xs"
               >
                 <div>
                   <div className="flex items-center gap-2 text-[#E8574F] text-xs font-bold mb-2">
@@ -433,7 +501,7 @@ export default function MarketingPage() {
             ))}
           </div>
 
-          <div className="pt-6 border-t border-slate-200/60 dark:border-slate-800/60 text-xs sm:text-sm text-slate-600 dark:text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="pt-6 border-t border-slate-200/60 dark:border-slate-800/60 text-xs sm:text-sm text-slate-600 dark:text-slate-400 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <span>
               Ingin menyertakan lembar keterangan transparan di lampiran skripsi Anda?
             </span>
@@ -447,16 +515,16 @@ export default function MarketingPage() {
       </section>
 
       {/* 6. PRICING SECTION PREVIEW */}
-      <section className="py-20 md:py-28 lg:py-32 border-t border-slate-200/70 dark:border-slate-800/70 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+      <section className="py-16 md:py-20 lg:py-24 border-t border-slate-200/70 dark:border-slate-800/70 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
         {/* Section Title Block: Rata Tengah */}
-        <div className="mb-12 md:mb-16 text-center max-w-2xl mx-auto">
-          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary mb-3">
+        <div className="mb-10 md:mb-12 text-center max-w-2xl mx-auto">
+          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary mb-2.5">
             <span>Investasi Kelulusan</span>
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
             {COPY.pricing.title}
           </h2>
-          <p className="mt-3 md:mt-4 text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl mx-auto">
+          <p className="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl mx-auto">
             {COPY.pricing.subtitle}
           </p>
         </div>
@@ -467,8 +535,8 @@ export default function MarketingPage() {
       </section>
 
       {/* 7. TRUST CALLOUT BOX: STANDAR SIDANG & AUDIT DOSEN PEMBIMBING */}
-      <section className="py-16 md:py-20 border-t border-slate-200/70 dark:border-slate-800/70 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-        <div className="max-w-5xl mx-auto rounded-3xl border border-primary/30 bg-primary/5 p-8 sm:p-10 lg:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 shadow-xs">
+      <section className="py-12 md:py-16 border-t border-slate-200/70 dark:border-slate-800/70 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+        <div className="max-w-5xl mx-auto rounded-3xl border border-primary/30 bg-primary/5 p-6 sm:p-8 lg:p-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 lg:gap-8 shadow-xs">
           <div className="space-y-3 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-primary/10 text-primary font-bold text-xs">
               <ShieldCheck className="h-4 w-4" />
@@ -482,13 +550,13 @@ export default function MarketingPage() {
             </p>
           </div>
           <div className="shrink-0 flex flex-col sm:flex-row md:flex-col gap-3 w-full md:w-auto">
-            <Button asChild size="lg" className="font-semibold text-xs sm:text-sm px-6 h-12 rounded-xl shadow-xs">
+            <Button asChild size="lg" className="font-semibold text-xs sm:text-sm px-6 h-12 rounded-xl shadow-xs justify-center">
               <Link prefetch={false} href="/app/proyek/baru?contoh=1">
                 <span>Coba Data Contoh (60 Detik)</span>
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="text-xs sm:text-sm px-6 h-12 rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-2xs">
+            <Button asChild variant="outline" size="lg" className="text-xs sm:text-sm px-6 h-12 rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-2xs justify-center">
               <Link prefetch={false} href="/pernyataan-penggunaan">
                 Format Lembar Pernyataan &rarr;
               </Link>
@@ -498,36 +566,36 @@ export default function MarketingPage() {
       </section>
 
       {/* 8. FAQ SECTION */}
-      <section className="py-20 md:py-28 lg:py-32 border-t border-slate-200/70 dark:border-slate-800/70 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+      <section className="py-16 md:py-20 lg:py-24 border-t border-slate-200/70 dark:border-slate-800/70 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
         {/* Section Title Block: Rata Tengah */}
-        <div className="mb-12 md:mb-16 text-center max-w-2xl mx-auto">
-          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary mb-3">
+        <div className="mb-10 md:mb-12 text-center max-w-2xl mx-auto">
+          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary mb-2.5">
             <span>Tanya Jawab</span>
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
             {COPY.faq.title}
           </h2>
-          <p className="mt-3 md:mt-4 text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl mx-auto">
+          <p className="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl mx-auto">
             Hal-hal yang sering ditanyakan mahasiswa sebelum memulai analisis kuesioner.
           </p>
         </div>
 
-        {/* Accordion FAQ: max-w-3xl, py-5 px-6, space-y-4 */}
-        <div className="max-w-3xl mx-auto space-y-4">
+        {/* Accordion FAQ */}
+        <div className="max-w-3xl mx-auto space-y-3.5">
           {COPY.faq.items.map((item, idx) => (
             <details
               key={idx}
               className="group rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 overflow-hidden transition-all shadow-xs"
               open={idx === 0}
             >
-              <summary className="w-full py-5 px-6 text-left flex items-center justify-between gap-4 text-sm sm:text-base font-semibold text-slate-900 dark:text-slate-100 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+              <summary className="w-full py-4 sm:py-4.5 px-5 sm:px-6 text-left flex items-center justify-between gap-4 text-sm sm:text-base font-semibold text-slate-900 dark:text-slate-100 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                 <span>{item.q}</span>
                 <ChevronDown
                   className="h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200 group-open:rotate-180 group-open:text-primary"
                   aria-hidden="true"
                 />
               </summary>
-              <div className="px-6 pb-6 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed border-t border-slate-200/60 dark:border-slate-800/60 pt-4">
+              <div className="px-5 sm:px-6 pb-5 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed border-t border-slate-200/60 dark:border-slate-800/60 pt-3.5">
                 <p>{item.a}</p>
                 {idx === 0 && (
                   <div className="mt-3 pt-3 border-t border-slate-200/50 dark:border-slate-800/50">
@@ -547,38 +615,45 @@ export default function MarketingPage() {
       </section>
 
       {/* 9. CTA FOOTER SECTION */}
-      <section className="py-20 md:py-28 lg:py-32 border-t border-slate-200/70 dark:border-slate-800/70 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-        <div className="max-w-5xl mx-auto rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 p-8 sm:p-12 lg:p-16 text-center space-y-6 shadow-sm">
+      <section className="py-16 md:py-20 lg:py-24 border-t border-slate-200/70 dark:border-slate-800/70 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+        <div className="max-w-5xl mx-auto rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 p-8 sm:p-10 lg:p-14 text-center space-y-5 shadow-sm">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
             Buka meja kerja skripsi Anda hari ini
           </h2>
           <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-xl mx-auto leading-relaxed">
             Tanpa instalasi perangkat lunak berat, tanpa lisensi mahal, dan tanpa rumus yang membingungkan. Mulai dengan dataset kuesioner Anda sendiri atau pelajari data simulasi.
           </p>
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button asChild size="lg" className="w-full sm:w-auto font-semibold text-sm px-6 h-12 rounded-xl shadow-sm">
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+            <Button asChild size="lg" className="w-full sm:w-auto font-semibold text-sm px-6 h-12 rounded-xl shadow-sm justify-center">
               <Link prefetch={false} href="/app/proyek/baru?contoh=1">
                 <span>Coba dengan data contoh (60 Detik)</span>
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="w-full sm:w-auto text-sm px-6 h-12 rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-2xs">
+            <Button asChild variant="outline" size="lg" className="w-full sm:w-auto text-sm px-6 h-12 rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-2xs justify-center">
               <Link prefetch={false} href="/pernyataan-penggunaan">
                 Format Lampiran Skripsi
               </Link>
             </Button>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 pt-2">
+          <p className="text-xs text-slate-500 dark:text-slate-400 pt-1.5">
             {COPY.reassurance.saved}
           </p>
         </div>
 
-        {/* PageActions Navigasi Halaman */}
-        <div className="mt-12">
-          <PageActions
-            nextHref="/harga"
-            nextLabel="Lihat Pilihan Harga"
-          />
+        {/* Navigasi Halaman Berikutnya yang Rapi dan Selaras */}
+        <div className="max-w-5xl mx-auto mt-10 sm:mt-12">
+          <div className="pt-6 sm:pt-8 border-t border-slate-200/80 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 text-center sm:text-left">
+              Pelajari rincian paket dan investasi kelulusan mahasiswa:
+            </span>
+            <Button asChild variant="outline" size="lg" className="w-full sm:w-auto h-11 px-6 rounded-xl font-semibold gap-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xs justify-center">
+              <Link prefetch={false} href="/harga">
+                <span>Lihat Pilihan Harga</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
         </div>
       </section>
     </div>
