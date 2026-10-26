@@ -25,10 +25,10 @@ import { LiveDemo } from '@/components/live-demo';
 
 export const metadata: Metadata = {
   title: {
-    absolute: 'Aplikasi Olah Data Kuantitatif Online & Alternatif Jamovi/SPSS | OlahData',
+    absolute: 'Olah Data Skripsi Kuantitatif Online [Gratis] — Alternatif Jamovi & SPSS | OlahData',
   },
   description:
-    'Aplikasi olah data kuantitatif online terbaik pengganti Jamovi & SPSS untuk kuesioner skripsi. Otomatis uji validitas, reliabilitas, asumsi klasik, regresi linier berganda, dan ekspor tabel serta draf Bab 4 Word standar skripsi.',
+    'Aplikasi olah data kuesioner skripsi kuantitatif online tanpa SPSS & Jamovi. Otomatis uji validitas, reliabilitas, asumsi klasik, regresi linier berganda, dan ekspor tabel serta draf Bab 4 Word standar skripsi.',
   keywords: [
     'olah data kuantitatif',
     'aplikasi olah data kuantitatif',
@@ -176,23 +176,24 @@ const STATISTICAL_TEST_PHASES = [
 export default function MarketingPage() {
   const jsonLdSoftware = {
     '@context': 'https://schema.org',
-    '@type': 'WebApplication',
+    '@type': 'SoftwareApplication',
     name: 'OlahData',
     alternateName: [
-      'Aplikasi Olah Data Kuantitatif',
+      'Olah Data Skripsi Kuantitatif',
+      'Aplikasi Olah Data Online',
       'Alternatif Jamovi Online',
       'Alternatif SPSS Mahasiswa',
-      'Olah Data Skripsi Kuantitatif',
     ],
     url: 'https://olahdata.vrimae.com',
-    applicationCategory: 'EducationalApplication',
-    operatingSystem: 'All',
+    applicationCategory: 'BusinessApplication, EducationalApplication',
+    operatingSystem: 'Web Browser, Windows, macOS, Android, iOS',
     browserRequirements: 'Requires JavaScript. Requires HTML5.',
     description:
-      'Aplikasi olah data kuantitatif online terbaik pengganti Jamovi dan SPSS untuk skripsi. Otomatis uji validitas, reliabilitas, asumsi klasik, regresi linier berganda, dan ekspor draf Bab 4 Word standar skripsi.',
+      'Aplikasi olah data kuesioner skripsi kuantitatif online pengganti Jamovi dan SPSS. Otomatis uji validitas, reliabilitas, asumsi klasik, regresi linier berganda, dan ekspor draf Bab 4 Word standar skripsi.',
     aggregateRating: {
       '@type': 'AggregateRating',
       ratingValue: '4.9',
+      ratingCount: '1280',
       reviewCount: '1280',
       bestRating: '5',
       worstRating: '1',

@@ -21,10 +21,10 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://olahdata.vrimae.com'),
   title: {
-    default: `${APP_NAME} — Olah Data Skripsi Kuantitatif & Buat Bab 4 Otomatis`,
+    default: `Olah Data Skripsi Kuantitatif Online [Gratis] — Alternatif Jamovi & SPSS | ${APP_NAME}`,
     template: `%s | ${APP_NAME}`,
   },
-  description: 'Aplikasi olah data kuesioner skripsi kuantitatif online tanpa SPSS. Otomatis uji validitas, reliabilitas, asumsi klasik, regresi linier, dan draf Bab 4 Word standar skripsi.',
+  description: 'Aplikasi olah data kuesioner skripsi kuantitatif online tanpa SPSS & Jamovi. Otomatis uji validitas, reliabilitas, asumsi klasik, regresi linier, dan draf Bab 4 Word standar skripsi dalam 60 detik.',
   verification: {
     google: 's9WY1v_Nd5OwIIxm18HwdUCJ5yHI9OHud39eehL8TJU',
   },
