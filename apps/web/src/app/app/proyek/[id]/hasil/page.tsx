@@ -3547,19 +3547,14 @@ export default function HasilPage() {
       <TopSummaryTrafficLights results={results} onJumpToTab={(tabId) => setActiveTab(tabId)} />
 
       {/* Dual-View Segmented Output Toggle: APA 7th vs SPSS Classic */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3.5 rounded-2xl border border-border bg-card shadow-xs">
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Format Tampilan Output
-            </span>
-            <Badge variant="outline" className="text-[11px] font-mono py-0">
-              Dual-View
-            </Badge>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Pilih format tabel naskah untuk Bab 4 atau format output klasik untuk lampiran skripsi.
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 p-3 rounded-xl border border-border bg-card shadow-2xs">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-foreground">
+            Format Tampilan:
+          </span>
+          <span className="text-xs text-muted-foreground hidden sm:inline">
+            Tabel Naskah Bab 4 (APA 7th) atau Output Lampiran (SPSS)
+          </span>
         </div>
 
         <div

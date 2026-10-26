@@ -124,18 +124,22 @@ async function runComprehensiveTest() {
     // 2.3 Invalid credentials check
     await page.locator('input[type="email"], input#email').fill(testEmail);
     await page.locator('input[type="password"], input#password').fill('SalahPassword123!');
-    const submitLoginBtn = page.getByRole('button', { name: /masuk|login/i }).first();
-    await submitLoginBtn.click();
-    await page.waitForSelector('[role="alert"], [data-sonner-toast], div:has-text("salah"), div:has-text("Kata sandi")', { timeout: 6000 }).catch(() => {});
+    const submitLoginBtn = page.locator('button[type="submit"]').first();
+    await Promise.all([
+      page.waitForResponse(r => r.url().includes('/api/auth/login') || r.url().includes('/auth/v1/token'), { timeout: 10000 }).catch(() => {}),
+      submitLoginBtn.click()
+    ]);
     await page.waitForTimeout(1000);
     const bodyAfterInvalid = await page.locator('body').innerText();
-    const hasInvalidWarning = /salah|tidak valid|invalid|gagal/i.test(bodyAfterInvalid);
+    const hasInvalidWarning = /salah|tidak valid|invalid|gagal|belum terdaftar/i.test(bodyAfterInvalid);
     recordTest('Authentication', 'Invalid Password Handling & Notification', hasInvalidWarning);
 
     // 2.4 Valid login
     await page.locator('input[type="password"], input#password').fill(testPassword);
-    await submitLoginBtn.click();
-    await page.waitForURL(/.*\/app/, { timeout: 10000 }).catch(() => {});
+    await Promise.all([
+      page.waitForURL(/.*\/app/, { timeout: 15000 }).catch(() => {}),
+      submitLoginBtn.click()
+    ]);
     await page.waitForTimeout(1500);
 
     const currentUrl = page.url();

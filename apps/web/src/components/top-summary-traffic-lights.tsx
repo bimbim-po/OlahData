@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { ShieldCheck, CheckCircle2, AlertTriangle, XCircle, Sparkles, Info } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, XCircle, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AnalysisResults } from '@/lib/api/types';
 import { formatNumber } from '@/lib/format';
@@ -18,13 +18,17 @@ interface TrafficLightCard {
   title: string;
   category: 'instrument' | 'assumptions' | 'hypotheses';
   status: LightStatus;
-  statusLabel: string;
-  conclusion: string;
-  details: string;
+  statusBadge: string;
+  metricHighlight: string;
+  summary: string;
 }
 
-export function TopSummaryTrafficLights({ results, className, onJumpToTab }: TopSummaryTrafficLightsProps) {
-  // 1. Evaluate Instrumen (Validitas & Reliabilitas)
+export function TopSummaryTrafficLights({
+  results,
+  className,
+  onJumpToTab,
+}: TopSummaryTrafficLightsProps) {
+  // 1. Evaluasi Instrumen (Validitas & Reliabilitas)
   const evalInstrument = (): TrafficLightCard => {
     const valItems = results.validity || [];
     const relItems = results.reliability || [];
@@ -32,150 +36,170 @@ export function TopSummaryTrafficLights({ results, className, onJumpToTab }: Top
     const validCount = valItems.filter((v) => v.valid).length;
     const invalidCount = totalItems - validCount;
 
-    const allReliable = relItems.length > 0 && relItems.every((r) => r.reliable);
-    const minAlpha = relItems.length > 0 ? Math.min(...relItems.map((r) => r.cronbachAlpha)) : 0;
+    const allReliable =
+      relItems.length > 0 && relItems.every((r) => r.reliable);
+    const minAlpha =
+      relItems.length > 0
+        ? Math.min(...relItems.map((r) => r.cronbachAlpha))
+        : 0;
 
     let status: LightStatus = 'passed';
-    let statusLabel = 'Lampu Hijau (Sempurna)';
-    let conclusion = '';
-    let details = '';
+    let statusBadge = 'Valid & Reliabel';
+    let metricHighlight = '';
+    let summary = '';
 
     if (totalItems === 0 && relItems.length === 0) {
       return {
-        title: '1. Instrumen Penelitian',
+        title: 'Validitas & Reliabilitas',
         category: 'instrument',
         status: 'passed',
-        statusLabel: 'Normal',
-        conclusion: 'Instrumen penelitian terkonfigurasi dengan baik.',
-        details: 'Data siap dianalisis.',
+        statusBadge: 'Siap',
+        metricHighlight: 'Instrumen Terkonfigurasi',
+        summary: 'Data siap dianalisis untuk pengujian skripsi.',
       };
     }
 
     if (invalidCount === 0 && allReliable) {
       status = 'passed';
-      statusLabel = 'Lampu Hijau: Instrumen Sangat Valid & Reliabel';
-      conclusion = `Seluruh ${totalItems} butir pernyataan dinyatakan valid (r hitung > r tabel) dan seluruh konstruk reliabel (Cronbach's Alpha ≥ 0,700).`;
-      details = `Nilai Cronbach's Alpha terendah adalah ${formatNumber(minAlpha, 3)}, melebihi batas kritis 0,700.`;
-    } else if (allReliable || minAlpha >= 0.60) {
+      statusBadge = 'Valid & Reliabel';
+      metricHighlight = `${totalItems}/${totalItems} Butir Valid • Alpha ${formatNumber(minAlpha, 3)}`;
+      summary = 'Semua butir instrumen valid dan konsisten mengukur variabel.';
+    } else if (allReliable || minAlpha >= 0.6) {
       status = 'warning';
-      statusLabel = 'Lampu Kuning: Memerlukan Penyesuaian Butir';
-      conclusion = invalidCount > 0
-        ? `Terdapat ${invalidCount} butir tidak valid (${valItems.filter((v) => !v.valid).map((v) => v.item).join(', ')}). Konsistensi konstruk tetap reliabel setelah butir gugur dieliminasi.`
-        : `Nilai reliabilitas konstruk berada pada kategori dapat diterima (${formatNumber(minAlpha, 3)} ≥ 0,600).`;
-      details = 'Disarankan mengeliminasi butir yang gugur sebelum pengujian hipotesis akhir skripsi.';
+      statusBadge = 'Perlu Penyesuaian';
+      metricHighlight = `${validCount}/${totalItems} Valid • ${invalidCount} Butir Gugur`;
+      summary = `${invalidCount} butir tidak valid. Konstruk tetap reliabel jika butir dieliminasi.`;
     } else {
       status = 'violated';
-      statusLabel = 'Lampu Merah: Instrumen Belum Reliabel';
-      conclusion = `Terdapat indikator instrumen yang tidak memenuhi syarat reliabilitas minimum (Alpha < 0,600).`;
-      details = 'Periksa butir dengan korelasi rendah atau butir negatif yang belum dibalik.';
+      statusBadge = 'Belum Reliabel';
+      metricHighlight = `Alpha Rendah (${formatNumber(minAlpha, 3)} < 0,600)`;
+      summary = 'Instrumen belum memenuhi batas keandalan minimum.';
     }
 
     return {
-      title: '1. Instrumen Penelitian (Validitas & Reliabilitas)',
+      title: 'Validitas & Reliabilitas',
       category: 'instrument',
       status,
-      statusLabel,
-      conclusion,
-      details,
+      statusBadge,
+      metricHighlight,
+      summary,
     };
   };
 
-  // 2. Evaluate Asumsi Klasik
+  // 2. Evaluasi Asumsi Klasik
   const evalAssumptions = (): TrafficLightCard => {
     const normality = results.normality || [];
     const multi = results.multicollinearity || [];
     const hetero = results.heteroscedasticity || [];
 
-    const normPassed = normality.length > 0 ? normality.every((n) => n.normal || n.pValue >= 0.05) : true;
-    const multiPassed = multi.length > 0 ? multi.every((m) => !m.problematic && m.vif < 10 && m.tolerance > 0.10) : true;
-    const heteroPassed = hetero.length > 0 ? hetero.every((h) => !h.significant && h.pValue >= 0.05) : true;
+    const normPassed =
+      normality.length > 0
+        ? normality.every((n) => n.normal || n.pValue >= 0.05)
+        : true;
+    const multiPassed =
+      multi.length > 0
+        ? multi.every(
+            (m) => !m.problematic && m.vif < 10 && m.tolerance > 0.1
+          )
+        : true;
+    const heteroPassed =
+      hetero.length > 0
+        ? hetero.every((h) => !h.significant && h.pValue >= 0.05)
+        : true;
 
     let status: LightStatus = 'passed';
-    let statusLabel = 'Lampu Hijau: Asumsi Terpenuhi';
-    let conclusion = '';
-    let details = '';
+    let statusBadge = 'Semua Terpenuhi';
+    let metricHighlight = '';
+    let summary = '';
 
     const issues: string[] = [];
-    if (!normPassed) issues.push('Normalitas residual');
+    if (!normPassed) issues.push('Normalitas');
     if (!multiPassed) issues.push('Multikolinearitas (VIF)');
     if (!heteroPassed) issues.push('Heteroskedastisitas');
 
     if (issues.length === 0) {
       status = 'passed';
-      statusLabel = 'Lampu Hijau: Seluruh Asumsi Klasik Terpenuhi';
-      conclusion = 'Residual model regresi berdistribusi normal, bebas dari multikolinearitas, dan memenuhi syarat homoskedastisitas.';
-      details = 'Estimator OLS bersifat BLUE (Best Linear Unbiased Estimator) dan layak untuk uji hipotesis.';
+      statusBadge = 'Semua Terpenuhi';
+      metricHighlight = 'Normalitas • Bebas VIF • Uji Glejser Lolos';
+      summary = 'Residual berdistribusi normal, bebas multikolinearitas dan heteroskedastisitas.';
     } else if (issues.length === 1) {
       status = 'warning';
-      statusLabel = 'Lampu Kuning: 1 Asumsi Perlu Perhatian';
-      conclusion = `Asumsi ${issues[0]} belum terpenuhi secara optimal pada taraf signifikansi α = 0,05.`;
-      details = 'Gunakan fitur Asisten Penyembuh Asumsi (transformasi atau pengecualian pencilan) jika dosen penguji mensyaratkan.';
+      statusBadge = '1 Catatan Asumsi';
+      metricHighlight = `Periksa: ${issues[0]}`;
+      summary = `Asumsi ${issues[0]} belum optimal pada taraf signifikansi α = 0,05.`;
     } else {
       status = 'violated';
-      statusLabel = 'Lampu Merah: Pelanggaran Asumsi Berganda';
-      conclusion = `Model regresi mengalami pelanggaran pada asumsi: ${issues.join(' dan ')}.`;
-      details = 'Disarankan mempertimbangkan uji non-parametrik alternatif atau pembersihan outlier.';
+      statusBadge = 'Perlu Perbaikan';
+      metricHighlight = `Pelanggaran: ${issues.join(' & ')}`;
+      summary = 'Model regresi mengalami beberapa pelanggaran asumsi klasik.';
     }
 
     return {
-      title: '2. Asumsi Klasik Regresi (Normalitas, VIF, Glejser)',
+      title: 'Uji Asumsi Klasik',
       category: 'assumptions',
       status,
-      statusLabel,
-      conclusion,
-      details,
+      statusBadge,
+      metricHighlight,
+      summary,
     };
   };
 
-  // 3. Evaluate Keputusan Hipotesis
+  // 3. Evaluasi Keputusan Hipotesis
   const evalHypotheses = (): TrafficLightCard => {
     const reg = results.regression || [];
     const fTest = results.fTest;
-    const predictors = reg.filter((r) => !['(constant)', 'konstanta', 'constant'].includes(r.variable.toLowerCase()));
+    const predictors = reg.filter(
+      (r) =>
+        !['(constant)', 'konstanta', 'constant'].includes(
+          r.variable.toLowerCase()
+        )
+    );
 
-    const sigPredictors = predictors.filter((p) => p.significant || p.pValue < 0.05);
-    const fSig = fTest ? (fTest.significant || fTest.pValue < 0.05) : false;
+    const sigPredictors = predictors.filter(
+      (p) => p.significant || p.pValue < 0.05
+    );
+    const fSig = fTest ? fTest.significant || fTest.pValue < 0.05 : false;
 
     let status: LightStatus = 'passed';
-    let statusLabel = 'Lampu Hijau: Hipotesis Diterima';
-    let conclusion = '';
-    let details = '';
+    let statusBadge = 'Semua Diterima';
+    let metricHighlight = '';
+    let summary = '';
 
     if (predictors.length === 0) {
       return {
-        title: '3. Pembuktian Hipotesis Penelitian',
+        title: 'Uji Hipotesis (t & F)',
         category: 'hypotheses',
         status: 'passed',
-        statusLabel: 'Dihitung',
-        conclusion: 'Model regresi berhasil diestimasi.',
-        details: 'Lihat rincian koefisien pada Tabel 4.10 dan 4.11.',
+        statusBadge: 'Selesai',
+        metricHighlight: 'Model Regresi Diestimasi',
+        summary: 'Hasil estimasi model regresi siap dibahas.',
       };
     }
 
     if (sigPredictors.length === predictors.length && fSig) {
       status = 'passed';
-      statusLabel = 'Lampu Hijau: Seluruh Hipotesis Diterima';
-      conclusion = `Seluruh ${predictors.length} hipotesis parsial (Uji t) dan hipotesis simultan (Uji F = ${fTest ? formatNumber(fTest.fHitung, 2) : '-'}, p < 0,001) terbukti berpengaruh signifikan.`;
-      details = 'Hasil pengujian memberikan bukti empiris kuat yang mendukung hipotesis penelitian.';
+      statusBadge = 'Semua Diterima';
+      metricHighlight = `${predictors.length}/${predictors.length} Parsial Signifikan • Uji F Signifikan`;
+      summary = 'Seluruh hipotesis penelitian terbukti berpengaruh nyata.';
     } else if (sigPredictors.length > 0 || fSig) {
       status = 'warning';
-      statusLabel = 'Lampu Kuning: Hipotesis Diterima Sebagian';
-      conclusion = `${sigPredictors.length} dari ${predictors.length} hipotesis parsial terbukti signifikan, serta uji simultan F ${fSig ? 'signifikan' : 'tidak signifikan'}.`;
-      details = 'Pembahasan perlu mengelaborasi mengapa beberapa variabel tidak berpengaruh signifikan.';
+      statusBadge = 'Diterima Sebagian';
+      metricHighlight = `${sigPredictors.length} dari ${predictors.length} Hipotesis Parsial Signifikan`;
+      summary = `${sigPredictors.length} variabel berpengaruh signifikan, uji simultan F ${fSig ? 'lolos' : 'belum'}.`;
     } else {
       status = 'violated';
-      statusLabel = 'Lampu Merah: Hipotesis Ditolak';
-      conclusion = 'Tidak ditemukan pengaruh yang signifikan baik secara parsial maupun simultan pada taraf α = 0,05.';
-      details = 'Jelaskan faktor kontekstual atau keterbatasan sampel pada bab pembahasan.';
+      statusBadge = 'Hipotesis Ditolak';
+      metricHighlight = 'Tidak Ada Pengaruh Signifikan';
+      summary = 'Tidak ditemukan pengaruh yang signifikan pada taraf α = 0,05.';
     }
 
     return {
-      title: '3. Keputusan Hipotesis Penelitian (Uji t & F)',
+      title: 'Uji Hipotesis (t & F)',
       category: 'hypotheses',
       status,
-      statusLabel,
-      conclusion,
-      details,
+      statusBadge,
+      metricHighlight,
+      summary,
     };
   };
 
@@ -184,112 +208,115 @@ export function TopSummaryTrafficLights({ results, className, onJumpToTab }: Top
   const getStatusIcon = (status: LightStatus) => {
     switch (status) {
       case 'passed':
-        return <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />;
+        return (
+          <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+        );
       case 'warning':
-        return <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />;
+        return (
+          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+        );
       case 'violated':
-        return <XCircle className="h-5 w-5 text-rose-600 dark:text-rose-400 shrink-0" />;
+        return (
+          <XCircle className="h-4 w-4 text-rose-600 dark:text-rose-400 shrink-0" />
+        );
     }
   };
 
   const getStatusBadgeClass = (status: LightStatus) => {
     switch (status) {
       case 'passed':
-        return 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30';
+        return 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/25';
       case 'warning':
-        return 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30';
+        return 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/25';
       case 'violated':
-        return 'bg-rose-500/15 text-rose-800 dark:text-rose-300 border-rose-500/30';
+        return 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/25';
     }
   };
 
   const getCardBorder = (status: LightStatus) => {
     switch (status) {
       case 'passed':
-        return 'border-emerald-500/30 bg-emerald-50/40 dark:bg-emerald-950/20';
+        return 'border-emerald-500/25 bg-emerald-50/30 dark:bg-emerald-950/15 hover:border-emerald-500/40';
       case 'warning':
-        return 'border-amber-500/30 bg-amber-50/40 dark:bg-amber-950/20';
+        return 'border-amber-500/25 bg-amber-50/30 dark:bg-amber-950/15 hover:border-amber-500/40';
       case 'violated':
-        return 'border-rose-500/30 bg-rose-50/40 dark:bg-rose-950/20';
+        return 'border-rose-500/25 bg-rose-50/30 dark:bg-rose-950/15 hover:border-rose-500/40';
     }
   };
 
   return (
-    <div className={cn('space-y-3.5', className)}>
+    <div className={cn('space-y-2.5', className)}>
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <div className="flex gap-1.5 p-1 rounded-full bg-muted border border-border">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" title="Lampu Hijau" />
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500" title="Lampu Kuning" />
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500" title="Lampu Merah" />
-          </div>
-          <h2 className="text-sm font-bold uppercase tracking-wider text-foreground">
-            Ringkasan Eksekutif Bab IV (Status Tri-Indikator Skripsi)
-          </h2>
-        </div>
-        <span className="text-xs text-muted-foreground hidden sm:inline">
-          Dihitung deterministik oleh OlahData Engine
-        </span>
+        <h2 className="text-xs sm:text-sm font-semibold text-foreground flex items-center gap-2">
+          <span>Ringkasan Hasil Uji Bab 4</span>
+          <span className="text-[11px] font-normal text-muted-foreground hidden sm:inline">
+            (Kelayakan instrumen, asumsi klasik, dan hipotesis)
+          </span>
+        </h2>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {cards.map((card) => (
           <div
             key={card.category}
             className={cn(
-              'rounded-xl border p-4 flex flex-col justify-between transition-all shadow-xs',
+              'rounded-xl border p-3.5 sm:p-4 flex flex-col justify-between transition-colors shadow-2xs',
               getCardBorder(card.status)
             )}
           >
-            <div className="space-y-2">
-              <div className="flex items-start justify-between gap-2">
-                <span className="text-xs font-bold text-foreground leading-tight">
+            <div className="space-y-1.5">
+              {/* Header Card: Judul & Badge Status */}
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-foreground">
                   {card.title}
                 </span>
-                {getStatusIcon(card.status)}
-              </div>
-
-              <div className="inline-block">
                 <span
                   className={cn(
-                    'text-[11px] font-semibold px-2 py-0.5 rounded-full border',
+                    'text-[10px] font-semibold px-2 py-0.5 rounded-full border inline-flex items-center gap-1 shrink-0',
                     getStatusBadgeClass(card.status)
                   )}
                 >
-                  {card.statusLabel}
+                  {getStatusIcon(card.status)}
+                  {card.statusBadge}
                 </span>
               </div>
 
-              <p className="text-xs text-foreground font-medium leading-relaxed">
-                {card.conclusion}
+              {/* Highlight Metrik Inti (Font Tebal, Jelas) */}
+              <div className="text-xs sm:text-[13px] font-bold text-foreground tracking-tight pt-0.5">
+                {card.metricHighlight}
+              </div>
+
+              {/* Ringkasan Singkat (Maksimal 1-2 Baris) */}
+              <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                {card.summary}
               </p>
             </div>
 
-            <div className="mt-3 pt-2.5 border-t border-border/50 space-y-2">
-              <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
-                <Info className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
-                <span>{card.details}</span>
-              </div>
-              {onJumpToTab && (
+            {/* Action Link Menuju Tabel Terkait */}
+            {onJumpToTab && (
+              <div className="mt-2.5 pt-2 border-t border-border/40">
                 <button
                   type="button"
                   onClick={() => {
                     if (card.category === 'instrument') onJumpToTab('validity');
-                    else if (card.category === 'assumptions') onJumpToTab('assumptions');
-                    else if (card.category === 'hypotheses') onJumpToTab('regression');
+                    else if (card.category === 'assumptions')
+                      onJumpToTab('assumptions');
+                    else if (card.category === 'hypotheses')
+                      onJumpToTab('regression');
                   }}
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline cursor-pointer pt-0.5"
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline cursor-pointer group"
                 >
-                  <span>{
-                    card.category === 'instrument'
-                      ? 'Lihat Tabel Validitas & Reliabilitas →'
+                  <span>
+                    {card.category === 'instrument'
+                      ? 'Buka Tabel Validitas'
                       : card.category === 'assumptions'
-                      ? 'Lihat Uji Asumsi Klasik →'
-                      : 'Lihat Tabel Uji Hipotesis →'
-                  }</span>
+                      ? 'Buka Asumsi Klasik'
+                      : 'Buka Tabel Hipotesis'}
+                  </span>
+                  <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
