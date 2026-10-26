@@ -10,7 +10,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       <div className="mx-auto max-w-7xl px-4 pt-16 pb-12 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-10 lg:gap-16 md:grid-cols-4 lg:grid-cols-5">
+        <div className="grid grid-cols-1 gap-10 lg:gap-12 md:grid-cols-2 lg:grid-cols-6">
           {/* Brand info */}
           <div className="md:col-span-2 space-y-4">
             <Link
@@ -28,7 +28,56 @@ export function SiteFooter() {
             </p>
           </div>
 
-          {/* Kolom 1: Produk */}
+          {/* Kolom 1: Alternatif & Uji Statistik */}
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100">
+              Alternatif &amp; Uji
+            </h4>
+            <ul className="mt-4 space-y-2.5 text-xs sm:text-[13px]">
+              <li>
+                <Link
+                  href="/alternatif-jamovi"
+                  className="text-slate-600 dark:text-slate-400 transition-colors hover:text-primary inline-flex py-0.5"
+                >
+                  Alternatif Jamovi
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/alternatif-spss"
+                  className="text-slate-600 dark:text-slate-400 transition-colors hover:text-primary inline-flex py-0.5"
+                >
+                  Alternatif SPSS
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/uji-validitas-reliabilitas"
+                  className="text-slate-600 dark:text-slate-400 transition-colors hover:text-primary inline-flex py-0.5"
+                >
+                  Uji Validitas &amp; Reliabilitas
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/uji-asumsi-klasik"
+                  className="text-slate-600 dark:text-slate-400 transition-colors hover:text-primary inline-flex py-0.5"
+                >
+                  Uji Asumsi Klasik
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/uji-regresi-linier-berganda"
+                  className="text-slate-600 dark:text-slate-400 transition-colors hover:text-primary inline-flex py-0.5"
+                >
+                  Regresi Linier Berganda
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Kolom 2: Produk */}
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100">
               Produk
@@ -61,7 +110,7 @@ export function SiteFooter() {
             </ul>
           </div>
 
-          {/* Kolom 2: Bantuan */}
+          {/* Kolom 3: Bantuan */}
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100">
               Bantuan dan Etika
@@ -94,7 +143,7 @@ export function SiteFooter() {
             </ul>
           </div>
 
-          {/* Kolom 3: Legal */}
+          {/* Kolom 4: Legal */}
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100">
               Legal
