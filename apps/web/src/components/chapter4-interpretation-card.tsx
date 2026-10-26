@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  Sparkles,
   Check,
   BookOpen,
   ChevronDown,
@@ -57,8 +56,7 @@ export function Chapter4InterpretationCard({
   className,
 }: Chapter4InterpretationCardProps) {
   const { toast } = useToast();
-  const [isPolishing, setIsPolishing] = useState(false);
-  const [isPolished, setIsPolished] = useState(false);
+  const [copiedDraft, setCopiedDraft] = useState(false);
   const [showScaffold, setShowScaffold] = useState(true);
   const [theoryNote, setTheoryNote] = useState('');
   const [noteVersion, setNoteVersion] = useState<number | undefined>(undefined);
@@ -400,18 +398,36 @@ export function Chapter4InterpretationCard({
     }
   };
 
-  const handlePolishWithAI = () => {
-    setIsPolishing(true);
-    setTimeout(() => {
-      setIsPolishing(false);
-      setIsPolished(true);
+  const handleCopyDraft = async () => {
+    const textToCopy = interpretation ? interpretation.trim() : intinya.trim();
+    if (!textToCopy) return;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(textToCopy);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = textToCopy;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      setCopiedDraft(true);
+      setTimeout(() => setCopiedDraft(false), 2000);
       toast({
-        title: 'Gaya Bahasa Naskah Dirapikan',
-        description:
-          'Tata bahasa telah diselaraskan dengan kaidah penulisan ilmiah baku. Angka dan signifikansi tetap 100% terkunci.',
+        title: 'Draf Naskah Bab 4 Tersalin',
+        description: 'Teks siap ditempelkan (Ctrl+V) ke Microsoft Word Anda.',
         variant: 'success',
       });
-    }, 600);
+    } catch {
+      toast({
+        title: 'Gagal Menyalin',
+        description: 'Periksa izin clipboard pada peramban Anda.',
+        variant: 'error',
+      });
+    }
   };
 
   return (
@@ -435,15 +451,23 @@ export function Chapter4InterpretationCard({
 
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             size="sm"
-            onClick={handlePolishWithAI}
-            disabled={isPolishing}
+            onClick={handleCopyDraft}
             className="text-xs h-7 px-2.5 gap-1.5 text-muted-foreground hover:text-foreground touch-manipulation cursor-pointer"
-            title="Rapikan tata bahasa kalimat tanpa mengubah angka atau kategori statistik"
+            title="Salin draf naskah Bab 4 ini untuk ditempelkan ke Microsoft Word"
           >
-            <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-            <span>{isPolished ? 'Gaya Ilmiah Aktif' : 'Rapikan Gaya AI'}</span>
+            {copiedDraft ? (
+              <>
+                <Check className="h-3.5 w-3.5 text-emerald-600" />
+                <span className="text-emerald-600 font-medium">Naskah Tersalin</span>
+              </>
+            ) : (
+              <>
+                <Copy className="h-3.5 w-3.5 text-primary" />
+                <span>Salin Naskah</span>
+              </>
+            )}
           </Button>
         </div>
 
