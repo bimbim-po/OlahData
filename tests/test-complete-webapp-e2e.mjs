@@ -126,6 +126,7 @@ async function runComprehensiveTest() {
     await page.locator('input[type="password"], input#password').fill('SalahPassword123!');
     const submitLoginBtn = page.getByRole('button', { name: /masuk|login/i }).first();
     await submitLoginBtn.click();
+    await page.waitForSelector('[role="alert"], [data-sonner-toast], div:has-text("salah"), div:has-text("Kata sandi")', { timeout: 6000 }).catch(() => {});
     await page.waitForTimeout(1000);
     const bodyAfterInvalid = await page.locator('body').innerText();
     const hasInvalidWarning = /salah|tidak valid|invalid|gagal/i.test(bodyAfterInvalid);

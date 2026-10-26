@@ -103,10 +103,41 @@ export async function createMidtransCheckoutSession(params: {
   customerPhone?: string;
   userId?: string;
 }): Promise<CheckoutSessionResponse> {
+  let token: string | undefined;
+  let resolvedUid = params.userId;
+
+  try {
+    const supabase = getSupabaseBrowserClient();
+    const sessionRes = await supabase.auth.getSession();
+    token = sessionRes?.data?.session?.access_token;
+    if (!resolvedUid) {
+      resolvedUid = sessionRes?.data?.session?.user?.id;
+    }
+  } catch {
+    // Abaikan jika auth client belum aktif
+  }
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  if (resolvedUid) {
+    headers['x-user-id'] = resolvedUid;
+  }
+
+  const payload = {
+    ...params,
+    userId: resolvedUid || params.userId,
+  };
+
   const res = await fetch('/api/billing/checkout', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(params),
+    headers,
+    credentials: 'include',
+    body: JSON.stringify(payload),
   });
 
   const data = await res.json().catch(() => ({}));

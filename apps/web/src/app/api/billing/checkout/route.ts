@@ -19,10 +19,23 @@ export async function POST(req: NextRequest) {
     const customerName = String(body.customerName || 'Mahasiswa OlahData').trim();
     const customerEmail = String(body.customerEmail || 'mahasiswa@olahdata.id').trim();
     const customerPhone = String(body.customerPhone || '081234567890').trim();
-    const rawUserId = String(body.userId || '').trim();
+
+    // Resolusi user_id dari body, header, atau cookie sesi
+    let resolvedUserId = String(body.userId || '').trim();
+    if (!resolvedUserId) {
+      resolvedUserId = req.headers.get('x-user-id') || '';
+    }
+    if (!resolvedUserId) {
+      const cookieHeader = req.headers.get('cookie') || '';
+      const uidMatch = cookieHeader.match(/olahdata-uid=([^;]+)/);
+      if (uidMatch) {
+        resolvedUserId = decodeURIComponent(uidMatch[1].trim());
+      }
+    }
+
     const userId =
-      rawUserId && rawUserId.includes('-') && rawUserId.length >= 32
-        ? rawUserId
+      resolvedUserId && resolvedUserId.includes('-') && resolvedUserId.length >= 32
+        ? resolvedUserId
         : DEFAULT_GUEST_USER_ID;
 
     const invoiceNumber = `OD-${plan.toUpperCase()}-${Date.now()}-${Math.random()
@@ -42,6 +55,24 @@ export async function POST(req: NextRequest) {
       DEFAULT_SUPABASE_URL;
     const serviceRoleKey =
       process.env.SUPABASE_SERVICE_ROLE_KEY || DEFAULT_SERVICE_ROLE_KEY;
+
+    // 0. AUTO-HEAL PROFILES: Pastikan row user ada di public.profiles agar foreign key payments_user_id_fkey tidak gagal
+    await fetch(`${supabaseUrl}/rest/v1/profiles`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        Prefer: 'resolution=merge-duplicates,return=representation',
+      },
+      body: JSON.stringify({
+        id: userId,
+        nama: customerName || 'Mahasiswa OlahData',
+        kampus: 'Universitas Indonesia',
+        prodi: 'Manajemen',
+        plan: 'free',
+      }),
+    }).catch(() => null);
 
     // 1. PRE-SNAP DATABASE INSERT
     const insertRes = await fetch(`${supabaseUrl}/rest/v1/payments`, {

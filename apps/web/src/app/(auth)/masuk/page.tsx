@@ -37,6 +37,7 @@ function MasukForm() {
   const authLogin = useAuthStore((state) => state.login);
   const [isLoading, setIsLoading] = React.useState(false);
   const [showPassword, setShowPassword] = React.useState(false);
+  const [authError, setAuthError] = React.useState<string | null>(null);
 
   const {
     register,
@@ -55,6 +56,7 @@ function MasukForm() {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
+      setAuthError(null);
       setIsLoading(true);
       const user = await login(data.email, data.password);
       authLogin(user);
@@ -67,6 +69,7 @@ function MasukForm() {
       window.location.href = lanjut;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Terjadi kendala saat memproses login. Silakan periksa kredensial Anda.';
+      setAuthError(msg);
       toast({
         title: 'Gagal masuk',
         description: msg,
@@ -94,6 +97,14 @@ function MasukForm() {
         <CardContent className="p-6 sm:p-8 pt-2">
           {/* Email/Password Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+            {authError && (
+              <div
+                role="alert"
+                className="p-3.5 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl font-medium leading-relaxed"
+              >
+                {authError}
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-xs font-semibold text-foreground">
                 {COPY.auth.email}

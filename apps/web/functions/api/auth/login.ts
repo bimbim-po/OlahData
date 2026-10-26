@@ -195,7 +195,7 @@ export async function onRequestPost(context: {
               'Content-Type': 'application/json',
               apikey: serviceRoleKey,
               Authorization: `Bearer ${serviceRoleKey}`,
-              Prefer: 'return=representation',
+              Prefer: 'resolution=merge-duplicates,return=representation',
             },
             body: JSON.stringify({
               id: userId,
@@ -226,6 +226,27 @@ export async function onRequestPost(context: {
       createdAt: profileData?.created_at || tokenData.user?.created_at || new Date().toISOString(),
     };
 
+    const headers = new Headers({
+      'Content-Type': 'application/json',
+    });
+
+    if (tokenData.access_token) {
+      headers.append(
+        'Set-Cookie',
+        `sb-access-token=${tokenData.access_token}; Path=/; SameSite=Lax; Max-Age=604800`
+      );
+      headers.append(
+        'Set-Cookie',
+        `olahdata-uid=${userId}; Path=/; SameSite=Lax; Max-Age=604800`
+      );
+    }
+    if (tokenData.refresh_token) {
+      headers.append(
+        'Set-Cookie',
+        `sb-refresh-token=${tokenData.refresh_token}; Path=/; SameSite=Lax; Max-Age=2592000`
+      );
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -237,7 +258,7 @@ export async function onRequestPost(context: {
         },
         user: finalUser,
       }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+      { status: 200, headers }
     );
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : 'Terjadi gangguan internal server.';

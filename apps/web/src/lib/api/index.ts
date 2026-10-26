@@ -74,6 +74,13 @@ export async function login(email: string, password: string): Promise<User> {
       if (typeof window !== 'undefined') {
         try {
           localStorage.setItem('olahdata-session', JSON.stringify(user));
+          if (resJson.session?.access_token) {
+            document.cookie = `sb-access-token=${resJson.session.access_token}; path=/; max-age=604800; SameSite=Lax`;
+            document.cookie = `olahdata-uid=${user.id}; path=/; max-age=604800; SameSite=Lax`;
+          }
+          if (resJson.session?.refresh_token) {
+            document.cookie = `sb-refresh-token=${resJson.session.refresh_token}; path=/; max-age=2592000; SameSite=Lax`;
+          }
         } catch {
           // ignore
         }
@@ -116,11 +123,33 @@ export async function login(email: string, password: string): Promise<User> {
   }
 
   // Ambil profil akademik dari tabel public.profiles
-  const { data: profile } = await supabase
+  let { data: profile } = await supabase
     .from('profiles')
     .select('nama, prodi, kampus, plan, created_at')
     .eq('id', data.user.id)
     .maybeSingle();
+
+  // Solusi Masalah 2: Jika baris profile belum ada, auto-heal baris profile langsung
+  if (!profile) {
+    try {
+      const { data: healedProfile } = await supabase
+        .from('profiles')
+        .upsert({
+          id: data.user.id,
+          nama: data.user.user_metadata?.nama || data.user.user_metadata?.full_name || 'Mahasiswa',
+          kampus: data.user.user_metadata?.kampus || data.user.user_metadata?.university || 'Universitas Indonesia',
+          prodi: data.user.user_metadata?.prodi || 'Manajemen',
+          plan: 'free',
+        })
+        .select('nama, prodi, kampus, plan, created_at')
+        .maybeSingle();
+      if (healedProfile) {
+        profile = healedProfile;
+      }
+    } catch {
+      // Abaikan jika upsert gagal
+    }
+  }
 
   const user: User = {
     id: data.user.id,
@@ -135,6 +164,13 @@ export async function login(email: string, password: string): Promise<User> {
   if (typeof window !== 'undefined') {
     try {
       localStorage.setItem('olahdata-session', JSON.stringify(user));
+      if (data.session?.access_token) {
+        document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=604800; SameSite=Lax`;
+        document.cookie = `olahdata-uid=${data.user.id}; path=/; max-age=604800; SameSite=Lax`;
+      }
+      if (data.session?.refresh_token) {
+        document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=2592000; SameSite=Lax`;
+      }
     } catch {
       // Abaikan jika localStorage tidak tersedia
     }
@@ -186,32 +222,47 @@ export async function register(
     }
 
     if (res.ok && resJson?.success) {
-      // Login langsung di browser client setelah akun terbuat di auth server
-      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-        email: cleanEmail,
-        password,
-      });
-
-      if (!loginError && loginData?.user) {
-        const user: User = {
-          id: loginData.user.id,
-          name: name.trim() || 'Mahasiswa',
-          email: cleanEmail,
-          university: university.trim() || 'Universitas',
-          department: 'Manajemen',
-          plan: 'free',
-          createdAt: new Date().toISOString(),
-        };
-
-        if (typeof window !== 'undefined') {
-          try {
-            localStorage.setItem('olahdata-session', JSON.stringify(user));
-          } catch {
-            // ignore
-          }
+      if (resJson.session?.access_token && resJson.session?.refresh_token) {
+        try {
+          await supabase.auth.setSession({
+            access_token: resJson.session.access_token,
+            refresh_token: resJson.session.refresh_token,
+          });
+        } catch {
+          // ignore
         }
-        return user;
+      } else {
+        await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password,
+        }).catch(() => null);
       }
+
+      const user: User = resJson.user || {
+        id: resJson.session?.user?.id || 'user',
+        name: name.trim() || 'Mahasiswa',
+        email: cleanEmail,
+        university: university.trim() || 'Universitas',
+        department: 'Manajemen',
+        plan: 'free',
+        createdAt: new Date().toISOString(),
+      };
+
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('olahdata-session', JSON.stringify(user));
+          if (resJson.session?.access_token) {
+            document.cookie = `sb-access-token=${resJson.session.access_token}; path=/; max-age=604800; SameSite=Lax`;
+            document.cookie = `olahdata-uid=${user.id}; path=/; max-age=604800; SameSite=Lax`;
+          }
+          if (resJson.session?.refresh_token) {
+            document.cookie = `sb-refresh-token=${resJson.session.refresh_token}; path=/; max-age=2592000; SameSite=Lax`;
+          }
+        } catch {
+          // ignore
+        }
+      }
+      return user;
     }
   } catch (err: unknown) {
     // Jika galat validasi bisnis (misal email sudah terdaftar), lemparkan ke user
@@ -251,6 +302,19 @@ export async function register(
     throw new Error('Gagal membuat akun baru.');
   }
 
+  // Auto-Heal: Buat baris profil di public.profiles agar foreign key proyek & billing langsung valid
+  try {
+    await supabase.from('profiles').upsert({
+      id: data.user.id,
+      nama: name.trim() || 'Mahasiswa',
+      kampus: university.trim() || 'Universitas Indonesia',
+      prodi: 'Manajemen',
+      plan: 'free',
+    });
+  } catch {
+    // Abaikan jika upsert profile gagal
+  }
+
   const user: User = {
     id: data.user.id,
     name,
@@ -264,6 +328,13 @@ export async function register(
   if (typeof window !== 'undefined') {
     try {
       localStorage.setItem('olahdata-session', JSON.stringify(user));
+      if (data.session?.access_token) {
+        document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=604800; SameSite=Lax`;
+        document.cookie = `olahdata-uid=${data.user.id}; path=/; max-age=604800; SameSite=Lax`;
+      }
+      if (data.session?.refresh_token) {
+        document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=2592000; SameSite=Lax`;
+      }
     } catch {
       // Abaikan jika localStorage tidak tersedia
     }
@@ -279,6 +350,12 @@ export async function logout(): Promise<void> {
     await supabase.auth.signOut();
   } catch (err) {
     console.warn('[Supabase Auth] Gagal logout dari server:', err);
+  }
+
+  if (typeof document !== 'undefined') {
+    document.cookie = 'sb-access-token=; path=/; max-age=0; SameSite=Lax';
+    document.cookie = 'olahdata-uid=; path=/; max-age=0; SameSite=Lax';
+    document.cookie = 'sb-refresh-token=; path=/; max-age=0; SameSite=Lax';
   }
 
   if (typeof window !== 'undefined') {
@@ -316,6 +393,22 @@ export async function getSession(): Promise<User | null> {
       .select('nama, prodi, kampus, plan, created_at')
       .eq('id', session.user.id)
       .maybeSingle();
+
+    if (!profile) {
+      try {
+        await supabase
+          .from('profiles')
+          .upsert({
+            id: session.user.id,
+            nama: session.user.user_metadata?.nama || session.user.user_metadata?.full_name || 'Mahasiswa',
+            kampus: session.user.user_metadata?.kampus || session.user.user_metadata?.university || 'Universitas Indonesia',
+            prodi: session.user.user_metadata?.prodi || 'Manajemen',
+            plan: 'free',
+          });
+      } catch {
+        // Abaikan jika upsert gagal
+      }
+    }
 
     const user: User = {
       id: session.user.id,
@@ -827,6 +920,21 @@ export async function createProject(
     const { data: { user } } = await supabase.auth.getUser();
 
     if (user) {
+      // Auto-Heal: Pastikan baris data user ada di public.profiles sebelum insert ke projects
+      try {
+        await supabase
+          .from('profiles')
+          .upsert({
+            id: user.id,
+            nama: user.user_metadata?.nama || user.user_metadata?.full_name || 'Mahasiswa',
+            kampus: user.user_metadata?.kampus || user.user_metadata?.university || 'Universitas Indonesia',
+            prodi: department || user.user_metadata?.prodi || 'Manajemen',
+            plan: 'free',
+          });
+      } catch {
+        // Abaikan jika upsert gagal
+      }
+
       const { data, error } = await supabase
         .from('projects')
         .insert({

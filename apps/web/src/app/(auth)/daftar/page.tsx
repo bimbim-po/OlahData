@@ -50,6 +50,7 @@ function DaftarForm() {
   const authLogin = useAuthStore((state) => state.login);
   const [isLoading, setIsLoading] = React.useState(false);
   const [showPassword, setShowPassword] = React.useState(false);
+  const [authError, setAuthError] = React.useState<string | null>(null);
 
   const {
     register,
@@ -75,6 +76,7 @@ function DaftarForm() {
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
+      setAuthError(null);
       setIsLoading(true);
       const user = await apiRegister(data.name, data.email, data.password, data.university);
       authLogin(user);
@@ -87,6 +89,7 @@ function DaftarForm() {
       window.location.href = lanjut;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Terjadi kendala saat mendaftarkan akun. Silakan coba lagi.';
+      setAuthError(msg);
       toast({
         title: 'Pendaftaran gagal',
         description: msg,
@@ -114,6 +117,14 @@ function DaftarForm() {
         <CardContent className="p-6 sm:p-8 pt-2">
           {/* Form Fields */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5" noValidate>
+            {authError && (
+              <div
+                role="alert"
+                className="p-3.5 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl font-medium leading-relaxed"
+              >
+                {authError}
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="name" className="text-xs font-semibold text-foreground">
                 {COPY.auth.name}
