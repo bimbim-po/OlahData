@@ -12,13 +12,13 @@ export const metadata: Metadata = {
     'lampiran sidang skripsi',
   ],
   alternates: {
-    canonical: 'https://olah-data.pages.dev/pernyataan-penggunaan',
+    canonical: 'https://olahdata.vrimae.com/pernyataan-penggunaan',
   },
   openGraph: {
     title: `Format Pernyataan Penggunaan Alat Skripsi | ${APP_NAME}`,
     description:
       'Templat resmi lembar transparansi akademik dan pernyataan penggunaan alat bantu komputasi skripsi.',
-    url: 'https://olah-data.pages.dev/pernyataan-penggunaan',
+    url: 'https://olahdata.vrimae.com/pernyataan-penggunaan',
     siteName: APP_NAME,
     locale: 'id_ID',
     type: 'article',

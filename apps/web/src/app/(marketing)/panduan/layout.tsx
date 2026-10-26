@@ -16,13 +16,13 @@ export const metadata: Metadata = {
     'format tabel word skripsi',
   ],
   alternates: {
-    canonical: 'https://olah-data.pages.dev/panduan',
+    canonical: 'https://olahdata.vrimae.com/panduan',
   },
   openGraph: {
     title: `Panduan Lengkap Olah Data Skripsi Kuantitatif | ${APP_NAME}`,
     description:
       'Panduan metodologi langkah demi langkah olah data kuesioner skripsi kuantitatif online: cara uji validitas reliabilitas, uji asumsi klasik, regresi linier berganda, dan penyusunan draf Bab 4 Word.',
-    url: 'https://olah-data.pages.dev/panduan',
+    url: 'https://olahdata.vrimae.com/panduan',
     siteName: APP_NAME,
     locale: 'id_ID',
     type: 'article',

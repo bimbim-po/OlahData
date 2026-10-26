@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import path from 'path';
 
-const LIVE_URL = 'https://olah-data.pages.dev';
+const LIVE_URL = process.env.TEST_URL || 'https://olah-data.pages.dev';
 const ARTIFACTS_DIR = 'C:/Users/ThinkPad X1 Yoga/.gemini/antigravity/brain/3238dc4e-fb77-4692-9957-e530fba398b7';
 
 const SUPABASE_URL = 'https://muxzjegpxjamasprgdrs.supabase.co';

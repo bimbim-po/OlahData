@@ -19,12 +19,15 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://olah-data.pages.dev'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://olahdata.vrimae.com'),
   title: {
     default: `${APP_NAME} — Olah Data Skripsi Kuantitatif & Buat Bab 4 Otomatis`,
     template: `%s | ${APP_NAME}`,
   },
   description: 'Aplikasi olah data kuesioner skripsi kuantitatif online tanpa SPSS. Otomatis uji validitas, reliabilitas, asumsi klasik, regresi linier, dan draf Bab 4 Word standar skripsi.',
+  verification: {
+    google: 's9WY1v_Nd5OwIIxm18HwdUCJ5yHI9OHud39eehL8TJU',
+  },
   keywords: [
     'olah data kuantitatif',
     'aplikasi olah data kuantitatif',
@@ -65,7 +68,7 @@ export const metadata: Metadata = {
     telephone: false,
   },
   alternates: {
-    canonical: 'https://olah-data.pages.dev',
+    canonical: 'https://olahdata.vrimae.com',
   },
   robots: {
     index: true,
@@ -81,7 +84,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: `${APP_NAME} — Olah Data Skripsi Kuantitatif & Buat Bab 4 Otomatis`,
     description: 'Aplikasi olah data kuesioner skripsi kuantitatif online tanpa SPSS. Otomatis uji validitas, reliabilitas, asumsi klasik, regresi linier, dan draf Bab 4 Word standar skripsi.',
-    url: 'https://olah-data.pages.dev',
+    url: 'https://olahdata.vrimae.com',
     siteName: APP_NAME,
     locale: 'id_ID',
     type: 'website',
@@ -123,6 +126,12 @@ export default function RootLayout({
       className={`${figtree.variable} ${jetbrainsMono.variable} h-full`}
       suppressHydrationWarning
     >
+      <head>
+        <meta
+          name="google-site-verification"
+          content="s9WY1v_Nd5OwIIxm18HwdUCJ5yHI9OHud39eehL8TJU"
+        />
+      </head>
       <body className="min-h-full flex flex-col antialiased">
         <ThemeProvider>
           <Toaster>

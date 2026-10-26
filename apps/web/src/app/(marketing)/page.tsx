@@ -52,19 +52,19 @@ export const metadata: Metadata = {
     'skala likert excel',
   ],
   alternates: {
-    canonical: 'https://olah-data.pages.dev',
+    canonical: 'https://olahdata.vrimae.com',
   },
   openGraph: {
     title: 'Aplikasi Olah Data Kuantitatif Online & Alternatif Jamovi/SPSS | OlahData',
     description:
       'Aplikasi olah data kuantitatif online terbaik pengganti Jamovi & SPSS untuk kuesioner skripsi. Otomatis uji validitas, reliabilitas, asumsi klasik, regresi, dan draf Bab 4 Word.',
-    url: 'https://olah-data.pages.dev/',
+    url: 'https://olahdata.vrimae.com/',
     siteName: APP_NAME,
     locale: 'id_ID',
     type: 'website',
     images: [
       {
-        url: 'https://olah-data.pages.dev/og-image.png',
+        url: 'https://olahdata.vrimae.com/og-image.png',
         width: 1200,
         height: 630,
         alt: 'OlahData - Olah Data Kuantitatif Skripsi & Alternatif Jamovi SPSS',
@@ -76,7 +76,7 @@ export const metadata: Metadata = {
     title: 'Aplikasi Olah Data Kuantitatif Online & Alternatif Jamovi/SPSS | OlahData',
     description:
       'Aplikasi olah data kuantitatif online pengganti Jamovi & SPSS untuk kuesioner skripsi. Buat Bab 4 Word otomatis.',
-    images: ['https://olah-data.pages.dev/og-image.png'],
+    images: ['https://olahdata.vrimae.com/og-image.png'],
   },
 };
 
@@ -184,7 +184,7 @@ export default function MarketingPage() {
       'Alternatif SPSS Mahasiswa',
       'Olah Data Skripsi Kuantitatif',
     ],
-    url: 'https://olah-data.pages.dev',
+    url: 'https://olahdata.vrimae.com',
     applicationCategory: 'EducationalApplication',
     operatingSystem: 'All',
     browserRequirements: 'Requires JavaScript. Requires HTML5.',
@@ -269,7 +269,7 @@ export default function MarketingPage() {
       position: idx + 1,
       name: step.title,
       text: step.description,
-      url: `https://olah-data.pages.dev/#langkah-${step.number}`,
+      url: `https://olahdata.vrimae.com/#langkah-${step.number}`,
     })),
   };
 
@@ -277,8 +277,8 @@ export default function MarketingPage() {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'OlahData',
-    url: 'https://olah-data.pages.dev',
-    logo: 'https://olah-data.pages.dev/logo-192.png',
+    url: 'https://olahdata.vrimae.com',
+    logo: 'https://olahdata.vrimae.com/logo-192.png',
     description:
       'Platform komputasi statistik deterministik untuk pengolahan data kuesioner skripsi kuantitatif mahasiswa di Indonesia.',
     contactPoint: {
@@ -298,7 +298,7 @@ export default function MarketingPage() {
         '@type': 'ListItem',
         position: 1,
         name: 'Beranda',
-        item: 'https://olah-data.pages.dev/',
+        item: 'https://olahdata.vrimae.com/',
       },
     ],
   };

@@ -1,4 +1,4 @@
-# robots.txt for https://olah-data.pages.dev
+# robots.txt for https://olahdata.vrimae.com
 User-agent: *
 Allow: /
 Disallow: /admin/
@@ -6,4 +6,4 @@ Disallow: /app/akses-ditolak
 Disallow: /api/
 Disallow: /dev/
 
-Sitemap: https://olah-data.pages.dev/sitemap.xml
+Sitemap: https://olahdata.vrimae.com/sitemap.xml

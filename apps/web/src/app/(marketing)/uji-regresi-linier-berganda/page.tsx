@@ -29,19 +29,19 @@ export const metadata: Metadata = {
     'uji hipotesis skripsi online',
   ],
   alternates: {
-    canonical: 'https://olah-data.pages.dev/uji-regresi-linier-berganda',
+    canonical: 'https://olahdata.vrimae.com/uji-regresi-linier-berganda',
   },
   openGraph: {
     title: 'Uji Regresi Linier Berganda Online, Uji t, Uji F, & Draf Bab 4 | OlahData',
     description:
       'Aplikasi analisis regresi linier berganda online untuk skripsi. Uji t parsial, Uji F simultan, R Square, dan draf naskah Bab 4 Word.',
-    url: 'https://olah-data.pages.dev/uji-regresi-linier-berganda',
+    url: 'https://olahdata.vrimae.com/uji-regresi-linier-berganda',
     siteName: APP_NAME,
     locale: 'id_ID',
     type: 'article',
     images: [
       {
-        url: 'https://olah-data.pages.dev/og-image.png',
+        url: 'https://olahdata.vrimae.com/og-image.png',
         width: 1200,
         height: 630,
         alt: 'Uji Regresi Linier Berganda Online - OlahData',
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     title: 'Uji Regresi Linier Berganda Online & Bab 4 Otomatis | OlahData',
     description:
       'Hitung regresi linier berganda, uji t, uji F, R Square, dan draf Bab 4 Word otomatis.',
-    images: ['https://olah-data.pages.dev/og-image.png'],
+    images: ['https://olahdata.vrimae.com/og-image.png'],
   },
 };
 
@@ -68,13 +68,13 @@ export default function UjiRegresiLinierBergandaPage() {
             '@type': 'ListItem',
             position: 1,
             name: 'Beranda',
-            item: 'https://olah-data.pages.dev/',
+            item: 'https://olahdata.vrimae.com/',
           },
           {
             '@type': 'ListItem',
             position: 2,
             name: 'Uji Regresi Linier Berganda',
-            item: 'https://olah-data.pages.dev/uji-regresi-linier-berganda',
+            item: 'https://olahdata.vrimae.com/uji-regresi-linier-berganda',
           },
         ],
       },

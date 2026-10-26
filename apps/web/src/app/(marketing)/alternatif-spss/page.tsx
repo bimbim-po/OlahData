@@ -34,19 +34,19 @@ export const metadata: Metadata = {
     'jasa olah data spss online',
   ],
   alternates: {
-    canonical: 'https://olah-data.pages.dev/alternatif-spss',
+    canonical: 'https://olahdata.vrimae.com/alternatif-spss',
   },
   openGraph: {
     title: 'Alternatif SPSS Online Terbaik untuk Mahasiswa & Skripsi | OlahData',
     description:
       'Aplikasi olah data kuesioner skripsi online alternatif SPSS terbaik. Tanpa software crack berbahaya, langsung menghasilkan tabel APA 7th dan draf Bab 4 Word.',
-    url: 'https://olah-data.pages.dev/alternatif-spss',
+    url: 'https://olahdata.vrimae.com/alternatif-spss',
     siteName: APP_NAME,
     locale: 'id_ID',
     type: 'article',
     images: [
       {
-        url: 'https://olah-data.pages.dev/og-image.png',
+        url: 'https://olahdata.vrimae.com/og-image.png',
         width: 1200,
         height: 630,
         alt: 'Alternatif SPSS Online - OlahData',
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
     title: 'Alternatif SPSS Online Terbaik untuk Mahasiswa & Skripsi | OlahData',
     description:
       'Olah data kuesioner skripsi online tanpa SPSS crack. Otomatis draf Bab 4 Word standar skripsi.',
-    images: ['https://olah-data.pages.dev/og-image.png'],
+    images: ['https://olahdata.vrimae.com/og-image.png'],
   },
 };
 
@@ -73,13 +73,13 @@ export default function AlternatifSpssPage() {
             '@type': 'ListItem',
             position: 1,
             name: 'Beranda',
-            item: 'https://olah-data.pages.dev/',
+            item: 'https://olahdata.vrimae.com/',
           },
           {
             '@type': 'ListItem',
             position: 2,
             name: 'Alternatif SPSS',
-            item: 'https://olah-data.pages.dev/alternatif-spss',
+            item: 'https://olahdata.vrimae.com/alternatif-spss',
           },
         ],
       },

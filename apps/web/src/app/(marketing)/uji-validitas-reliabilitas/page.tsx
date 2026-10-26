@@ -31,19 +31,19 @@ export const metadata: Metadata = {
     'uji validitas tanpa spss',
   ],
   alternates: {
-    canonical: 'https://olah-data.pages.dev/uji-validitas-reliabilitas',
+    canonical: 'https://olahdata.vrimae.com/uji-validitas-reliabilitas',
   },
   openGraph: {
     title: 'Uji Validitas & Reliabilitas Kuesioner Online (Pearson & Cronbach Alpha) | OlahData',
     description:
       'Aplikasi uji validitas dan reliabilitas kuesioner skala Likert online otomatis tanpa SPSS. Pearson r-hitung vs r-tabel dan Cronbach Alpha siap ekspor ke Word.',
-    url: 'https://olah-data.pages.dev/uji-validitas-reliabilitas',
+    url: 'https://olahdata.vrimae.com/uji-validitas-reliabilitas',
     siteName: APP_NAME,
     locale: 'id_ID',
     type: 'article',
     images: [
       {
-        url: 'https://olah-data.pages.dev/og-image.png',
+        url: 'https://olahdata.vrimae.com/og-image.png',
         width: 1200,
         height: 630,
         alt: 'Uji Validitas dan Reliabilitas Kuesioner Online - OlahData',
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     title: 'Uji Validitas & Reliabilitas Kuesioner Online | OlahData',
     description:
       'Hitung Pearson Product Moment dan Cronbach Alpha kuesioner skripsi otomatis online tanpa SPSS.',
-    images: ['https://olah-data.pages.dev/og-image.png'],
+    images: ['https://olahdata.vrimae.com/og-image.png'],
   },
 };
 
@@ -70,13 +70,13 @@ export default function UjiValiditasReliabilitasPage() {
             '@type': 'ListItem',
             position: 1,
             name: 'Beranda',
-            item: 'https://olah-data.pages.dev/',
+            item: 'https://olahdata.vrimae.com/',
           },
           {
             '@type': 'ListItem',
             position: 2,
             name: 'Uji Validitas & Reliabilitas',
-            item: 'https://olah-data.pages.dev/uji-validitas-reliabilitas',
+            item: 'https://olahdata.vrimae.com/uji-validitas-reliabilitas',
           },
         ],
       },

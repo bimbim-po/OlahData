@@ -35,19 +35,19 @@ export const metadata: Metadata = {
     'regresi linier jamovi bab 4',
   ],
   alternates: {
-    canonical: 'https://olah-data.pages.dev/alternatif-jamovi',
+    canonical: 'https://olahdata.vrimae.com/alternatif-jamovi',
   },
   openGraph: {
     title: 'Alternatif Jamovi Online Terbaik untuk Olah Data Skripsi Kuantitatif | OlahData',
     description:
       'Aplikasi olah data kuantitatif online pengganti Jamovi tanpa instalasi. Otomatis uji validitas, reliabilitas, asumsi klasik, regresi, dan draf naskah Bab 4 Word.',
-    url: 'https://olah-data.pages.dev/alternatif-jamovi',
+    url: 'https://olahdata.vrimae.com/alternatif-jamovi',
     siteName: APP_NAME,
     locale: 'id_ID',
     type: 'article',
     images: [
       {
-        url: 'https://olah-data.pages.dev/og-image.png',
+        url: 'https://olahdata.vrimae.com/og-image.png',
         width: 1200,
         height: 630,
         alt: 'Alternatif Jamovi Online - OlahData',
@@ -59,7 +59,7 @@ export const metadata: Metadata = {
     title: 'Alternatif Jamovi Online Terbaik untuk Olah Data Skripsi Kuantitatif | OlahData',
     description:
       'Aplikasi olah data kuantitatif online pengganti Jamovi tanpa instalasi. Buat draf Bab 4 Word otomatis.',
-    images: ['https://olah-data.pages.dev/og-image.png'],
+    images: ['https://olahdata.vrimae.com/og-image.png'],
   },
 };
 
@@ -74,13 +74,13 @@ export default function AlternatifJamoviPage() {
             '@type': 'ListItem',
             position: 1,
             name: 'Beranda',
-            item: 'https://olah-data.pages.dev/',
+            item: 'https://olahdata.vrimae.com/',
           },
           {
             '@type': 'ListItem',
             position: 2,
             name: 'Alternatif Jamovi',
-            item: 'https://olah-data.pages.dev/alternatif-jamovi',
+            item: 'https://olahdata.vrimae.com/alternatif-jamovi',
           },
         ],
       },

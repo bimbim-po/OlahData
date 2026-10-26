@@ -14,13 +14,13 @@ export const metadata: Metadata = {
     'tarif olah data kuantitatif',
   ],
   alternates: {
-    canonical: 'https://olah-data.pages.dev/harga',
+    canonical: 'https://olahdata.vrimae.com/harga',
   },
   openGraph: {
     title: `Pilihan Paket & Investasi Meja Kerja Skripsi | ${APP_NAME}`,
     description:
       'Pilihan paket langganan olah data kuesioner skripsi terjangkau untuk mahasiswa. Akses lengkap uji validitas, reliabilitas, asumsi klasik, regresi, dan ekspor Word.',
-    url: 'https://olah-data.pages.dev/harga',
+    url: 'https://olahdata.vrimae.com/harga',
     siteName: APP_NAME,
     locale: 'id_ID',
     type: 'website',

@@ -30,19 +30,19 @@ export const metadata: Metadata = {
     'uji glejser otomatis',
   ],
   alternates: {
-    canonical: 'https://olah-data.pages.dev/uji-asumsi-klasik',
+    canonical: 'https://olahdata.vrimae.com/uji-asumsi-klasik',
   },
   openGraph: {
     title: 'Uji Asumsi Klasik Online: Normalitas, Multikolinearitas, Heteroskedastisitas | OlahData',
     description:
       'Aplikasi uji asumsi klasik regresi linier berganda online tanpa SPSS. Uji Normalitas, Multikolinearitas VIF, dan Heteroskedastisitas Glejser otomatis.',
-    url: 'https://olah-data.pages.dev/uji-asumsi-klasik',
+    url: 'https://olahdata.vrimae.com/uji-asumsi-klasik',
     siteName: APP_NAME,
     locale: 'id_ID',
     type: 'article',
     images: [
       {
-        url: 'https://olah-data.pages.dev/og-image.png',
+        url: 'https://olahdata.vrimae.com/og-image.png',
         width: 1200,
         height: 630,
         alt: 'Uji Asumsi Klasik Online - OlahData',
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     title: 'Uji Asumsi Klasik Online Otomatis | OlahData',
     description:
       'Uji asumsi klasik regresi linier berganda online tanpa SPSS. Normalitas, VIF, Glejser otomatis.',
-    images: ['https://olah-data.pages.dev/og-image.png'],
+    images: ['https://olahdata.vrimae.com/og-image.png'],
   },
 };
 
@@ -69,13 +69,13 @@ export default function UjiAsumsiKlasikPage() {
             '@type': 'ListItem',
             position: 1,
             name: 'Beranda',
-            item: 'https://olah-data.pages.dev/',
+            item: 'https://olahdata.vrimae.com/',
           },
           {
             '@type': 'ListItem',
             position: 2,
             name: 'Uji Asumsi Klasik',
-            item: 'https://olah-data.pages.dev/uji-asumsi-klasik',
+            item: 'https://olahdata.vrimae.com/uji-asumsi-klasik',
           },
         ],
       },
