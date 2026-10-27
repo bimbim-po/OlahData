@@ -45,10 +45,17 @@ export async function onRequestPost(context: {
       .toUpperCase()}`;
 
     const serverKey =
-      context.env?.MIDTRANS_SERVER_KEY || 'SB-Mid-server-WxaVRWag2.0qOo1r_iJg07RE';
+      context.env?.MIDTRANS_SERVER_KEY || '';
     const clientKey =
-      context.env?.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || 'SB-Mid-client-Nl4mVDRgnxsQTD2hGmyWeQtN';
+      context.env?.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || 'Mid-client-MzfBTwOLJ1i2dfaqu.qk5yhZ';
     const isSandbox = serverKey.startsWith('SB-');
+
+    if (!serverKey) {
+      return new Response(
+        JSON.stringify({ code: 'CONFIG_ERROR', message: 'MIDTRANS_SERVER_KEY belum dikonfigurasi.' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     const supabaseUrl =
       context.env?.NEXT_PUBLIC_SUPABASE_URL ||

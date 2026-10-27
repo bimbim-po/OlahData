@@ -14,7 +14,7 @@ export async function onRequestPost(context: {
     }
 
     const serverKey =
-      context.env?.MIDTRANS_SERVER_KEY || 'SB-Mid-server-WxaVRWag2.0qOo1r_iJg07RE';
+      context.env?.MIDTRANS_SERVER_KEY || '';
     const isSandbox = serverKey.startsWith('SB-');
     const targetPlan = plan === 'thesis' ? 'thesis' : 'monthly';
     const supabaseUrl =

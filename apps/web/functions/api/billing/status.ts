@@ -93,7 +93,18 @@ async function handleStatus(context: {
 
     // 2. Jika masih pending atau belum terverifikasi, query API Status Midtrans
     const serverKey =
-      context.env?.MIDTRANS_SERVER_KEY || 'SB-Mid-server-WxaVRWag2.0qOo1r_iJg07RE';
+      context.env?.MIDTRANS_SERVER_KEY || '';
+
+    if (!serverKey) {
+      return new Response(
+        JSON.stringify({
+          order_id: orderId,
+          status: 'pending',
+          transaction_status: 'waiting_payment',
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
     const isSandbox = serverKey.startsWith('SB-');
     const midtransStatusUrl = isSandbox
       ? `https://api.sandbox.midtrans.com/v2/${encodeURIComponent(orderId)}/status`

@@ -9,7 +9,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'User ID tidak valid.' }, { status: 400 });
     }
 
-    const serverKey = process.env.MIDTRANS_SERVER_KEY || 'SB-Mid-server-WxaVRWag2.0qOo1r_iJg07RE';
+    const serverKey = process.env.MIDTRANS_SERVER_KEY || '';
     const isSandbox = serverKey.startsWith('SB-');
     const targetPlan = plan === 'thesis' ? 'thesis' : 'monthly';
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://muxzjegpxjamasprgdrs.supabase.co';

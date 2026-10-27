@@ -1,7 +1,22 @@
 import { test, expect } from '@playwright/test';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 
-const SERVER_KEY = 'SB-Mid-server-WxaVRWag2.0qOo1r_iJg07RE';
+function getMidtransServerKey() {
+  if (process.env.MIDTRANS_SERVER_KEY) return process.env.MIDTRANS_SERVER_KEY;
+  try {
+    const envPath = path.resolve('apps/web/.env.local');
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, 'utf8');
+      const match = content.match(/MIDTRANS_SERVER_KEY=([^\r\n]+)/);
+      if (match) return match[1].trim();
+    }
+  } catch {}
+  return '';
+}
+
+const SERVER_KEY = getMidtransServerKey();
 const SUPABASE_URL = 'https://muxzjegpxjamasprgdrs.supabase.co';
 const SERVICE_ROLE_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eHpqZWdweGphbWFzcHJnZHJzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MTg0NjQxNywiZXhwIjoyMTA3NDIyNDE3fQ.V4H7G7WGUyBhbQVfGA8miMVzLkE7JpFvVd7lsQqPL5U';
@@ -134,9 +149,13 @@ test.describe('Midtrans Sandbox & Database Persistence QA Suite', () => {
     );
   });
 
-  test('4. Midtrans Sandbox Status API Connectivity', async () => {
+  test('4. Midtrans Status API Connectivity', async () => {
+    const isSandbox = SERVER_KEY.startsWith('SB-');
     const auth = Buffer.from(`${SERVER_KEY}:`).toString('base64');
-    const res = await fetch('https://api.sandbox.midtrans.com/v2/OD-PING-TEST/status', {
+    const statusEndpoint = isSandbox
+      ? 'https://api.sandbox.midtrans.com/v2/OD-PING-TEST/status'
+      : 'https://api.midtrans.com/v2/OD-PING-TEST/status';
+    const res = await fetch(statusEndpoint, {
       headers: {
         Accept: 'application/json',
         Authorization: `Basic ${auth}`,

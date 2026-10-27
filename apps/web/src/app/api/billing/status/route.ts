@@ -83,7 +83,7 @@ async function handleStatus(req: NextRequest) {
 
     // 2. Jika masih pending atau belum terverifikasi, query API Status Midtrans
     const serverKey =
-      process.env.MIDTRANS_SERVER_KEY || 'SB-Mid-server-WxaVRWag2.0qOo1r_iJg07RE';
+      process.env.MIDTRANS_SERVER_KEY || '';
     const isSandbox = serverKey.startsWith('SB-');
     const midtransStatusUrl = isSandbox
       ? `https://api.sandbox.midtrans.com/v2/${encodeURIComponent(orderId)}/status`

@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   try {
     const payload = await req.json().catch(() => ({}));
     const serverKey =
-      process.env.MIDTRANS_SERVER_KEY || 'SB-Mid-server-WxaVRWag2.0qOo1r_iJg07RE';
+      process.env.MIDTRANS_SERVER_KEY || '';
 
     const orderId = String(payload.order_id || '').trim();
     const statusCode = String(payload.status_code || '').trim();

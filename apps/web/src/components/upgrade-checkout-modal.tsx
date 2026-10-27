@@ -308,9 +308,15 @@ export function UpgradeCheckoutModal() {
                   Midtrans Payment Gateway (QRIS & Virtual Account)
                 </Badge>
               </div>
-              <Badge variant="amber" className="text-[10px] font-mono rounded-[6px]">
-                SANDBOX AKTIF
-              </Badge>
+              {pendingSession?.isSandbox ? (
+                <Badge variant="amber" className="text-[10px] font-mono rounded-[6px]">
+                  SANDBOX
+                </Badge>
+              ) : (
+                <Badge variant="pine" className="text-[10px] font-mono rounded-[6px]">
+                  PRODUKSI RESMI
+                </Badge>
+              )}
             </div>
             <DialogTitle className="text-lg font-bold text-foreground">
               Upgrade Paket OlahData Skripsi

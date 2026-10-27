@@ -18,7 +18,7 @@ export async function onRequestPost(context: {
   try {
     const payload = (await context.request.json().catch(() => ({}))) as Record<string, unknown>;
     const serverKey =
-      context.env?.MIDTRANS_SERVER_KEY || 'SB-Mid-server-WxaVRWag2.0qOo1r_iJg07RE';
+      context.env?.MIDTRANS_SERVER_KEY || '';
 
     const orderId = String(payload.order_id || '').trim();
     const statusCode = String(payload.status_code || '').trim();

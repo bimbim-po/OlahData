@@ -30,7 +30,7 @@ declare global {
   }
 }
 
-const DEFAULT_SANDBOX_CLIENT_KEY = 'SB-Mid-client-Nl4mVDRgnxsQTD2hGmyWeQtN';
+const DEFAULT_CLIENT_KEY = 'Mid-client-MzfBTwOLJ1i2dfaqu.qk5yhZ';
 
 /**
  * Memuat skrip Midtrans Snap.js secara dinamis di browser (Sandbox atau Production).
@@ -45,7 +45,7 @@ export function loadMidtransSnapScript(
   const resolvedClientKey =
     clientKey ||
     process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY ||
-    DEFAULT_SANDBOX_CLIENT_KEY;
+    DEFAULT_CLIENT_KEY;
   const isProd =
     isProduction ||
     process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === 'true' ||

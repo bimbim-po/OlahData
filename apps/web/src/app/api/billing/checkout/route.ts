@@ -44,9 +44,9 @@ export async function POST(req: NextRequest) {
       .toUpperCase()}`;
 
     const serverKey =
-      process.env.MIDTRANS_SERVER_KEY || 'SB-Mid-server-WxaVRWag2.0qOo1r_iJg07RE';
+      process.env.MIDTRANS_SERVER_KEY || '';
     const clientKey =
-      process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || 'SB-Mid-client-Nl4mVDRgnxsQTD2hGmyWeQtN';
+      process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || 'Mid-client-MzfBTwOLJ1i2dfaqu.qk5yhZ';
     const isSandbox = serverKey.startsWith('SB-');
 
     const supabaseUrl =
