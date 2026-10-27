@@ -19,6 +19,7 @@ import {
   UserCheck,
   ArrowRight,
   Sparkles,
+  RefreshCw,
 } from 'lucide-react';
 import {
   Dialog,
@@ -41,6 +42,7 @@ import {
   loadMidtransSnapScript,
   createMidtransCheckoutSession,
   syncPaidPlanToSupabase,
+  checkMidtransOrderStatus,
 } from '@/lib/midtrans-snap';
 
 type AuthTab = 'register' | 'login';
@@ -62,7 +64,9 @@ export function UpgradeCheckoutModal() {
     paymentUrl: string;
     amountIdr: number;
     userId?: string;
+    isSandbox?: boolean;
   } | null>(null);
+  const [isVerifyingPayment, setIsVerifyingPayment] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
   // Form input states
@@ -109,6 +113,43 @@ export function UpgradeCheckoutModal() {
       description: `Paket ${targetPlanConfig.name} kini aktif penuh di akun Anda.`,
       variant: 'success',
     });
+  };
+
+  const handleVerifyPayment = async () => {
+    if (!pendingSession?.invoiceNumber) return;
+    setIsVerifyingPayment(true);
+    try {
+      const result = await checkMidtransOrderStatus(pendingSession.invoiceNumber);
+      if (result.status === 'paid') {
+        await activatePlanAfterPayment(
+          pendingSession.invoiceNumber,
+          pendingSession.amountIdr,
+          pendingSession.userId
+        );
+      } else if (pendingSession.isSandbox) {
+        // Mode Sandbox: izinkan pengujian langsung
+        await activatePlanAfterPayment(
+          pendingSession.invoiceNumber,
+          pendingSession.amountIdr,
+          pendingSession.userId
+        );
+      } else {
+        toast({
+          title: 'Pembayaran Belum Terkonfirmasi',
+          description:
+            'Sistem belum mendeteksi transfer masuk dari bank atau e-wallet. Mohon tunggu 15-30 detik lalu klik kembali.',
+          variant: 'error',
+        });
+      }
+    } catch {
+      toast({
+        title: 'Kendala Koneksi',
+        description: 'Terjadi kendala saat memeriksa status pembayaran ke Midtrans.',
+        variant: 'error',
+      });
+    } finally {
+      setIsVerifyingPayment(false);
+    }
   };
 
   const handleMidtransCheckout = async (e: React.FormEvent) => {
@@ -224,6 +265,7 @@ export function UpgradeCheckoutModal() {
           paymentUrl: session.paymentUrl,
           amountIdr: session.amountIdr,
           userId: resolvedUserId,
+          isSandbox: session.isSandbox,
         });
       }
     } catch (err: unknown) {
@@ -330,12 +372,14 @@ export function UpgradeCheckoutModal() {
             </div>
           ) : pendingSession ? (
             <div className="space-y-4 py-2">
-              <div className="p-4 rounded-xl border border-amber-500/40 bg-amber-500/10 space-y-2 text-xs">
+              <div className="p-4 rounded-xl border border-primary/30 bg-primary/5 space-y-2 text-xs">
                 <p className="font-bold text-foreground">
-                  Tagihan Midtrans Dibuat: <span className="font-mono">{pendingSession.invoiceNumber}</span>
+                  Tagihan Pembayaran Dibuat: <span className="font-mono">{pendingSession.invoiceNumber}</span>
                 </p>
                 <p className="text-muted-foreground leading-relaxed">
-                  Untuk menguji pembayaran di mode Sandbox, buka halaman pembayaran Midtrans atau gunakan Simulator Resmi Midtrans, lalu klik tombol konfirmasi di bawah.
+                  {pendingSession.isSandbox
+                    ? 'Untuk menguji pembayaran di mode Sandbox, buka jendela pembayaran Midtrans atau gunakan Simulator Resmi Midtrans, lalu konfirmasi di bawah.'
+                    : 'Silakan selesaikan pembayaran tagihan Anda melalui QRIS atau Virtual Account di jendela Midtrans. Setelah transfer berhasil, klik tombol verifikasi di bawah.'}
                 </p>
                 <div className="flex flex-wrap gap-2 pt-1">
                   <Button
@@ -346,40 +390,44 @@ export function UpgradeCheckoutModal() {
                     className="h-8 text-xs gap-1.5"
                   >
                     <a href={pendingSession.paymentUrl} target="_blank" rel="noopener noreferrer">
-                      <span>Buka Halaman Snap Midtrans</span>
+                      <span>Buka Halaman Pembayaran Midtrans</span>
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                   </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    asChild
-                    className="h-8 text-xs gap-1.5"
-                  >
-                    <a
-                      href="https://simulator.sandbox.midtrans.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
+                  {pendingSession.isSandbox && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      asChild
+                      className="h-8 text-xs gap-1.5 text-muted-foreground"
                     >
-                      <span>Buka Simulator Midtrans</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  </Button>
+                      <a
+                        href="https://simulator.sandbox.midtrans.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <span>Buka Simulator Sandbox</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </Button>
+                  )}
                 </div>
               </div>
               <Button
                 type="button"
-                onClick={() =>
-                  activatePlanAfterPayment(
-                    pendingSession.invoiceNumber,
-                    pendingSession.amountIdr,
-                    pendingSession.userId
-                  )
-                }
+                disabled={isVerifyingPayment}
+                onClick={handleVerifyPayment}
                 className="w-full h-10 text-xs font-semibold rounded-[10px]"
               >
-                Saya Sudah Selesai Membayar di Sandbox — Aktifkan Paket
+                {isVerifyingPayment ? (
+                  <span className="flex items-center gap-2">
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    Memeriksa Konfirmasi Bank...
+                  </span>
+                ) : (
+                  <span>Saya Sudah Selesai Membayar — Cek &amp; Aktifkan Paket</span>
+                )}
               </Button>
             </div>
           ) : (

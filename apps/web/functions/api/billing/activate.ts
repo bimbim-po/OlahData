@@ -13,6 +13,9 @@ export async function onRequestPost(context: {
       );
     }
 
+    const serverKey =
+      context.env?.MIDTRANS_SERVER_KEY || 'SB-Mid-server-WxaVRWag2.0qOo1r_iJg07RE';
+    const isSandbox = serverKey.startsWith('SB-');
     const targetPlan = plan === 'thesis' ? 'thesis' : 'monthly';
     const supabaseUrl =
       context.env?.NEXT_PUBLIC_SUPABASE_URL ||
@@ -22,8 +25,75 @@ export async function onRequestPost(context: {
       context.env?.SUPABASE_SERVICE_ROLE_KEY ||
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eHpqZWdweGphbWFzcHJnZHJzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MTg0NjQxNywiZXhwIjoyMTA3NDIyNDE3fQ.V4H7G7WGUyBhbQVfGA8miMVzLkE7JpFvVd7lsQqPL5U';
 
+    // 0. KEAMANAN PRODUKSI: Verifikasi status transaksi resmi ke API Midtrans
+    let isVerifiedPaid = false;
+
+    if (orderId && typeof orderId === 'string') {
+      // a. Cek apakah transaksi sudah berstatus 'paid' di tabel payments
+      const dbPaymentCheck = await fetch(
+        `${supabaseUrl}/rest/v1/payments?provider_ref=eq.${encodeURIComponent(orderId)}&select=status,amount_idr`,
+        {
+          headers: {
+            apikey: serviceRoleKey,
+            Authorization: `Bearer ${serviceRoleKey}`,
+          },
+        }
+      ).catch(() => null);
+
+      if (dbPaymentCheck && dbPaymentCheck.ok) {
+        const rows = (await dbPaymentCheck.json().catch(() => [])) as Array<{ status: string }>;
+        if (Array.isArray(rows) && rows[0]?.status === 'paid') {
+          isVerifiedPaid = true;
+        }
+      }
+
+      // b. Jika belum tercatat di DB, tanyakan langsung ke API Midtrans resmi
+      if (!isVerifiedPaid) {
+        try {
+          const midtransStatusUrl = isSandbox
+            ? `https://api.sandbox.midtrans.com/v2/${encodeURIComponent(orderId)}/status`
+            : `https://api.midtrans.com/v2/${encodeURIComponent(orderId)}/status`;
+
+          const authHeader = btoa(`${serverKey}:`);
+          const midtransRes = await fetch(midtransStatusUrl, {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Basic ${authHeader}`,
+            },
+          });
+
+          if (midtransRes.ok) {
+            const mData = (await midtransRes.json()) as Record<string, unknown>;
+            const txStatus = String(mData.transaction_status || '').toLowerCase();
+            const fraudStatus = String(mData.fraud_status || '').toLowerCase();
+
+            if (
+              txStatus === 'settlement' ||
+              (txStatus === 'capture' && fraudStatus === 'accept')
+            ) {
+              isVerifiedPaid = true;
+            }
+          }
+        } catch {
+          // ignore network error to fallback
+        }
+      }
+    }
+
+    // Di mode Production, TOLAK mutasi jika transaksi belum dibayar di Midtrans
+    if (!isSandbox && !isVerifiedPaid) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error:
+            'Pembayaran belum terkonfirmasi oleh sistem Midtrans. Harap selesaikan pembayaran terlebih dahulu.',
+        }),
+        { status: 402, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     // 1. Update public.profiles
-    const updateRes = await fetch(
+    await fetch(
       `${supabaseUrl}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`,
       {
         method: 'PATCH',
@@ -56,8 +126,8 @@ export async function onRequestPost(context: {
             provider: 'midtrans',
             provider_ref: orderId,
             amount_idr: typeof amountIdr === 'number' ? amountIdr : (targetPlan === 'thesis' ? 99000 : 39000),
-            status: 'paid',
-            paid_at: new Date().toISOString(),
+            status: isVerifiedPaid || isSandbox ? 'paid' : 'pending',
+            paid_at: isVerifiedPaid || isSandbox ? new Date().toISOString() : null,
           }),
         });
       } catch {
