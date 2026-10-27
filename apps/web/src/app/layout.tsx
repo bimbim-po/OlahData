@@ -105,14 +105,29 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/icon.svg', type: 'image/svg+xml' },
-      { url: '/favicon.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-48x48.png', sizes: '48x48', type: 'image/png' },
+      { url: '/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
       { url: '/logo-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
     ],
     apple: [
       { url: '/logo-192.png', sizes: '192x192', type: 'image/png' },
     ],
   },
+};
+
+const jsonLdWebSite = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'OlahData',
+  alternateName: [
+    'Olah Data',
+    'OlahData Kuantitatif',
+    'OlahData Skripsi',
+    'olahdata.vrimae.com',
+  ],
+  url: 'https://olahdata.vrimae.com/',
 };
 
 export default function RootLayout({
@@ -130,6 +145,15 @@ export default function RootLayout({
         <meta
           name="google-site-verification"
           content="s9WY1v_Nd5OwIIxm18HwdUCJ5yHI9OHud39eehL8TJU"
+        />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
+        <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/logo-192.png" />
+        <link rel="apple-touch-icon" href="/logo-192.png" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdWebSite) }}
         />
       </head>
       <body className="min-h-full flex flex-col antialiased">
